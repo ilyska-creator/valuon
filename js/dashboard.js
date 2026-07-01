@@ -89,16 +89,39 @@ function updateStats(items) {
 
     if (!totalEl || !activeEl || !expiringEl) return;
 
-    const total = items.length;
-    const active = items.filter(i => calculateDaysLeft(i.purchase_date, i.warranty_months) > 30).length;
-    const expiring = items.filter(i => {
-        const d = calculateDaysLeft(i.purchase_date, i.warranty_months);
-        return d > 0 && d <= 30;
-    }).length;
+    let activeCount = 0;
+    let expiringCount = 0;
 
-    totalEl.textContent = total;
-    activeEl.textContent = active;
-    expiringEl.textContent = expiring;
+    items.forEach(item => {
+        const days = calculateDaysLeft(item.purchase_date, item.warranty_months);
+        if (days > 30) activeCount++;
+        else if (days > 0 && days <= 30) expiringCount++;
+    });
+
+    totalEl.textContent = items.length;
+    activeEl.textContent = activeCount;
+    expiringEl.textContent = expiringCount;
+}
+
+function updateStats(items) {
+    const totalEl = document.getElementById('stat-total');
+    const activeEl = document.getElementById('stat-active');
+    const expiringEl = document.getElementById('stat-expiring');
+
+    if (!totalEl || !activeEl || !expiringEl) return;
+
+    let activeCount = 0;
+    let expiringCount = 0;
+
+    items.forEach(item => {
+        const days = calculateDaysLeft(item.purchase_date, item.warranty_months);
+        if (days > 30) activeCount++;
+        else if (days > 0 && days <= 30) expiringCount++;
+    });
+
+    totalEl.textContent = items.length;
+    activeEl.textContent = activeCount;
+    expiringEl.textContent = expiringCount;
 }
 
 function setupModal() {
