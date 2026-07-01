@@ -157,10 +157,6 @@ ul {
     gap: 10px;
 }
 
-.brand i {
-    color: var(--primary);
-}
-
 .nav-list {
     display: flex;
     gap: 32px;

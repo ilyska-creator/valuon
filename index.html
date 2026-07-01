@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Warrantix — Цифровой паспорт твоих вещей</title>
+    <link rel="icon" type="image/png" href="favicon.png">
 
     <script>
         (function () { const t = localStorage.getItem('warrantix-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); })();
@@ -23,7 +24,13 @@
     <nav class="navbar">
         <div class="container nav-wrapper">
             <a href="#" class="brand">
-                <i class="fa-solid fa-shield-halved"></i> Warrantix
+                <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 4L5 10V20C5 29.5 11.5 37.5 20 39C28.5 37.5 35 29.5 35 20V10L20 4Z" fill="#3b82f6"
+                        stroke="#2563eb" stroke-width="1.5" stroke-linejoin="round" />
+                    <path d="M13 20L18 25L27 15" stroke="white" stroke-width="3" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                Warrantix
             </a>
 
             <ul class="nav-list">
@@ -35,7 +42,7 @@
                     <button id="lang-toggle" class="icon-btn" title="Switch Language">EN</button>
                     <button id="theme-toggle" class="icon-btn" title="Toggle Theme"><i
                             class="fa-solid fa-moon"></i></button>
-                    <a href="#" class="btn btn-primary small" data-i18n="nav_login">Вход</a>
+                    <a href="login.html" class="btn btn-primary small" data-i18n="nav_login">Вход</a>
                 </li>
             </ul>
 
