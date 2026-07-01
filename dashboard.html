@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет — Warrantix</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="brand">
+                <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 4L5 10V20C5 29.5 11.5 37.5 20 39C28.5 37.5 35 29.5 35 20V10L20 4Z" fill="#3b82f6"
+                        stroke="#2563eb" stroke-width="1.5" stroke-linejoin="round" />
+                    <path d="M13 20L18 25L27 15" stroke="white" stroke-width="3" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                Warrantix
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active"><i class="fa-solid fa-box-open"></i> Мои вещи</a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-receipt"></i> Чеки и документы</a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-bell"></i> Уведомления</a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-gear"></i> Настройки</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="index.html" class="btn btn-outline small full-width"><i
+                    class="fa-solid fa-arrow-right-from-bracket"></i> Выйти</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="content-header">
+            <h1>Мои активы</h1>
+            <button id="add-item-btn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Добавить вещь</button>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fa-solid fa-laptop"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Всего вещей</span>
+                    <span class="stat-value">0</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Активных гарантий</span>
+                    <span class="stat-value">0</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Истекают скоро</span>
+                    <span class="stat-value">0</span>
+                </div>
+            </div>
+        </div>
+
+        <section class="items-section">
+            <h2>Недавние покупки</h2>
+            <div class="items-grid">
+
+
+            </div>
+        </section>
+    </main>
+
+    <div id="add-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Добавить новую вещь</h2>
+                <button id="close-modal" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form class="modal-form">
+                <div class="input-group">
+                    <label>Название товара</label>
+                    <input type="text" placeholder="Например: MacBook Air M2" required>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Серийный номер</label>
+                        <input type="text" placeholder="S/N..." required>
+                    </div>
+                    <div class="input-group">
+                        <label>Дата покупки</label>
+                        <input type="date" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Срок гарантии (мес.)</label>
+                    <input type="number" min="1" max="60" value="12" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="cancel-modal" class="btn btn-outline">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/theme.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
+</body>
+
+</html>

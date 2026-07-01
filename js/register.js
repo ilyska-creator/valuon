@@ -17,20 +17,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = loginForm.querySelector('button[type="submit"]');
+            const btn = registerForm.querySelector('button[type="submit"]');
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const originalText = btn.innerHTML;
 
             try {
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Вход...';
+                btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Регистрация...';
 
-                const { data, error } = await supabase.auth.signInWithPassword({
+                const { data, error } = await supabase.auth.signUp({
                     email: email,
                     password: password
                 });
@@ -39,10 +39,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.session) {
                     window.location.href = 'dashboard.html';
+                } else {
+                    alert('Регистрация успешна! Проверьте почту для подтверждения.');
+                    window.location.href = 'login.html';
                 }
             } catch (err) {
                 console.error(err);
-                alert('Неверный email или пароль.');
+                alert(err.message || 'Ошибка регистрации. Попробуйте снова.');
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
