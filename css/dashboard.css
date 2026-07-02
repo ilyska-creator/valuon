@@ -787,7 +787,7 @@
     }
 }
 
-/* --- Исправленная мобильная панель --- */
+/* --- Исправленная мобильная панель (Фиксированная высота) --- */
 .mobile-top-bar {
     display: none;
     /* Скрыта на десктопе */
@@ -796,16 +796,16 @@
     left: 0;
     width: 100%;
     height: 64px;
-    /* Фиксированная высота для стабильности */
+    /* ЖЕСТКАЯ ВЫСОТА: предотвращает "уезжание" и обрезку при скролле */
     z-index: 1000;
 
-    /* Исправлено: добавлена ; после align-items */
+    /* Центрируем контент по вертикали вместо padding */
     align-items: center;
     justify-content: flex-start;
-    /* Элементы идут слева направо */
 
+    /* Только горизонтальные отступы! Вертикальные убраны, чтобы не ломать высоту */
     padding: 0 20px;
-    /* Отступы по бокам вместо padding: 20px 0 */
+
     transition: all 0.3s ease;
 
     backdrop-filter: blur(12px);
@@ -815,12 +815,12 @@
 
 [data-theme="light"] .mobile-top-bar,
 :not([data-theme="dark"]) .mobile-top-bar {
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.4);
     border-bottom-color: rgba(0, 0, 0, 0.05);
 }
 
 [data-theme="dark"] .mobile-top-bar {
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.4);
     border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -837,6 +837,7 @@
     transform: translateX(-50%);
     white-space: nowrap;
 }
+
 
 .menu-trigger {
     background: none;
@@ -855,6 +856,7 @@
     background: rgba(59, 130, 246, 0.1);
 }
 
+/* Скрываем старую плавающую кнопку */
 .mobile-menu-btn:not(.menu-trigger) {
     display: none !important;
 }
