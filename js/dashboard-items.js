@@ -39,7 +39,7 @@ async function loadItems(userId, client) {
         return;
     }
 
-    const safeItems = items || []; 
+    const safeItems = items || [];
 
     renderItems(safeItems);
     updateStats(safeItems);
@@ -52,9 +52,14 @@ async function loadItems(userId, client) {
 export function calculateDaysLeft(purchaseDate, months) {
     if (!purchaseDate || !months) return -999;
 
-    const [year, month, day] = purchaseDate.split('-').map(Number);
+    const parts = purchaseDate.split('-');
+    if (parts.length !== 3) return -999;
 
-    const endDate = new Date(year, month - 1, day);
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+
+    const endDate = new Date(year, month, day);
 
     const targetMonth = endDate.getMonth() + parseInt(months);
     endDate.setFullYear(endDate.getFullYear() + Math.floor(targetMonth / 12));
@@ -89,12 +94,27 @@ function renderItems(items) {
         return;
     }
 
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '—';
+        const [y, m, d] = dateStr.split('-');
+        return `${d}.${m}.${y}`;
+    };
+
     grid.innerHTML = items.map(item => {
         const iconClass = DEVICE_ICONS[item.type] || DEVICE_ICONS.other;
         const daysLeft = calculateDaysLeft(item.purchase_date, item.warranty_months);
         const status = getStatusInfo(daysLeft);
+
         const totalDays = (item.warranty_months || 12) * 30;
         const progress = totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
+
+        let endDateStr = '—';
+        if (item.purchase_date && item.warranty_months) {
+            const parts = item.purchase_date.split('-').map(Number);
+            const end = new Date(parts[0], parts[1] - 1, parts[2]);
+            end.setMonth(end.getMonth() + parseInt(item.warranty_months));
+            endDateStr = formatDate(end.toISOString().split('T')[0]);
+        }
 
         return `
             <div class="item-card">
@@ -102,12 +122,14 @@ function renderItems(items) {
                     <div class="item-icon"><i class="fa-solid ${iconClass}"></i></div>
                     <div class="item-status ${status.class}">${status.text}</div>
                 </div>
+                
                 <h3 class="item-title">${item.name}</h3>
                 <p class="item-meta">
                     ${item.brand || 'Бренд не указан'} • 
                     S/N: ${item.serial_number || '—'}
                     ${item.location ? `<br><small style="opacity:0.7">📍 ${item.location}</small>` : ''}
                 </p>
+
                 <div class="item-progress">
                     <div class="progress-bar-bg">
                         <div class="progress-bar-fill ${status.class}" style="width: ${progress}%"></div>
@@ -115,6 +137,29 @@ function renderItems(items) {
                     <span class="progress-text ${status.class === 'active' ? '' : status.class + '-text'}">
                         ${daysLeft > 0 ? `Осталось ${daysLeft} дней` : 'Гарантия истекла'}
                     </span>
+                </div>
+
+                <div class="warranty-timeline">
+                    <!-- Левая точка + Текст -->
+                    <div class="timeline-node start">
+                        <div class="node-dot"></div>
+                        <div class="node-text">
+                            <span class="label">Начало</span>
+                            <span class="date">${formatDate(item.purchase_date)}</span>
+                        </div>
+                    </div>
+
+                    <!-- Соединительная линия -->
+                    <div class="timeline-track"></div>
+
+                    <!-- Правая точка + Текст -->
+                    <div class="timeline-node end">
+                        <div class="node-dot"></div>
+                        <div class="node-text">
+                            <span class="label">Конец</span>
+                            <span class="date">${endDateStr}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -186,18 +231,23 @@ function setupModal(client) {
 
             const { data: { user } } = await client.auth.getUser();
 
-            const nameInput = form.querySelector('input[name="name"]') || form.querySelector('input[type="text"]');
-            const serialInputs = form.querySelectorAll('input[type="text"]');
-            const dateInput = form.querySelector('input[type="date"]');
-            const monthsInput = form.querySelector('input[type="number"]');
+            const nameInput = form.querySelector('input[name="name"]');
+            const typeSelect = form.querySelector('select[name="type"]');
+            const brandInput = form.querySelector('input[name="brand"]');
+            const serialInput = form.querySelector('input[name="serial_number"]');
+            const dateInput = form.querySelector('input[name="purchase_date"]');
+            const monthsInput = form.querySelector('input[name="warranty_months"]');
+            const locationInput = form.querySelector('input[name="location"]');
 
             const { error } = await client.from('items').insert([{
                 user_id: user.id,
                 name: nameInput.value.trim(),
-                brand: '',
-                serial_number: serialInputs.length > 1 ? serialInputs[1].value.trim() : '',
+                type: typeSelect ? typeSelect.value : 'other',
+                brand: brandInput ? brandInput.value.trim() : '',
+                serial_number: serialInput ? serialInput.value.trim() : '',
                 purchase_date: dateInput.value,
-                warranty_months: parseInt(monthsInput.value) || 12
+                warranty_months: parseInt(monthsInput.value) || 12,
+                location: locationInput ? locationInput.value.trim() : ''
             }]);
 
             if (error) throw error;
@@ -214,12 +264,12 @@ function setupModal(client) {
             }, 800);
 
         } catch (err) {
+            console.error(err);
             if (err.code === '23505') {
                 alert('Эта вещь уже добавлена!');
             } else {
                 alert('Ошибка сохранения. Попробуйте снова.');
             }
-            console.error(err);
             btn.innerHTML = originalText;
             btn.disabled = false;
             isSubmitting = false;

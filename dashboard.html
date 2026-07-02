@@ -224,35 +224,46 @@
             const closeBtn = document.getElementById('close-sidebar-btn');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
+            const spaLinks = document.querySelectorAll('.sidebar-nav .nav-item[data-view]');
+            const views = document.querySelectorAll('.dashboard-view');
+
+            let scrollPosition = 0;
+
+            function lockScroll() {
+                scrollPosition = window.scrollY;
+                document.body.classList.add('scroll-locked');
+                document.body.style.top = `-${scrollPosition}px`;
+            }
+
+            function unlockScroll() {
+                document.body.classList.remove('scroll-locked');
+                document.body.style.top = '';
+
+                window.scrollTo(0, scrollPosition);
+
+                if ('ontouchstart' in window) {
+                    document.body.dispatchEvent(new Event('touchstart'));
+                }
+            }
 
             function toggleMenu() {
                 if (!sidebar || !overlay) return;
-
                 const isActive = sidebar.classList.contains('active');
+
                 if (isActive) {
                     sidebar.classList.remove('active');
                     overlay.classList.remove('active');
-                    document.body.style.overflow = '';
+                    setTimeout(unlockScroll, 450);
                 } else {
                     sidebar.classList.add('active');
                     overlay.classList.add('active');
-                    document.body.style.overflow = 'hidden';
+                    lockScroll();
                 }
             }
 
             if (menuBtn) menuBtn.addEventListener('click', toggleMenu);
             if (closeBtn) closeBtn.addEventListener('click', toggleMenu);
             if (overlay) overlay.addEventListener('click', toggleMenu);
-
-            const allNavLinks = document.querySelectorAll('.sidebar-nav .nav-item');
-            const spaLinks = document.querySelectorAll('.sidebar-nav .nav-item[data-view]');
-            const views = document.querySelectorAll('.dashboard-view');
-
-            function closeMobileMenuIfNeeded() {
-                if (window.innerWidth <= 900 && sidebar?.classList.contains('active')) {
-                    toggleMenu();
-                }
-            }
 
             spaLinks.forEach(link => {
                 link.addEventListener('click', (e) => {
@@ -264,31 +275,21 @@
                     views.forEach(view => view.classList.remove('active'));
                     const targetId = link.getAttribute('href').replace('#', '');
                     const targetView = document.getElementById(targetId);
-                    if (targetView) targetView.classList.add('active');
 
-                    closeMobileMenuIfNeeded();
+                    if (targetView) {
+                        targetView.classList.add('active');
+
+                        if (window.innerWidth <= 900 && sidebar?.classList.contains('active')) {
+                            toggleMenu();
+                        } else {
+                            window.scrollTo({ top: 0, behavior: 'instant' });
+                            unlockScroll();
+                        }
+                    }
                 });
             });
 
-            allNavLinks.forEach(link => {
-                if (!link.hasAttribute('data-view')) {
-                    link.addEventListener('click', () => {
-                        closeMobileMenuIfNeeded();
-                    });
-                }
-            });
-
-            const hash = window.location.hash.replace('#', '');
-            if (hash && document.getElementById(hash)) {
-                spaLinks.forEach(l => l.classList.remove('active'));
-                views.forEach(v => v.classList.remove('active'));
-
-                const activeLink = document.querySelector(`[href="#${hash}"]`);
-                if (activeLink) activeLink.classList.add('active');
-
-                const activeView = document.getElementById(hash);
-                if (activeView) activeView.classList.add('active');
-            }
+            unlockScroll();
         });
     </script>
 </body>
