@@ -3,7 +3,6 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const supabaseUrl = 'https://qjnzawjivqvgupbgxdao.supabase.co';
 const supabaseKey = 'sb_publishable__b1k1cuhxQEBn50III2tkQ_0DOOqe3V';
 
-// Создаем клиент с динамическим хранилищем
 function getSupabaseClient(rememberMe) {
     return createClient(supabaseUrl, supabaseKey, {
         auth: {
@@ -15,8 +14,7 @@ function getSupabaseClient(rememberMe) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Проверяем, есть ли активная сессия в любом хранилище
-    const tempClient = getSupabaseClient(true); // Пробуем найти сессию везде
+    const tempClient = getSupabaseClient(true);
     const { data: { session } } = await tempClient.auth.getSession();
 
     if (session) {
@@ -24,7 +22,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Автозаполнение email
     const savedEmail = localStorage.getItem('valuon-remember-email');
     const emailInput = document.getElementById('email');
     const rememberCheckbox = document.getElementById('remember');
@@ -34,7 +31,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (rememberCheckbox) rememberCheckbox.checked = true;
     }
 
-    // Логика "глазика"
     const toggleBtn = document.querySelector('.toggle-password');
     const passwordInput = document.getElementById('password');
     if (toggleBtn && passwordInput) {
@@ -46,7 +42,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Обработка формы
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
@@ -61,7 +56,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
 
-                // Используем правильный клиент в зависимости от галочки
                 const client = getSupabaseClient(rememberMe);
 
                 const { data, error } = await client.auth.signInWithPassword({
@@ -71,7 +65,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (error) throw error;
 
-                // Сохраняем email для автозаполнения только если стоит галочка
                 if (rememberMe) {
                     localStorage.setItem('valuon-remember-email', email);
                 } else {

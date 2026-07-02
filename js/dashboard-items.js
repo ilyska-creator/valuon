@@ -1,5 +1,17 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
 
+const DEVICE_ICONS = {
+    laptop: 'fa-laptop',
+    phone: 'fa-mobile-screen-button',
+    tablet: 'fa-tablet-screen-button',
+    watch: 'fa-stopwatch',
+    headphones: 'fa-headphones-simple',
+    camera: 'fa-camera',
+    console: 'fa-gamepad',
+    appliance: 'fa-blender',
+    other: 'fa-box-open'
+};
+
 async function initDashboardItems() {
     const auth = await requireAuth();
     if (!auth) return;
@@ -33,13 +45,24 @@ async function loadItems(userId, client) {
 
 function calculateDaysLeft(purchaseDate, months) {
     if (!purchaseDate || !months) return -999;
-    const start = new Date(purchaseDate);
-    if (isNaN(start.getTime())) return -999;
 
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + parseInt(months));
+    const parts = purchaseDate.split('-');
+    if (parts.length !== 3) return -999;
+
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+
+    const endDate = new Date(Date.UTC(year, month, day));
+    endDate.setUTCMonth(endDate.getUTCMonth() + parseInt(months));
+
     const now = new Date();
-    return Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+    const diffTime = endDate.getTime() - today.getTime();
+    const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return daysLeft;
 }
 
 function getStatusInfo(daysLeft) {
@@ -58,6 +81,7 @@ function renderItems(items) {
     }
 
     grid.innerHTML = items.map(item => {
+        const iconClass = DEVICE_ICONS[item.type] || DEVICE_ICONS.other;
         const daysLeft = calculateDaysLeft(item.purchase_date, item.warranty_months);
         const status = getStatusInfo(daysLeft);
         const totalDays = (item.warranty_months || 12) * 30;
@@ -66,11 +90,15 @@ function renderItems(items) {
         return `
             <div class="item-card">
                 <div class="item-header">
-                    <div class="item-icon"><i class="fa-solid fa-box"></i></div>
+                    <div class="item-icon"><i class="fa-solid ${iconClass}"></i></div>
                     <div class="item-status ${status.class}">${status.text}</div>
                 </div>
                 <h3 class="item-title">${item.name}</h3>
-                <p class="item-meta">${item.brand || 'Бренд не указан'} • S/N: ${item.serial_number || '—'}</p>
+                <p class="item-meta">
+                    ${item.brand || 'Бренд не указан'} • 
+                    S/N: ${item.serial_number || '—'}
+                    ${item.location ? `<br><small style="opacity:0.7">📍 ${item.location}</small>` : ''}
+                </p>
                 <div class="item-progress">
                     <div class="progress-bar-bg">
                         <div class="progress-bar-fill ${status.class}" style="width: ${progress}%"></div>
@@ -132,18 +160,24 @@ function setupModal(client) {
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
             const { data: { user } } = await client.auth.getUser();
-            const nameInput = form.querySelector('input[name="name"]') || form.querySelector('input[type="text"]');
-            const serialInputs = form.querySelectorAll('input[type="text"]');
-            const dateInput = form.querySelector('input[type="date"]');
-            const monthsInput = form.querySelector('input[type="number"]');
+
+            const nameInput = form.querySelector('input[name="name"]');
+            const typeSelect = form.querySelector('select[name="type"]');
+            const brandInput = form.querySelector('input[name="brand"]');
+            const serialInput = form.querySelector('input[name="serial_number"]');
+            const dateInput = form.querySelector('input[name="purchase_date"]');
+            const monthsInput = form.querySelector('input[name="warranty_months"]');
+            const locationInput = form.querySelector('input[name="location"]');
 
             const { error } = await client.from('items').insert([{
                 user_id: user.id,
                 name: nameInput.value.trim(),
-                brand: '',
-                serial_number: serialInputs.length > 1 ? serialInputs[1].value.trim() : '',
+                type: typeSelect.value,
+                brand: brandInput.value.trim(),
+                serial_number: serialInput.value.trim(),
                 purchase_date: dateInput.value,
-                warranty_months: parseInt(monthsInput.value) || 12
+                warranty_months: parseInt(monthsInput.value) || 12,
+                location: locationInput.value.trim()
             }]);
 
             if (error) throw error;

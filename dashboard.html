@@ -4,22 +4,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon</title>
-
+    <title>Valuon — Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
-
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/dashboard.css">
 </head>
 
 <body class="dashboard-body">
 
-    <aside class="sidebar">
+    <button id="mobile-menu-btn" class="mobile-menu-btn">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="index.html" class="brand">
                 <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -30,95 +34,165 @@
                 </svg>
                 Valuon
             </a>
+            <button id="close-sidebar-btn" class="close-sidebar-btn">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
 
         <nav class="sidebar-nav">
-            <a href="#" class="nav-item active"><i class="fa-solid fa-box-open"></i> Мои вещи</a>
-            <a href="#" class="nav-item"><i class="fa-solid fa-receipt"></i> Чеки и документы</a>
-            <a href="#" class="nav-item"><i class="fa-solid fa-bell"></i> Уведомления</a>
-            <a href="#" class="nav-item"><i class="fa-solid fa-gear"></i> Настройки</a>
+            <a href="#" class="nav-item active"><i class="fa-solid fa-box-open"></i> <span data-i18n="nav_items">Мои
+                    вещи</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-receipt"></i> <span data-i18n="nav_receipts">Чеки и
+                    документы</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-bell"></i> <span
+                    data-i18n="nav_notifications">Уведомления</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-gear"></i> <span
+                    data-i18n="nav_settings">Настройки</span></a>
         </nav>
 
-        <button id="logout-btn" class="btn btn-outline small">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i> Выйти
-        </button>
+        <div class="sidebar-footer">
+            <div class="controls-row">
+                <a href="#" id="theme-toggle" class="circle-btn" aria-label="Toggle Theme">
+                    <i class="fa-solid fa-moon"></i>
+                </a>
+                <a href="#" id="lang-toggle" class="circle-btn" aria-label="Toggle Language">
+                    <span>RU</span>
+                </a>
+            </div>
+
+            <a href="#" id="logout-btn" class="nav-item full-width">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span data-i18n="ui_logout">Выйти</span>
+            </a>
+        </div>
     </aside>
 
     <main class="main-content">
         <header class="content-header">
-            <h1>Мои активы</h1>
-            <button id="add-item-btn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Добавить вещь</button>
+            <h1 data-i18n="dashboard_title">Мои активы</h1>
+            <button id="add-item-btn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> <span
+                    data-i18n="btn_add">Добавить вещь</span></button>
         </header>
 
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon blue"><i class="fa-solid fa-laptop"></i></div>
                 <div class="stat-info">
-                    <span class="stat-label">Всего вещей</span>
+                    <span class="stat-label" data-i18n="stat_total">Всего вещей</span>
                     <span class="stat-value" id="stat-total">0</span>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon green"><i class="fa-solid fa-shield-halved"></i></div>
                 <div class="stat-info">
-                    <span class="stat-label">Активных гарантий</span>
+                    <span class="stat-label" data-i18n="stat_active">Активных гарантий</span>
                     <span class="stat-value" id="stat-active">0</span>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon orange"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 <div class="stat-info">
-                    <span class="stat-label">Истекают скоро</span>
+                    <span class="stat-label" data-i18n="stat_expiring">Истекают скоро</span>
                     <span class="stat-value" id="stat-expiring">0</span>
                 </div>
             </div>
         </div>
 
         <section class="items-section">
-            <h2>Недавние покупки</h2>
-            <div class="items-grid">
-
-
-            </div>
+            <h2 data-i18n="section_recent">Недавние покупки</h2>
+            <div class="items-grid"></div>
         </section>
     </main>
 
     <div id="add-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Добавить новую вещь</h2>
+                <h2 data-i18n="modal_title">Добавить новую вещь</h2>
                 <button id="close-modal" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form class="modal-form">
                 <div class="input-group">
-                    <label>Название товара</label>
-                    <input type="text" placeholder="Например: MacBook Air M2" required>
+                    <label data-i18n="label_name">Название товара</label>
+                    <input type="text" name="name" placeholder="MacBook Air M2" required>
                 </div>
                 <div class="input-row">
                     <div class="input-group">
-                        <label>Серийный номер</label>
-                        <input type="text" placeholder="S/N..." required>
+                        <label data-i18n="label_type">Тип устройства</label>
+                        <select name="type" required>
+                            <option value="laptop">💻 Ноутбук</option>
+                            <option value="phone">📱 Смартфон</option>
+                            <option value="tablet">📟 Планшет</option>
+                            <option value="watch"> Часы</option>
+                            <option value="headphones">🎧 Наушники</option>
+                            <option value="camera"> Камера</option>
+                            <option value="console">🎮 Консоль</option>
+                            <option value="appliance">🏠 Бытовая техника</option>
+                            <option value="other">📦 Другое</option>
+                        </select>
                     </div>
                     <div class="input-group">
-                        <label>Дата покупки</label>
-                        <input type="date" required>
+                        <label data-i18n="label_brand">Бренд</label>
+                        <input type="text" name="brand" placeholder="Apple, Samsung..." required>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>Срок гарантии (мес.)</label>
-                    <input type="number" min="1" max="60" value="12" required>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_serial">Серийный номер</label>
+                        <input type="text" name="serial_number" placeholder="S/N...">
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_date">Дата покупки</label>
+                        <input type="date" name="purchase_date" required>
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_months">Срок гарантии (мес.)</label>
+                        <input type="number" name="warranty_months" min="1" max="60" value="12" required>
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_location">Место хранения</label>
+                        <input type="text" name="location" placeholder="Дом, Офис, Дача...">
+                    </div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" id="cancel-modal" class="btn btn-outline">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <button type="button" id="cancel-modal" class="btn btn-outline"
+                        data-i18n="btn_cancel">Отмена</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_save">Сохранить</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script src="js/theme.js"></script>
+    <script src="js/dashboard-lang.js"></script>
     <script type="module" src="js/dashboard-auth.js"></script>
     <script type="module" src="js/dashboard-items.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            const closeBtn = document.getElementById('close-sidebar-btn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            function toggleMenu() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+                document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+            }
+
+            if (menuBtn) menuBtn.addEventListener('click', toggleMenu);
+            if (closeBtn) closeBtn.addEventListener('click', toggleMenu);
+            if (overlay) overlay.addEventListener('click', toggleMenu);
+
+            document.querySelectorAll('.sidebar-nav .nav-item').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth <= 900) toggleMenu();
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>
