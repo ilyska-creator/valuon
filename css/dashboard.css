@@ -814,6 +814,7 @@
 }
 
 .brand-mobile {
+    margin-top: 4px;
     display: flex;
     align-items: center;
     gap: 10px;
