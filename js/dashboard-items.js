@@ -142,6 +142,8 @@ function setupModal(client) {
 
     if (!addBtn || !modal) return;
 
+    let isSubmitting = false;
+
     addBtn.addEventListener('click', () => modal.classList.add('active'));
     closeBtn?.addEventListener('click', () => modal.classList.remove('active'));
     cancelBtn?.addEventListener('click', () => modal.classList.remove('active'));
@@ -152,6 +154,10 @@ function setupModal(client) {
 
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        if (isSubmitting) return;
+        isSubmitting = true;
+
         const btn = form.querySelector('button[type="submit"]');
         const originalText = btn.innerHTML;
 
@@ -161,41 +167,45 @@ function setupModal(client) {
 
             const { data: { user } } = await client.auth.getUser();
 
-            const nameInput = form.querySelector('input[name="name"]');
-            const typeSelect = form.querySelector('select[name="type"]');
-            const brandInput = form.querySelector('input[name="brand"]');
-            const serialInput = form.querySelector('input[name="serial_number"]');
-            const dateInput = form.querySelector('input[name="purchase_date"]');
-            const monthsInput = form.querySelector('input[name="warranty_months"]');
-            const locationInput = form.querySelector('input[name="location"]');
+            // Сбор данных из формы
+            const nameInput = form.querySelector('input[name="name"]') || form.querySelector('input[type="text"]');
+            const serialInputs = form.querySelectorAll('input[type="text"]');
+            const dateInput = form.querySelector('input[type="date"]');
+            const monthsInput = form.querySelector('input[type="number"]');
 
             const { error } = await client.from('items').insert([{
                 user_id: user.id,
                 name: nameInput.value.trim(),
-                type: typeSelect.value,
-                brand: brandInput.value.trim(),
-                serial_number: serialInput.value.trim(),
+                brand: '',
+                serial_number: serialInputs.length > 1 ? serialInputs[1].value.trim() : '',
                 purchase_date: dateInput.value,
-                warranty_months: parseInt(monthsInput.value) || 12,
-                location: locationInput.value.trim()
+                warranty_months: parseInt(monthsInput.value) || 12
             }]);
 
             if (error) throw error;
 
             btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+
             setTimeout(() => {
                 modal.classList.remove('active');
                 form.reset();
                 btn.innerHTML = originalText;
                 btn.disabled = false;
+                isSubmitting = false;
                 initDashboardItems();
             }, 800);
 
         } catch (err) {
+            if (err.code === '23505') {
+                alert('Эта вещь уже добавлена!');
+            } else {
+                alert('Ошибка сохранения. Попробуйте снова.');
+            }
             console.error(err);
             alert('Ошибка сохранения. Попробуйте снова.');
             btn.innerHTML = originalText;
             btn.disabled = false;
+            isSubmitting = false;
         }
     });
 }

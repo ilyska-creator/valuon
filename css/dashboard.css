@@ -787,7 +787,6 @@
     }
 }
 
-/* --- Жестко фиксированная мобильная панель --- */
 .mobile-top-bar {
     display: none;
     position: fixed;
@@ -795,15 +794,10 @@
     left: 0;
     width: 100%;
     height: 64px;
-    /* Физическая высота, которая не меняется */
     z-index: 1000;
 
-    /* Включаем Flexbox для управления внутренними элементами */
-    display: flex;
     align-items: center;
-    /* Центрирует всё по вертикали внутри 64px */
     justify-content: space-between;
-    /* Распределяет элементы по ширине */
 
     padding: 0 20px;
     transition: background 0.3s ease, border-color 0.3s ease;
@@ -815,16 +809,15 @@
 
 [data-theme="light"] .mobile-top-bar,
 :not([data-theme="dark"]) .mobile-top-bar {
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.4);
     border-bottom-color: rgba(0, 0, 0, 0.05);
 }
 
 [data-theme="dark"] .mobile-top-bar {
-    background: rgba(15, 23, 42, 0.85);
+    background: rgba(0, 0, 0, 0.4);
     border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Логотип теперь часть потока, а не абсолютный элемент */
 .brand-mobile {
     display: flex;
     align-items: center;
@@ -833,16 +826,13 @@
     font-size: 1.1rem;
     color: var(--text-main);
 
-    /* Абсолютное позиционирование + трансформация для идеального центра */
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
     white-space: nowrap;
     pointer-events: none;
-    /* Чтобы не мешал кликать, если перекроет другие элементы */
 }
 
-/* Кнопка меню слева */
 .menu-trigger {
     background: none;
     border: none;
@@ -855,21 +845,18 @@
     transition: background 0.2s;
     z-index: 2;
     flex-shrink: 0;
-    /* Запрещаем кнопке сжиматься */
 }
 
 .menu-trigger:hover {
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(0, 0, 0, 0.1);
 }
 
-/* Пустой блок справа для баланса (чтобы центр не смещался из-за ширины кнопки) */
 .top-bar-spacer {
     width: 40px;
     height: 40px;
     flex-shrink: 0;
 }
 
-/* Скрываем старую кнопку */
 .mobile-menu-btn:not(.menu-trigger) {
     display: none !important;
 }
@@ -877,14 +864,12 @@
 @media (max-width: 900px) {
     .mobile-top-bar {
         display: flex;
-        /* Принудительно включаем флекс на мобильных */
     }
 
     .main-content {
         margin-left: 0;
         padding: 24px;
         padding-top: 88px;
-        /* 64px панель + 24px воздух */
     }
 
     .content-header {
