@@ -4,24 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon</title>
-
+    <title>Valuon — Регистрация</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
-
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
 </head>
 
 <body class="auth-body">
-
-    <a href="index.html" class="back-link">
-        <i class="fa-solid fa-arrow-left"></i> На главную
-    </a>
+    <a href="index.html" class="back-link" data-i18n="back_home">← На главную</a>
 
     <div class="auth-container">
         <div class="auth-card">
@@ -32,41 +27,60 @@
                     <path d="M13 20L18 25L27 15" stroke="white" stroke-width="3" stroke-linecap="round"
                         stroke-linejoin="round" />
                 </svg>
-                <h1>Valuon</h1>
+                <h1 data-i18n="reg_title">Создать аккаунт</h1>
             </div>
-
-            <p class="auth-subtitle">Создайте аккаунт для управления гарантиями</p>
+            <p class="auth-subtitle" data-i18n="reg_subtitle">Начните управлять гарантиями бесплатно</p>
 
             <form id="register-form" class="auth-form">
                 <div class="input-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" placeholder="name@example.com" required>
+                    <label for="email" data-i18n="label_email">Email</label>
+                    <input type="email" id="email" required placeholder="name@example.com" autocomplete="email">
                 </div>
 
                 <div class="input-group">
-                    <label for="password">Пароль</label>
+                    <label for="password" data-i18n="label_password">Пароль</label>
                     <div class="password-wrapper">
-                        <input type="password" id="password" placeholder="Минимум 6 символов" minlength="6" required>
-                        <button type="button" class="toggle-password" aria-label="Показать пароль">
+                        <input type="password" id="password" required minlength="6" placeholder="••••••••"
+                            autocomplete="new-password">
+                        <button type="button" class="toggle-password" aria-label="Toggle password visibility">
                             <i class="fa-regular fa-eye"></i>
                         </button>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary auth-btn">
-                    Зарегистрироваться <i class="fa-solid fa-arrow-right"></i>
-                </button>
+                <div class="input-group">
+                    <label for="confirm-password" data-i18n="label_confirm_password">Повторите пароль</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="confirm-password" required minlength="6" placeholder="••••••••"
+                            autocomplete="new-password">
+                        <button type="button" class="toggle-password-confirm" aria-label="Toggle password visibility">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="terms" required>
+                        <span data-i18n="reg_terms">Я согласен с <a href="#"
+                                style="color:var(--primary)">условиями</a></span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary auth-btn"
+                    data-i18n="btn_register">Зарегистрироваться</button>
             </form>
 
             <div class="auth-footer">
-                Уже есть аккаунт? <a href="login.html">Войти</a>
+                <span data-i18n="footer_have_account">Уже есть аккаунт?</span>
+                <a href="login.html" data-i18n="footer_link_login">Войти</a>
             </div>
         </div>
     </div>
 
     <script src="js/theme.js"></script>
-    <script type="module" src="js/register.js"></script>
     <script src="js/login-lang.js"></script>
+    <script type="module" src="js/register.js"></script>
 </body>
 
 </html>

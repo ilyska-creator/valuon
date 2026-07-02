@@ -4,24 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon</title>
-
+    <title>Valuon — Вход</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
-    <link rel="icon" type="image/png" href="../assets/favicon.png">
 </head>
 
 <body class="auth-body">
-
-    <a href="index.html" class="back-link">
-        <i class="fa-solid fa-arrow-left"></i> На главную
-    </a>
+    <a href="index.html" class="back-link" data-i18n="back_home">← На главную</a>
 
     <div class="auth-container">
         <div class="auth-card">
@@ -32,22 +27,22 @@
                     <path d="M13 20L18 25L27 15" stroke="white" stroke-width="3" stroke-linecap="round"
                         stroke-linejoin="round" />
                 </svg>
-                <h1>Valuon</h1>
+                <h1 data-i18n="auth_title">С возвращением!</h1>
             </div>
-
-            <p class="auth-subtitle">Войдите в свой цифровой паспорт вещей</p>
+            <p class="auth-subtitle" data-i18n="auth_subtitle">Введите данные для входа в аккаунт</p>
 
             <form id="login-form" class="auth-form">
                 <div class="input-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" placeholder="name@example.com" required>
+                    <label for="email" data-i18n="label_email">Email</label>
+                    <input type="email" id="email" required placeholder="name@example.com" autocomplete="email">
                 </div>
 
                 <div class="input-group">
-                    <label for="password">Пароль</label>
+                    <label for="password" data-i18n="label_password">Пароль</label>
                     <div class="password-wrapper">
-                        <input type="password" id="password" placeholder="••••••••" required>
-                        <button type="button" class="toggle-password" aria-label="Показать пароль">
+                        <input type="password" id="password" required placeholder="••••••••"
+                            autocomplete="current-password">
+                        <button type="button" class="toggle-password" aria-label="Toggle password visibility">
                             <i class="fa-regular fa-eye"></i>
                         </button>
                     </div>
@@ -55,24 +50,25 @@
 
                 <div class="form-options">
                     <label class="checkbox-label">
-                        <input type="checkbox"> Запомнить меня
+                        <input type="checkbox" id="remember">
+                        <span data-i18n="login_remember">Запомнить меня</span>
                     </label>
-                    <a href="#" class="forgot-link">Забыли пароль?</a>
+                    <a href="#" class="forgot-link" data-i18n="login_forgot">Забыли пароль?</a>
                 </div>
 
-                <button type="submit" class="btn btn-primary auth-btn">
-                    Войти <i class="fa-solid fa-arrow-right"></i>
-                </button>
+                <button type="submit" class="btn btn-primary auth-btn" data-i18n="btn_login">Войти</button>
             </form>
 
             <div class="auth-footer">
-                Нет аккаунта? <a href="register.html">Зарегистрироваться</a>
+                <span data-i18n="footer_text">Нет аккаунта?</span>
+                <a href="register.html" data-i18n="footer_link">Зарегистрироваться</a>
             </div>
         </div>
     </div>
+
     <script src="js/theme.js"></script>
-    <script type="module" src="js/auth.js"></script>
     <script src="js/login-lang.js"></script>
+    <script type="module" src="js/auth.js"></script>
 </body>
 
 </html>

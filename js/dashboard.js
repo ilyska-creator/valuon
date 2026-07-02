@@ -2,69 +2,82 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabaseUrl = 'https://qjnzawjivqvgupbgxdao.supabase.co';
 const supabaseKey = 'sb_publishable__b1k1cuhxQEBn50III2tkQ_0DOOqe3V';
-const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function getSession() {
+    let client = createClient(supabaseUrl, supabaseKey, { auth: { storage: localStorage } });
+    let { data: { session } } = await client.auth.getSession();
+
+    if (!session) {
+        client = createClient(supabaseUrl, supabaseKey, { auth: { storage: sessionStorage } });
+        ({ data: { session } } = await client.auth.getSession());
+    }
+
+    return { session, client };
+}
 
 async function initDashboard() {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { session, client } = await getSession();
 
     if (!session) {
         window.location.href = 'login.html';
         return;
     }
 
-    loadItems(session.user.id);
-    setupModal();
+    loadItems(session.user.id, client);
+    setupModal(client);
+    setupLogout(client);
 }
 
-async function loadItems(userId) {
-    console.log('🔍 Загрузка вещей для пользователя:', userId);
+function setupLogout(currentClient) {
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await currentClient.auth.signOut();
+                localStorage.removeItem('valuon-remember-email');
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+            } catch (err) {
+                console.error(err);
+                localStorage.removeItem('valuon-remember-email');
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+            }
+        });
+    }
+}
 
+async function loadItems(userId, client) {
     const grid = document.querySelector('.items-grid');
     if (!grid) return;
 
     grid.innerHTML = '<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Загрузка...</div>';
 
-    const { data: items, error } = await supabase
+    const { data: items, error } = await client
         .from('items')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error(' Ошибка Supabase:', error);
+        console.error(error);
         grid.innerHTML = '<p class="empty-state error">Ошибка загрузки данных.</p>';
         return;
     }
 
-    console.log('📦 Получено вещей:', items?.length || 0);
-    console.log(' Данные:', items);
-
-    const safeItems = items || [];
-
-    renderItems(safeItems);
-    updateStats(safeItems);
+    renderItems(items || []);
+    updateStats(items || []);
 }
 
 function calculateDaysLeft(purchaseDate, months) {
-    if (!purchaseDate || !months) {
-        console.warn('⚠️ Нет даты или месяцев:', purchaseDate, months);
-        return -999;
-    }
-
+    if (!purchaseDate || !months) return -999;
     const start = new Date(purchaseDate);
-    if (isNaN(start.getTime())) {
-        console.warn('⚠️ Некорректная дата:', purchaseDate);
-        return -999;
-    }
+    if (isNaN(start.getTime())) return -999;
 
     const end = new Date(start);
     end.setMonth(end.getMonth() + parseInt(months));
-
     const now = new Date();
-    const days = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-
-    console.log(`⏳ Расчет дней для "${purchaseDate}" + ${months} мес = ${days} дн.`);
-    return days;
+    return Math.ceil((end - now) / (1000 * 60 * 60 * 24));
 }
 
 function getStatusInfo(daysLeft) {
@@ -85,7 +98,6 @@ function renderItems(items) {
     grid.innerHTML = items.map(item => {
         const daysLeft = calculateDaysLeft(item.purchase_date, item.warranty_months);
         const status = getStatusInfo(daysLeft);
-
         const totalDays = (item.warranty_months || 12) * 30;
         const progress = totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
 
@@ -111,36 +123,27 @@ function renderItems(items) {
 }
 
 function updateStats(items) {
-    console.log('📊 Обновление статистики для', items.length, 'вещей');
-
     const totalEl = document.getElementById('stat-total');
     const activeEl = document.getElementById('stat-active');
     const expiringEl = document.getElementById('stat-expiring');
 
-    if (!totalEl || !activeEl || !expiringEl) {
-        console.error(' Не найдены элементы статистики! Проверь ID в HTML.');
-        return;
-    }
+    if (!totalEl || !activeEl || !expiringEl) return;
 
     let activeCount = 0;
     let expiringCount = 0;
 
-    items.forEach((item, index) => {
+    items.forEach(item => {
         const days = calculateDaysLeft(item.purchase_date, item.warranty_months);
-        console.log(`   Вещь #${index + 1}: ${days} дней -> `, days > 30 ? 'АКТИВНА' : days > 0 ? 'ЗАКАНЧИВАЕТСЯ' : 'ИСТЕКЛА');
-
         if (days > 30) activeCount++;
         else if (days > 0 && days <= 30) expiringCount++;
     });
-
-    console.log(`✅ Итог: Всего=${items.length}, Активных=${activeCount}, Истекающих=${expiringCount}`);
 
     totalEl.textContent = items.length;
     activeEl.textContent = activeCount;
     expiringEl.textContent = expiringCount;
 }
 
-function setupModal() {
+function setupModal(client) {
     const addBtn = document.getElementById('add-item-btn');
     const modal = document.getElementById('add-modal');
     const closeBtn = document.getElementById('close-modal');
@@ -152,7 +155,10 @@ function setupModal() {
     addBtn.addEventListener('click', () => modal.classList.add('active'));
     closeBtn?.addEventListener('click', () => modal.classList.remove('active'));
     cancelBtn?.addEventListener('click', () => modal.classList.remove('active'));
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('active');
+    });
 
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -163,14 +169,13 @@ function setupModal() {
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
-            const { data: { user } } = await supabase.auth.getUser();
-
-            const nameInput = form.querySelector('input[type="text"]');
+            const { data: { user } } = await client.auth.getUser();
+            const nameInput = form.querySelector('input[name="name"]') || form.querySelector('input[type="text"]');
             const serialInputs = form.querySelectorAll('input[type="text"]');
             const dateInput = form.querySelector('input[type="date"]');
             const monthsInput = form.querySelector('input[type="number"]');
 
-            const { error } = await supabase.from('items').insert([{
+            const { error } = await client.from('items').insert([{
                 user_id: user.id,
                 name: nameInput.value.trim(),
                 brand: '',

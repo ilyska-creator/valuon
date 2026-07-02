@@ -195,3 +195,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+async function checkAuthOnHome() {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session) {
+        const startBtn = document.querySelector('a[href="register.html"]');
+        const loginBtn = document.querySelector('a[href="login.html"]');
+
+        if (startBtn) {
+            startBtn.href = 'dashboard.html';
+            startBtn.textContent = 'Мой кабинет';
+        }
+        if (loginBtn) {
+            loginBtn.href = 'dashboard.html';
+            loginBtn.textContent = 'Кабинет';
+        }
+    }
+}
+
+if (document.querySelector('.hero-actions')) {
+    checkAuthOnHome();
+}
