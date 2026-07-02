@@ -17,6 +17,8 @@ async function initDashboard() {
 }
 
 async function loadItems(userId) {
+    console.log('🔍 Загрузка вещей для пользователя:', userId);
+
     const grid = document.querySelector('.items-grid');
     if (!grid) return;
 
@@ -29,13 +31,46 @@ async function loadItems(userId) {
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error('Ошибка загрузки:', error);
+        console.error(' Ошибка Supabase:', error);
         grid.innerHTML = '<p class="empty-state error">Ошибка загрузки данных.</p>';
         return;
     }
 
-    renderItems(items);
-    updateStats(items);
+    console.log('📦 Получено вещей:', items?.length || 0);
+    console.log(' Данные:', items);
+
+    const safeItems = items || [];
+
+    renderItems(safeItems);
+    updateStats(safeItems);
+}
+
+function calculateDaysLeft(purchaseDate, months) {
+    if (!purchaseDate || !months) {
+        console.warn('⚠️ Нет даты или месяцев:', purchaseDate, months);
+        return -999;
+    }
+
+    const start = new Date(purchaseDate);
+    if (isNaN(start.getTime())) {
+        console.warn('⚠️ Некорректная дата:', purchaseDate);
+        return -999;
+    }
+
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + parseInt(months));
+
+    const now = new Date();
+    const days = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+
+    console.log(`⏳ Расчет дней для "${purchaseDate}" + ${months} мес = ${days} дн.`);
+    return days;
+}
+
+function getStatusInfo(daysLeft) {
+    if (daysLeft > 30) return { class: 'active', text: 'Активна' };
+    if (daysLeft > 0) return { class: 'warning', text: 'Заканчивается' };
+    return { class: 'expired', text: 'Истекла' };
 }
 
 function renderItems(items) {
@@ -43,29 +78,30 @@ function renderItems(items) {
     if (!grid) return;
 
     if (items.length === 0) {
-        grid.innerHTML = '<p class="empty-state">У вас пока нет добавленных вещей.</p>';
+        grid.innerHTML = '<p class="empty-state">У вас пока нет добавленных вещей. Нажмите "Добавить вещь".</p>';
         return;
     }
 
     grid.innerHTML = items.map(item => {
         const daysLeft = calculateDaysLeft(item.purchase_date, item.warranty_months);
-        const statusClass = daysLeft > 30 ? 'active' : daysLeft > 0 ? 'warning' : 'expired';
-        const statusText = daysLeft > 30 ? 'Активна' : daysLeft > 0 ? 'Заканчивается' : 'Истекла';
-        const progress = Math.max(0, Math.min(100, (daysLeft / (item.warranty_months * 30)) * 100));
+        const status = getStatusInfo(daysLeft);
+
+        const totalDays = (item.warranty_months || 12) * 30;
+        const progress = totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
 
         return `
             <div class="item-card">
                 <div class="item-header">
                     <div class="item-icon"><i class="fa-solid fa-box"></i></div>
-                    <div class="item-status ${statusClass}">${statusText}</div>
+                    <div class="item-status ${status.class}">${status.text}</div>
                 </div>
                 <h3 class="item-title">${item.name}</h3>
                 <p class="item-meta">${item.brand || 'Бренд не указан'} • S/N: ${item.serial_number || '—'}</p>
                 <div class="item-progress">
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill ${statusClass}" style="width: ${progress}%"></div>
+                        <div class="progress-bar-fill ${status.class}" style="width: ${progress}%"></div>
                     </div>
-                    <span class="progress-text ${statusClass === 'active' ? '' : statusClass + '-text'}">
+                    <span class="progress-text ${status.class === 'active' ? '' : status.class + '-text'}">
                         ${daysLeft > 0 ? `Осталось ${daysLeft} дней` : 'Гарантия истекла'}
                     </span>
                 </div>
@@ -74,31 +110,34 @@ function renderItems(items) {
     }).join('');
 }
 
-function calculateDaysLeft(purchaseDate, months) {
-    const start = new Date(purchaseDate);
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + months);
-    const now = new Date();
-    return Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-}
-
 function updateStats(items) {
+    console.log('📊 Обновление статистики для', items.length, 'вещей');
+
     const totalEl = document.getElementById('stat-total');
     const activeEl = document.getElementById('stat-active');
     const expiringEl = document.getElementById('stat-expiring');
 
-    if (!totalEl || !activeEl || !expiringEl) return;
+    if (!totalEl || !activeEl || !expiringEl) {
+        console.error(' Не найдены элементы статистики! Проверь ID в HTML.');
+        return;
+    }
 
-    const total = items.length;
-    const active = items.filter(i => calculateDaysLeft(i.purchase_date, i.warranty_months) > 30).length;
-    const expiring = items.filter(i => {
-        const d = calculateDaysLeft(i.purchase_date, i.warranty_months);
-        return d > 0 && d <= 30;
-    }).length;
+    let activeCount = 0;
+    let expiringCount = 0;
 
-    totalEl.textContent = total;
-    activeEl.textContent = active;
-    expiringEl.textContent = expiring;
+    items.forEach((item, index) => {
+        const days = calculateDaysLeft(item.purchase_date, item.warranty_months);
+        console.log(`   Вещь #${index + 1}: ${days} дней -> `, days > 30 ? 'АКТИВНА' : days > 0 ? 'ЗАКАНЧИВАЕТСЯ' : 'ИСТЕКЛА');
+
+        if (days > 30) activeCount++;
+        else if (days > 0 && days <= 30) expiringCount++;
+    });
+
+    console.log(`✅ Итог: Всего=${items.length}, Активных=${activeCount}, Истекающих=${expiringCount}`);
+
+    totalEl.textContent = items.length;
+    activeEl.textContent = activeCount;
+    expiringEl.textContent = expiringCount;
 }
 
 function setupModal() {
@@ -126,12 +165,18 @@ function setupModal() {
 
             const { data: { user } } = await supabase.auth.getUser();
 
+            const nameInput = form.querySelector('input[type="text"]');
+            const serialInputs = form.querySelectorAll('input[type="text"]');
+            const dateInput = form.querySelector('input[type="date"]');
+            const monthsInput = form.querySelector('input[type="number"]');
+
             const { error } = await supabase.from('items').insert([{
                 user_id: user.id,
-                name: form.querySelector('input[type="text"]').value,
-                serial_number: form.querySelectorAll('input[type="text"]')[1]?.value || '',
-                purchase_date: form.querySelector('input[type="date"]').value,
-                warranty_months: parseInt(form.querySelector('input[type="number"]').value)
+                name: nameInput.value.trim(),
+                brand: '',
+                serial_number: serialInputs.length > 1 ? serialInputs[1].value.trim() : '',
+                purchase_date: dateInput.value,
+                warranty_months: parseInt(monthsInput.value) || 12
             }]);
 
             if (error) throw error;
@@ -147,7 +192,7 @@ function setupModal() {
 
         } catch (err) {
             console.error(err);
-            alert('Ошибка сохранения.');
+            alert('Ошибка сохранения. Попробуйте снова.');
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
