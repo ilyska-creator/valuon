@@ -556,7 +556,7 @@
         transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         z-index: 1000;
 
-        background: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.75);
         backdrop-filter: blur(20px) saturate(180%);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
         border-right: 1px solid rgba(255, 255, 255, 0.5);
@@ -784,5 +784,81 @@
         opacity: 0;
         transform: scale(0.95);
         transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+}
+
+.mobile-top-bar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 64px;
+    z-index: 90;
+    padding: 0 20px;
+    align-items: center;
+    justify-content: flex-start;
+
+
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="dark"] .mobile-top-bar {
+    background: rgba(17, 17, 17, 0.6);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.brand-mobile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--text-main);
+
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+.menu-trigger {
+    background: none;
+    border: none;
+    color: var(--text-main);
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 8px;
+    margin-left: -8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.menu-trigger:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.mobile-menu-btn:not(.menu-trigger) {
+    display: none !important;
+}
+
+@media (max-width: 900px) {
+    .mobile-top-bar {
+        display: flex;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 24px;
+        padding-top: 88px;
+    }
+
+    .content-header {
+        margin-top: 0;
     }
 }
