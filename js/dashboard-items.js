@@ -47,6 +47,11 @@ async function loadItems(userId, client) {
     if (typeof renderNotifications === 'function') {
         renderNotifications(safeItems);
     }
+
+    // Применяем текущий язык к только что созданным элементам
+    if (typeof window.applyDashboardLang === 'function') {
+        window.applyDashboardLang(localStorage.getItem('valuon-lang') || 'ru');
+    }
 }
 
 export function calculateDaysLeft(purchaseDate, months) {
@@ -80,90 +85,81 @@ export function calculateDaysLeft(purchaseDate, months) {
 }
 
 function getStatusInfo(daysLeft) {
-    if (daysLeft > 30) return { class: 'active', text: 'Активна' };
-    if (daysLeft > 0) return { class: 'warning', text: 'Заканчивается' };
-    return { class: 'expired', text: 'Истекла' };
+    if (daysLeft > 30) return { class: 'active' };
+    if (daysLeft > 0) return { class: 'warning' };
+    return { class: 'expired' };
 }
 
 function renderItems(items) {
     const grid = document.querySelector('.items-grid');
     if (!grid) return;
 
+    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+
     if (items.length === 0) {
-        grid.innerHTML = '<p class="empty-state">У вас пока нет добавленных вещей. Нажмите "Добавить вещь".</p>';
+        grid.innerHTML = `<p class="empty-state" data-i18n="empty_state">${t.empty_state || ''}</p>`;
         return;
     }
-
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '—';
-        const [y, m, d] = dateStr.split('-');
-        return `${d}.${m}.${y}`;
-    };
 
     grid.innerHTML = items.map(item => {
         const iconClass = DEVICE_ICONS[item.type] || DEVICE_ICONS.other;
         const daysLeft = calculateDaysLeft(item.purchase_date, item.warranty_months);
         const status = getStatusInfo(daysLeft);
 
+        // Маппинг классов статусов на ключи переводов
+        const statusKeyMap = {
+            active: 'status_active',
+            warning: 'status_expiring', // warning -> expiring
+            expired: 'status_expired'
+        };
+        const statusTextKey = statusKeyMap[status.class] || 'status_active';
+
+        const progressTextKey = daysLeft > 0 ? 'days_left' : 'warranty_expired_text';
+
         const totalDays = (item.warranty_months || 12) * 30;
         const progress = totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
 
-        let endDateStr = '—';
-        if (item.purchase_date && item.warranty_months) {
-            const parts = item.purchase_date.split('-').map(Number);
-            const end = new Date(parts[0], parts[1] - 1, parts[2]);
-            end.setMonth(end.getMonth() + parseInt(item.warranty_months));
-            endDateStr = formatDate(end.toISOString().split('T')[0]);
-        }
+        // Теги
+        const tags = [];
+        if (item.location) tags.push(`<span class="tag"><i class="fa-solid fa-location-dot"></i> ${item.location}</span>`);
+        if (item.price && item.price > 0) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> ${item.price} $</span>`);
 
         return `
             <div class="item-card">
                 <div class="item-header">
                     <div class="item-icon"><i class="fa-solid ${iconClass}"></i></div>
-                    <div class="item-status ${status.class}">${status.text}</div>
+                    <!-- Используем data-i18n вместо инлайн-текста -->
+                    <div class="item-status-badge ${status.class}" data-i18n="${statusTextKey}"></div>
                 </div>
                 
-                <h3 class="item-title">${item.name}</h3>
-                <p class="item-meta">
-                    ${item.brand || 'Бренд не указан'} • 
-                    S/N: ${item.serial_number || '—'}
-                    ${item.location ? `<br><small style="opacity:0.7">📍 ${item.location}</small>` : ''}
-                </p>
+                <div class="item-body">
+                    <h3 class="item-title">${item.name}</h3>
+                    <div class="item-brand">${item.brand || (t.brand_not_specified || 'Brand not specified')}</div>
+                    
+                    <div class="item-tags">
+                        ${tags.join('')}
+                    </div>
+                </div>
 
-                <div class="item-progress">
+                <div class="item-footer">
                     <div class="progress-bar-bg">
                         <div class="progress-bar-fill ${status.class}" style="width: ${progress}%"></div>
                     </div>
-                    <span class="progress-text ${status.class === 'active' ? '' : status.class + '-text'}">
-                        ${daysLeft > 0 ? `Осталось ${daysLeft} дней` : 'Гарантия истекла'}
-                    </span>
-                </div>
-
-                <div class="warranty-timeline">
-                    <!-- Левая точка + Текст -->
-                    <div class="timeline-node start">
-                        <div class="node-dot"></div>
-                        <div class="node-text">
-                            <span class="label">Начало</span>
-                            <span class="date">${formatDate(item.purchase_date)}</span>
-                        </div>
-                    </div>
-
-                    <!-- Соединительная линия -->
-                    <div class="timeline-track"></div>
-
-                    <!-- Правая точка + Текст -->
-                    <div class="timeline-node end">
-                        <div class="node-dot"></div>
-                        <div class="node-text">
-                            <span class="label">Конец</span>
-                            <span class="date">${endDateStr}</span>
-                        </div>
+                    <!-- Используем data-i18n + data-i18n-count для динамического числа -->
+                    <div class="days-left-text ${status.class}" 
+                         data-i18n="${progressTextKey}" 
+                         data-i18n-count="${daysLeft > 0 ? daysLeft : ''}">
                     </div>
                 </div>
             </div>
         `;
     }).join('');
+
+    // Применяем переводы ко всем новым элементам с data-i18n
+    if (typeof window.applyDashboardLang === 'function') {
+        window.applyDashboardLang(lang);
+    }
 }
 
 function updateStats(items) {
@@ -238,12 +234,20 @@ function setupModal(client) {
             const dateInput = form.querySelector('input[name="purchase_date"]');
             const monthsInput = form.querySelector('input[name="warranty_months"]');
             const locationInput = form.querySelector('input[name="location"]');
+            const priceInput = form.querySelector('input[name="price"]');
+            const storeInput = form.querySelector('input[name="store_name"]');
 
             const { error } = await client.from('items').insert([{
                 user_id: user.id,
                 name: nameInput.value.trim(),
                 type: typeSelect ? typeSelect.value : 'other',
                 brand: brandInput ? brandInput.value.trim() : '',
+                serial_number: serialInput ? serialInput.value.trim() : '',
+                purchase_date: dateInput.value,
+                warranty_months: parseInt(monthsInput.value) || 12,
+                location: locationInput ? locationInput.value.trim() : '',
+                price: parseFloat(priceInput?.value) || 0,
+                store_name: storeInput ? storeInput.value.trim() : '',
                 serial_number: serialInput ? serialInput.value.trim() : '',
                 purchase_date: dateInput.value,
                 warranty_months: parseInt(monthsInput.value) || 12,

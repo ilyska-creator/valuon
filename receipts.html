@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valuon — Чеки и документы</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body class="dashboard-body">
+
+    <header class="mobile-top-bar">
+        <button id="mobile-menu-btn" class="menu-trigger">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <a href="index.html" class="brand-mobile">
+            <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 4L5 10V20C5 29.5 11.5 37.5 20 39C28.5 37.5 35 29.5 35 20V10L20 4Z" fill="#3b82f6"
+                    stroke="#2563eb" stroke-width="1.5" stroke-linejoin="round" />
+                <path d="M13 20L18 25L27 15" stroke="white" stroke-width="3" stroke-linecap="round"
+                    stroke-linejoin="round" />
+            </svg>
+            <span>Valuon</span>
+        </a>
+        <div class="top-bar-spacer"></div>
+    </header>
+
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="brand">
+                <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 4L5 10V20C5 29.5 11.5 37.5 20 39C28.5 37.5 35 29.5 35 20V10L20 4Z" fill="#3b82f6"
+                        stroke="#2563eb" stroke-width="1.5" stroke-linejoin="round" />
+                    <path d="M13 20L18 25L27 15" stroke="white" stroke-width="3" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                Valuon
+            </a>
+            <button id="close-sidebar-btn" class="close-sidebar-btn">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html#view-items" class="nav-item" data-view="items">
+                <i class="fa-solid fa-box-open"></i> <span data-i18n="nav_items">Мои вещи</span>
+            </a>
+            <a href="receipts.html" class="nav-item active">
+                <i class="fa-solid fa-receipt"></i> <span data-i18n="nav_receipts">Чеки и документы</span>
+            </a>
+            <a href="dashboard.html#view-notifications" class="nav-item" data-view="notifications">
+                <i class="fa-solid fa-bell"></i> <span data-i18n="nav_notifications">Уведомления</span>
+            </a>
+            <a href="dashboard.html#view-settings" class="nav-item" data-view="settings">
+                <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Настройки</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="controls-row">
+                <a href="#" id="theme-toggle" class="circle-btn" aria-label="Toggle Theme">
+                    <i class="fa-solid fa-moon"></i>
+                </a>
+                <a href="#" id="lang-toggle" class="circle-btn" aria-label="Toggle Language">
+                    <span>RU</span>
+                </a>
+            </div>
+            <a href="#" id="logout-btn" class="nav-item full-width">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span data-i18n="ui_logout">Выйти</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="content-header">
+            <h1 data-i18n="nav_receipts">Чеки и документы</h1>
+            <button class="btn btn-primary" id="upload-receipt-btn">
+                <i class="fa-solid fa-upload"></i> <span data-i18n="btn_upload">Загрузить чек</span>
+            </button>
+        </header>
+
+        <div class="upload-zone" id="drop-zone">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <p data-i18n="upload_title">Перетащите фото чека сюда</p>
+            <span data-i18n="upload_hint">или нажмите для выбора файла • JPG, PNG, PDF</span>
+            <input type="file" id="file-input" accept="image/*,.pdf" style="display: none;">
+        </div>
+
+        <section class="items-section">
+            <h2 data-i18n="section_documents">Ваши документы</h2>
+
+            <div class="receipts-grid">
+                <div class="receipt-card">
+                    <div class="receipt-header">
+                        <div class="receipt-icon"><i class="fa-solid fa-file-invoice"></i></div>
+                        <div class="item-status-badge active" data-i18n="status_verified">Проверен</div>
+                    </div>
+                    <div class="receipt-info">
+                        <h3>MacBook Air M2</h3>
+                        <p>DNS • 15.06.2026</p>
+                    </div>
+                    <div class="receipt-meta">
+                        <span class="tag"><i class="fa-solid fa-tag"></i> $1,299.00</span>
+                        <span class="tag"><i class="fa-solid fa-shield-halved"></i> Гарантия активна</span>
+                    </div>
+                    <div class="receipt-actions">
+                        <button class="btn-action primary">
+                            <i class="fa-solid fa-eye"></i>
+                            <span data-i18n="btn_view">Просмотр</span>
+                        </button>
+                        <button class="btn-action secondary">
+                            <i class="fa-solid fa-download"></i>
+                            <span data-i18n="btn_download">Скачать</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="receipt-card">
+                    <div class="receipt-header">
+                        <div class="receipt-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                        <div class="item-status-badge warning" data-i18n="status_pending">Обработка</div>
+                    </div>
+                    <div class="receipt-info">
+                        <h3>Sony WH-1000XM5</h3>
+                        <p>Ozon • 20.06.2026</p>
+                    </div>
+                    <div class="receipt-meta">
+                        <span class="tag"><i class="fa-solid fa-tag"></i> $349.00</span>
+                    </div>
+                    <div class="receipt-actions">
+                        <button class="btn-action primary">
+                            <i class="fa-solid fa-eye"></i>
+                            <span data-i18n="btn_view">Просмотр</span>
+                        </button>
+                        <button class="btn-action secondary">
+                            <i class="fa-solid fa-download"></i>
+                            <span data-i18n="btn_download">Скачать</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/theme.js"></script>
+    <script src="js/dashboard-lang.js"></script>
+
+    <script type="module">
+        import { requireAuth, setupLogout } from './js/dashboard-auth.js';
+
+        async function initReceiptsAuth() {
+            const auth = await requireAuth();
+            if (auth) {
+                setupLogout(auth.client);
+            }
+        }
+
+        initReceiptsAuth();
+    </script>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-receipt-btn');
+
+        if (dropZone && fileInput) {
+            dropZone.addEventListener('click', () => fileInput.click());
+            if (uploadBtn) uploadBtn.addEventListener('click', () => fileInput.click());
+
+            ['dragenter', 'dragover'].forEach(evt => {
+                dropZone.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    dropZone.style.borderColor = 'var(--primary)';
+                    dropZone.style.background = 'rgba(59, 130, 246, 0.05)';
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(evt => {
+                dropZone.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    dropZone.style.borderColor = '';
+                    dropZone.style.background = '';
+                });
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    alert(`Файл "${files[0].name}" готов к загрузке!`);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    alert(`Файл "${e.target.files[0].name}" готов к загрузке!`);
+                }
+            });
+        }
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            const closeBtn = document.getElementById('close-sidebar-btn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            let scrollPosition = 0;
+
+            function lockScroll() {
+                scrollPosition = window.scrollY;
+                document.body.classList.add('scroll-locked');
+                document.body.style.top = `-${scrollPosition}px`;
+            }
+
+            function unlockScroll() {
+                document.body.classList.remove('scroll-locked');
+                document.body.style.top = '';
+                window.scrollTo(0, scrollPosition);
+                if ('ontouchstart' in window) {
+                    document.body.dispatchEvent(new Event('touchstart'));
+                }
+            }
+
+            function toggleMenu() {
+                if (!sidebar || !overlay) return;
+                const isActive = sidebar.classList.contains('active');
+                if (isActive) {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                    setTimeout(unlockScroll, 450);
+                } else {
+                    sidebar.classList.add('active');
+                    overlay.classList.add('active');
+                    lockScroll();
+                }
+            }
+
+            if (menuBtn) menuBtn.addEventListener('click', toggleMenu);
+            if (closeBtn) closeBtn.addEventListener('click', toggleMenu);
+            if (overlay) overlay.addEventListener('click', toggleMenu);
+
+            const navLinks = document.querySelectorAll('.sidebar-nav .nav-item');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth <= 900 && sidebar?.classList.contains('active')) {
+                        toggleMenu();
+                    }
+                });
+            });
+
+            unlockScroll();
+        });
+    </script>
+</body>
+
+</html>

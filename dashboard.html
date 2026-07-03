@@ -117,7 +117,7 @@
                 <div class="stat-card">
                     <div class="stat-icon red"><i class="fa-solid fa-circle-xmark"></i></div>
                     <div class="stat-info">
-                        <span class="stat-label">Истекла гарантия</span>
+                        <span class="stat-label" data-i18n="stat_expired">Истекла гарантия</span>
                         <span class="stat-value" id="stat-expired">0</span>
                     </div>
                 </div>
@@ -182,6 +182,18 @@
                         <input type="text" name="brand" placeholder="Apple, Samsung..." required>
                     </div>
                 </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_price">Цена покупки ($)</label>
+                        <input type="number" name="price" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_store">Магазин / Продавец</label>
+                        <input type="text" name="store_name" placeholder="DNS, Ozon, М.Видео...">
+                    </div>
+                </div>
+
                 <div class="input-row">
                     <div class="input-group">
                         <label data-i18n="label_serial">Серийный номер</label>

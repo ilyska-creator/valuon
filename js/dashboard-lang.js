@@ -14,7 +14,18 @@ const dashboardTranslations = {
         section_recent: "Недавние покупки",
         empty_state: "У вас пока нет добавленных вещей.",
         ui_theme: "Тема",
-        ui_logout: "Выйти"
+        ui_logout: "Выйти",
+        stat_expired: "Истекла гарантия",
+
+        status_active: 'Активна',
+        status_expiring: 'Заканчивается',
+        status_warning: 'Заканчивается',
+        status_expired: 'Истекла',
+        days_left: 'Осталось {count} дней',
+        warranty_expired_text: 'Гарантия истекла',
+        timeline_start: 'Начало',
+        timeline_end: 'Конец',
+        brand_not_specified: 'Бренд не указан',
     },
     en: {
         page_title: "Valuon — Dashboard",
@@ -29,20 +40,44 @@ const dashboardTranslations = {
         stat_active: "Active Warranties",
         stat_expiring: "Expiring Soon",
         section_recent: "Recent Purchases",
+        empty_state: "You haven't added any items yet.",
         ui_theme: "Theme",
         ui_logout: "Logout",
-        empty_state: "You haven't added any items yet."
+        stat_expired: "Expired Warranties",
+
+        status_active: 'Active',
+        status_expiring: 'Expiring Soon',
+        status_warning: 'Expiring Soon',
+        status_expired: 'Expired',
+        days_left: '{count} days left',
+        warranty_expired_text: 'Warranty expired',
+        timeline_start: 'Start',
+        timeline_end: 'End',
+        brand_not_specified: 'Brand not specified'
+
     }
 };
 
+let currentLang = localStorage.getItem('valuon-lang') || 'ru';
+
 function applyDashboardLang(lang) {
     const t = dashboardTranslations[lang] || dashboardTranslations.ru;
+    currentLang = lang;
 
     document.title = t.page_title;
 
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (t[key]) el.innerHTML = t[key];
+        if (t[key]) {
+            let text = t[key];
+
+            if (el.hasAttribute('data-i18n-count')) {
+                const count = el.getAttribute('data-i18n-count');
+                text = text.replace('{count}', count);
+            }
+
+            el.textContent = text;
+        }
     });
 
     const langBtn = document.getElementById('lang-toggle');
@@ -50,19 +85,21 @@ function applyDashboardLang(lang) {
         const span = langBtn.querySelector('span');
         if (span) span.textContent = lang.toUpperCase();
     }
+
+    localStorage.setItem('valuon-lang', lang);
 }
 
+window.applyDashboardLang = applyDashboardLang;
+
 document.addEventListener('DOMContentLoaded', () => {
-    let currentLang = localStorage.getItem('valuon-lang') || 'ru';
     applyDashboardLang(currentLang);
 
     const langToggle = document.getElementById('lang-toggle');
     if (langToggle) {
         langToggle.addEventListener('click', (e) => {
             e.preventDefault();
-            currentLang = currentLang === 'ru' ? 'en' : 'ru';
-            localStorage.setItem('valuon-lang', currentLang);
-            applyDashboardLang(currentLang);
+            const newLang = currentLang === 'ru' ? 'en' : 'ru';
+            applyDashboardLang(newLang);
         });
     }
 
