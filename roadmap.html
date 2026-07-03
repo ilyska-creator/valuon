@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon Roadmap</title>
+    <title>Valuon — Дорожная карта продукта</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -27,15 +27,20 @@
                 </svg>
                 Valuon
             </a>
-            <a href="index.html" class="btn btn-outline small" data-i18n="roadmap_back">← На главную</a>
+            <div class="nav-actions">
+                <button id="theme-toggle" class="icon-btn" aria-label="Toggle Theme"><i
+                        class="fa-solid fa-moon"></i></button>
+                <button id="lang-toggle" class="icon-btn" aria-label="Toggle Language"><span>RU</span></button>
+                <a href="index.html" class="btn btn-outline small" data-i18n="roadmap_back">← На главную</a>
+            </div>
         </div>
     </nav>
 
     <header class="roadmap-header section">
         <div class="container">
-            <h1 class="fade-in-up" data-i18n="roadmap_title">Путь к цифровой инфраструктуре владения</h1>
-            <p class="fade-in-up delay-1" data-i18n="roadmap_desc">Мы строим экосистему, где каждая покупка имеет свой
-                защищенный цифровой паспорт.</p>
+            <h1 class="fade-in-up" data-i18n="roadmap_title">Дорожная карта развития Valuon</h1>
+            <p class="fade-in-up delay-1" data-i18n="roadmap_desc">План развития платформы от базового учёта гарантий до
+                комплексной системы управления цифровыми активами и B2B-интеграций.</p>
         </div>
     </header>
 
@@ -43,91 +48,101 @@
         <div class="container timeline-container">
 
             <div class="timeline-card">
-                <div class="card-status current" data-i18n="phase_1_badge"><i class="fa-solid fa-rocket"></i> Q3-Q4
-                    2026: Сейчас</div>
-                <h2 data-i18n="phase_1_title">MVP и Валидация Ядра</h2>
+                <div class="card-status current" data-i18n="phase_1_badge"><i class="fa-solid fa-rocket"></i> Q3–Q4
+                    2026: Текущий этап</div>
+                <h2 data-i18n="phase_1_title">MVP: Базовый учёт и валидация</h2>
                 <ul class="feature-list">
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="phase_1_item_1">Ручное добавление товаров и
-                            базовый трекинг</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="phase_1_item_2">Точный алгоритм расчета
-                            сроков гарантии</span></li>
-                    <li><i class="fa-solid fa-spinner fa-spin"></i> <span data-i18n="phase_1_item_3">Мультиязычность
-                            (RU/EN) и Темная тема</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_1_item_4">Сбор первой 1,000 активных
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="phase_1_item_1">Ручное добавление активов с
+                            точным расчётом гарантийных сроков</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="phase_1_item_2">Поддержка тёмной темы и
+                            локализация (RU/EN)</span></li>
+                    <li><i class="fa-solid fa-spinner fa-spin"></i> <span data-i18n="phase_1_item_3">Загрузка и хранение
+                            фото чеков с привязкой к карточке товара</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_1_item_4">Система уведомлений об
+                            истечении гарантийных сроков</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_1_item_5">Достижение метрики 1 000
+                            MAU (Monthly Active Users)</span></li>
+                </ul>
+            </div>
+
+            <div class="timeline-card">
+                <div class="card-status upcoming" data-i18n="phase_2_badge"><i
+                        class="fa-solid fa-wand-magic-sparkles"></i> Q1–Q2 2027</div>
+                <h2 data-i18n="phase_2_title">Автоматизация ввода данных и OCR</h2>
+                <ul class="feature-list">
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_2_item_1">OCR-сканирование чеков с
+                            извлечением даты, суммы, наименования и магазина</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_2_item_2">Автоматическое определение
+                            модели и срока гарантии по штрихкоду или серийному номеру</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_2_item_3">Настраиваемые уведомления:
+                            выбор каналов (Push/Email/Telegram) и порогов оповещения</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_2_item_4">База знаний гарантийных
+                            условий: автоматическая подстановка сроков для 500+ брендов</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_2_item_5">Экспорт списка покупок в
+                            PDF/CSV для личного учёта и планирования бюджета</span></li>
+                </ul>
+            </div>
+
+            <div class="timeline-card">
+                <div class="card-status future" data-i18n="phase_3_badge"><i class="fa-solid fa-users"></i> Q3–Q4 2027
+                </div>
+                <h2 data-i18n="phase_3_title">Расширенный функционал для пользователей</h2>
+                <ul class="feature-list">
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_3_item_1">Цифровой паспорт товара:
+                            верифицированная история покупки, ремонтов и обслуживания для перепродажи</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_3_item_2">Карта авторизованных
+                            сервисных центров с фильтрацией по бренду, модели и рейтингу пользователей</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_3_item_3">Трекинг стоимости
+                            владения: учёт расходов на ремонт, аксессуары и обслуживание по каждому активу</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_3_item_4">Напоминания о плановом
+                            обслуживании: замена фильтров, ТО, чистка по регламенту производителя</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_3_item_5">Монетизация:
+                            Premium-подписка (безлимит, OCR, приоритетная поддержка) и Lifetime Deal для ранних
                             пользователей</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_1_item_5">Интеграция Supabase Auth &
-                            RLS Security</span></li>
                 </ul>
             </div>
 
             <div class="timeline-card">
-                <div class="card-status upcoming" data-i18n="phase_2_badge"><i class="fa-solid fa-brain"></i> Q1-Q2 2027
-                </div>
-                <h2 data-i18n="phase_2_title">AI-Автоматизация и OCR</h2>
+                <div class="card-status vision" data-i18n="phase_4_badge"><i class="fa-solid fa-store"></i> 2028</div>
+                <h2 data-i18n="phase_4_title">B2B-интеграции и экосистема</h2>
                 <ul class="feature-list">
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_2_item_1">Распознавание чеков через
-                            компьютерное зрение</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_2_item_2">Автозаполнение полей
-                            (дата, сумма, магазин)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_2_item_3">Умные Push/Email
-                            уведомления об истечении</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_2_item_4">База знаний стандартных
-                            гарантий брендов</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_2_item_5">Экспорт данных в
-                            PDF/CSV</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_4_item_1">Retailer API:
+                            автоматическая передача данных о покупке в Valuon при оформлении заказа онлайн или на
+                            кассе</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_4_item_2">Система цифровых
+                            возвратов: сканирование QR-кода покупателем → мгновенная верификация чека → оформление
+                            возврата без участия менеджера</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_4_item_3">White-label модуль:
+                            встроенный трекер гарантий под брендом магазина с кобрендингом и push-уведомлениями от
+                            ритейлера</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_4_item_4">Аналитический дашборд для
+                            производителей: частота отказов по моделям, география поломок, среднее время до первого
+                            обращения в сервис</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_4_item_5">Программа лояльности:
+                            триггерные рассылки перед окончанием гарантии с персональными предложениями на апгрейд или
+                            аксессуары</span></li>
                 </ul>
             </div>
 
             <div class="timeline-card">
-                <div class="card-status future" data-i18n="phase_3_badge"><i class="fa-solid fa-users"></i> Q3-Q4 2027
-                </div>
-                <h2 data-i18n="phase_3_title">Сообщество и Семейный Доступ</h2>
+                <div class="card-status vision" data-i18n="phase_5_badge"><i class="fa-solid fa-earth-americas"></i>
+                    2029+</div>
+                <h2 data-i18n="phase_5_title">Глобальная инфраструктура</h2>
                 <ul class="feature-list">
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_3_item_1">Shared Access: управление
-                            гарантиями семьи</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_3_item_2">Публичные отзывы о
-                            сервисных центрах</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_3_item_3">Геймификация и достижения
-                            за порядок</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_3_item_4">Встроенный чат поддержки
-                            по товару</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_3_item_5">Запуск Premium подписки и
-                            Lifetime Deal</span></li>
-                </ul>
-            </div>
-
-            <div class="timeline-card">
-                <div class="card-status vision" data-i18n="phase_4_badge"><i class="fa-solid fa-handshake"></i> 2028
-                </div>
-                <h2 data-i18n="phase_4_title">B2B Интеграции и Цифровые Чеки</h2>
-                <ul class="feature-list">
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_4_item_1">API для ритейлеров
-                            (автодобавление покупок)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_4_item_2">Генерация защищенных
-                            QR-кодов для возвратов</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_4_item_3">Verified Resale
-                            Marketplace (б/у с историей)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_4_item_4">White-label решение для
-                            магазинов</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_4_item_5">Аналитика поломок для
-                            производителей</span></li>
-                </ul>
-            </div>
-
-            <div class="timeline-card">
-                <div class="card-status vision" data-i18n="phase_5_badge"><i class="fa-solid fa-globe"></i> 2029+</div>
-                <h2 data-i18n="phase_5_title">Глобальный Стандарт Владения</h2>
-                <ul class="feature-list">
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_5_item_1">Поддержка законодательства
-                            50+ стран</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_5_item_2">Децентрализованная
-                            верификация прав</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_5_item_3">IoT-интеграция: умные вещи
-                            сообщают о поломке</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_5_item_4">NFT-сертификаты для
-                            люксовых активов</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_5_item_5">Страхование прямо в
-                            карточке товара</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_5_item_1">Мультиюрисдикционная
+                            поддержка: адаптация гарантийных правил под законодательство 50+ стран</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_5_item_2">IoT-интеграция:
+                            подключённые устройства автоматически передают данные о состоянии и ошибках в профиль
+                            владельца</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_5_item_3">Встроенное страхование:
+                            оформление расширенной гарантии или страховки от поломок в один клик из карточки
+                            товара</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_5_item_4">Децентрализованная
+                            верификация: независимое подтверждение истории владения через открытые реестры (без привязки
+                            к конкретному вендору)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_5_item_5">Предиктивная аналитика:
+                            прогноз остаточной стоимости актива на основе истории обслуживания и рыночных данных</span>
+                    </li>
                 </ul>
             </div>
 
@@ -140,7 +155,6 @@
         </div>
     </footer>
 
-    <script src="js/theme.js"></script>
     <script src="js/roadmap-lang.js"></script>
 </body>
 
