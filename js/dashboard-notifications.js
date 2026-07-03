@@ -1,4 +1,3 @@
-
 function _calculateDaysLeft(purchaseDate, months) {
     if (!purchaseDate || !months) return -999;
     const [year, month, day] = purchaseDate.split('-').map(Number);

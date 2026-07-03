@@ -145,8 +145,102 @@
             <header class="content-header">
                 <h1 data-i18n="nav_settings">Настройки</h1>
             </header>
+
             <div class="settings-container">
-                <p class="empty-state">Настройки профиля будут здесь</p>
+
+                <div class="settings-section">
+                    <h2><i class="fa-solid fa-user"></i> <span data-i18n="settings_profile">Профиль</span></h2>
+
+                    <div class="profile-fields">
+                        <div class="profile-field">
+                            <label data-i18n="label_email">Email</label>
+                            <div class="email-row" id="email-display-row">
+                                <input type="email" id="settings-email" readonly>
+                                <button class="btn btn-outline btn-sm" id="change-email-btn"
+                                    data-i18n="btn_change_email">Изменить</button>
+                            </div>
+                        </div>
+
+                        <div class="profile-field hidden" id="change-email-form">
+                            <label data-i18n="label_new_email">Новый Email</label>
+                            <div class="email-change-form">
+                                <input type="email" id="new-email-input" placeholder="new@email.com">
+                                <div class="email-change-actions">
+                                    <button class="btn btn-primary btn-sm" id="confirm-email-change">
+                                        <i class="fa-solid fa-paper-plane"></i>
+                                    </button>
+                                    <button class="btn btn-outline btn-sm" id="cancel-email-change">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="setting-desc email-hint" data-i18n="email_change_hint">
+                                На новый адрес придёт ссылка для подтверждения
+                            </p>
+                        </div>
+
+                        <div class="profile-field">
+                            <label data-i18n="label_display_name">Отображаемое имя</label>
+                            <input type="text" id="settings-name" placeholder="Ваше имя">
+                        </div>
+                    </div>
+
+                    <div class="save-bar">
+                        <button class="btn btn-primary" id="save-profile-btn" data-i18n="btn_save">Сохранить</button>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2><i class="fa-solid fa-bell"></i> <span data-i18n="settings_notifications">Уведомления</span>
+                    </h2>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label" data-i18n="setting_expiry_alerts">Напоминания об истечении
+                                гарантии</span>
+                            <span class="setting-desc" data-i18n="setting_expiry_desc">За 30, 7 и 1 день до
+                                окончания</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-expiry" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label" data-i18n="setting_email_digest">Еженедельная сводка</span>
+                            <span class="setting-desc" data-i18n="setting_digest_desc">Обзор ваших активов каждый
+                                понедельник</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-digest">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-section danger-zone disabled-section">
+                    <h2><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="settings_danger">Опасная
+                            зона</span></h2>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label" data-i18n="setting_delete_all">Удалить все мои данные</span>
+                            <span class="setting-desc" data-i18n="setting_delete_disabled_desc">Функция появится в
+                                следующем обновлении</span>
+                        </div>
+                        <button class="btn-danger btn-disabled" disabled data-i18n="btn_unavailable">Недоступно</button>
+                    </div>
+
+                    <div class="disabled-overlay">
+                        <div class="disabled-badge">
+                            <i class="fa-solid fa-lock"></i>
+                            <span data-i18n="coming_soon">Скоро</span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </section>
     </main>
@@ -229,6 +323,7 @@
     <script type="module" src="js/dashboard-items.js"></script>
     <script src="js/dashboard-notifications.js"></script>
     <script src="js/dashboard-nav.js"></script>
+    <script type="module" src="js/dashboard-settings.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

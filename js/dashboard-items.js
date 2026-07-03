@@ -107,10 +107,9 @@ function renderItems(items) {
         const daysLeft = calculateDaysLeft(item.purchase_date, item.warranty_months);
         const status = getStatusInfo(daysLeft);
 
-        // Маппинг классов статусов на ключи переводов
         const statusKeyMap = {
             active: 'status_active',
-            warning: 'status_expiring', // warning -> expiring
+            warning: 'status_expiring',
             expired: 'status_expired'
         };
         const statusTextKey = statusKeyMap[status.class] || 'status_active';
@@ -156,7 +155,6 @@ function renderItems(items) {
         `;
     }).join('');
 
-    // Применяем переводы ко всем новым элементам с data-i18n
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(lang);
     }
