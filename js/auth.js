@@ -102,13 +102,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     function openForgotModal() {
         if (!forgotModal) return;
 
-        // Автозаполнение email из формы входа
         const mainEmail = document.getElementById('email')?.value.trim();
         if (mainEmail && forgotEmailInput) {
             forgotEmailInput.value = mainEmail;
         }
 
-        // Сброс на шаг ввода email
         stepEmail?.classList.remove('hidden');
         stepSuccess?.classList.add('hidden');
 
@@ -177,3 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 });
+
+resetForm.classList.add('hidden');
+document.getElementById('reset-header')?.classList.add('hidden');
+successBlock?.classList.remove('hidden');
