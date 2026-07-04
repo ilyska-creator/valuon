@@ -11,17 +11,16 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
-
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/dashboard.css">
+    <script>
+        (function () { const t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); })();
+    </script>
 </head>
 
 <body class="dashboard-body">
-
     <header class="mobile-top-bar">
-        <button id="mobile-menu-btn" class="menu-trigger">
-            <i class="fa-solid fa-bars"></i>
-        </button>
+        <button id="mobile-menu-btn" class="menu-trigger"><i class="fa-solid fa-bars"></i></button>
         <a href="index.html" class="brand-mobile">
             <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M20 4L5 10V20C5 29.5 11.5 37.5 20 39C28.5 37.5 35 29.5 35 20V10L20 4Z" fill="#3b82f6"
@@ -47,168 +46,134 @@
                 </svg>
                 Valuon
             </a>
-            <button id="close-sidebar-btn" class="close-sidebar-btn">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+            <button id="close-sidebar-btn" class="close-sidebar-btn"><i class="fa-solid fa-xmark"></i></button>
         </div>
-
         <nav class="sidebar-nav">
-            <a href="dashboard.html#view-items" class="nav-item" data-view="items">
-                <i class="fa-solid fa-box-open"></i> <span data-i18n="nav_items">Мои вещи</span>
-            </a>
-            <a href="receipts.html" class="nav-item active">
-                <i class="fa-solid fa-receipt"></i> <span data-i18n="nav_receipts">Чеки и документы</span>
-            </a>
-            <a href="dashboard.html#view-notifications" class="nav-item" data-view="notifications">
-                <i class="fa-solid fa-bell"></i> <span data-i18n="nav_notifications">Уведомления</span>
-            </a>
-            <a href="dashboard.html#view-settings" class="nav-item" data-view="settings">
-                <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Настройки</span>
-            </a>
+            <a href="dashboard.html#view-items" class="nav-item"><i class="fa-solid fa-box-open"></i> <span
+                    data-i18n="nav_items">Мои вещи</span></a>
+            <a href="receipts.html" class="nav-item active"><i class="fa-solid fa-receipt"></i> <span
+                    data-i18n="nav_receipts">Чеки и документы</span></a>
+            <a href="dashboard.html#view-notifications" class="nav-item"><i class="fa-solid fa-bell"></i> <span
+                    data-i18n="nav_notifications">Уведомления</span></a>
+            <a href="dashboard.html#view-settings" class="nav-item"><i class="fa-solid fa-gear"></i> <span
+                    data-i18n="nav_settings">Настройки</span></a>
         </nav>
-
         <div class="sidebar-footer">
             <div class="controls-row">
-                <a href="#" id="theme-toggle" class="circle-btn" aria-label="Toggle Theme">
-                    <i class="fa-solid fa-moon"></i>
-                </a>
-                <a href="#" id="lang-toggle" class="circle-btn" aria-label="Toggle Language">
-                    <span>RU</span>
-                </a>
+                <a href="#" id="theme-toggle" class="circle-btn" aria-label="Toggle Theme"><i
+                        class="fa-solid fa-moon"></i></a>
+                <a href="#" id="lang-toggle" class="circle-btn" aria-label="Toggle Language"><span>RU</span></a>
             </div>
-            <a href="#" id="logout-btn" class="nav-item full-width">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                <span data-i18n="ui_logout">Выйти</span>
-            </a>
+            <a href="#" id="logout-btn" class="nav-item full-width"><i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span data-i18n="ui_logout">Выйти</span></a>
         </div>
     </aside>
 
     <main class="main-content">
         <header class="content-header">
             <h1 data-i18n="nav_receipts">Чеки и документы</h1>
-            <button class="btn btn-primary" id="upload-receipt-btn">
-                <i class="fa-solid fa-upload"></i> <span data-i18n="btn_upload">Загрузить чек</span>
-            </button>
+            <button class="btn btn-primary" id="upload-receipt-btn"><i class="fa-solid fa-upload"></i> <span
+                    data-i18n="btn_upload">Загрузить чек</span></button>
         </header>
 
         <div class="upload-zone" id="drop-zone">
             <i class="fa-solid fa-cloud-arrow-up"></i>
             <p data-i18n="upload_title">Перетащите фото чека сюда</p>
-            <span data-i18n="upload_hint">или нажмите для выбора файла • JPG, PNG, PDF</span>
-            <input type="file" id="file-input" accept="image/*,.pdf" style="display: none;">
+            <span data-i18n="upload_hint">или нажмите для выбора файла • JPG, PNG, PDF • Макс. 10 МБ</span>
         </div>
 
         <section class="items-section">
             <h2 data-i18n="section_documents">Ваши документы</h2>
-
-            <div class="receipts-grid">
-                <div class="receipt-card">
-                    <div class="receipt-header">
-                        <div class="receipt-icon"><i class="fa-solid fa-file-invoice"></i></div>
-                        <div class="item-status-badge active" data-i18n="status_verified">Проверен</div>
-                    </div>
-                    <div class="receipt-info">
-                        <h3>MacBook Air M2</h3>
-                        <p>DNS • 15.06.2026</p>
-                    </div>
-                    <div class="receipt-meta">
-                        <span class="tag"><i class="fa-solid fa-tag"></i> $1,299.00</span>
-                        <span class="tag"><i class="fa-solid fa-shield-halved"></i> Гарантия активна</span>
-                    </div>
-                    <div class="receipt-actions">
-                        <button class="btn-action primary">
-                            <i class="fa-solid fa-eye"></i>
-                            <span data-i18n="btn_view">Просмотр</span>
-                        </button>
-                        <button class="btn-action secondary">
-                            <i class="fa-solid fa-download"></i>
-                            <span data-i18n="btn_download">Скачать</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="receipt-card">
-                    <div class="receipt-header">
-                        <div class="receipt-icon"><i class="fa-solid fa-file-pdf"></i></div>
-                        <div class="item-status-badge warning" data-i18n="status_pending">Обработка</div>
-                    </div>
-                    <div class="receipt-info">
-                        <h3>Sony WH-1000XM5</h3>
-                        <p>Ozon • 20.06.2026</p>
-                    </div>
-                    <div class="receipt-meta">
-                        <span class="tag"><i class="fa-solid fa-tag"></i> $349.00</span>
-                    </div>
-                    <div class="receipt-actions">
-                        <button class="btn-action primary">
-                            <i class="fa-solid fa-eye"></i>
-                            <span data-i18n="btn_view">Просмотр</span>
-                        </button>
-                        <button class="btn-action secondary">
-                            <i class="fa-solid fa-download"></i>
-                            <span data-i18n="btn_download">Скачать</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <div class="receipts-grid"></div>
         </section>
     </main>
 
+    <div id="upload-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="modal_upload_receipt">Загрузить чек</h2>
+                <button id="close-upload-modal" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="upload-receipt-form" class="modal-form">
+                <div class="input-group">
+                    <label data-i18n="label_linked_item">Привязать к товару</label>
+                    <select name="item_id" id="linked-item-select">
+                        <option value="" data-i18n="option_no_link">Не привязывать</option>
+                    </select>
+                    <p class="field-hint link-hint" id="link-hint" data-i18n="link_hint_manual">Ручной ввод данных</p>
+                </div>
+
+                <div class="input-group">
+                    <label data-i18n="label_receipt_name">Название чека</label>
+                    <div class="input-with-lock">
+                        <input type="text" name="receipt_name" placeholder="MacBook Air M2" required>
+                        <i class="fa-solid fa-lock lock-icon hidden"></i>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label data-i18n="label_receipt_file">Файл чека</label>
+                    <div class="upload-zone-mini" id="modal-drop-zone">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span id="file-name-display" data-i18n="upload_select_hint">Нажмите для выбора файла</span>
+                        <input type="file" id="modal-file-input" accept="image/*,.pdf" style="display: none;">
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_amount">Сумма ($)</label>
+                        <div class="input-with-lock">
+                            <input type="number" name="amount" min="0" step="0.01" placeholder="0.00" required>
+                            <i class="fa-solid fa-lock lock-icon hidden"></i>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_purchase_date">Дата покупки</label>
+                        <div class="input-with-lock">
+                            <input type="date" name="purchase_date" required>
+                            <i class="fa-solid fa-lock lock-icon hidden"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label data-i18n="label_store">Магазин</label>
+                    <div class="input-with-lock">
+                        <input type="text" name="store_name" data-i18n-placeholder="ph_store" required>
+                        <i class="fa-solid fa-lock lock-icon hidden"></i>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cancel-upload-modal" class="btn btn-outline"
+                        data-i18n="btn_cancel">Отмена</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_upload">Загрузить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="delete-receipt-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="forgot-icon" style="background: rgba(239,68,68,0.1); color: #ef4444; margin-bottom: 16px;">
+                <i class="fa-solid fa-trash"></i>
+            </div>
+            <h3 data-i18n="delete_receipt_title">Удалить чек?</h3>
+            <p class="forgot-desc" data-i18n="delete_receipt_desc">Файл и запись будут удалены безвозвратно.</p>
+            <div class="modal-actions">
+                <button type="button" id="cancel-delete-receipt" class="btn btn-outline"
+                    data-i18n="btn_cancel">Отмена</button>
+                <button type="button" id="confirm-delete-receipt" class="btn btn-danger"
+                    data-i18n="btn_delete">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
     <script src="js/theme.js"></script>
+    <script src="js/toast.js"></script>
     <script src="js/dashboard-lang.js"></script>
-
-    <script type="module">
-        import { requireAuth, setupLogout } from './js/dashboard-auth.js';
-
-        async function initReceiptsAuth() {
-            const auth = await requireAuth();
-            if (auth) {
-                setupLogout(auth.client);
-            }
-        }
-
-        initReceiptsAuth();
-    </script>
-
-    <script>
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('file-input');
-        const uploadBtn = document.getElementById('upload-receipt-btn');
-
-        if (dropZone && fileInput) {
-            dropZone.addEventListener('click', () => fileInput.click());
-            if (uploadBtn) uploadBtn.addEventListener('click', () => fileInput.click());
-
-            ['dragenter', 'dragover'].forEach(evt => {
-                dropZone.addEventListener(evt, (e) => {
-                    e.preventDefault();
-                    dropZone.style.borderColor = 'var(--primary)';
-                    dropZone.style.background = 'rgba(59, 130, 246, 0.05)';
-                });
-            });
-
-            ['dragleave', 'drop'].forEach(evt => {
-                dropZone.addEventListener(evt, (e) => {
-                    e.preventDefault();
-                    dropZone.style.borderColor = '';
-                    dropZone.style.background = '';
-                });
-            });
-
-            dropZone.addEventListener('drop', (e) => {
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    alert(`Файл "${files[0].name}" готов к загрузке!`);
-                }
-            });
-
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    alert(`Файл "${e.target.files[0].name}" готов к загрузке!`);
-                }
-            });
-        }
-    </script>
+    <script type="module" src="js/receipts.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -216,7 +181,6 @@
             const closeBtn = document.getElementById('close-sidebar-btn');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-
             let scrollPosition = 0;
 
             function lockScroll() {
@@ -229,9 +193,6 @@
                 document.body.classList.remove('scroll-locked');
                 document.body.style.top = '';
                 window.scrollTo(0, scrollPosition);
-                if ('ontouchstart' in window) {
-                    document.body.dispatchEvent(new Event('touchstart'));
-                }
             }
 
             function toggleMenu() {
@@ -252,8 +213,7 @@
             if (closeBtn) closeBtn.addEventListener('click', toggleMenu);
             if (overlay) overlay.addEventListener('click', toggleMenu);
 
-            const navLinks = document.querySelectorAll('.sidebar-nav .nav-item');
-            navLinks.forEach(link => {
+            document.querySelectorAll('.sidebar-nav .nav-item').forEach(link => {
                 link.addEventListener('click', () => {
                     if (window.innerWidth <= 900 && sidebar?.classList.contains('active')) {
                         toggleMenu();

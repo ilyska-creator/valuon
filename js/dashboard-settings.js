@@ -271,12 +271,19 @@ async function initSettings() {
 }
 
 const settingsLink = document.querySelector('[data-view="settings"]');
+let settingsInitialized = false;
+
+function ensureSettingsLoaded() {
+    if (!settingsInitialized) {
+        initSettings();
+        settingsInitialized = true;
+    }
+}
+
 if (settingsLink) {
-    let initialized = false;
-    settingsLink.addEventListener('click', () => {
-        if (!initialized) {
-            initSettings();
-            initialized = true;
-        }
-    });
+    settingsLink.addEventListener('click', ensureSettingsLoaded);
+}
+
+if (window.location.hash === '#view-settings') {
+    ensureSettingsLoaded();
 }

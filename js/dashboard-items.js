@@ -270,11 +270,14 @@ function setupModal(client) {
 
         } catch (err) {
             console.error(err);
+            const lang = localStorage.getItem('valuon-lang') || 'ru';
+
             if (err.code === '23505') {
-                alert('Эта вещь уже добавлена!');
+                showToast(lang === 'ru' ? 'Эта вещь уже добавлена!' : 'This item already exists!', 'warning');
             } else {
-                alert('Ошибка сохранения. Попробуйте снова.');
+                showToast(lang === 'ru' ? 'Ошибка сохранения. Попробуйте снова.' : 'Save failed. Try again.', 'error');
             }
+
             btn.innerHTML = originalText;
             btn.disabled = false;
             isSubmitting = false;

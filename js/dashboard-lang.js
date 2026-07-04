@@ -40,6 +40,10 @@ const dashboardTranslations = {
         btn_save: "Сохранить",
         ph_store: "DNS, Ozon, М.Видео...",
         ph_location: "Дом, Офис, Дача...",
+        upload_select_hint: "Нажмите для выбора файла (Макс. 10 МБ)",
+        upload_hint: "или нажмите для выбора файла • JPG, PNG, PDF • Макс. 10 МБ",
+
+
     },
     en: {
         page_title: "Valuon — Dashboard",
@@ -82,6 +86,9 @@ const dashboardTranslations = {
         btn_save: "Save",
         ph_store: "Apple Store, Amazon, Best Buy...",
         ph_location: "Home, Office, Storage...",
+        upload_select_hint: "Click to select file (Max 10 MB)",
+        upload_hint: "or click to select file • JPG, PNG, PDF • Max 10 MB",
+
 
     }
 };
