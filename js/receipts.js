@@ -36,6 +36,9 @@ async function initReceipts() {
 
     await loadReceipts(user.id, client);
     await populateItemSelect(user.id, client);
+    if (typeof window.applyDashboardLang === 'function') {
+        window.applyDashboardLang(getLang());
+    }
     setupUploadModal(client, user.id);
     setupDeleteModal(client, user.id);
 }
@@ -113,8 +116,7 @@ function renderReceipts(receipts) {
             <div class="receipt-card">
                 <div class="receipt-header">
                     <div class="receipt-icon"><i class="fa-solid ${iconClass}"></i></div>
-                    <div class="item-status-badge ${statusClass}">${statusText}</div>
-                </div>
+                    <div class="item-status-badge ${statusClass}" data-i18n="${isVerified ? 'status_verified' : 'status_pending'}">${statusText}</div>                </div>
                 <div class="receipt-info">
                     <h3>${safeName}</h3>
                 </div>
@@ -124,11 +126,11 @@ function renderReceipts(receipts) {
                 <div class="receipt-actions">
                     <a href="${safeFileUrl}" target="_blank" class="btn-action primary" title="${btnViewText}">
                         <i class="fa-solid fa-eye"></i>
-                        <span>${btnViewText}</span>
+                        <span data-i18n="btn_view">${btnViewText}</span>
                     </a>
                     <button class="btn-action secondary btn-download-receipt" data-url="${safeFileUrl}" data-name="${safeName}" title="${btnDownloadText}">
                         <i class="fa-solid fa-download"></i>
-                        <span>${btnDownloadText}</span>
+                        <span data-i18n="btn_download">${btnDownloadText}</span>
                     </button>
                     <button class="btn-action danger btn-delete-receipt" data-id="${safeId}" data-path="${safeFilePath}" title="${btnDeleteText}">
                         <i class="fa-solid fa-trash"></i>
@@ -137,6 +139,10 @@ function renderReceipts(receipts) {
             </div>
         `;
     }).join('');
+
+    if (typeof window.applyDashboardLang === 'function') {
+        window.applyDashboardLang(lang);
+    }
 
     grid.querySelectorAll('.btn-download-receipt').forEach(btn => {
         btn.addEventListener('click', async () => {
