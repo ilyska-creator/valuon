@@ -1472,7 +1472,7 @@
 .email-change-form {
     display: flex;
     gap: 8px;
-    align-items: stretch;
+    align-items: center;
 }
 
 .email-change-form input {
@@ -1487,7 +1487,14 @@
 }
 
 .email-change-actions .btn-sm {
-    padding: 12px 14px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .email-hint {
@@ -1499,7 +1506,6 @@
     justify-content: flex-end;
     margin-top: 24px;
     padding-top: 20px;
-    border-top: 1px solid var(--border);
 }
 
 .danger-zone {
@@ -1629,6 +1635,8 @@
         flex: 1;
         text-align: center;
         justify-content: center;
+        border-radius: 5%;
+
     }
 
     .btn-danger {
@@ -1935,4 +1943,18 @@
 
 .btn i+span {
     margin-left: 8px;
+}
+
+.btn:disabled,
+.btn[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+    transform: none !important;
+}
+
+.btn:disabled:hover,
+.btn[disabled]:hover {
+    transform: none !important;
+    box-shadow: none !important;
 }

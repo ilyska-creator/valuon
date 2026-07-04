@@ -1,5 +1,14 @@
 import { requireAuth } from './dashboard-auth.js';
 
+function getSettingsLang() {
+    return localStorage.getItem('valuon-lang') || 'ru';
+}
+
+function getSettingsT() {
+    const lang = getSettingsLang();
+    return window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+}
+
 async function initSettings() {
     const auth = await requireAuth();
     if (!auth) return;
@@ -63,26 +72,40 @@ async function initSettings() {
 
     await loadProfile();
 
+    if (typeof window.applyDashboardLang === 'function') {
+        window.applyDashboardLang(getSettingsLang());
+    }
+
     const saveBtn = document.getElementById('save-profile-btn');
     const firstNameInput = document.getElementById('settings-first-name');
     const lastNameInput = document.getElementById('settings-last-name');
+    let originalFirstName = firstNameInput?.value?.trim() || '';
+    let originalLastName = lastNameInput?.value?.trim() || '';
+
+    function updateSaveButtonState() {
+        if (!saveBtn || !firstNameInput || !lastNameInput) return;
+        const currentFirst = firstNameInput.value.trim();
+        const currentLast = lastNameInput.value.trim();
+        const hasChanges = currentFirst !== originalFirstName || currentLast !== originalLastName;
+        const isValid = currentFirst.length > 0 && currentLast.length > 0;
+        saveBtn.disabled = !hasChanges || !isValid;
+    }
+
+    if (firstNameInput) firstNameInput.addEventListener('input', updateSaveButtonState);
+    if (lastNameInput) lastNameInput.addEventListener('input', updateSaveButtonState);
+
+    updateSaveButtonState();
 
     if (saveBtn && firstNameInput && lastNameInput) {
         saveBtn.addEventListener('click', async () => {
             const firstName = firstNameInput.value.trim();
             const lastName = lastNameInput.value.trim();
-            const lang = localStorage.getItem('valuon-lang') || 'ru';
+            const t = getSettingsT();
 
             if (!firstName || !lastName) {
-                if (typeof showToast === 'function') {
-                    showToast(lang === 'ru' ? 'Имя и фамилия обязательны' : 'First and last name are required', 'warning');
-                } else {
-                    alert(lang === 'ru' ? 'Имя и фамилия обязательны' : 'First and last name are required');
-                }
+                showToast(t.msg_name_required || 'Name required', 'warning');
                 return;
             }
-
-            const displayName = `${firstName} ${lastName}`;
 
             saveBtn.disabled = true;
             const originalHTML = saveBtn.innerHTML;
@@ -107,21 +130,21 @@ async function initSettings() {
                     }
                 });
 
+                originalFirstName = firstName;
+                originalLastName = lastName;
+
                 saveBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                const tSuccess = getSettingsT();
+                showToast(tSuccess.msg_save_success || 'Данные успешно сохранены', 'success');
                 setTimeout(() => {
                     saveBtn.innerHTML = originalHTML;
-                    saveBtn.disabled = false;
+                    updateSaveButtonState();
                 }, 1500);
             } catch (err) {
-                console.error('Save profile error:', err);
-                const msg = err.message || 'Unknown error';
-                if (typeof showToast === 'function') {
-                    showToast(lang === 'ru' ? `Ошибка: ${msg}` : `Error: ${msg}`, 'error');
-                } else {
-                    showToast(msg);
-                }
+                console.error(err);
+                showToast((t.msg_save_error || 'Save failed') + ': ' + (err.message || ''), 'error');
                 saveBtn.innerHTML = originalHTML;
-                saveBtn.disabled = false;
+                updateSaveButtonState();
             }
         });
     }
@@ -158,31 +181,54 @@ async function initSettings() {
     const newEmailInput = document.getElementById('new-email-input');
     const confirmEmailChange = document.getElementById('confirm-email-change');
     const cancelEmailChange = document.getElementById('cancel-email-change');
+    let emailCheckTimeout = null;
+
+    function resetEmailForm() {
+        clearTimeout(emailCheckTimeout);
+        changeEmailForm?.classList.add('hidden');
+        changeEmailBtn?.classList.remove('hidden');
+        if (newEmailInput) newEmailInput.value = '';
+        if (confirmEmailChange) {
+            confirmEmailChange.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+            confirmEmailChange.disabled = false;
+        }
+    }
+
+    if (newEmailInput) {
+        newEmailInput.addEventListener('input', () => {
+            clearTimeout(emailCheckTimeout);
+            const val = newEmailInput.value.trim();
+            if (!val) return;
+            emailCheckTimeout = setTimeout(() => {
+                const currentEmail = user.email?.toLowerCase() || '';
+                if (val.toLowerCase() === currentEmail) {
+                    const t = getSettingsT();
+                    showToast(t.msg_same_email || 'This is your current email', 'warning');
+                }
+            }, 600);
+        });
+    }
 
     if (changeEmailBtn && changeEmailForm && emailDisplayRow) {
         changeEmailBtn.addEventListener('click', () => {
-            emailDisplayRow.classList.add('hidden');
             changeEmailForm.classList.remove('hidden');
+            changeEmailBtn.classList.add('hidden');
             newEmailInput?.focus();
         });
 
-        cancelEmailChange?.addEventListener('click', () => {
-            changeEmailForm.classList.add('hidden');
-            emailDisplayRow.classList.remove('hidden');
-            if (newEmailInput) newEmailInput.value = '';
-        });
+        cancelEmailChange?.addEventListener('click', resetEmailForm);
 
         confirmEmailChange?.addEventListener('click', async () => {
             const newEmail = newEmailInput?.value.trim();
-            const lang = localStorage.getItem('valuon-lang') || 'ru';
+            const t = getSettingsT();
 
             if (!newEmail || !newEmail.includes('@')) {
-                showToast(lang === 'ru' ? 'Введите корректный email' : 'Enter a valid email', 'warning');
+                showToast(t.msg_valid_email || 'Enter a valid email', 'warning');
                 return;
             }
 
-            if (newEmail === user.email) {
-                showToast(lang === 'ru' ? 'Это ваш текущий email' : 'This is your current email', 'warning');
+            if (newEmail.toLowerCase() === user.email?.toLowerCase()) {
+                showToast(t.msg_same_email || 'This is your current email', 'warning');
                 return;
             }
 
@@ -196,25 +242,17 @@ async function initSettings() {
 
                 confirmEmailChange.innerHTML = '<i class="fa-solid fa-check"></i>';
                 setTimeout(() => {
-                    changeEmailForm.classList.add('hidden');
-                    emailDisplayRow.classList.remove('hidden');
-                    if (newEmailInput) newEmailInput.value = '';
-                    confirmEmailChange.innerHTML = originalHTML;
-                    confirmEmailChange.disabled = false;
-                    showToast(
-                        lang === 'ru'
-                            ? `Письмо с подтверждением отправлено на ${newEmail}`
-                            : `Confirmation email sent to ${newEmail}`,
-                        'success'
-                    );
+                    resetEmailForm();
+                    const msg = (t.msg_confirm_sent || 'Confirmation sent to {email}').replace('{email}', newEmail);
+                    showToast(msg, 'success');
                 }, 1000);
             } catch (err) {
                 console.error(err);
-                let msg = err.message || 'Failed to send request';
+                let msg = err.message || 'Failed';
                 if (err.message?.includes('already registered')) {
-                    msg = lang === 'ru' ? 'Этот email уже используется' : 'This email is already in use';
+                    msg = t.msg_email_in_use || 'Email in use';
                 } else if (err.message?.includes('rate limit')) {
-                    msg = lang === 'ru' ? 'Слишком много попыток. Подождите минуту.' : 'Too many attempts. Please wait a minute.';
+                    msg = t.msg_rate_limit || 'Rate limit';
                 }
                 showToast(msg, 'error');
                 confirmEmailChange.innerHTML = originalHTML;
@@ -226,18 +264,14 @@ async function initSettings() {
     const deleteBtn = document.getElementById('delete-account-btn');
     if (deleteBtn) {
         deleteBtn.addEventListener('click', async () => {
-            const lang = localStorage.getItem('valuon-lang') || 'ru';
+            const t = getSettingsT();
 
-            const firstConfirm = confirm(
-                lang === 'ru' ? 'Вы уверены? Это действие необратимо.' : 'Are you sure? This action is irreversible.'
-            );
+            const firstConfirm = confirm(t.confirm_delete_title || 'Are you sure?');
             if (!firstConfirm) return;
 
-            const secondConfirm = prompt(
-                lang === 'ru' ? 'Для подтверждения введите свой email:' : 'To confirm, enter your email:'
-            );
+            const secondConfirm = prompt(t.prompt_delete_email || 'Enter your email:');
             if (secondConfirm !== user.email) {
-                showToast(lang === 'ru' ? 'Email не совпадает. Удаление отменено.' : 'Email does not match. Deletion cancelled.', 'warning');
+                showToast(t.msg_email_mismatch || 'Email mismatch', 'warning');
                 return;
             }
 
@@ -262,7 +296,7 @@ async function initSettings() {
                 window.location.href = 'index.html';
             } catch (err) {
                 console.error(err);
-                showToast(lang === 'ru' ? 'Ошибка удаления. Попробуйте позже.' : 'Deletion failed. Try again later.', 'error');
+                showToast(t.msg_delete_failed || 'Deletion failed', 'error');
                 deleteBtn.textContent = originalText;
                 deleteBtn.disabled = false;
             }

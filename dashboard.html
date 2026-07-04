@@ -131,12 +131,13 @@
         <section id="view-notifications" class="dashboard-view hidden">
             <header class="content-header">
                 <h1 data-i18n="nav_notifications">Уведомления</h1>
-                <button class="btn btn-outline" onclick="markAllAsRead()">Прочитать все</button>
+                <button class="btn btn-outline" onclick="markAllAsRead()" data-i18n="mark_all_read">Прочитать
+                    все</button>
             </header>
 
             <div class="notifications-list" id="notifications-container">
-                <div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Проверка статусов...
-                </div>
+                <div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> <span
+                        data-i18n="notif_checking">Проверка статусов...</span></div>
             </div>
         </section>
 
@@ -179,6 +180,12 @@
                             </p>
                         </div>
 
+                        <div class="profile-field">
+                            <label data-i18n="label_birthdate">Дата рождения</label>
+                            <input type="date" id="settings-birthdate" readonly disabled>
+                            <p class="setting-desc" data-i18n="birthdate_readonly_hint">Указывается при регистрации и не
+                                может быть изменена</p>
+                        </div>
                         <div class="input-row">
                             <div class="profile-field">
                                 <label data-i18n="label_first_name">Имя</label>
@@ -188,12 +195,6 @@
                                 <label data-i18n="label_last_name">Фамилия</label>
                                 <input type="text" id="settings-last-name" placeholder="Smith">
                             </div>
-                        </div>
-                        <div class="profile-field">
-                            <label data-i18n="label_birthdate">Дата рождения</label>
-                            <input type="date" id="settings-birthdate" readonly disabled>
-                            <p class="setting-desc" data-i18n="birthdate_readonly_hint">Указывается при регистрации и не
-                                может быть изменена</p>
                         </div>
                     </div>
 
@@ -329,7 +330,12 @@
         </div>
     </div>
 
+    <div id="toast-container" class="toast-container"></div>
+
+
     <script src="js/theme.js"></script>
+    <script src="js/toast.js"></script>
+
     <script src="js/dashboard-lang.js"></script>
     <script type="module" src="js/dashboard-auth.js"></script>
     <script type="module" src="js/dashboard-items.js"></script>

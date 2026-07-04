@@ -16,6 +16,8 @@ const dashboardTranslations = {
         ui_theme: "Тема",
         ui_logout: "Выйти",
         stat_expired: "Истекла гарантия",
+        msg_save_success: "Данные успешно сохранены",
+
 
         status_active: 'Активна',
         status_expiring: 'Заканчивается',
@@ -64,6 +66,39 @@ const dashboardTranslations = {
         upload_title: "Перетащите фото чека сюда",
         upload_hint: "или нажмите для выбора файла • JPG, PNG, PDF • Макс. 10 МБ",
 
+        settings_profile: "Профиль",
+        label_email: "Email",
+        btn_change_email: "Изменить",
+        label_new_email: "Новый Email",
+        email_change_hint: "На новый адрес придёт ссылка для подтверждения",
+        label_first_name: "Имя",
+        label_last_name: "Фамилия",
+        label_birthdate: "Дата рождения",
+        birthdate_readonly_hint: "Указывается при регистрации и не может быть изменена",
+        settings_notifications: "Уведомления",
+        setting_expiry_alerts: "Напоминания об истечении гарантии",
+        setting_expiry_desc: "За 30, 7 и 1 день до окончания",
+        setting_email_digest: "Еженедельная сводка",
+        setting_digest_desc: "Обзор ваших активов каждый понедельник",
+        settings_danger: "Опасная зона",
+        setting_delete_all: "Удалить все мои данные",
+        setting_delete_disabled_desc: "Функция появится в следующем обновлении",
+        btn_unavailable: "Недоступно",
+        coming_soon: "Скоро",
+        msg_name_required: "Имя и фамилия обязательны",
+        msg_valid_email: "Введите корректный email",
+        msg_same_email: "Это ваш текущий email",
+        msg_confirm_sent: "Письмо с подтверждением отправлено на {email}",
+        msg_email_in_use: "Этот email уже используется",
+        msg_rate_limit: "Слишком много попыток. Подождите минуту.",
+        msg_save_error: "Ошибка сохранения",
+        confirm_delete_title: "Вы уверены? Это действие необратимо.",
+        prompt_delete_email: "Для подтверждения введите свой email:",
+        msg_email_mismatch: "Email не совпадает. Удаление отменено.",
+        msg_delete_failed: "Ошибка удаления. Попробуйте позже.",
+        mark_all_read: "Прочитать все",
+        notif_checking: "Проверка статусов...",
+
 
     },
     en: {
@@ -83,6 +118,7 @@ const dashboardTranslations = {
         ui_theme: "Theme",
         ui_logout: "Logout",
         stat_expired: "Expired Warranties",
+        msg_save_success: "Profile saved successfully",
 
         status_active: 'Active',
         status_expiring: 'Expiring Soon',
@@ -132,8 +168,43 @@ const dashboardTranslations = {
         upload_hint: "or click to select file • JPG, PNG, PDF • Max 10 MB",
         btn_submit_upload: "Upload",
 
+        settings_profile: "Profile",
+        label_email: "Email",
+        btn_change_email: "Change",
+        label_new_email: "New Email",
+        email_change_hint: "A confirmation link will be sent to the new address",
+        label_first_name: "First Name",
+        label_last_name: "Last Name",
+        label_birthdate: "Date of Birth",
+        birthdate_readonly_hint: "Set during registration and cannot be changed",
+        settings_notifications: "Notifications",
+        setting_expiry_alerts: "Warranty expiry reminders",
+        setting_expiry_desc: "30, 7 and 1 day before expiration",
+        setting_email_digest: "Weekly digest",
+        setting_digest_desc: "Overview of your assets every Monday",
+        settings_danger: "Danger Zone",
+        setting_delete_all: "Delete all my data",
+        setting_delete_disabled_desc: "Feature coming in the next update",
+        btn_unavailable: "Unavailable",
+        coming_soon: "Coming Soon",
+        msg_name_required: "First and last name are required",
+        msg_valid_email: "Enter a valid email",
+        msg_same_email: "This is your current email",
+        msg_confirm_sent: "Confirmation email sent to {email}",
+        msg_email_in_use: "This email is already in use",
+        msg_rate_limit: "Too many attempts. Please wait a minute.",
+        msg_save_error: "Save failed",
+        confirm_delete_title: "Are you sure? This action is irreversible.",
+        prompt_delete_email: "To confirm, enter your email:",
+        msg_email_mismatch: "Email does not match. Deletion cancelled.",
+        msg_delete_failed: "Deletion failed. Try again later.",
+        mark_all_read: "Mark all as read",
+        notif_checking: "Checking statuses...",
+
     }
 };
+window.dashboardTranslations = dashboardTranslations;
+
 
 let currentLang = localStorage.getItem('valuon-lang') || 'ru';
 
