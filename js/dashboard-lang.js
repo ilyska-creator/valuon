@@ -26,6 +26,20 @@ const dashboardTranslations = {
         timeline_start: 'Начало',
         timeline_end: 'Конец',
         brand_not_specified: 'Бренд не указан',
+        modal_title: "Добавить новую вещь",
+        label_name: "Название товара",
+        label_type: "Тип устройства",
+        label_brand: "Бренд",
+        label_price: "Цена покупки ($)",
+        label_store: "Магазин / Продавец",
+        label_serial: "Серийный номер",
+        label_date: "Дата покупки",
+        label_months: "Срок гарантии (мес.)",
+        label_location: "Место хранения",
+        btn_cancel: "Отмена",
+        btn_save: "Сохранить",
+        ph_store: "DNS, Ozon, М.Видео...",
+        ph_location: "Дом, Офис, Дача...",
     },
     en: {
         page_title: "Valuon — Dashboard",
@@ -53,7 +67,21 @@ const dashboardTranslations = {
         warranty_expired_text: 'Warranty expired',
         timeline_start: 'Start',
         timeline_end: 'End',
-        brand_not_specified: 'Brand not specified'
+        brand_not_specified: 'Brand not specified',
+        modal_title: "Add New Item",
+        label_name: "Item Name",
+        label_type: "Device Type",
+        label_brand: "Brand",
+        label_price: "Purchase Price ($)",
+        label_store: "Store / Seller",
+        label_serial: "Serial Number",
+        label_date: "Purchase Date",
+        label_months: "Warranty Period (mo.)",
+        label_location: "Storage Location",
+        btn_cancel: "Cancel",
+        btn_save: "Save",
+        ph_store: "Apple Store, Amazon, Best Buy...",
+        ph_location: "Home, Office, Storage...",
 
     }
 };
@@ -79,6 +107,10 @@ function applyDashboardLang(lang) {
             el.textContent = text;
         }
     });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (t[key]) el.placeholder = t[key];
+    });
 
     const langBtn = document.getElementById('lang-toggle');
     if (langBtn) {
@@ -87,6 +119,18 @@ function applyDashboardLang(lang) {
     }
 
     localStorage.setItem('valuon-lang', lang);
+    const typeLabels = {
+        ru: { laptop: '💻 Ноутбук', phone: '📱 Смартфон', tablet: '📟 Планшет', watch: '⌚ Часы', headphones: '🎧 Наушники', camera: '📷 Камера', console: '🎮 Консоль', appliance: '🏠 Бытовая техника', other: '📦 Другое' },
+        en: { laptop: '💻 Laptop', phone: '📱 Phone', tablet: '📟 Tablet', watch: '⌚ Watch', headphones: '🎧 Headphones', camera: '📷 Camera', console: '🎮 Console', appliance: '🏠 Appliance', other: '📦 Other' }
+    };
+
+    document.querySelectorAll('select[name="type"] option').forEach(opt => {
+        const val = opt.value;
+        if (typeLabels[lang]?.[val]) opt.textContent = typeLabels[lang][val];
+
+
+    });
+
 }
 
 window.applyDashboardLang = applyDashboardLang;

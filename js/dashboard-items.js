@@ -121,14 +121,18 @@ function renderItems(items) {
 
         // Теги
         const tags = [];
-        if (item.location) tags.push(`<span class="tag"><i class="fa-solid fa-location-dot"></i> ${item.location}</span>`);
+        if (item.serial_number) {
+            const shortSerial = item.serial_number.length > 6
+                ? item.serial_number.substring(0, 6) + '...'
+                : item.serial_number;
+            tags.push(`<span class="tag"><i class="fa-solid fa-barcode"></i> ${shortSerial}</span>`);
+        }
+        if (item.store_name) tags.push(`<span class="tag"><i class="fa-solid fa-store"></i> ${item.store_name}</span>`);
         if (item.price && item.price > 0) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> ${item.price} $</span>`);
-
         return `
             <div class="item-card">
                 <div class="item-header">
                     <div class="item-icon"><i class="fa-solid ${iconClass}"></i></div>
-                    <!-- Используем data-i18n вместо инлайн-текста -->
                     <div class="item-status-badge ${status.class}" data-i18n="${statusTextKey}"></div>
                 </div>
                 
@@ -145,7 +149,6 @@ function renderItems(items) {
                     <div class="progress-bar-bg">
                         <div class="progress-bar-fill ${status.class}" style="width: ${progress}%"></div>
                     </div>
-                    <!-- Используем data-i18n + data-i18n-count для динамического числа -->
                     <div class="days-left-text ${status.class}" 
                          data-i18n="${progressTextKey}" 
                          data-i18n-count="${daysLeft > 0 ? daysLeft : ''}">
