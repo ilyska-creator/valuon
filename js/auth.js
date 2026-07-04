@@ -14,6 +14,7 @@ function getSupabaseClient(rememberMe) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Проверка сессии
     const tempClient = getSupabaseClient(true);
     const { data: { session } } = await tempClient.auth.getSession();
 
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Запомненный email
     const savedEmail = localStorage.getItem('valuon-remember-email');
     const emailInput = document.getElementById('email');
     const rememberCheckbox = document.getElementById('remember');
@@ -31,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (rememberCheckbox) rememberCheckbox.checked = true;
     }
 
+    // Переключение видимости пароля
     const toggleBtn = document.querySelector('.toggle-password');
     const passwordInput = document.getElementById('password');
     if (toggleBtn && passwordInput) {
@@ -42,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Вход
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
@@ -57,11 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
 
                 const client = getSupabaseClient(rememberMe);
-
-                const { data, error } = await client.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
+                const { data, error } = await client.auth.signInWithPassword({ email, password });
 
                 if (error) throw error;
 
@@ -83,6 +83,94 @@ document.addEventListener('DOMContentLoaded', async () => {
                         : 'Invalid email or password';
                 }
                 alert(msg);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+    }
+
+    // --- ВОССТАНОВЛЕНИЕ ПАРОЛЯ ---
+    const forgotLink = document.querySelector('.forgot-link');
+    const forgotModal = document.getElementById('forgot-modal');
+    const forgotClose = forgotModal?.querySelector('.forgot-close');
+    const forgotForm = document.getElementById('forgot-form');
+    const forgotEmailInput = document.getElementById('forgot-email');
+    const stepEmail = document.getElementById('forgot-step-email');
+    const stepSuccess = document.getElementById('forgot-step-success');
+    const backToLoginBtn = forgotModal?.querySelector('.forgot-back-login');
+
+    function openForgotModal() {
+        if (!forgotModal) return;
+
+        // Автозаполнение email из формы входа
+        const mainEmail = document.getElementById('email')?.value.trim();
+        if (mainEmail && forgotEmailInput) {
+            forgotEmailInput.value = mainEmail;
+        }
+
+        // Сброс на шаг ввода email
+        stepEmail?.classList.remove('hidden');
+        stepSuccess?.classList.add('hidden');
+
+        forgotModal.classList.add('active');
+    }
+
+    function closeForgotModal() {
+        forgotModal?.classList.remove('active');
+    }
+
+    if (forgotLink) {
+        forgotLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openForgotModal();
+        });
+    }
+
+    if (forgotClose) {
+        forgotClose.addEventListener('click', closeForgotModal);
+    }
+
+    if (forgotModal) {
+        forgotModal.addEventListener('click', (e) => {
+            if (e.target === forgotModal) closeForgotModal();
+        });
+    }
+
+    if (backToLoginBtn) {
+        backToLoginBtn.addEventListener('click', closeForgotModal);
+    }
+
+    if (forgotForm) {
+        forgotForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = forgotForm.querySelector('button[type="submit"]');
+            const email = forgotEmailInput?.value.trim();
+            const originalText = btn.innerHTML;
+
+            if (!email) return;
+
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+
+                const client = getSupabaseClient(false);
+                const { error } = await client.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/reset-password.html`
+                });
+
+                if (error) throw error;
+
+                // Показываем экран успеха
+                stepEmail?.classList.add('hidden');
+                stepSuccess?.classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                const lang = localStorage.getItem('valuon-lang') || 'ru';
+                alert(lang === 'ru'
+                    ? 'Ошибка отправки. Проверьте email и попробуйте снова.'
+                    : 'Failed to send. Check email and try again.');
+            } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }

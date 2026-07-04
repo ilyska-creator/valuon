@@ -6,7 +6,6 @@ async function initSettings() {
 
     const { user, client } = auth;
 
-    // --- ЗАГРУЗКА ПРОФИЛЯ ---
     async function loadProfile() {
         const emailInput = document.getElementById('settings-email');
         const nameInput = document.getElementById('settings-name');
@@ -26,14 +25,11 @@ async function initSettings() {
             return;
         }
 
-        // Если профиль существует — заполняем поля
         if (data) {
             if (nameInput && data.display_name) nameInput.value = data.display_name;
             if (toggleExpiry) toggleExpiry.checked = data.expiry_alerts ?? true;
             if (toggleDigest) toggleDigest.checked = data.weekly_digest ?? false;
-        } else {
-            // Если профиля нет — создаём с дефолтными значениями
-            await client.from('profiles').insert({
+        } else {            await client.from('profiles').insert({
                 id: user.id,
                 display_name: user.user_metadata?.display_name || '',
                 expiry_alerts: true,
@@ -44,7 +40,6 @@ async function initSettings() {
 
     await loadProfile();
 
-    // --- СОХРАНЕНИЕ ИМЕНИ ---
     const saveBtn = document.getElementById('save-profile-btn');
     const nameInput = document.getElementById('settings-name');
 
@@ -58,7 +53,6 @@ async function initSettings() {
             saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
             try {
-                // Сохраняем в profiles
                 const { error: dbError } = await client
                     .from('profiles')
                     .update({ display_name: name, updated_at: new Date().toISOString() })
@@ -66,7 +60,6 @@ async function initSettings() {
 
                 if (dbError) throw dbError;
 
-                // Сохраняем в user_metadata (для отображения в других местах)
                 await client.auth.updateUser({ data: { display_name: name } });
 
                 saveBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
@@ -83,7 +76,6 @@ async function initSettings() {
         });
     }
 
-    // --- АВТОСОХРАНЕНИЕ ТОГГЛОВ ---
     async function saveToggle(field, value) {
         try {
             await client
@@ -110,7 +102,6 @@ async function initSettings() {
         });
     }
 
-    // --- СМЕНА EMAIL ---
     const changeEmailBtn = document.getElementById('change-email-btn');
     const changeEmailForm = document.getElementById('change-email-form');
     const emailDisplayRow = document.getElementById('email-display-row');

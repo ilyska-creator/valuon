@@ -191,7 +191,8 @@
 }
 
 .password-wrapper input {
-    padding-right: 40px !important;}
+    padding-right: 40px !important;
+}
 
 .toggle-password,
 .toggle-password-confirm {
@@ -264,4 +265,108 @@
         flex-direction: column;
         align-items: flex-start;
     }
+}
+
+#forgot-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+#forgot-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.forgot-modal-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-lg);
+}
+
+#forgot-modal.active .forgot-modal-content {
+    transform: translateY(0);
+}
+
+.forgot-modal-content .btn-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.forgot-modal-content .btn-close:hover {
+    color: var(--text-main);
+}
+
+.forgot-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto 20px;
+}
+
+[data-theme="dark"] .forgot-icon {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.forgot-icon.success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+[data-theme="dark"] .forgot-icon.success {
+    background: rgba(16, 185, 129, 0.15);
+}
+
+.forgot-modal-content h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 8px;
+}
+
+.forgot-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
+
+.forgot-back-login {
+    margin-top: 8px;
+}
+
+.hidden {
+    display: none !important;
 }

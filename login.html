@@ -66,6 +66,41 @@
         </div>
     </div>
 
+    <!-- auth-container ЗАКРЫТ здесь -->
+    </div>
+
+    <!-- Модальное окно ВНЕ контейнера авторизации -->
+    <div id="forgot-modal">
+        <div class="forgot-modal-content">
+            <button class="btn-close forgot-close"><i class="fa-solid fa-xmark"></i></button>
+
+            <div id="forgot-step-email">
+                <div class="forgot-icon"><i class="fa-solid fa-key"></i></div>
+                <h3 data-i18n="forgot_title">Восстановление пароля</h3>
+                <p class="forgot-desc" data-i18n="forgot_desc">Введите email, привязанный к аккаунту. Мы отправим ссылку
+                    для сброса пароля.</p>
+                <form id="forgot-form" class="auth-form">
+                    <div class="input-group">
+                        <label for="forgot-email" data-i18n="label_email">Email</label>
+                        <input type="email" id="forgot-email" required placeholder="name@example.com"
+                            autocomplete="email">
+                    </div>
+                    <button type="submit" class="btn btn-primary auth-btn" data-i18n="btn_send_link">Отправить
+                        ссылку</button>
+                </form>
+            </div>
+
+            <div id="forgot-step-success" class="hidden">
+                <div class="forgot-icon success"><i class="fa-solid fa-envelope-open-text"></i></div>
+                <h3 data-i18n="forgot_success_title">Письмо отправлено!</h3>
+                <p class="forgot-desc" data-i18n="forgot_success_desc">Проверьте почту и перейдите по ссылке в письме
+                    для сброса пароля. Ссылка действительна 1 час.</p>
+                <button class="btn btn-outline auth-btn forgot-back-login" data-i18n="btn_back_to_login">Вернуться ко
+                    входу</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/login-lang.js"></script>
     <script type="module" src="js/auth.js"></script>
     <script src="js/theme.js"></script>
