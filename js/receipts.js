@@ -51,7 +51,7 @@ async function loadReceipts(userId, client) {
 
     const { data, error } = await client
         .from('receipts')
-        .select('*, items(name)')
+        .select('*, items(name, price, purchase_date, store_name)')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -67,10 +67,18 @@ async function loadReceipts(userId, client) {
         return;
     }
 
-    const flatData = data.map(r => ({
-        ...r,
-        item_name: r.items?.name || null
-    }));
+    const flatData = data.map(r => {
+        const linked = r.items != null;
+        return {
+            ...r,
+            item_name: r.items?.name || null,
+            display_name: linked ? r.items.name : (r.receipt_name || r.store_name || 'Untitled Receipt'),
+            display_amount: linked ? r.items.price : r.amount,
+            display_date: linked ? r.items.purchase_date : r.purchase_date,
+            display_store: linked ? r.items.store_name : r.store_name,
+            is_linked: linked
+        };
+    });
 
     renderReceipts(flatData);
 }
@@ -91,22 +99,22 @@ function renderReceipts(receipts) {
         const isPdf = r.file_type === 'application/pdf';
         const isImage = r.file_type && r.file_type.startsWith('image/');
         const iconClass = isPdf ? 'fa-file-pdf' : isImage ? 'fa-file-image' : 'fa-file-invoice';
-        const date = r.purchase_date
-            ? new Date(r.purchase_date).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US')
-            : '';
 
-        const safeName = escapeHtml(r.receipt_name || r.store_name || 'Untitled Receipt');
-        const safeStore = escapeHtml(r.store_name);
+        const safeName = escapeHtml(r.display_name || 'Untitled Receipt');
+        const safeStore = escapeHtml(r.display_store);
         const safeItem = escapeHtml(r.item_name);
         const safeFileUrl = escapeHtml(r.file_url);
         const safeFilePath = escapeHtml(r.file_path);
         const safeId = escapeHtml(r.id);
 
         const tags = [];
-        if (r.amount) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> $${parseFloat(r.amount).toFixed(2)}</span>`);
-        if (date) tags.push(`<span class="tag"><i class="fa-regular fa-calendar"></i> ${date}</span>`);
+        if (r.display_amount) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> $${parseFloat(r.display_amount).toFixed(2)}</span>`);
+        if (r.display_date) {
+            const date = new Date(r.display_date).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US');
+            tags.push(`<span class="tag"><i class="fa-regular fa-calendar"></i> ${date}</span>`);
+        }
         if (safeStore) tags.push(`<span class="tag"><i class="fa-solid fa-store"></i> ${safeStore}</span>`);
-        if (safeItem) tags.push(`<span class="tag"><i class="fa-solid fa-link"></i> ${safeItem}</span>`);
+        if (r.is_linked) tags.push(`<span class="tag"><i class="fa-solid fa-link"></i> ${safeItem}</span>`);
 
         const btnViewText = t.btn_view || 'Просмотр';
         const btnDownloadText = t.btn_download || 'Скачать';
