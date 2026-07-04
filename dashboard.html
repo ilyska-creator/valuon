@@ -179,9 +179,21 @@
                             </p>
                         </div>
 
+                        <div class="input-row">
+                            <div class="profile-field">
+                                <label data-i18n="label_first_name">Имя</label>
+                                <input type="text" id="settings-first-name" placeholder="James">
+                            </div>
+                            <div class="profile-field">
+                                <label data-i18n="label_last_name">Фамилия</label>
+                                <input type="text" id="settings-last-name" placeholder="Smith">
+                            </div>
+                        </div>
                         <div class="profile-field">
-                            <label data-i18n="label_display_name">Отображаемое имя</label>
-                            <input type="text" id="settings-name" placeholder="Ваше имя">
+                            <label data-i18n="label_birthdate">Дата рождения</label>
+                            <input type="date" id="settings-birthdate" readonly disabled>
+                            <p class="setting-desc" data-i18n="birthdate_readonly_hint">Указывается при регистрации и не
+                                может быть изменена</p>
                         </div>
                     </div>
 

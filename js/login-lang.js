@@ -51,7 +51,15 @@ const translations = {
 
         // Ошибки
         msg_pass_mismatch: "Пароли не совпадают",
-        msg_weak_pass: "Пароль должен быть не менее 6 символов"
+        msg_weak_pass: "Пароль должен быть не менее 6 символов",
+        birthdate_warning: "Нельзя изменить после регистрации",
+        label_birthdate: "Дата рождения",
+        label_first_name: "Имя",
+        label_last_name: "Фамилия",
+        ph_first_name: "Иван",
+        ph_last_name: "Иванов",
+
+
     },
     en: {
         // General
@@ -105,7 +113,13 @@ const translations = {
 
         // Errors
         msg_pass_mismatch: "Passwords do not match",
-        msg_weak_pass: "Password must be at least 6 characters"
+        msg_weak_pass: "Password must be at least 6 characters",
+        birthdate_warning: "Cannot be changed after registration",
+        label_birthdate: "Date of Birth",
+        label_first_name: "First Name",
+        label_last_name: "Last Name",
+        ph_first_name: "James",
+        ph_last_name: "Smith",
     }
 };
 

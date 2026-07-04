@@ -546,3 +546,30 @@
         max-width: none;
     }
 }
+
+.auth-form .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 480px) {
+    .auth-form .input-row {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+.profile-field input[readonly] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.field-hint {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    opacity: 0.7;
+    line-height: 1.3;
+}

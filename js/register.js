@@ -31,15 +31,58 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
+            const firstName = document.getElementById('first-name').value.trim();
+            const lastName = document.getElementById('last-name').value.trim();
+            const birthdate = document.getElementById('birthdate')?.value || '';
             const originalText = btn.innerHTML;
             const lang = getLang();
 
             if (password !== confirmPassword) {
-                alert(translations[lang].msg_pass_mismatch);
+                showToast(translations[lang].msg_pass_mismatch, 'error');
                 return;
             }
+
             if (password.length < 6) {
-                alert(translations[lang].msg_weak_pass);
+                showToast(translations[lang].msg_weak_pass, 'warning');
+                return;
+            }
+
+            if (!firstName) {
+                showToast(lang === 'ru' ? 'Введите ваше имя' : 'Please enter your first name', 'warning');
+                return;
+            }
+
+            if (!lastName) {
+                showToast(lang === 'ru' ? 'Введите вашу фамилию' : 'Please enter your last name', 'warning');
+                return;
+            }
+
+            if (!birthdate) {
+                showToast(lang === 'ru' ? 'Укажите дату рождения' : 'Please enter your date of birth', 'warning');
+                return;
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const birthDateObj = new Date(birthdate);
+
+            if (birthDateObj > today) {
+                showToast(lang === 'ru' ? 'Дата рождения не может быть в будущем' : 'Birth date cannot be in the future', 'warning');
+                return;
+            }
+
+            const age = today.getFullYear() - birthDateObj.getFullYear();
+            const monthDiff = today.getMonth() - birthDateObj.getMonth();
+            const dayDiff = today.getDate() - birthDateObj.getDate();
+            const actualAge = age - (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? 1 : 0);
+
+            if (actualAge < 14) {
+                showToast(lang === 'ru' ? 'Вам должно быть не менее 14 лет' : 'You must be at least 14 years old', 'warning');
+                return;
+            }
+
+            if (actualAge > 120) {
+                showToast(lang === 'ru' ? 'Проверьте корректность даты рождения' : 'Please check the birth date', 'warning');
                 return;
             }
 
@@ -47,15 +90,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
 
+                const displayName = `${firstName} ${lastName}`;
+
                 const { data, error } = await supabase.auth.signUp({
-                    email: email,
-                    password: password,
+                    email,
+                    password,
                     options: {
-                        data: { created_at: new Date().toISOString() }
+                        data: {
+                            display_name: displayName,
+                            first_name: firstName,
+                            last_name: lastName,
+                            birthdate: birthdate,
+                            created_at: new Date().toISOString()
+                        }
                     }
                 });
 
                 if (error) throw error;
+
+                if (data.user) {
+                    await supabase.from('profiles').upsert({
+                        id: data.user.id,
+                        display_name: displayName,
+                        first_name: firstName,
+                        last_name: lastName,
+                        birthdate: birthdate
+                    }, { onConflict: 'id' });
+                }
 
                 if (data.session) {
                     window.location.href = 'dashboard.html';
@@ -63,8 +124,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const msg = lang === 'ru'
                         ? 'Регистрация успешна! Проверьте почту для подтверждения.'
                         : 'Registration successful! Check your email to confirm.';
-                    alert(msg);
-                    window.location.href = 'login.html';
+                    showToast(msg, 'success');
+                    setTimeout(() => { window.location.href = 'login.html'; }, 2000);
                 }
             } catch (err) {
                 console.error(err);
@@ -72,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (err.message.includes('User already registered')) {
                     errorMsg = lang === 'ru' ? 'Этот email уже зарегистрирован' : 'This email is already registered';
                 }
-                alert(errorMsg);
+                showToast(errorMsg, 'error');
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }

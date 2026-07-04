@@ -37,6 +37,24 @@
                     <input type="email" id="email" required placeholder="name@example.com" autocomplete="email">
                 </div>
 
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="first-name" data-i18n="label_first_name">Имя</label>
+                        <input type="text" id="first-name" required data-i18n-placeholder="ph_first_name"
+                            autocomplete="given-name">
+                    </div>
+                    <div class="input-group">
+                        <label for="last-name" data-i18n="label_last_name">Фамилия</label>
+                        <input type="text" id="last-name" required data-i18n-placeholder="ph_last_name"
+                            autocomplete="family-name">
+                    </div>
+                    <div class="input-group">
+                        <label for="birthdate" data-i18n="label_birthdate">Дата рождения</label>
+                        <input type="date" id="birthdate" required autocomplete="bday">
+                        <span class="field-hint" data-i18n="birthdate_warning">Нельзя изменить после регистрации</span>
+                    </div>
+                </div>
+
                 <div class="input-group">
                     <label for="password" data-i18n="label_password">Пароль</label>
                     <div class="password-wrapper">
