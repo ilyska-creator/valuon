@@ -1590,6 +1590,10 @@
 }
 
 @media (max-width: 480px) {
+    .content-header h1 {
+        align-self: center;
+    }
+
     .settings-section {
         padding: 24px;
         border-radius: 20px;
