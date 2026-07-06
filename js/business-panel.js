@@ -1,16 +1,17 @@
-// js/business-panel.js
 import { requireAuth } from './dashboard-auth.js';
+import { downloadReceiptPDF } from './receipt-generator.js';
 
 let currentClient = null;
 let currentUser = null;
 let currentShop = null;
 
 async function initBusinessPanel() {
-    // ✅ ПУНКТ 3: Обработка ошибок загрузки магазина с fallback UI
     if (typeof window.showToast !== 'function') {
         console.warn('Toast system not loaded');
         window.showToast = (msg) => console.log(`[TOAST] ${msg}`);
     }
+
+    let currentReceiptsList = [];
 
     const auth = await requireAuth();
     if (!auth) return;
@@ -19,7 +20,6 @@ async function initBusinessPanel() {
     currentUser = user;
     currentClient = client;
 
-    // ✅ ПУНКТ 9: Кэширование данных магазина в sessionStorage
     const cachedShop = sessionStorage.getItem('current_shop');
     if (cachedShop) {
         try {
@@ -63,7 +63,6 @@ async function initBusinessPanel() {
         if (addrEl) addrEl.textContent = shop.address || '—';
     }
 
-    // Загрузка магазина из БД
     try {
         const { data: shop, error } = await client
             .from('shops')
@@ -75,7 +74,6 @@ async function initBusinessPanel() {
             console.error('Shop load failed:', error);
             window.showToast('Не удалось загрузить данные магазина. Проверьте подключение.', 'error');
 
-            // Если есть кэш — показываем дашборд с кэшированными данными
             if (currentShop) {
                 updateShopInfo(currentShop);
                 renderView(views.dashboard);
@@ -88,7 +86,6 @@ async function initBusinessPanel() {
 
         currentShop = shop;
 
-        // Сохраняем в кэш при успешной загрузке
         if (shop) {
             sessionStorage.setItem('current_shop', JSON.stringify(shop));
         } else {
@@ -106,7 +103,6 @@ async function initBusinessPanel() {
         }
     } catch (e) {
         console.error('Shop load failed:', e);
-        // ✅ ПУНКТ 3: Fallback на кэш или форму создания
         if (currentShop) {
             updateShopInfo(currentShop);
             renderView(views.dashboard);
@@ -121,7 +117,6 @@ async function initBusinessPanel() {
         targetView?.classList.add('is-active');
     }
 
-    // Создание магазина
     if (forms.shop) {
         forms.shop.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -156,7 +151,6 @@ async function initBusinessPanel() {
 
                 if (newShop) {
                     currentShop = newShop;
-                    // ✅ ПУНКТ 9: Обновляем кэш
                     sessionStorage.setItem('current_shop', JSON.stringify(newShop));
                     updateShopInfo(newShop);
                     renderView(views.dashboard);
@@ -202,7 +196,6 @@ async function initBusinessPanel() {
         if (e.target === modal.el) toggleModal(false);
     });
 
-    // Выписка чека
     if (forms.receipt) {
         forms.receipt.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -274,12 +267,10 @@ async function initBusinessPanel() {
     async function refreshDashboard(client, shopId, statsEl, listEl) {
         if (!shopId) return;
 
-        // Индикатор загрузки
         statsEl.total.textContent = '...';
         statsEl.pending.textContent = '...';
         listEl.grid.innerHTML = '<div class="loading-spinner" style="text-align:center;padding:2rem;"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i></div>';
 
-        // Скрываем сообщение о пустоте во время загрузки
         const emptyMsg = document.getElementById('no-receipts-msg');
         if (emptyMsg) emptyMsg.style.display = 'none';
 
@@ -293,16 +284,15 @@ async function initBusinessPanel() {
             if (statsEl.total) statsEl.total.textContent = totalRes.count || 0;
             if (statsEl.pending) statsEl.pending.textContent = pendingRes.count || 0;
 
-            const receipts = receiptsRes.data || [];
+            currentReceiptsList = receiptsRes.data || [];
+            const receipts = currentReceiptsList;
 
-            // ✅ ЛОГИКА ОТОБРАЖЕНИЯ ПУСТОГО СОСТОЯНИЯ
             if (receipts.length === 0) {
-                listEl.grid.innerHTML = ''; // Очищаем сетку
-                if (emptyMsg) emptyMsg.style.display = 'block'; // Показываем сообщение
+                listEl.grid.innerHTML = '';
+                if (emptyMsg) emptyMsg.style.display = 'block';
                 return;
             }
 
-            // Если чеки есть, скрываем сообщение и рендерим карточки
             if (emptyMsg) emptyMsg.style.display = 'none';
 
             listEl.grid.innerHTML = receipts.map(r => {
@@ -326,9 +316,91 @@ async function initBusinessPanel() {
                         <span class="tag"><i class="fa-solid fa-calendar-days"></i> ${escapeHtml(dateStr)}</span>
                         <span class="tag"><i class="fa-solid fa-hashtag"></i> ${escapeHtml(r.id.slice(0, 8).toUpperCase())}</span>
                     </div>
+
+                    <div class="item-actions">
+                        <button class="btn-action download btn-download-receipt" data-id="${r.id}" title="Скачать чек">
+                            <i class="fa-solid fa-download"></i> Скачать
+                        </button>
+                        <button class="btn-action delete btn-delete-receipt" data-id="${r.id}" title="Удалить чек">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>`;
             }).join('');
+
+            listEl.grid.querySelectorAll('.btn-delete-receipt').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const receiptId = btn.dataset.id;
+                    const deleteModal = document.getElementById('delete-confirm-modal');
+                    const confirmBtn = document.getElementById('confirm-delete-btn');
+                    const cancelBtn = document.getElementById('cancel-delete-btn');
+
+                    if (!deleteModal) return;
+
+                    deleteModal.classList.remove('is-hidden');
+
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = '<i class="fa-solid fa-trash"></i> Удалить';
+
+                    const handleConfirm = async () => {
+                        confirmBtn.disabled = true;
+                        confirmBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+
+                        try {
+                            const { error } = await client
+                                .from('business_receipts')
+                                .delete()
+                                .eq('id', receiptId);
+
+                            if (error) throw error;
+
+                            window.showToast('Чек успешно удален', 'success');
+                            deleteModal.classList.add('is-hidden');
+                            await refreshDashboard(client, shopId, statsEl, listEl);
+                        } catch (e) {
+                            console.error('Delete failed:', e);
+                            window.showToast('Ошибка при удалении чека', 'error');
+                            confirmBtn.disabled = false;
+                            confirmBtn.innerHTML = '<i class="fa-solid fa-trash"></i> Удалить';
+                        }
+                    };
+
+                    const handleCancel = () => {
+                        deleteModal.classList.add('is-hidden');
+                        cleanup();
+                    };
+
+                    const cleanup = () => {
+                        confirmBtn.removeEventListener('click', handleConfirm);
+                        cancelBtn.removeEventListener('click', handleCancel);
+                        deleteModal.removeEventListener('click', handleClickOutside);
+                    };
+
+                    const handleClickOutside = (e) => {
+                        if (e.target === deleteModal || e.target.classList.contains('modal-backdrop')) {
+                            handleCancel();
+                        }
+                    };
+
+                    confirmBtn.addEventListener('click', handleConfirm);
+                    cancelBtn.addEventListener('click', handleCancel);
+                    deleteModal.addEventListener('click', handleClickOutside);
+                });
+            });
+
+            listEl.grid.querySelectorAll('.btn-download-receipt').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const receiptId = btn.dataset.id;
+                    const receipt = currentReceiptsList.find(r => r.id === receiptId);
+
+                    if (receipt && currentShop) {
+                        downloadReceiptPDF(receipt, currentShop);
+                    } else {
+                        window.showToast('Не удалось найти данные чека', 'error');
+                    }
+                });
+            });
         } catch (e) {
             console.error('Dashboard refresh failed:', e);
             window.showToast('Не удалось обновить данные. Попробуйте позже.', 'error');
@@ -346,6 +418,7 @@ async function initBusinessPanel() {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
     }
+
     const firstReceiptBtn = document.getElementById('create-first-receipt-btn');
     if (firstReceiptBtn) {
         firstReceiptBtn.addEventListener('click', () => {

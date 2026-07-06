@@ -1054,3 +1054,130 @@
     margin: 0 auto 1.5rem;
     line-height: 1.5;
 }
+
+
+/* ✅ КНОПКИ ДЕЙСТВИЙ В КАРТОЧКЕ (70% / 30%) */
+.item-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    /* Чуть выше для удобства на мобильных */
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-body);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: var(--font-main);
+}
+
+/* Кнопка Скачать: занимает ~70% ширины + текст */
+.btn-action.download {
+    flex: 1;
+    /* Растягивается на доступное пространство */
+    gap: 0.5rem;
+    background: rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.2);
+    color: var(--primary);
+}
+
+.btn-action.download:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+/* Кнопка Удалить: фиксированная ширина ~30% или иконка */
+.btn-action.delete {
+    width: 42px;
+    /* Квадратная кнопка */
+    flex-shrink: 0;
+    /* Не сжимается */
+    background: rgba(239, 68, 68, 0.05);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.btn-action.delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+
+.btn-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ✅ СТИЛИ ДЛЯ МОДАЛКИ ПОДТВЕРЖДЕНИЯ */
+.delete-confirm-card {
+    text-align: center;
+    padding: 2.5rem 2rem !important;
+}
+
+.delete-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.5rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+}
+
+.delete-confirm-card h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+}
+
+.delete-confirm-card p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 2rem;
+}
+
+.confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 0 !important;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+@media (max-width: 480px) {
+    .confirm-actions {
+        grid-template-columns: 1fr;
+    }
+}

@@ -13,6 +13,8 @@
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/business.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
     <script>
         (function () {
             const savedTheme = localStorage.getItem('valuon-theme');
@@ -199,6 +201,24 @@
                         <button type="submit" class="btn btn-primary">Выписать чек</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <div id="delete-confirm-modal" class="modal-overlay is-hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content max-w-md delete-confirm-card">
+                <div class="delete-icon-wrapper">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h2>Удалить чек?</h2>
+                <p>Это действие необратимо. Чек будет удален из системы безвозвратно.</p>
+
+                <div class="modal-actions confirm-actions">
+                    <button type="button" id="cancel-delete-btn" class="btn btn-outline w-full">Отмена</button>
+                    <button type="button" id="confirm-delete-btn" class="btn btn-danger w-full">
+                        <i class="fa-solid fa-trash"></i> Удалить
+                    </button>
+                </div>
             </div>
         </div>
     </main>
