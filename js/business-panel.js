@@ -233,7 +233,10 @@ async function initBusinessPanel() {
                     .from('profiles')
                     .select('id')
                     .eq('email', email)
-                    .single();
+                    .maybeSingle();
+
+                // ✅ СТАТУС ЗАВИСИТ ОТ НАЛИЧИЯ ПРОФИЛЯ
+                const status = existingUser ? 'verified' : 'pending';
 
                 const payload = {
                     shop_id: currentShop.id,
@@ -243,8 +246,11 @@ async function initBusinessPanel() {
                     net_total: net, vat_amount: vat, gross_total: gross,
                     purchase_date: fd.get('purchase_date'),
                     payment_method: fd.get('payment_method'),
-                    status: existingUser ? 'verified' : 'pending',
-                    fiscal_hash: fiscalHash
+                    status: status, // ✅ ПЕРЕДАЕМ ВЫЧИСЛЕННЫЙ СТАТУС
+                    fiscal_hash: fiscalHash,
+                    shop_name: currentShop.shop_name,
+                    tax_id: currentShop.tax_id,
+                    address: currentShop.address
                 };
 
                 const { error } = await client.from('business_receipts').insert([payload]);
@@ -296,8 +302,10 @@ async function initBusinessPanel() {
             if (emptyMsg) emptyMsg.style.display = 'none';
 
             listEl.grid.innerHTML = receipts.map(r => {
-                const statusClass = r.status === 'verified' ? 'active' : 'warning';
-                const statusText = r.status === 'verified' ? 'Привязан' : 'Ожидает регистрации';
+                // ✅ ВИЗУАЛЬНОЕ ОТОБРАЖЕНИЕ СТАТУСА
+                const isVerified = r.status === 'verified';
+                const statusClass = isVerified ? 'active' : 'warning';
+                const statusText = isVerified ? 'Привязан к клиенту' : 'Ожидает регистрации';
                 const dateStr = new Date(r.purchase_date).toLocaleDateString('ru-RU');
 
                 return `

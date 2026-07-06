@@ -1650,7 +1650,7 @@
 
 .-container {
     position: fixed;
-    top:toast 24px;
+    top: toast 24px;
     right: 24px;
     z-index: 9999;
     display: flex;
@@ -2021,4 +2021,71 @@
 
 [data-theme="dark"] .item-actions .btn-action.danger:hover {
     background: rgba(239, 68, 68, 0.25);
+}
+
+/* ✅ РАЗДЕЛИТЕЛЬ МЕЖДУ БЛОКАМИ */
+.section-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 48px 0;
+    position: relative;
+}
+
+.section-divider::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -10px;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 20px;
+    background: var(--light);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+}
+
+[data-theme="dark"] .section-divider::after {
+    background: var(--bg-body);
+}
+
+/* ✅ ПЛАШКА МАГАЗИНА */
+.shop-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(59, 130, 246, 0.08);
+    color: var(--primary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 100px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    width: fit-content;
+}
+
+[data-theme="dark"] .shop-badge {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.business-section h2 {
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+}
+
+.business-card .receipt-icon {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+[data-theme="dark"] .business-card .receipt-icon {
+    background: rgba(16, 185, 129, 0.15);
+}
+
+@media (max-width: 480px) {
+    .section-divider {
+        margin: 32px 0;
+    }
 }

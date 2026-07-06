@@ -1,4 +1,6 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
+import { downloadReceiptPDF } from './receipt-generator.js';
+
 
 let pendingDeleteId = null;
 let pendingDeletePath = null;
@@ -34,53 +36,244 @@ async function initReceipts() {
     const { user, client } = auth;
     setupLogout(client);
 
-    await loadReceipts(user.id, client);
+    window.supabaseClient = client;
+    window.currentUserId = user.id;
+
+    await loadAllReceipts(user.email, user.id, client);
     await populateItemSelect(user.id, client);
+
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(getLang());
     }
+
     setupUploadModal(client, user.id);
     setupDeleteModal(client, user.id);
 }
 
-async function loadReceipts(userId, client) {
-    const grid = document.querySelector('.receipts-grid');
-    if (!grid) return;
+async function loadAllReceipts(userEmail, userId, client) {
+    const mainContent = document.querySelector('.main-content');
+    if (!mainContent) return;
 
-    grid.innerHTML = '<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i></div>';
+    mainContent.innerHTML = '<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i></div>';
 
-    const { data, error } = await client
-        .from('receipts')
-        .select('*, items(name, price, purchase_date, store_name)')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+    try {
+        const { data: businessData } = await client
+            .from('business_receipts')
+            .select('*')
+            .eq('customer_email', userEmail)
+            .order('purchase_date', { ascending: false });
 
-    if (error) {
-        console.error(error);
-        grid.innerHTML = '<p class="empty-state error">Ошибка загрузки чеков.</p>';
-        return;
+        const { data: personalData } = await client
+            .from('receipts')
+            .select('*, items(name, price, purchase_date, store_name)')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
+        renderSplitReceipts(businessData || [], personalData || []);
+    } catch (e) {
+        console.error(e);
+        mainContent.innerHTML = '<p class="empty-state error">Ошибка загрузки данных.</p>';
     }
+}
 
-    if (!data || data.length === 0) {
-        const lang = getLang();
-        grid.innerHTML = `<p class="empty-state">${lang === 'ru' ? 'У вас пока нет загруженных чеков.' : 'No receipts uploaded yet.'}</p>`;
-        return;
+// ✅ РЕНДЕРИНГ ДВУХ БЛОКОВ
+function renderSplitReceipts(businessReceipts, personalReceipts) {
+    const mainContent = document.querySelector('.main-content');
+    const lang = getLang();
+    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+
+    let html = `
+        <header class="content-header">
+            <h1 data-i18n="nav_receipts">Чеки и документы</h1>
+            <button class="btn btn-primary" id="upload-receipt-btn">
+                <i class="fa-solid fa-upload"></i> <span data-i18n="btn_upload">Загрузить чек</span>
+            </button>
+        </header>
+        <div class="upload-zone" id="drop-zone">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <p data-i18n="upload_title">Перетащите фото чека сюда</p>
+            <span data-i18n="upload_hint">или нажмите для выбора файла • JPG, PNG, PDF • Макс. 10 МБ</span>
+        </div>
+    `;
+
+    // БЛОК 1: ЧЕКИ ОТ БИЗНЕСА
+    html += `<section class="items-section business-section">`;
+    html += `<h2><i class="fa-solid fa-store" style="color: var(--primary); margin-right: 8px;"></i> Чеки от партнеров</h2>`;
+
+    if (businessReceipts.length === 0) {
+        html += `<div class="empty-state">${lang === 'ru' ? 'У вас пока нет автоматически выписанных чеков.' : 'No business receipts yet.'}</div>`;
+    } else {
+        html += `<div class="receipts-grid">`;
+        businessReceipts.forEach(r => { html += renderBusinessCard(r, t); });
+        html += `</div>`;
     }
+    html += `</section>`;
 
-    const flatData = data.map(r => {
-        const linked = r.items != null;
-        return {
+    // РАЗДЕЛИТЕЛЬ
+    html += `<div class="section-divider"></div>`;
+
+    // БЛОК 2: ЛИЧНЫЕ ЧЕКИ
+    html += `<section class="items-section personal-section">`;
+    html += `<h2 data-i18n="section_documents">Ваши документы</h2>`;
+
+    if (personalReceipts.length === 0) {
+        html += `<div class="empty-state">${lang === 'ru' ? 'У вас пока нет загруженных чеков.' : 'No personal receipts uploaded yet.'}</div>`;
+    } else {
+        html += `<div class="receipts-grid">`;
+        const flatData = personalReceipts.map(r => ({
             ...r,
             item_name: r.items?.name || null,
-            display_name: linked ? r.items.name : (r.receipt_name || r.store_name || 'Untitled Receipt'),
-            display_amount: linked ? r.items.price : r.amount,
-            display_date: linked ? r.items.purchase_date : r.purchase_date,
-            display_store: linked ? r.items.store_name : r.store_name,
-            is_linked: linked
-        };
+            display_name: r.items?.name || r.receipt_name || r.store_name || 'Untitled Receipt',
+            display_amount: r.items?.price || r.amount,
+            display_date: r.items?.purchase_date || r.purchase_date,
+            display_store: r.items?.store_name || r.store_name,
+            is_linked: !!r.items
+        }));
+
+        flatData.forEach(r => { html += renderPersonalCard(r, t); });
+        html += `</div>`;
+    }
+    html += `</section>`;
+
+    mainContent.innerHTML = html;
+    restoreModalsAndListeners(personalReceipts);
+}
+
+function renderBusinessCard(r, t) {
+    const dateStr = new Date(r.purchase_date).toLocaleDateString(getLang() === 'ru' ? 'ru-RU' : 'en-US');
+    const shopBadge = r.shop_name
+        ? `<div class="shop-badge"><i class="fa-solid fa-store"></i> ${escapeHtml(r.shop_name)}</div>`
+        : '';
+
+    return `
+        <div class="receipt-card business-card">
+            <div class="receipt-header">
+                <div class="receipt-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                <div class="item-status-badge active">Verified</div>
+            </div>
+            ${shopBadge}
+            <div class="receipt-info">
+                <h3>${escapeHtml(r.item_name || 'Digital Receipt')}</h3>
+                <p>${escapeHtml(r.customer_email)}</p>
+            </div>
+            <div class="receipt-meta">
+                <span class="tag"><i class="fa-solid fa-tag"></i> $${parseFloat(r.gross_total || 0).toFixed(2)}</span>
+                <span class="tag"><i class="fa-regular fa-calendar"></i> ${dateStr}</span>
+                <span class="tag"><i class="fa-solid fa-hashtag"></i> ${escapeHtml(r.id.slice(0, 8).toUpperCase())}</span>
+            </div>
+            <div class="receipt-actions">
+                <button class="btn-action primary btn-download-biz" data-receipt='${JSON.stringify(r).replace(/'/g, "&#39;")}' title="${t.btn_download || 'Скачать'}">
+                    <i class="fa-solid fa-download"></i> <span>${t.btn_download || 'Скачать'}</span>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// ✅ КАРТОЧКА ЛИЧНОГО ЧЕКА
+function renderPersonalCard(r, t) {
+    const isPdf = r.file_type === 'application/pdf';
+    const isImage = r.file_type && r.file_type.startsWith('image/');
+    const iconClass = isPdf ? 'fa-file-pdf' : isImage ? 'fa-file-image' : 'fa-file-invoice';
+    const tags = [];
+
+    if (r.display_amount) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> $${parseFloat(r.display_amount).toFixed(2)}</span>`);
+    if (r.display_date) {
+        const date = new Date(r.display_date).toLocaleDateString(getLang() === 'ru' ? 'ru-RU' : 'en-US');
+        tags.push(`<span class="tag"><i class="fa-regular fa-calendar"></i> ${date}</span>`);
+    }
+    if (r.display_store) tags.push(`<span class="tag"><i class="fa-solid fa-store"></i> ${escapeHtml(r.display_store)}</span>`);
+    if (r.is_linked) tags.push(`<span class="tag"><i class="fa-solid fa-link"></i> ${escapeHtml(r.item_name)}</span>`);
+
+    return `
+        <div class="receipt-card">
+            <div class="receipt-header">
+                <div class="receipt-icon"><i class="fa-solid ${iconClass}"></i></div>
+                <div class="item-status-badge ${r.status === 'verified' ? 'active' : 'warning'}">${r.status === 'verified' ? (t.status_verified || 'Проверен') : (t.status_pending || 'Обработка')}</div>
+            </div>
+            <div class="receipt-info">
+                <h3>${escapeHtml(r.display_name)}</h3>
+            </div>
+            <div class="receipt-meta">${tags.join('')}</div>
+            <div class="receipt-actions">
+                <a href="${escapeHtml(r.file_url)}" target="_blank" class="btn-action primary" title="${t.btn_view || 'Просмотр'}">
+                    <i class="fa-solid fa-eye"></i> <span>${t.btn_view || 'Просмотр'}</span>
+                </a>
+                <button class="btn-action secondary btn-download-receipt" data-url="${escapeHtml(r.file_url)}" data-name="${escapeHtml(r.display_name)}" title="${t.btn_download || 'Скачать'}">
+                    <i class="fa-solid fa-download"></i> <span>${t.btn_download || 'Скачать'}</span>
+                </button>
+                <button class="btn-action danger btn-delete-receipt" data-id="${escapeHtml(r.id)}" data-path="${escapeHtml(r.file_path)}" title="${t.btn_delete || 'Удалить'}">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// ✅ ВОССТАНОВЛЕНИЕ ОБРАБОТЧИКОВ
+function restoreModalsAndListeners(personalReceipts) {
+    const lang = getLang();
+    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+
+    // Скачивание личных чеков
+    document.querySelectorAll('.btn-download-receipt').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const url = btn.dataset.url;
+            const name = btn.dataset.name;
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+            } catch (err) {
+                console.error(err);
+                showToast(lang === 'ru' ? 'Не удалось скачать файл' : 'Failed to download file', 'error');
+            } finally {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        });
     });
 
-    renderReceipts(flatData);
+    // Скачивание бизнес-чеков через генератор
+    document.querySelectorAll('.btn-download-biz').forEach(btn => {
+        btn.addEventListener('click', () => {
+            try {
+                const receipt = JSON.parse(btn.dataset.receipt.replace(/&#39;/g, "'"));
+                const mockShop = {
+                    shop_name: receipt.shop_name || 'Partner Store',
+                    address: receipt.address || '',
+                    tax_id: receipt.tax_id || ''
+                };
+                downloadReceiptPDF(receipt, mockShop);
+            } catch (e) {
+                console.error('Parse error:', e);
+                showToast('Ошибка генерации PDF', 'error');
+            }
+        });
+    });
+
+    // Удаление
+    document.querySelectorAll('.btn-delete-receipt').forEach(btn => {
+        btn.addEventListener('click', () => {
+            pendingDeleteId = btn.dataset.id;
+            pendingDeletePath = btn.dataset.path;
+            document.getElementById('delete-receipt-modal')?.classList.add('active');
+        });
+    });
+
+    // Перезапуск модалок
+    setupUploadModal(window.supabaseClient, window.currentUserId);
+    setupDeleteModal(window.supabaseClient, window.currentUserId);
 }
 
 function renderReceipts(receipts) {
@@ -478,7 +671,8 @@ function setupUploadModal(client, userId) {
 
             showToast(lang === 'ru' ? 'Чек успешно загружен!' : 'Receipt uploaded successfully!', 'success');
             closeModal();
-            await loadReceipts(userId, client);
+            const auth = await requireAuth();
+            if (auth) await loadAllReceipts(auth.user.email, auth.user.id, client);
 
         } catch (err) {
             console.error(err);

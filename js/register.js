@@ -94,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const displayName = `${firstName} ${lastName}`;
 
+                // ✅ В auth.signUp display_name можно оставить как metadata
                 const { data, error } = await supabase.auth.signUp({
                     email,
                     password,
@@ -111,13 +112,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (error) throw error;
 
                 if (data.user) {
-                    await supabase.from('profiles').upsert({
+                    // ✅ В profiles НЕТ display_name, убираем его отсюда
+                    const { error: profileError } = await supabase.from('profiles').upsert({
                         id: data.user.id,
-                        display_name: displayName,
+                        email: email.toLowerCase().trim(),
                         first_name: firstName,
                         last_name: lastName,
                         birthdate: birthdate
                     }, { onConflict: 'id' });
+
+                    if (profileError) {
+                        console.error('❌ Ошибка сохранения профиля:', profileError);
+                        showToast('Ошибка сохранения данных профиля', 'error');
+                    } else {
+                        console.log('✅ Профиль сохранен успешно');
+
+                        await supabase
+                            .from('business_receipts')
+                            .update({ status: 'verified' })
+                            .eq('customer_email', email.toLowerCase().trim())
+                            .eq('status', 'pending');
+                    }
                 }
 
                 if (data.session) {
