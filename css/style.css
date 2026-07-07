@@ -949,3 +949,146 @@ ul {
     opacity: 0.8;
     text-decoration: underline;
 }
+
+/* ============================================================
+   Shared design system + UX polish (site-wide, additive layer).
+   Loaded before page-specific CSS so pages can still override.
+   Goal: one consistent look & feel across every page.
+   ============================================================ */
+:root {
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-pill: 100px;
+    --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.15);
+    --ring: 0 0 0 3px rgba(59, 130, 246, 0.35);
+    --transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    --brand-glow-1: rgba(59, 130, 246, 0.16);
+    --brand-glow-2: rgba(139, 92, 246, 0.14);
+}
+
+[data-theme="dark"] {
+    --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+    --ring: 0 0 0 3px rgba(96, 165, 250, 0.45);
+    --brand-glow-1: rgba(59, 130, 246, 0.14);
+    --brand-glow-2: rgba(139, 92, 246, 0.12);
+}
+
+/* Visible keyboard focus on every interactive element (a11y).
+   Uses :focus-visible so mouse clicks stay clean. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible,
+.btn:focus-visible,
+.icon-btn:focus-visible,
+.circle-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+/* Consistent text selection + form control accent everywhere */
+::selection {
+    background: rgba(59, 130, 246, 0.22);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--primary);
+}
+
+/* Unified button interaction feedback */
+.btn {
+    transition: transform var(--transition), background var(--transition),
+        box-shadow var(--transition), border-color var(--transition),
+        color var(--transition);
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn:disabled,
+.btn[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Round toggle buttons look & behave the same across pages */
+.icon-btn:hover,
+.circle-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Consistent card hover elevation across marketing & app cards */
+.feature-item,
+.timeline-card {
+    transition: transform var(--transition), box-shadow var(--transition),
+        border-color var(--transition);
+}
+
+.feature-item:hover,
+.timeline-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(59, 130, 246, 0.35);
+}
+
+/* Subtle, consistent scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: var(--radius-pill);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary);
+    background-clip: padding-box;
+}
+
+/* Auth pages get the same soft branded backdrop as the rest of the
+   product instead of a stark white screen. */
+.auth-body {
+    background-image:
+        radial-gradient(circle at 12% 18%, var(--brand-glow-1), transparent 42%),
+        radial-gradient(circle at 88% 82%, var(--brand-glow-2), transparent 42%);
+    background-attachment: fixed;
+}
+
+.auth-controls {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    z-index: 10;
+}
+
+@media (max-width: 480px) {
+    .auth-controls {
+        top: 16px;
+        right: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .btn:active,
+    .icon-btn:hover,
+    .circle-btn:hover {
+        transform: none;
+    }
+}
