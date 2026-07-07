@@ -61,9 +61,12 @@
     </nav>
 
     <header class="hero-section">
+        <div class="hero-blob hero-blob-1" aria-hidden="true"></div>
+        <div class="hero-blob hero-blob-2" aria-hidden="true"></div>
         <div class="container hero-grid">
             <div class="hero-text fade-in-up">
-                <div class="badge" data-i18n="hero_badge">🟢 Альфа доступ открыт</div>
+                <div class="badge"><span class="badge-dot"></span><span data-i18n="hero_badge">Альфа доступ
+                        открыт</span></div>
 
                 <h1 data-i18n="hero_title">Гарантия больше не <br><span class="highlight">бумажка в ящике</span></h1>
 
@@ -102,7 +105,7 @@
 
                     <div class="item-footer">
                         <div class="progress-bar-bg">
-                            <div class="progress-bar-fill active" style="width: 78%"></div>
+                            <div class="progress-bar-fill active fill-animated" style="--fill: 78%"></div>
                         </div>
                         <div class="days-left-text active" data-i18n="demo_days_left">Осталось 285 дней</div>
                     </div>
@@ -120,27 +123,27 @@
 
     <section id="features" class="section features-section">
         <div class="container">
-            <div class="section-header reveal">
+            <div class="section-header" data-animate>
                 <h2 data-i18n="feat_title">Все инструменты защиты <br>ваших покупок</h2>
                 <p data-i18n="feat_desc">Мы убрали хаос из гарантийного обслуживания, оставив только то, что
                     действительно важно.</p>
             </div>
 
-            <div class="features-grid">
-                <div class="feature-item reveal">
+            <div class="features-grid" data-animate-group data-animate-step="100">
+                <div class="feature-item" data-animate>
                     <div class="f-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
                     <h3 data-i18n="feat_1_title">Облачный архив чеков</h3>
                     <p data-i18n="feat_1_desc">Загружайте фото чеков для надёжного хранения. Данные вводятся вручную,
                         автозаполнение — в разработке.
                     </p>
                 </div>
-                <div class="feature-item reveal">
+                <div class="feature-item" data-animate>
                     <div class="f-icon"><i class="fa-solid fa-stopwatch"></i></div>
                     <h3 data-i18n="feat_2_title">Живой таймер гарантии</h3>
                     <p data-i18n="feat_2_desc">Точный расчёт сроков с учётом даты покупки и условий производителя.
                         Больше никаких «вроде год назад».</p>
                 </div>
-                <div class="feature-item reveal">
+                <div class="feature-item" data-animate>
                     <div class="f-icon"><i class="fa-solid fa-bell"></i></div>
                     <h3 data-i18n="feat_3_title">Умные напоминания</h3>
                     <p data-i18n="feat_3_desc">Получайте уведомления за 30, 7 и 1 день до окончания гарантии. Не
@@ -152,12 +155,12 @@
 
     <section id="process" class="section process-section bg-dark">
         <div class="container">
-            <div class="section-header white reveal">
+            <div class="section-header white" data-animate>
                 <h2 data-i18n="proc_title">Путь от покупки до спокойствия</h2>
             </div>
 
-            <div class="timeline">
-                <div class="timeline-item reveal">
+            <div class="timeline" data-animate-group data-animate-step="140">
+                <div class="timeline-item" data-animate="left">
                     <div class="t-number">1</div>
                     <div class="t-content">
                         <h3 data-i18n="proc_1_title">Добавление товаров</h3>
@@ -165,7 +168,7 @@
                             фото чека для подтверждения.</p>
                     </div>
                 </div>
-                <div class="timeline-item reveal">
+                <div class="timeline-item" data-animate="fade">
                     <div class="t-number">2</div>
                     <div class="t-content">
                         <h3 data-i18n="proc_2_title">Расчет</h3>
@@ -173,7 +176,7 @@
                             в ваш личный кабинет.</p>
                     </div>
                 </div>
-                <div class="timeline-item reveal">
+                <div class="timeline-item" data-animate="right">
                     <div class="t-number">3</div>
                     <div class="t-content">
                         <h3 data-i18n="proc_3_title">Мониторинг</h3>
@@ -186,7 +189,7 @@
     </section>
 
     <section id="vision" class="vision-section">
-        <div class="container vision-wrapper reveal">
+        <div class="container vision-wrapper" data-animate="zoom">
             <div class="vision-content">
                 <h2 data-i18n="vision_title">Строим мировую инфраструктуру доверия</h2>
                 <p data-i18n="vision_desc">Наша цель — создать единый стандарт цифрового владения. В будущем Valuon
@@ -234,6 +237,7 @@
     </footer>
 
     <script src="js/theme.js"></script>
+    <script src="js/animations.js"></script>
     <script type="module" src="js/script.js"></script>
 </body>
 

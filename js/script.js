@@ -10,7 +10,7 @@ const translations = {
     ru: {
         page_title: "Valuon — Главная",
         nav_features: "Возможности", nav_how: "Как это работает", nav_mission: "Миссия", nav_login: "Вход",
-        hero_badge: "🟢 Альфа доступ открыт",
+        hero_badge: "Альфа доступ открыт",
         hero_title: 'Гарантия больше не <br><span class="highlight">бумажка в ящике</span>',
         hero_desc: "Цифровой профиль для каждой покупки. Храните чеки, отслеживайте гарантии и никогда не теряйте право на бесплатный ремонт.",
         form_placeholder: "Ваш email",
@@ -44,7 +44,7 @@ const translations = {
     en: {
         page_title: "Valuon — Home",
         nav_features: "Features", nav_how: "How it works", nav_mission: "Mission", nav_login: "Login",
-        hero_badge: "🟢 Alpha Access Open",
+        hero_badge: "Alpha Access Open",
         hero_title: 'Warranty is no longer <br><span class="highlight">paper in a drawer</span>',
         hero_desc: "A digital profile for every purchase. Store receipts, track warranties and never lose your right to free repair.",
         form_placeholder: "Your email",
@@ -131,15 +131,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const revealElements = document.querySelectorAll('.reveal');
-    const revealObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('active');
-            }
-        });
-    }, { threshold: 0.1 });
+    if (revealElements.length) {
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1 });
 
-    revealElements.forEach(el => revealObserver.observe(el));
+        revealElements.forEach(el => revealObserver.observe(el));
+    }
+
+    // Subtle shadow/background bump on the fixed navbar once the page scrolls.
+    const navbar = document.querySelector('.navbar');
+    if (navbar) {
+        const updateNavbarScrollState = () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 12);
+        };
+        updateNavbarScrollState();
+        window.addEventListener('scroll', updateNavbarScrollState, { passive: true });
+    }
 
     const form = document.getElementById('waitlist-form');
     const messageEl = document.getElementById('form-message');
