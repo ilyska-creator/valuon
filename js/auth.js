@@ -60,9 +60,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             const rateLimitCheck = checkLoginRateLimit(email);
             if (!rateLimitCheck.allowed) {
                 const lang = localStorage.getItem('valuon-lang') === 'ru';
-                showToast(lang 
+                showToast(lang
                     ? `Слишком много попыток входа. Попробуйте через ${rateLimitCheck.resetIn}`
                     : `Too many login attempts. Try again in ${rateLimitCheck.resetIn}`);
+                return;
+            }
+
+            const captchaToken = typeof turnstile !== 'undefined' ? turnstile.getResponse() : null;
+            if (!captchaToken) {
+                const lang = localStorage.getItem('valuon-lang') === 'ru';
+                showToast(lang ? 'Подтвердите, что вы не робот' : 'Please complete the captcha', 'warning');
                 return;
             }
 
@@ -70,7 +77,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 setLoadingButton(btn);
 
                 const client = getSupabaseClient(rememberMe);
-                const { data, error } = await client.auth.signInWithPassword({ email, password });
+                const { data, error } = await client.auth.signInWithPassword({
+                    email,
+                    password,
+                    options: { captchaToken }
+                });
 
                 if (error) throw error;
 
@@ -91,6 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     : 'Invalid email or password';
                 showToast(msg);
                 resetLoadingButton(btn, originalText);
+                if (typeof turnstile !== 'undefined') turnstile.reset();
             }
         });
     }
@@ -153,7 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Проверка пусто ли поле
             if (!email) {
-                showToast(lang 
+                showToast(lang
                     ? 'Введите email адрес'
                     : 'Please enter your email');
                 return;
@@ -169,7 +181,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const rateLimitCheck = checkLoginRateLimit(`reset_${email}`);
             if (!rateLimitCheck.allowed) {
-                showToast(lang 
+                showToast(lang
                     ? `Слишком много попыток. Попробуйте через ${rateLimitCheck.resetIn}`
                     : `Too many attempts. Try again in ${rateLimitCheck.resetIn}`);
                 return;

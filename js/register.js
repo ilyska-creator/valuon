@@ -96,9 +96,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Проверка rate limiting для регистрации
                 const rateLimitCheck = checkSignupRateLimit(email);
                 if (!rateLimitCheck.allowed) {
-                    throw new Error(lang === 'ru' 
+                    throw new Error(lang === 'ru'
                         ? 'Слишком много попыток регистрации с этого email. Попробуйте позже.'
                         : 'Too many signup attempts from this email. Try again later.');
+                }
+
+                const captchaToken = typeof turnstile !== 'undefined' ? turnstile.getResponse() : null;
+                if (!captchaToken) {
+                    throw new Error(lang === 'ru' ? 'Подтвердите, что вы не робот' : 'Please complete the captcha');
                 }
 
                 const displayName = `${firstName} ${lastName}`;
@@ -108,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     email,
                     password,
                     options: {
+                        captchaToken,
                         data: {
                             display_name: displayName,
                             first_name: firstName,
@@ -136,11 +142,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         console.log('✅ Профиль сохранен успешно');
 
-                        await supabase
+                        const { error: lazyBindError, count } = await supabase
                             .from('business_receipts')
                             .update({ status: 'verified' })
                             .eq('customer_email', email.toLowerCase().trim())
-                            .eq('status', 'pending');
+                            .eq('status', 'pending')
+                            .select('id', { count: 'exact' });
+
+                        if (lazyBindError) {
+                            // Не блокируем регистрацию — но обязательно логируем,
+                            // чтобы не терять факт несработавшей привязки чеков молча.
+                            console.error('❌ Ошибка привязки бизнес-чеков (lazy binding):', lazyBindError);
+                        } else {
+                            console.log(`✅ Привязано бизнес-чеков: ${count ?? 0}`);
+                        }
                     }
                 }
 
@@ -162,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast(errorMsg, 'error');
                 btn.innerHTML = originalText;
                 btn.disabled = false;
+                if (typeof turnstile !== 'undefined') turnstile.reset();
             }
         });
     }

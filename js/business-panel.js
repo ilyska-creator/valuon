@@ -337,6 +337,10 @@ async function initBusinessPanel() {
             </div>`;
             }).join('');
 
+            if (typeof applyBusinessTranslations === 'function') {
+                applyBusinessTranslations();
+            }
+
             listEl.grid.querySelectorAll('.btn-delete-receipt').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const receiptId = btn.dataset.id;
@@ -369,7 +373,7 @@ async function initBusinessPanel() {
                             window.showToast(successMsg, 'success');
                             deleteModal.classList.add('is-hidden');
                             await refreshDashboard(client, shopId, statsEl, listEl);
-                            
+
                             // Reapply translations after refresh
                             if (typeof applyBusinessTranslations === 'function') {
                                 applyBusinessTranslations();

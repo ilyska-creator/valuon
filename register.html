@@ -13,6 +13,7 @@
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 
 <body class="auth-body">
@@ -84,6 +85,8 @@
                                 style="color:var(--primary)">условиями</a></span>
                     </label>
                 </div>
+
+                <div class="cf-turnstile" data-sitekey="0x4AAAAAADxC9yNLOh3uKLe-" data-theme="auto" data-animate></div>
 
                 <button type="submit" class="btn btn-primary auth-btn" data-animate
                     data-i18n="btn_register">Зарегистрироваться</button>

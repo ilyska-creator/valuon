@@ -366,9 +366,6 @@ function translateReceiptCards(t) {
     });
 }
 
-/**
- * Переключить язык и применить переводы
- */
 function toggleBusinessLanguage() {
     businessCurrentLang = businessCurrentLang === 'ru' ? 'en' : 'ru';
     localStorage.setItem('valuon-lang', businessCurrentLang);
