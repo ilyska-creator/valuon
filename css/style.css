@@ -1,5 +1,5 @@
 :root {
-    
+
     --primary: #3b82f6;
     --primary-dark: #2563eb;
     --primary-light: #60a5fa;
@@ -12,10 +12,10 @@
     --warning: #f59e0b;
     --error: #ef4444;
 
-    
+
     --font-main: 'Manrope', sans-serif;
 
-    
+
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
@@ -28,7 +28,7 @@
     --space-16: 64px;
     --space-20: 80px;
 
-    
+
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
@@ -36,23 +36,23 @@
     --radius-2xl: 24px;
     --radius-full: 9999px;
 
-    
+
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
     --shadow-xl: 0 20px 60px -15px rgba(0, 0, 0, 0.2);
 
-    
+
     --transition-fast: 0.15s ease;
     --transition-base: 0.3s ease;
     --transition-slow: 0.5s ease;
 
-    
+
     --bg-body: var(--white);
     --card-bg: rgba(255, 255, 255, 0.95);
     --nav-bg: rgba(255, 255, 255, 0.9);
 
-    
+
     --text-main: var(--dark);
     --text-muted: var(--secondary);
 }
@@ -1110,12 +1110,10 @@ ul {
         right: -100%;
         top: 70px;
         flex-direction: column;
-        background: var(--bg-body);
         width: 100%;
         text-align: center;
         transition: 0.3s;
         padding: 40px 0;
-        box-shadow: var(--shadow-lg);
         border-bottom: 1px solid var(--border);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
@@ -1386,8 +1384,8 @@ ul {
 [data-animate] {
     opacity: 0;
     transform: translateY(28px);
-    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     transition-delay: var(--anim-delay, 0ms);
     will-change: opacity, transform;
 }

@@ -1,19 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 (function () {
     'use strict';
 
@@ -37,9 +21,9 @@
             return;
         }
 
-        
+
         document.querySelectorAll('[data-animate-group]').forEach(function (group) {
-            var step = parseInt(group.dataset.animateStep, 10) || 90;
+            var step = parseInt(group.dataset.animateStep, 10) || 45;
             group.querySelectorAll('[data-animate]').forEach(function (el, i) {
                 if (!el.style.getPropertyValue('--anim-delay')) {
                     el.style.setProperty('--anim-delay', (i * step) + 'ms');
@@ -47,7 +31,7 @@
             });
         });
 
-        
+
         elements.forEach(function (el) {
             if (el.dataset.delay) {
                 el.style.setProperty('--anim-delay', parseInt(el.dataset.delay, 10) + 'ms');
