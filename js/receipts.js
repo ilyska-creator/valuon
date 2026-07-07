@@ -129,7 +129,11 @@ function renderSplitReceipts(businessReceipts, personalReceipts, client, userId)
     html += `<h2><i class="fa-solid fa-store" style="color: var(--primary); margin-right: 8px;"></i> ${t.section_business_receipts || 'Чеки от партнеров'}</h2>`;
 
     if (businessReceipts.length === 0) {
-        html += `<div class="empty-state">${t.no_business_receipts || (lang === 'ru' ? 'У вас пока нет автоматически выписанных чеков.' : 'No business receipts yet.')}</div>`;
+        html += `<div class="empty-state" data-animate="zoom">
+            <div class="empty-icon"><i class="fa-solid fa-store"></i></div>
+            <h3>${lang === 'ru' ? 'Пока нет чеков от партнёров' : 'No business receipts yet'}</h3>
+            <p>${lang === 'ru' ? 'Как только магазин-партнёр Valuon выпишет чек на ваш email, он появится здесь автоматически.' : 'Once a Valuon partner store issues a receipt to your email, it will appear here automatically.'}</p>
+        </div>`;
     } else {
         html += `<div class="receipts-grid">`;
         businessReceipts.forEach(r => { html += renderBusinessCard(r, t); });
@@ -143,7 +147,14 @@ function renderSplitReceipts(businessReceipts, personalReceipts, client, userId)
     html += `<h2 data-i18n="section_documents">Ваши документы</h2>`;
 
     if (personalReceipts.length === 0) {
-        html += `<div class="empty-state">${lang === 'ru' ? 'У вас пока нет загруженных чеков.' : 'No personal receipts uploaded yet.'}</div>`;
+        html += `<div class="empty-state" data-animate="zoom">
+            <div class="empty-icon"><i class="fa-solid fa-receipt"></i></div>
+            <h3>${lang === 'ru' ? 'Пока нет загруженных чеков' : 'No personal receipts yet'}</h3>
+            <p>${lang === 'ru' ? 'Сфотографируйте или загрузите первый чек — он останется здесь навсегда.' : 'Photograph or upload your first receipt — it will stay here for good.'}</p>
+            <button type="button" class="btn btn-outline empty-state-cta" id="empty-upload-receipt-btn">
+                <i class="fa-solid fa-upload"></i> ${lang === 'ru' ? 'Загрузить чек' : 'Upload receipt'}
+            </button>
+        </div>`;
     } else {
         html += `<div class="receipts-grid">`;
         const flatData = personalReceipts.map(r => ({
@@ -338,6 +349,7 @@ function restoreListeners(client, userId) {
     // перепривязываем только САМ триггер открытия, не трогая внутренности модалки.
     if (uploadModal) {
         document.getElementById('upload-receipt-btn')?.addEventListener('click', uploadModal.open);
+        document.getElementById('empty-upload-receipt-btn')?.addEventListener('click', uploadModal.open);
 
         const dropZone = document.getElementById('drop-zone');
         if (dropZone) {

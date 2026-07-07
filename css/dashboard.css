@@ -736,6 +736,45 @@
     color: var(--secondary);
     font-size: 1.1rem;
     grid-column: 1 / -1;
+    animation: emptyStateIn 0.5s ease;
+}
+
+@keyframes emptyStateIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.empty-icon {
+    font-size: 2.75rem;
+    margin-bottom: 16px;
+    opacity: 0.35;
+    color: var(--primary);
+}
+
+.empty-state h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    font-size: 0.95rem;
+    max-width: 380px;
+    margin: 0 auto 20px;
+    line-height: 1.5;
+    color: var(--secondary);
+}
+
+.empty-state-cta {
+    margin: 0 auto;
 }
 
 .empty-state.error {

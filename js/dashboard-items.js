@@ -39,7 +39,6 @@ async function loadItems(userId, client) {
     const grid = document.querySelector('.items-grid');
     if (!grid) return;
 
-    // Безопасно устанавливаем HTML для загрузки (контролируемый HTML)
     grid.innerHTML = '<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Загрузка...</div>';
 
     const { data: items, error } = await client
@@ -110,8 +109,23 @@ function renderItems(items) {
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
     if (items.length === 0) {
-        // Безопасно устанавливаем пустое состояние (контролируемый HTML)
-        grid.innerHTML = `<p class="empty-state" data-i18n="empty_state">${escapeHtml(t.empty_state || '')}</p>`;
+        const emptyTitle = t.empty_state_title || (lang === 'ru' ? 'Пока нет добавленных вещей' : 'No items yet');
+        const emptyText = t.empty_state || (lang === 'ru' ? 'Добавьте первую покупку — чек, гарантию, серийный номер.' : 'Add your first purchase — receipt, warranty, serial number.');
+        const emptyCta = t.empty_state_cta || (lang === 'ru' ? 'Добавить вещь' : 'Add item');
+
+        grid.innerHTML = `
+            <div class="empty-state" data-animate="zoom">
+                <div class="empty-icon"><i class="fa-solid fa-box-open"></i></div>
+                <h3>${escapeHtml(emptyTitle)}</h3>
+                <p>${escapeHtml(emptyText)}</p>
+                <button type="button" class="btn btn-outline empty-state-cta" id="empty-add-item-btn">
+                    <i class="fa-solid fa-plus"></i> ${escapeHtml(emptyCta)}
+                </button>
+            </div>`;
+
+        document.getElementById('empty-add-item-btn')?.addEventListener('click', () => {
+            document.getElementById('add-item-btn')?.click();
+        });
         return;
     }
 

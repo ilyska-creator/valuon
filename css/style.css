@@ -137,7 +137,8 @@ ul {
 }
 
 .btn-primary:active {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.97);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
 }
 
 .btn-outline {
@@ -150,6 +151,10 @@ ul {
     border-color: var(--primary);
     color: var(--primary);
     background: rgba(59, 130, 246, 0.05);
+}
+
+.btn-outline:active {
+    transform: scale(0.97);
 }
 
 /* ============================================
