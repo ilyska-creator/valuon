@@ -69,8 +69,8 @@ export function downloadReceiptPDF(receipt, shop) {
         const vatAmount = receipt.vat_amount;
         const grossTotal = receipt.gross_total;
 
-        // Формируем данные для QR (фискальная подпись)
-        const qrData = `RECEIPT:${receiptSerial}|DATE:${purchaseDate}|TAX:${vatAmount.toFixed(2)}|TOTAL:${grossTotal.toFixed(2)}|SELLER:${taxId}|HASH:${receipt.fiscal_hash}`;
+        // Формируем данные для QR (фискальная подпись Ed25519)
+        const qrData = `RECEIPT:${receiptSerial}|DATE:${purchaseDate}|TAX:${vatAmount.toFixed(2)}|TOTAL:${grossTotal.toFixed(2)}|SELLER:${taxId}|SIG:${receipt.fiscal_hash}`;
 
         let y = 0;
         const leftCol = 20;

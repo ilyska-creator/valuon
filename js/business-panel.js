@@ -1,5 +1,6 @@
 import { requireAuth } from './dashboard-auth.js';
 import { downloadReceiptPDF } from './receipt-generator.js';
+import Ed25519Signer from './crypto-signature.js';
 
 let currentClient = null;
 let currentUser = null;
@@ -128,12 +129,29 @@ async function initBusinessPanel() {
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Создание...';
 
             try {
+                // Check Ed25519 support
+                if (!Ed25519Signer.isSupported()) {
+                    window.showToast('Ваш браузер не поддерживает Ed25519. Пожалуйста, используйте Chrome 137+, Firefox 129+ или Safari 17+', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                    return;
+                }
+
                 const fd = new FormData(e.target);
+                
+                // Generate Ed25519 key pair for the shop
+                const signer = new Ed25519Signer();
+                const keyPair = await signer.generateKeyPair();
+                const publicKeyBase64 = await signer.exportPublicKey();
+                const privateKeyBase64 = await signer.exportPrivateKey();
+
                 const { error } = await client.from('shops').insert([{
                     owner_id: currentUser.id,
                     shop_name: fd.get('shop_name'),
                     tax_id: fd.get('tax_id'),
-                    address: fd.get('address')
+                    address: fd.get('address'),
+                    public_key: publicKeyBase64,
+                    private_key: privateKeyBase64
                 }]);
 
                 if (error) {
@@ -141,7 +159,7 @@ async function initBusinessPanel() {
                     return;
                 }
 
-                window.showToast('Магазин создан!', 'success');
+                window.showToast('Магазин создан с криптографической подписью!', 'success');
 
                 const { data: newShop } = await client
                     .from('shops')
@@ -156,6 +174,9 @@ async function initBusinessPanel() {
                     renderView(views.dashboard);
                     await refreshDashboard(client, newShop.id, stats, list);
                 }
+            } catch (err) {
+                console.error('Shop creation error:', err);
+                window.showToast('Ошибка создания магазина: ' + err.message, 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
@@ -225,9 +246,20 @@ async function initBusinessPanel() {
                 const vat = net * (vatRate / 100);
                 const gross = net + vat;
 
-                const hashData = `${currentShop.tax_id}|${fd.get('item_name')}|${net}|${vat}|${fd.get('purchase_date')}`;
-                const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(hashData));
-                const fiscalHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+                // Create Ed25519 signature instead of SHA-256 hash
+                const signer = new Ed25519Signer();
+                
+                // Import shop's private key
+                if (!currentShop.private_key) {
+                    window.showToast('Криптографический ключ магазина не найден. Пересоздайте магазин.', 'error');
+                    return;
+                }
+                
+                const privateKey = await signer.importPrivateKey(currentShop.private_key);
+                
+                // Data to sign: tax_id|item_name|net|vat|purchase_date
+                const signData = `${currentShop.tax_id}|${fd.get('item_name')}|${net}|${vat}|${fd.get('purchase_date')}`;
+                const fiscalSignature = await signer.sign(signData, privateKey);
 
                 // ⚠️ Раньше здесь был прямой select из profiles по email — RLS
                 // тихо возвращал null для чужих строк, и статус всегда получался
@@ -253,7 +285,7 @@ async function initBusinessPanel() {
                     purchase_date: fd.get('purchase_date'),
                     payment_method: fd.get('payment_method'),
                     status: status, // ✅ ПЕРЕДАЕМ ВЫЧИСЛЕННЫЙ СТАТУС
-                    fiscal_hash: fiscalHash,
+                    fiscal_hash: fiscalSignature, // Ed25519 signature instead of SHA-256 hash
                     shop_name: currentShop.shop_name,
                     tax_id: currentShop.tax_id,
                     address: currentShop.address

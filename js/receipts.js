@@ -404,7 +404,6 @@ async function populateItemSelect(userId, client) {
     }
 }
 
-// Модалка удаления: внутренности (confirm/cancel/фон) настраиваются один раз за сессию.
 function setupDeleteModal(client, userId) {
     const modal = document.getElementById('delete-receipt-modal');
     const confirmBtn = document.getElementById('confirm-delete-receipt');
@@ -447,7 +446,6 @@ function setupDeleteModal(client, userId) {
             showToast(lang === 'ru' ? 'Чек удалён' : 'Receipt deleted', 'success');
             closeDeleteModal();
 
-            // ФИКС #3: раньше здесь был вызов несуществующей loadReceipts(...)
             await loadAllReceipts(currentUserEmail, userId, client);
 
         } catch (err) {
@@ -465,9 +463,7 @@ function setupDeleteModal(client, userId) {
     });
 }
 
-// Модалка загрузки: создаётся и настраивается РОВНО ОДИН РАЗ за жизнь страницы.
-// Возвращает { open, setFile } — их переиспользует restoreListeners() при каждом рендере,
-// вместо того чтобы навешивать обработчики на форму заново (ФИКС #2).
+
 function createUploadModal(client, userId) {
     const modal = document.getElementById('upload-modal');
     const closeBtn = document.getElementById('close-upload-modal');
@@ -617,7 +613,6 @@ function createUploadModal(client, userId) {
             const purchaseDate = form.querySelector('[name="purchase_date"]').value;
             const storeName = form.querySelector('[name="store_name"]').value.trim();
             const rawItemId = form.querySelector('[name="item_id"]').value;
-            // ФИКС #5: item.id может быть UUID — Number(uuid) даёт NaN. Передаём как есть.
             const itemId = rawItemId || null;
 
             const { error: dbError } = await client.from('receipts').insert({
