@@ -16,11 +16,11 @@
 </head>
 
 <body class="auth-body">
-    <a href="index.html" class="back-link" data-i18n="back_home">← На главную</a>
+    <a href="index.html" class="back-link" data-i18n="back_home" data-animate="fade">← На главную</a>
 
     <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-logo">
+        <div class="auth-card" data-animate-group data-animate-step="80">
+            <div class="auth-logo" data-animate="zoom">
                 <svg width="48" height="48" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M20 4L5 10V20C5 29.5 11.5 37.5 20 39C28.5 37.5 35 29.5 35 20V10L20 4Z" fill="#3b82f6"
                         stroke="#2563eb" stroke-width="1.5" stroke-linejoin="round" />
@@ -29,15 +29,15 @@
                 </svg>
                 <h1 data-i18n="auth_title">С возвращением!</h1>
             </div>
-            <p class="auth-subtitle" data-i18n="auth_subtitle">Введите данные для входа в аккаунт</p>
+            <p class="auth-subtitle" data-i18n="auth_subtitle" data-animate>Введите данные для входа в аккаунт</p>
 
             <form id="login-form" class="auth-form">
-                <div class="input-group">
+                <div class="input-group" data-animate>
                     <label for="email" data-i18n="label_email">Email</label>
                     <input type="email" id="email" required placeholder="name@example.com" autocomplete="email">
                 </div>
 
-                <div class="input-group">
+                <div class="input-group" data-animate>
                     <label for="password" data-i18n="label_password">Пароль</label>
                     <div class="password-wrapper">
                         <input type="password" id="password" required placeholder="••••••••"
@@ -48,7 +48,7 @@
                     </div>
                 </div>
 
-                <div class="form-options">
+                <div class="form-options" data-animate>
                     <label class="checkbox-label">
                         <input type="checkbox" id="remember">
                         <span data-i18n="login_remember">Запомнить меня</span>
@@ -56,10 +56,10 @@
                     <a href="#" class="forgot-link" data-i18n="login_forgot">Забыли пароль?</a>
                 </div>
 
-                <button type="submit" class="btn btn-primary auth-btn" data-i18n="btn_login">Войти</button>
+                <button type="submit" class="btn btn-primary auth-btn" data-i18n="btn_login" data-animate>Войти</button>
             </form>
 
-            <div class="auth-footer">
+            <div class="auth-footer" data-animate>
                 <span data-i18n="footer_text">Нет аккаунта?</span>
                 <a href="register.html" data-i18n="footer_link">Зарегистрироваться</a>
             </div>
@@ -103,6 +103,7 @@
     <script src="js/toast.js"></script>
     <script type="module" src="js/auth.js"></script>
     <script src="js/theme.js"></script>
+    <script src="js/animations.js"></script>
     <div id="toast-container" class="toast-container"></div>
 </body>
 

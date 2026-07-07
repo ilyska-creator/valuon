@@ -48,7 +48,7 @@
     <main class="business-main">
         <section id="create-shop-view" class="view">
             <div class="shop-setup-wrapper">
-                <div class="card shop-setup-card max-w-md">
+                <div class="card shop-setup-card max-w-md" data-animate="zoom">
                     <div class="shop-setup-header">
                         <div class="card-icon large-icon"><i class="fa-solid fa-store"></i></div>
                         <h1>Регистрация магазина</h1>
@@ -89,14 +89,14 @@
             </div>
         </section>
         <section id="shop-dashboard-view" class="view is-active">
-            <div class="content-header">
+            <div class="content-header" data-animate>
                 <h1>Мои чеки</h1>
                 <button id="open-create-receipt-btn" class="btn btn-primary">
                     <i class="fa-solid fa-plus"></i> Создать чек
                 </button>
             </div>
 
-            <div class="shop-info-card mb-6">
+            <div class="shop-info-card mb-6" data-animate>
                 <div class="shop-icon">
                     <i class="fa-solid fa-store"></i>
                 </div>
@@ -112,15 +112,15 @@
                 </div>
             </div>
 
-            <div class="stats-grid mb-6">
-                <div class="stat-card">
+            <div class="stats-grid mb-6" data-animate-group data-animate-step="110">
+                <div class="stat-card" data-animate="zoom">
                     <div class="stat-icon blue"><i class="fa-solid fa-file-invoice"></i></div>
                     <div class="stat-info">
                         <span class="stat-label">Всего чеков</span>
                         <span class="stat-value" id="total-receipts">0</span>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" data-animate="zoom">
                     <div class="stat-icon orange"><i class="fa-solid fa-hourglass-half"></i></div>
                     <div class="stat-info">
                         <span class="stat-label">Ожидают привязки</span>
@@ -129,7 +129,7 @@
                 </div>
             </div>
 
-            <div class="receipts-list-container">
+            <div class="receipts-list-container" data-animate>
                 <h2 class="section-title">Выписанные чеки</h2>
                 <div id="business-receipts-grid" class="items-grid">
                 </div>
@@ -227,6 +227,7 @@
 
     <script src="js/toast.js"></script>
     <script type="module" src="js/business-panel.js"></script>
+    <script src="js/animations.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

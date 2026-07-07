@@ -87,13 +87,13 @@
 
     <main class="main-content">
         <section id="view-items" class="dashboard-view active">
-            <header class="content-header">
+            <header class="content-header" data-animate>
                 <h1 data-i18n="dashboard_title">Мои активы</h1>
                 <button id="add-item-btn" class="btn btn-primary"><span data-i18n="btn_add">Добавить
                         вещь</span></button>
             </header>
-            <div class="stats-grid">
-                <div class="stat-card">
+            <div class="stats-grid" data-animate-group data-animate-step="100">
+                <div class="stat-card" data-animate="zoom">
                     <div class="stat-icon blue"><i class="fa-solid fa-laptop"></i></div>
                     <div class="stat-info">
                         <span class="stat-label" data-i18n="stat_total">Всего вещей</span>
@@ -101,7 +101,7 @@
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div class="stat-card" data-animate="zoom">
                     <div class="stat-icon green"><i class="fa-solid fa-shield-halved"></i></div>
                     <div class="stat-info">
                         <span class="stat-label" data-i18n="stat_active">Активных гарантий</span>
@@ -109,7 +109,7 @@
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div class="stat-card" data-animate="zoom">
                     <div class="stat-icon orange"><i class="fa-solid fa-triangle-exclamation"></i></div>
                     <div class="stat-info">
                         <span class="stat-label" data-i18n="stat_expiring">Истекают скоро</span>
@@ -117,7 +117,7 @@
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div class="stat-card" data-animate="zoom">
                     <div class="stat-icon red"><i class="fa-solid fa-circle-xmark"></i></div>
                     <div class="stat-info">
                         <span class="stat-label" data-i18n="stat_expired">Истекла гарантия</span>
@@ -125,7 +125,7 @@
                     </div>
                 </div>
             </div>
-            <section class="items-section">
+            <section class="items-section" data-animate>
                 <h2 data-i18n="section_recent">Недавние покупки</h2>
                 <div class="items-grid"></div>
             </section>
@@ -148,9 +148,9 @@
                 <h1 data-i18n="nav_settings">Настройки</h1>
             </header>
 
-            <div class="settings-container">
+            <div class="settings-container" data-animate-group data-animate-step="120">
 
-                <div class="settings-section">
+                <div class="settings-section" data-animate>
                     <h2><i class="fa-solid fa-user"></i> <span data-i18n="settings_profile">Профиль</span></h2>
 
                     <div class="profile-fields">
@@ -204,7 +204,7 @@
                     </div>
                 </div>
 
-                <div class="settings-section">
+                <div class="settings-section" data-animate>
                     <h2><i class="fa-solid fa-bell"></i> <span data-i18n="settings_notifications">Уведомления</span>
                     </h2>
 
@@ -234,7 +234,7 @@
                     </div>
                 </div>
 
-                <div class="settings-section danger-zone disabled-section">
+                <div class="settings-section danger-zone disabled-section" data-animate>
                     <h2><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="settings_danger">Опасная
                             зона</span></h2>
 
@@ -428,6 +428,7 @@
     <script type="module" src="js/dashboard-notifications.js"></script>
     <script src="js/dashboard-nav.js"></script>
     <script type="module" src="js/dashboard-settings.js"></script>
+    <script src="js/animations.js"></script>
 </body>
 
 </html>

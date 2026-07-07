@@ -76,19 +76,19 @@
     </aside>
 
     <main class="main-content">
-        <header class="content-header">
+        <header class="content-header" data-animate>
             <h1 data-i18n="nav_receipts">Чеки и документы</h1>
             <button class="btn btn-primary" id="upload-receipt-btn"><i class="fa-solid fa-upload"></i> <span
                     data-i18n="btn_upload">Загрузить чек</span></button>
         </header>
 
-        <div class="upload-zone" id="drop-zone">
+        <div class="upload-zone" id="drop-zone" data-animate>
             <i class="fa-solid fa-cloud-arrow-up"></i>
             <p data-i18n="upload_title">Перетащите фото чека сюда</p>
             <span data-i18n="upload_hint">или нажмите для выбора файла • JPG, PNG, PDF • Макс. 10 МБ</span>
         </div>
 
-        <section class="items-section">
+        <section class="items-section" data-animate data-delay="120">
             <h2 data-i18n="section_documents">Ваши документы</h2>
             <div class="receipts-grid"></div>
         </section>
@@ -181,6 +181,7 @@
     <script src="js/toast.js"></script>
     <script src="js/dashboard-lang.js"></script>
     <script type="module" src="js/receipts.js"></script>
+    <script src="js/animations.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
