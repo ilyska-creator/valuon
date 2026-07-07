@@ -1,9 +1,9 @@
 const businessTranslations = {
     ru: {
-        // Top bar
+        
         back_to_dashboard: 'Вернуться в личный кабинет',
 
-        // Create shop section
+        
         shop_registration_title: 'Регистрация магазина',
         shop_registration_desc: 'Создайте цифровой профиль вашего бизнеса для автоматической выдачи чеков клиентам.',
 
@@ -21,7 +21,7 @@ const businessTranslations = {
 
         register_shop_btn: 'Зарегистрировать магазин',
 
-        // Dashboard section
+        
         my_receipts: 'Мои чеки',
         create_receipt_btn: 'Создать чек',
 
@@ -33,7 +33,7 @@ const businessTranslations = {
         no_receipts_desc: 'Нажмите кнопку «Создать чек», чтобы выдать первый цифровой документ клиенту.',
         create_first_receipt_btn: 'Создать первый чек',
 
-        // Create receipt modal
+        
         issue_receipt_title: 'Выписать новый чек',
 
         customer_email_label: 'Email покупателя *',
@@ -62,15 +62,14 @@ const businessTranslations = {
         cancel_btn: 'Отмена',
         issue_receipt_submit: 'Выписать чек',
 
-        // Delete confirmation modal
+        
         delete_receipt_title: 'Удалить чек?',
         delete_receipt_desc: 'Это действие необратимо. Чек будет удален из системы безвозвратно.',
         delete_btn: 'Удалить',
 
-        // Theme toggle
         theme_toggle_title: 'Переключить тему',
 
-        // Receipt cards
+        
         status_verified: 'Привязан к клиенту',
         status_pending: 'Ожидает регистрации',
         download_btn: 'Скачать',
@@ -78,15 +77,13 @@ const businessTranslations = {
         delete_receipt_title: 'Удалить чек',
         receipt_deleted_success: 'Чек успешно удален',
         receipt_delete_error: 'Ошибка при удалении чека',
-        receipt_not_found: 'Не удалось найти данные чека',
-        data_refresh_error: 'Не удалось обновить данные. Попробуйте позже.',
         data_load_error: 'Ошибка загрузки данных',
     },
     en: {
-        // Top bar
+        
         back_to_dashboard: 'Back to Dashboard',
 
-        // Create shop section
+        
         shop_registration_title: 'Shop Registration',
         shop_registration_desc: 'Create a digital profile for your business to automatically issue receipts to customers.',
 
@@ -104,7 +101,7 @@ const businessTranslations = {
 
         register_shop_btn: 'Register Shop',
 
-        // Dashboard section
+        
         my_receipts: 'My Receipts',
         create_receipt_btn: 'Create Receipt',
 
@@ -116,7 +113,6 @@ const businessTranslations = {
         no_receipts_desc: 'Click the "Create Receipt" button to issue your first digital document to a customer.',
         create_first_receipt_btn: 'Create First Receipt',
 
-        // Create receipt modal
         issue_receipt_title: 'Issue New Receipt',
 
         customer_email_label: 'Customer Email *',
@@ -145,15 +141,12 @@ const businessTranslations = {
         cancel_btn: 'Cancel',
         issue_receipt_submit: 'Issue Receipt',
 
-        // Delete confirmation modal
         delete_receipt_title: 'Delete Receipt?',
         delete_receipt_desc: 'This action is irreversible. The receipt will be permanently deleted from the system.',
         delete_btn: 'Delete',
 
-        // Theme toggle
         theme_toggle_title: 'Toggle Theme',
 
-        // Receipt cards
         status_verified: 'Linked to Customer',
         status_pending: 'Awaiting Registration',
         download_btn: 'Download',
@@ -161,8 +154,6 @@ const businessTranslations = {
         delete_receipt_title: 'Delete receipt',
         receipt_deleted_success: 'Receipt successfully deleted',
         receipt_delete_error: 'Error deleting receipt',
-        receipt_not_found: 'Could not find receipt data',
-        data_refresh_error: 'Failed to refresh data. Please try again later.',
         data_load_error: 'Data loading error',
     }
 };
@@ -172,18 +163,18 @@ let businessCurrentLang = localStorage.getItem('valuon-lang') || 'ru';
 function applyBusinessTranslations() {
     const t = businessTranslations[businessCurrentLang] || businessTranslations.ru;
 
-    // Top bar
+    
     const backLink = document.querySelector('.back-link span');
     if (backLink) backLink.textContent = t.back_to_dashboard;
 
-    // Create shop view
+    
     const shopTitle = document.querySelector('#create-shop-view h1');
     if (shopTitle) shopTitle.textContent = t.shop_registration_title;
 
     const shopDesc = document.querySelector('.setup-subtitle');
     if (shopDesc) shopDesc.textContent = t.shop_registration_desc;
 
-    // Form labels and hints
+    
     const labels = {
         'shop_name': t.shop_name_label,
         'tax_id': t.tax_id_label,
@@ -195,7 +186,7 @@ function applyBusinessTranslations() {
         if (labelEl) labelEl.textContent = label;
     }
 
-    // Input placeholders
+    
     const inputs = {
         'shop_name': t.shop_name_placeholder,
         'tax_id': t.tax_id_placeholder,
@@ -206,7 +197,7 @@ function applyBusinessTranslations() {
         if (input) input.placeholder = placeholder;
     }
 
-    // Address placeholder
+    
     const addressInput = document.getElementById('address');
     if (addressInput) addressInput.placeholder = t.address_placeholder;
 
@@ -219,23 +210,23 @@ function applyBusinessTranslations() {
     const registerBtn = document.querySelector('#create-shop-form button[type="submit"]');
     if (registerBtn) registerBtn.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${t.register_shop_btn}`;
 
-    // Dashboard section
+    
     const dashboardH1 = document.querySelector('#shop-dashboard-view .content-header h1');
     if (dashboardH1) dashboardH1.textContent = t.my_receipts;
 
     const createBtn = document.getElementById('open-create-receipt-btn');
     if (createBtn) createBtn.innerHTML = `<i class="fa-solid fa-plus"></i> ${t.create_receipt_btn}`;
 
-    // Stats labels
+    
     const statLabels = document.querySelectorAll('.stat-label');
     if (statLabels[0]) statLabels[0].textContent = t.total_receipts_label;
     if (statLabels[1]) statLabels[1].textContent = t.pending_receipts_label;
 
-    // Receipts section
+    
     const receiptsTitle = document.querySelector('.receipts-list-container .section-title');
     if (receiptsTitle) receiptsTitle.textContent = t.issued_receipts_title;
 
-    // No receipts message
+    
     const noReceiptsTitle = document.querySelector('#no-receipts-msg h3');
     if (noReceiptsTitle) noReceiptsTitle.textContent = t.no_receipts_title;
 
@@ -245,11 +236,11 @@ function applyBusinessTranslations() {
     const firstReceiptBtn = document.getElementById('create-first-receipt-btn');
     if (firstReceiptBtn) firstReceiptBtn.innerHTML = `<i class="fa-solid fa-plus"></i> ${t.create_first_receipt_btn}`;
 
-    // Create receipt modal
+    
     const modalTitle = document.querySelector('#create-receipt-modal .modal-header h2');
     if (modalTitle) modalTitle.textContent = t.issue_receipt_title;
 
-    // Modal form labels
+    
     const formLabels = {
         'customer_email': t.customer_email_label,
         'item_name': t.item_name_label,
@@ -270,7 +261,7 @@ function applyBusinessTranslations() {
         }
     }
 
-    // Modal form hints and placeholders
+    
     const customerEmailInput = document.querySelector('[name="customer_email"]');
     if (customerEmailInput) {
         customerEmailInput.placeholder = t.customer_email_placeholder;
@@ -294,7 +285,7 @@ function applyBusinessTranslations() {
         if (hint && hint.classList.contains('field-hint')) hint.textContent = t.vat_rate_hint;
     }
 
-    // Payment method options
+    
     const paymentSelect = document.querySelector('[name="payment_method"]');
     if (paymentSelect) {
         const options = paymentSelect.querySelectorAll('option');
@@ -302,7 +293,7 @@ function applyBusinessTranslations() {
         if (options[1]) options[1].textContent = t.payment_cash;
     }
 
-    // Modal buttons
+    
     const cancelBtns = document.querySelectorAll('.modal-actions .btn-outline');
     cancelBtns.forEach(btn => {
         if (btn.textContent.includes('Отмена') || btn.textContent.includes('Cancel')) {
@@ -313,7 +304,7 @@ function applyBusinessTranslations() {
     const submitBtn = document.querySelector('#issue-receipt-form button[type="submit"]');
     if (submitBtn) submitBtn.textContent = t.issue_receipt_submit;
 
-    // Delete confirmation modal
+    
     const deleteTitle = document.querySelector('#delete-confirm-modal h2');
     if (deleteTitle) deleteTitle.textContent = t.delete_receipt_title;
 
@@ -323,37 +314,35 @@ function applyBusinessTranslations() {
     const deleteBtn = document.getElementById('confirm-delete-btn');
     if (deleteBtn) deleteBtn.innerHTML = `<i class="fa-solid fa-trash"></i> ${t.delete_btn}`;
 
-    // Theme toggle title
+    
     const themeBtn = document.getElementById('theme-toggle-btn');
     if (themeBtn) themeBtn.setAttribute('aria-label', t.theme_toggle_title);
 
-    // Translate receipt cards
+    
     translateReceiptCards(t);
 }
 
-/**
- * Translate receipt cards dynamically
- */
+
 function translateReceiptCards(t) {
-    // Translate status badges
+    
     document.querySelectorAll('.item-status-badge[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (t[key]) el.textContent = t[key];
     });
 
-    // Translate download buttons
+    
     document.querySelectorAll('.btn-download-receipt span[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (t[key]) el.textContent = t[key];
     });
 
-    // Translate button titles
+    
     document.querySelectorAll('[data-i18n-title]').forEach(el => {
         const key = el.getAttribute('data-i18n-title');
         if (t[key]) el.setAttribute('title', t[key]);
     });
 
-    // Translate dates based on language
+    
     document.querySelectorAll('.receipt-date').forEach(el => {
         const card = el.closest('.item-card');
         if (card) {
@@ -372,7 +361,7 @@ function toggleBusinessLanguage() {
     applyBusinessTranslations();
 }
 
-// Применить переводы при загрузке страницы
+
 document.addEventListener('DOMContentLoaded', () => {
     applyBusinessTranslations();
 });

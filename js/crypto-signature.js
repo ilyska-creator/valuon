@@ -5,10 +5,7 @@ class Ed25519Signer {
         this.privateKey = null;
     }
 
-    /**
-     * Generate a new Ed25519 key pair
-     * @returns {Promise<CryptoKeyPair>}
-     */
+    
     async generateKeyPair() {
         try {
             const keyPair = await window.crypto.subtle.generateKey(
@@ -31,11 +28,7 @@ class Ed25519Signer {
         }
     }
 
-    /**
-     * Export public key to base64 string for storage
-     * @param {CryptoKey} publicKey
-     * @returns {Promise<string>}
-     */
+    
     async exportPublicKey(publicKey = this.publicKey) {
         if (!publicKey) throw new Error('No public key available');
 
@@ -44,11 +37,7 @@ class Ed25519Signer {
         return exportedAsBase64;
     }
 
-    /**
-     * Import public key from base64 string
-     * @param {string} base64Key
-     * @returns {Promise<CryptoKey>}
-     */
+    
     async importPublicKey(base64Key) {
         const binaryString = this.base64ToArrayBuffer(base64Key);
         return await window.crypto.subtle.importKey(
@@ -63,11 +52,7 @@ class Ed25519Signer {
         );
     }
 
-    /**
-     * Export private key to base64 string for storage (use with caution!)
-     * @param {CryptoKey} privateKey
-     * @returns {Promise<string>}
-     */
+    
     async exportPrivateKey(privateKey = this.privateKey) {
         if (!privateKey) throw new Error('No private key available');
 
@@ -76,11 +61,7 @@ class Ed25519Signer {
         return exportedAsBase64;
     }
 
-    /**
-     * Import private key from base64 string
-     * @param {string} base64Key
-     * @returns {Promise<CryptoKey>}
-     */
+    
     async importPrivateKey(base64Key) {
         const binaryString = this.base64ToArrayBuffer(base64Key);
         return await window.crypto.subtle.importKey(
@@ -95,12 +76,7 @@ class Ed25519Signer {
         );
     }
 
-    /**
-     * Sign data with the private key
-     * @param {string} data - Data to sign
-     * @param {CryptoKey} privateKey
-     * @returns {Promise<string>} Base64 encoded signature
-     */
+    
     async sign(data, privateKey = this.privateKey) {
         if (!privateKey) throw new Error('No private key available for signing');
 
@@ -116,13 +92,7 @@ class Ed25519Signer {
         return this.arrayBufferToBase64(signature);
     }
 
-    /**
-     * Verify signature with public key
-     * @param {string} data - Original data
-     * @param {string} signatureBase64 - Base64 encoded signature
-     * @param {CryptoKey} publicKey
-     * @returns {Promise<boolean>}
-     */
+    
     async verify(data, signatureBase64, publicKey = this.publicKey) {
         if (!publicKey) throw new Error('No public key available for verification');
 
@@ -140,11 +110,7 @@ class Ed25519Signer {
         return isValid;
     }
 
-    /**
-     * Convert ArrayBuffer to Base64 string
-     * @param {ArrayBuffer} buffer
-     * @returns {string}
-     */
+    
     arrayBufferToBase64(buffer) {
         const bytes = new Uint8Array(buffer);
         let binary = '';
@@ -154,11 +120,7 @@ class Ed25519Signer {
         return window.btoa(binary);
     }
 
-    /**
-     * Convert Base64 string to ArrayBuffer
-     * @param {string} base64
-     * @returns {ArrayBuffer}
-     */
+    
     base64ToArrayBuffer(base64) {
         const binaryString = window.atob(base64);
         const bytes = new Uint8Array(binaryString.length);
@@ -168,10 +130,7 @@ class Ed25519Signer {
         return bytes.buffer;
     }
 
-    /**
-     * Check if Ed25519 is supported in current browser
-     * @returns {boolean}
-     */
+    
     static isSupported() {
         return 'crypto' in window &&
             'subtle' in window.crypto &&

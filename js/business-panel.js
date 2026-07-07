@@ -129,7 +129,7 @@ async function initBusinessPanel() {
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Создание...';
 
             try {
-                // Check Ed25519 support
+                
                 if (!Ed25519Signer.isSupported()) {
                     window.showToast('Ваш браузер не поддерживает Ed25519. Пожалуйста, используйте Chrome 137+, Firefox 129+ или Safari 17+', 'error');
                     btn.disabled = false;
@@ -139,7 +139,7 @@ async function initBusinessPanel() {
 
                 const fd = new FormData(e.target);
                 
-                // Generate Ed25519 key pair for the shop
+                
                 const signer = new Ed25519Signer();
                 const keyPair = await signer.generateKeyPair();
                 const publicKeyBase64 = await signer.exportPublicKey();
@@ -246,10 +246,10 @@ async function initBusinessPanel() {
                 const vat = net * (vatRate / 100);
                 const gross = net + vat;
 
-                // Create Ed25519 signature instead of SHA-256 hash
+                
                 const signer = new Ed25519Signer();
                 
-                // Import shop's private key
+                
                 if (!currentShop.private_key) {
                     window.showToast('Криптографический ключ магазина не найден. Пересоздайте магазин.', 'error');
                     return;
@@ -257,15 +257,15 @@ async function initBusinessPanel() {
                 
                 const privateKey = await signer.importPrivateKey(currentShop.private_key);
                 
-                // Data to sign: tax_id|item_name|net|vat|purchase_date
+                
                 const signData = `${currentShop.tax_id}|${fd.get('item_name')}|${net}|${vat}|${fd.get('purchase_date')}`;
                 const fiscalSignature = await signer.sign(signData, privateKey);
 
-                // ⚠️ Раньше здесь был прямой select из profiles по email — RLS
-                // тихо возвращал null для чужих строк, и статус всегда получался
-                // 'pending', даже для уже зарегистрированных покупателей.
-                // Используем RPC (SECURITY DEFINER), который обходит RLS,
-                // но отдаёт наружу только true/false, а не сами данные профиля.
+                
+                
+                
+                
+                
                 const { data: emailIsRegistered, error: checkError } = await client
                     .rpc('check_profile_exists', { p_email: email });
 
@@ -273,7 +273,7 @@ async function initBusinessPanel() {
                     console.error('Ошибка проверки email покупателя:', checkError);
                 }
 
-                // ✅ СТАТУС ЗАВИСИТ ОТ НАЛИЧИЯ ПРОФИЛЯ
+                
                 const status = emailIsRegistered ? 'verified' : 'pending';
 
                 const payload = {
@@ -284,8 +284,8 @@ async function initBusinessPanel() {
                     net_total: net, vat_amount: vat, gross_total: gross,
                     purchase_date: fd.get('purchase_date'),
                     payment_method: fd.get('payment_method'),
-                    status: status, // ✅ ПЕРЕДАЕМ ВЫЧИСЛЕННЫЙ СТАТУС
-                    fiscal_hash: fiscalSignature, // Ed25519 signature instead of SHA-256 hash
+                    status: status, 
+                    fiscal_hash: fiscalSignature, 
                     shop_name: currentShop.shop_name,
                     tax_id: currentShop.tax_id,
                     address: currentShop.address
@@ -340,7 +340,7 @@ async function initBusinessPanel() {
             if (emptyMsg) emptyMsg.style.display = 'none';
 
             listEl.grid.innerHTML = receipts.map(r => {
-                // ✅ ВИЗУАЛЬНОЕ ОТОБРАЖЕНИЕ СТАТУСА
+                
                 const isVerified = r.status === 'verified';
                 const statusClass = isVerified ? 'active' : 'warning';
                 const statusKey = isVerified ? 'status_verified' : 'status_pending';
@@ -375,10 +375,10 @@ async function initBusinessPanel() {
             </div>`;
             }).join('');
 
-            // ⚠️ Карточки только что вставлены через innerHTML и содержат
-            // пустые data-i18n/data-i18n-title бейджи (статус, кнопка
-            // скачивания). Без этого вызова текст появляется только после
-            // переключения языка сайта — прогоняем перевод сразу же.
+            
+            
+            
+            
             window.applyBusinessTranslations?.();
 
             listEl.grid.querySelectorAll('.btn-delete-receipt').forEach(btn => {
@@ -416,7 +416,7 @@ async function initBusinessPanel() {
                             cleanup();
                             await refreshDashboard(client, shopId, statsEl, listEl);
 
-                            // Reapply translations after refresh
+                            
                             if (typeof applyBusinessTranslations === 'function') {
                                 applyBusinessTranslations();
                             }

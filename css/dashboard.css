@@ -2063,7 +2063,7 @@
     background: rgba(239, 68, 68, 0.25);
 }
 
-/* ✅ РАЗДЕЛИТЕЛЬ МЕЖДУ БЛОКАМИ */
+
 .section-divider {
     height: 1px;
     background: var(--border);
@@ -2088,7 +2088,7 @@
     background: var(--bg-body);
 }
 
-/* ✅ ПЛАШКА МАГАЗИНА */
+
 .shop-badge {
     display: inline-flex;
     align-items: center;

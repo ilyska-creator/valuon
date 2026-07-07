@@ -1,7 +1,4 @@
-/**
- * Receipt Verification Module
- * Verifies Ed25519 signatures on fiscal receipts
- */
+
 
 import Ed25519Signer from './crypto-signature.js';
 
@@ -10,12 +7,7 @@ class ReceiptVerifier {
         this.signer = new Ed25519Signer();
     }
 
-    /**
-     * Verify a receipt's fiscal signature
-     * @param {Object} receipt - Receipt object from database
-     * @param {Object} shop - Shop object with public_key
-     * @returns {Promise<{valid: boolean, error?: string}>}
-     */
+    
     async verifyReceipt(receipt, shop) {
         try {
             if (!receipt.fiscal_hash) {
@@ -26,13 +18,13 @@ class ReceiptVerifier {
                 return { valid: false, error: 'Shop public key not found' };
             }
 
-            // Import shop's public key
+            
             const publicKey = await this.signer.importPublicKey(shop.public_key);
 
-            // Reconstruct the data that was signed
+            
             const signData = `${shop.tax_id}|${receipt.item_name}|${receipt.net_total}|${receipt.vat_amount}|${receipt.purchase_date}`;
 
-            // Verify the signature
+            
             const isValid = await this.signer.verify(signData, receipt.fiscal_hash, publicKey);
 
             return { valid: isValid };
@@ -42,12 +34,7 @@ class ReceiptVerifier {
         }
     }
 
-    /**
-     * Verify multiple receipts in batch
-     * @param {Array} receipts - Array of receipt objects
-     * @param {Object} shop - Shop object with public_key
-     * @returns {Promise<Array<{receipt: Object, valid: boolean, error?: string}>>}
-     */
+    
     async verifyReceiptsBatch(receipts, shop) {
         const results = [];
         
@@ -59,10 +46,7 @@ class ReceiptVerifier {
         return results;
     }
 
-    /**
-     * Check if Ed25519 is supported
-     * @returns {boolean}
-     */
+    
     static isSupported() {
         return Ed25519Signer.isSupported();
     }

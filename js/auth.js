@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const originalText = btn.innerHTML;
             const lang = localStorage.getItem('valuon-lang') === 'ru';
 
-            // Проверка пусто ли поле
+            
             if (!email) {
                 showToast(lang
                     ? 'Введите email адрес'
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            // Проверка формата email
+            
             if (!isValidEmail(email)) {
                 showToast(lang
                     ? 'Пожалуйста, введите корректный email адрес'

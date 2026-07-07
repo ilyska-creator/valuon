@@ -67,7 +67,7 @@
     display: none;
 }
 
-/* ✅ ФОН ДЛЯ СТРАНИЦЫ СОЗДАНИЯ МАГАЗИНА */
+
 .shop-setup-wrapper {
     position: relative;
     min-height: calc(100vh - 72px);
@@ -140,7 +140,7 @@
     margin: 0 auto;
 }
 
-/* ✅ СОВРЕМЕННЫЕ ПОЛЯ ВВОДА */
+
 .input-group {
     margin-bottom: var(--space-6);
     position: relative;
@@ -245,7 +245,7 @@
     }
 }
 
-/* ✅ ОСНОВНОЙ КОНТЕНТ */
+
 .business-main {
     flex: 1;
     max-width: 1240px;
@@ -947,17 +947,17 @@
     .modal-overlay {
         padding: 0.5rem;
         align-items: flex-start;
-        /* Прижимаем к верху на мобильных */
+        
         padding-top: 2rem;
     }
 
     .modal-content {
         max-height: calc(100vh - 4rem);
-        /* Учитываем отступы сверху и снизу */
+        
         padding: 1.5rem;
         border-radius: 16px;
         margin-bottom: 2rem;
-        /* Отступ снизу для удобства */
+        
     }
 
     .modal-actions {
@@ -1019,13 +1019,13 @@
     gap: 0.5rem;
 }
 
-/* ✅ СТИЛИ ДЛЯ ПУСТОГО СОСТОЯНИЯ */
+
 .empty-state {
     text-align: center;
     padding: 4rem 1rem;
     color: var(--text-muted);
     grid-column: 1 / -1;
-    /* Занимает всю ширину сетки */
+    
     animation: fadeIn 0.5s ease;
 }
 
@@ -1051,7 +1051,7 @@
 }
 
 
-/* ✅ КНОПКИ ДЕЙСТВИЙ В КАРТОЧКЕ (70% / 30%) */
+
 .item-actions {
     display: flex;
     gap: 0.5rem;
@@ -1065,7 +1065,7 @@
     align-items: center;
     justify-content: center;
     height: 42px;
-    /* Чуть выше для удобства на мобильных */
+    
     border-radius: 10px;
     border: 1px solid var(--border);
     background: var(--bg-body);
@@ -1077,10 +1077,10 @@
     font-family: var(--font-main);
 }
 
-/* Кнопка Скачать: занимает ~70% ширины + текст */
+
 .btn-action.download {
     flex: 1;
-    /* Растягивается на доступное пространство */
+    
     gap: 0.5rem;
     background: rgba(59, 130, 246, 0.05);
     border-color: rgba(59, 130, 246, 0.2);
@@ -1094,12 +1094,12 @@
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
-/* Кнопка Удалить: фиксированная ширина ~30% или иконка */
+
 .btn-action.delete {
     width: 42px;
-    /* Квадратная кнопка */
+    
     flex-shrink: 0;
-    /* Не сжимается */
+    
     background: rgba(239, 68, 68, 0.05);
     border-color: rgba(239, 68, 68, 0.2);
     color: #ef4444;
@@ -1119,7 +1119,7 @@
     box-shadow: none !important;
 }
 
-/* ✅ СТИЛИ ДЛЯ МОДАЛКИ ПОДТВЕРЖДЕНИЯ */
+
 .delete-confirm-card {
     text-align: center;
     padding: 2.5rem 2rem !important;
@@ -1171,7 +1171,7 @@
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
-/* Header icons container */
+
 .header-icons {
     display: flex;
     gap: var(--space-3);

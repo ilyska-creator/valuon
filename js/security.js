@@ -1,12 +1,8 @@
 const loginAttempts = new Map();
 const MAX_LOGIN_ATTEMPTS = 10;
-const LOGIN_TIMEOUT_MS = 15 * 60 * 1000; // 15 минут
+const LOGIN_TIMEOUT_MS = 15 * 60 * 1000; 
 
-/**
- * Проверяет и регистрирует попытку входа
- * @param {string} identifier - email или username
- * @returns {Object} { allowed: boolean, remainingAttempts: number, resetIn: string }
- */
+
 export function checkLoginRateLimit(identifier) {
     const key = identifier.toLowerCase().trim();
     const now = Date.now();
@@ -38,14 +34,10 @@ export function checkLoginRateLimit(identifier) {
     };
 }
 
-/**
- * Проверяет rate limit для регистрации
- * @param {string} email
- * @returns {Object} { allowed: boolean }
- */
+
 const signupAttempts = new Map();
 const MAX_SIGNUP_ATTEMPTS = 3;
-const SIGNUP_TIMEOUT_MS = 60 * 60 * 1000; // 1 час
+const SIGNUP_TIMEOUT_MS = 60 * 60 * 1000; 
 
 export function checkSignupRateLimit(email) {
     const key = email.toLowerCase().trim();
@@ -66,57 +58,38 @@ export function checkSignupRateLimit(email) {
     return { allowed: true };
 }
 
-// ============================================================================
-// БЕЗОПАСНАЯ РАБОТА С HTML
-// ============================================================================
 
-/**
- * Безопасно устанавливает внутренний HTML элемента
- * Предпочитает textContent для простого текста
- * @param {HTMLElement} element
- * @param {string} html - может содержать HTML
- * @param {boolean} allowHTML - разрешить ли HTML (для иконок и т.д.)
- */
+
+
+
+
 export function setSafeHTML(element, html, allowHTML = false) {
     if (!element) return;
 
     if (allowHTML) {
-        // Для контролируемого HTML (иконки, структурированный контент)
+        
         element.innerHTML = html;
     } else {
-        // Для пользовательского контента - только текст
+        
         element.textContent = html;
     }
 }
 
-/**
- * Устанавливает спиннер загрузки безопасно
- * @param {HTMLElement} button
- */
+
 export function setLoadingButton(button) {
     if (!button) return;
     button.disabled = true;
     button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
 }
 
-/**
- * Восстанавливает кнопку из состояния загрузки
- * @param {HTMLElement} button
- * @param {string} originalHTML - исходный HTML
- */
+
 export function resetLoadingButton(button, originalHTML) {
     if (!button) return;
     button.disabled = false;
     button.innerHTML = originalHTML;
 }
 
-/**
- * Безопасно создаёт элемент с HTML контентом
- * @param {string} tag - название тега
- * @param {string} html - содержимое (может быть HTML)
- * @param {string} className - класс элемента
- * @returns {HTMLElement}
- */
+
 export function createSafeElement(tag, html, className = '') {
     const el = document.createElement(tag);
     if (className) el.className = className;
@@ -124,15 +97,11 @@ export function createSafeElement(tag, html, className = '') {
     return el;
 }
 
-// ============================================================================
-// ВАЛИДАЦИЯ И ЭКРАНИРОВАНИЕ
-// ============================================================================
 
-/**
- * Экранирует HTML специальные символы
- * @param {string} str
- * @returns {string}
- */
+
+
+
+
 export function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -144,21 +113,11 @@ export function escapeHtml(str) {
         .replace(/\//g, '&#x2F;');
 }
 
-/**
- * Проверяет валидность email
- * @param {string} email
- * @returns {boolean}
- */
 export function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
 
-/**
- * Проверяет силу пароля
- * @param {string} password
- * @returns {Object} { valid: boolean, strength: 'weak'|'medium'|'strong', issues: string[] }
- */
 export function validatePassword(password) {
     const issues = [];
 
@@ -179,18 +138,10 @@ export function validatePassword(password) {
     };
 }
 
-// ============================================================================
-// ОЧИСТКА ПАМЯТИ
-// ============================================================================
-
-/**
- * Очищает старые попытки входа (каждый час)
- */
 export function cleanupOldAttempts() {
     setInterval(() => {
         const now = Date.now();
 
-        // Очистить login attempts
         for (const [key, attempts] of loginAttempts.entries()) {
             const recent = attempts.filter(t => now - t < LOGIN_TIMEOUT_MS);
             if (recent.length === 0) {
@@ -200,7 +151,6 @@ export function cleanupOldAttempts() {
             }
         }
 
-        // Очистить signup attempts
         for (const [key, attempts] of signupAttempts.entries()) {
             const recent = attempts.filter(t => now - t < SIGNUP_TIMEOUT_MS);
             if (recent.length === 0) {
@@ -209,10 +159,9 @@ export function cleanupOldAttempts() {
                 signupAttempts.set(key, recent);
             }
         }
-    }, 60 * 60 * 1000); // Каждый час
+    }, 60 * 60 * 1000);
 }
 
-// Запустить очистку памяти при загрузке
 if (typeof window !== 'undefined') {
     window.addEventListener('load', cleanupOldAttempts);
 }

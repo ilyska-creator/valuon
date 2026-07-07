@@ -94,7 +94,6 @@ const translations = {
         footer_prod: "Product", footer_sec: "Security", footer_biz: "For Business",
         footer_comp: "Company", footer_about: "About Us", footer_career: "Careers", footer_contact: "Contact", footer_social: "Socials",
         footer_copyright: "© 2026 Valuon. All rights reserved.",
-        msg_success: "Thanks! You are on the waitlist.",
         msg_duplicate: "This email is already registered.",
         msg_error: "Error. Please try again later."
     }
@@ -108,8 +107,8 @@ function applyTranslations() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (translations[currentLang][key]) {
-            // Для элементов с HTML структурой (hero_title содержит <br> и <span>)
-            // используем innerHTML, но контент из переводов - это контролируемый HTML
+            
+            
             el.innerHTML = translations[currentLang][key];
         }
     });
@@ -167,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         revealElements.forEach(el => revealObserver.observe(el));
     }
 
-    // Subtle shadow/background bump on the fixed navbar once the page scrolls.
+    
     const navbar = document.querySelector('.navbar');
     if (navbar) {
         const updateNavbarScrollState = () => {

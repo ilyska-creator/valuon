@@ -198,7 +198,7 @@
     align-items: center;
 }
 
-/* ===== Roles section (Role A / Role B / Role C) ===== */
+
 
 .roles-section {
     padding-top: 0;
@@ -298,7 +298,7 @@
     color: var(--text-muted);
 }
 
-/* Small role tag/pill — used both in the intro cards and on timeline cards */
+
 
 .role-tag {
     display: inline-block;
@@ -361,7 +361,7 @@
     color: #cbd5e1;
 }
 
-/* Decision gate callout inside a timeline card */
+
 
 .decision-gate {
     display: flex;
@@ -387,7 +387,7 @@
     border-left-color: #fb923c;
 }
 
-/* Out-of-scope section */
+
 
 .out-of-scope-section {
     padding-top: 0;

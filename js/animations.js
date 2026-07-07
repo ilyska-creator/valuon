@@ -1,19 +1,19 @@
-// Shared entrance / scroll-reveal animations for all Valuon pages.
-//
-// Opt an element in with the `data-animate` attribute. Optional values:
-//   (empty)  — slide up (default)
-//   "fade"   — fade only
-//   "zoom"   — scale up
-//   "left"   — slide in from the left
-//   "right"  — slide in from the right
-//   "down"   — slide down
-//
-// Stagger a set of items by wrapping them in a container with
-// `data-animate-group` (optionally `data-animate-step="80"` for the delay
-// in ms between items), or set `data-delay="150"` on a single element.
-//
-// Styling lives in css/style.css ([data-animate] / .is-visible). Respects
-// the user's "prefers-reduced-motion" preference.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 (function () {
     'use strict';
 
@@ -37,7 +37,7 @@
             return;
         }
 
-        // Staggered delays for grouped items.
+        
         document.querySelectorAll('[data-animate-group]').forEach(function (group) {
             var step = parseInt(group.dataset.animateStep, 10) || 90;
             group.querySelectorAll('[data-animate]').forEach(function (el, i) {
@@ -47,7 +47,7 @@
             });
         });
 
-        // Explicit per-element delays.
+        
         elements.forEach(function (el) {
             if (el.dataset.delay) {
                 el.style.setProperty('--anim-delay', parseInt(el.dataset.delay, 10) + 'ms');

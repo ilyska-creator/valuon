@@ -1,8 +1,6 @@
-// js/receipt-generator.js
 
-/**
- * Генерирует Base64 изображение QR-кода для PDF
- */
+
+
 export function generateQRDataURL(text, size = 80) {
     if (typeof qrcode === 'undefined') {
         console.error('qrcode-generator library is not loaded');
@@ -22,14 +20,14 @@ export function generateQRDataURL(text, size = 80) {
     canvas.height = actualSize + 10;
     const ctx = canvas.getContext('2d');
 
-    // Белый фон с серой рамкой
+    
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = '#e5e7eb';
     ctx.lineWidth = 1;
     ctx.strokeRect(0.5, 0.5, canvas.width - 1, canvas.height - 1);
 
-    // Рисуем модули QR
+    
     ctx.fillStyle = '#000000';
     for (let row = 0; row < moduleCount; row++) {
         for (let col = 0; col < moduleCount; col++) {
@@ -41,11 +39,7 @@ export function generateQRDataURL(text, size = 80) {
     return canvas.toDataURL('image/png');
 }
 
-/**
- * Генерирует и скачивает PDF чек
- * @param {Object} receipt - Данные чека из БД
- * @param {Object} shop - Данные магазина (текущийShop)
- */
+
 export function downloadReceiptPDF(receipt, shop) {
     if (typeof window.jspdf === 'undefined') {
         console.error('jsPDF library is not loaded');
@@ -69,14 +63,14 @@ export function downloadReceiptPDF(receipt, shop) {
         const vatAmount = receipt.vat_amount;
         const grossTotal = receipt.gross_total;
 
-        // Формируем данные для QR (фискальная подпись Ed25519)
+        
         const qrData = `RECEIPT:${receiptSerial}|DATE:${purchaseDate}|TAX:${vatAmount.toFixed(2)}|TOTAL:${grossTotal.toFixed(2)}|SELLER:${taxId}|SIG:${receipt.fiscal_hash}`;
 
         let y = 0;
         const leftCol = 20;
         const rightCol = 120;
 
-        // 1. Брендированная шапка
+        
         doc.setFillColor(59, 130, 246);
         doc.rect(0, 0, 210, 18, 'F');
         doc.setTextColor(255, 255, 255);
@@ -87,7 +81,7 @@ export function downloadReceiptPDF(receipt, shop) {
         y = 28;
         doc.setTextColor(0, 0, 0);
 
-        // 2. Данные продавца
+        
         doc.setFontSize(16);
         doc.setFont(undefined, 'bold');
         doc.text(sellerName, leftCol, y);
@@ -106,7 +100,7 @@ export function downloadReceiptPDF(receipt, shop) {
         doc.line(leftCol, y, 190, y);
         y += 8;
 
-        // 3. Метаданные чека
+        
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
         doc.setFont(undefined, 'bold');
@@ -134,7 +128,7 @@ export function downloadReceiptPDF(receipt, shop) {
         doc.text(receipt.payment_method, leftCol + 25, y);
         y += 10;
 
-        // 4. Таблица товаров
+        
         doc.setDrawColor(180, 180, 180);
         doc.setLineDashPattern([1, 1], 0);
         doc.line(leftCol, y, 190, y);
@@ -172,7 +166,7 @@ export function downloadReceiptPDF(receipt, shop) {
         doc.setLineDashPattern([], 0);
         y += 8;
 
-        // 5. Блок итогов
+        
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
         doc.text(`Net Amount:`, rightCol, y);
@@ -202,7 +196,7 @@ export function downloadReceiptPDF(receipt, shop) {
         doc.line(rightCol - 5, y + 1.5, 190, y + 1.5);
         y += 15;
 
-        // 6. QR код
+        
         const qrImg = generateQRDataURL(qrData, 70);
         if (qrImg) {
             doc.addImage(qrImg, 'PNG', leftCol, y, 35, 35);
@@ -215,7 +209,7 @@ export function downloadReceiptPDF(receipt, shop) {
         }
         y += 45;
 
-        // 7. Футер
+        
         doc.setDrawColor(220, 220, 220);
         doc.setLineWidth(0.3);
         doc.line(leftCol, y, 190, y);

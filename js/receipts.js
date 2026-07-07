@@ -3,13 +3,13 @@ import { requireAuth, setupLogout } from './dashboard-auth.js';
 let pendingDeleteId = null;
 let pendingDeletePath = null;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const SIGNED_URL_TTL = 60 * 60; // 1 час
+const SIGNED_URL_TTL = 60 * 60; 
 
-// Состояние текущего пользователя (нужно, чтобы не дёргать requireAuth() повторно)
+
 let currentUserId = null;
 let currentUserEmail = null;
 
-// Модалка загрузки инициализируется один раз и переиспользуется
+
 let uploadModal = null;
 
 function getLang() {
@@ -45,7 +45,6 @@ async function initReceipts() {
     currentUserId = user.id;
     currentUserEmail = user.email;
 
-    // Модалка загрузки настраивается один раз за всё время жизни страницы
     uploadModal = createUploadModal(client, currentUserId);
     setupDeleteModal(client, currentUserId);
 
@@ -57,8 +56,6 @@ async function initReceipts() {
     }
 }
 
-// ФИКС #4: сохранённая в БД file_url (signed URL) может быть устаревшей/истёкшей.
-// Перед рендером всегда перевыпускаем свежую подписанную ссылку по file_path.
 async function attachFreshSignedUrls(receipts, client) {
     return Promise.all(receipts.map(async (r) => {
         if (!r.file_path) return r;
@@ -252,8 +249,6 @@ function renderPersonalCard(r, t) {
     `;
 }
 
-// Обработчики для карточек, которые пересоздаются при каждом рендере.
-// Внутренности самих модалок сюда НЕ входят — они настраиваются один раз (см. createUploadModal / setupDeleteModal).
 function restoreListeners(client, userId) {
     const lang = getLang();
 
@@ -263,8 +258,6 @@ function restoreListeners(client, userId) {
         });
     });
 
-    // ФИКС #6: cross-origin ссылки игнорируют атрибут download в браузере,
-    // поэтому качаем файл как blob и скачиваем локальный object URL.
     document.querySelectorAll('.btn-download-receipt').forEach(btn => {
         btn.addEventListener('click', async () => {
             const url = btn.dataset.url;
@@ -297,9 +290,6 @@ function restoreListeners(client, userId) {
         });
     });
 
-    // ФИКС #1: генератор PDF подключается динамически и только по клику.
-    // Если модуль ещё не создан — страница чеков всё равно работает,
-    // падает только эта конкретная кнопка с понятной ошибкой.
     document.querySelectorAll('.btn-download-biz').forEach(btn => {
         btn.addEventListener('click', async () => {
             const originalHTML = btn.innerHTML;
@@ -345,8 +335,6 @@ function restoreListeners(client, userId) {
         });
     });
 
-    // Кнопка и drop-zone открытия модалки пересоздаются при каждом рендере —
-    // перепривязываем только САМ триггер открытия, не трогая внутренности модалки.
     if (uploadModal) {
         document.getElementById('upload-receipt-btn')?.addEventListener('click', uploadModal.open);
         document.getElementById('empty-upload-receipt-btn')?.addEventListener('click', uploadModal.open);
