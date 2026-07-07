@@ -198,6 +198,270 @@
     align-items: center;
 }
 
+/* ===== Roles section (Role A / Role B / Role C) ===== */
+
+.roles-section {
+    padding-top: 0;
+    padding-bottom: var(--space-16);
+}
+
+.roles-heading {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: var(--space-8);
+}
+
+.role-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-6);
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.role-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-base);
+}
+
+.role-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md, var(--shadow-sm));
+}
+
+.role-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-bottom: var(--space-4);
+}
+
+.role-icon-a {
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.role-icon-b {
+    background: #f3e8ff;
+    color: #6b21a8;
+}
+
+.role-icon-c {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+[data-theme="dark"] .role-icon-a {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .role-icon-b {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+}
+
+[data-theme="dark"] .role-icon-c {
+    background: rgba(148, 163, 184, 0.12);
+    color: #cbd5e1;
+}
+
+.role-card h3 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: var(--space-3);
+}
+
+.role-card p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+}
+
+.roles-note {
+    text-align: center;
+    max-width: 700px;
+    margin: var(--space-8) auto 0;
+    font-size: 0.95rem;
+    font-style: italic;
+    color: var(--text-muted);
+}
+
+/* Small role tag/pill — used both in the intro cards and on timeline cards */
+
+.role-tag {
+    display: inline-block;
+    padding: var(--space-1, 4px) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: var(--space-3);
+}
+
+.role-tag-a {
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.role-tag-b {
+    background: #f3e8ff;
+    color: #6b21a8;
+}
+
+.role-tag-c {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.role-tag-both {
+    background: linear-gradient(90deg, #eff6ff 50%, #f3e8ff 50%);
+    color: #3730a3;
+}
+
+.role-tag-neutral {
+    background: var(--border);
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .role-tag-a {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .role-tag-b {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+}
+
+[data-theme="dark"] .role-tag-c {
+    background: rgba(148, 163, 184, 0.12);
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .role-tag-both {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 50%, rgba(168, 85, 247, 0.15) 50%);
+    color: #a5b4fc;
+}
+
+[data-theme="dark"] .role-tag-neutral {
+    background: rgba(148, 163, 184, 0.12);
+    color: #cbd5e1;
+}
+
+/* Decision gate callout inside a timeline card */
+
+.decision-gate {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+    padding: var(--space-4) var(--space-5);
+    background: #fff7ed;
+    border-left: 3px solid #fb923c;
+    border-radius: var(--radius-lg, 12px);
+    font-size: 0.92rem;
+    color: #9a3412;
+    line-height: 1.5;
+}
+
+.decision-gate i {
+    margin-top: 2px;
+}
+
+[data-theme="dark"] .decision-gate {
+    background: rgba(249, 115, 22, 0.1);
+    color: #fdba74;
+    border-left-color: #fb923c;
+}
+
+/* Out-of-scope section */
+
+.out-of-scope-section {
+    padding-top: 0;
+}
+
+.out-of-scope-card {
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--card-bg);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-10);
+}
+
+.out-of-scope-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.out-of-scope-header i {
+    color: #9a3412;
+    font-size: 1.1rem;
+}
+
+.out-of-scope-header h3 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.out-of-scope-card>p {
+    color: var(--text-muted);
+    margin-bottom: var(--space-6);
+}
+
+.out-of-scope-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.out-of-scope-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    font-size: 0.98rem;
+    color: var(--text-muted);
+}
+
+.out-of-scope-list li i {
+    color: #b91c1c;
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .out-of-scope-list li i {
+    color: #f87171;
+}
+
+@media (max-width: 900px) {
+    .role-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .out-of-scope-card {
+        padding: var(--space-6);
+    }
+}
+
 .nav-actions {
     display: flex;
     align-items: center;

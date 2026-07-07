@@ -42,162 +42,220 @@
 
         <header class="roadmap-header section">
                 <div class="container">
-                        <h1 class="fade-in-up" data-i18n="roadmap_title">Дорожная карта развития Valuon</h1>
-                        <p class="fade-in-up delay-1" data-i18n="roadmap_desc">План развития платформы от базового учёта
-                                гарантий до
-                                комплексной системы управления цифровыми активами и B2B-интеграций.</p>
+                        <h1 class="fade-in-up" data-i18n="roadmap_title">Дорожная карта Valuon: единая платформа
+                                официальных чеков</h1>
+                        <p class="fade-in-up delay-1" data-i18n="roadmap_desc">План развития от рабочего MVP до единой
+                                точки доступа к официальным чекам в разных странах. Гарантии и перепродажа — полезная
+                                надстройка поверх этого ядра, а не самоцель.</p>
                 </div>
         </header>
+
+        <section class="roles-section section">
+                <div class="container">
+                        <h2 class="roles-heading fade-in-up" data-i18n="roles_section_title">Две роли Valuon, а не одна
+                                универсальная</h2>
+                        <div class="role-grid">
+                                <div class="role-card role-card-a fade-in-up" data-animate="up">
+                                        <div class="role-icon role-icon-a"><i class="fa-solid fa-stamp"></i></div>
+                                        <span class="role-tag role-tag-a" data-i18n="role_a_tag">Роль А</span>
+                                        <h3 data-i18n="role_a_title">Первичный эмитент</h3>
+                                        <p data-i18n="role_a_desc">Эстония, Ирландия, Мальта, Финляндия, Лихтенштейн,
+                                                США — там, где нет обязательной фискализации, чек Valuon может быть
+                                                настоящим официальным цифровым чеком, а не имитацией.</p>
+                                </div>
+                                <div class="role-card role-card-b fade-in-up" data-animate="up">
+                                        <div class="role-icon role-icon-b"><i class="fa-solid fa-layer-group"></i></div>
+                                        <span class="role-tag role-tag-b" data-i18n="role_b_tag">Роль Б</span>
+                                        <h3 data-i18n="role_b_title">Реестр поверх официального</h3>
+                                        <p data-i18n="role_b_desc">Германия, Франция, Италия, Испания и другие — чек
+                                                уже подписан государственно сертифицированной кассой. Valuon
+                                                подключается к этим данным и даёт чеку вторую жизнь у покупателя.</p>
+                                </div>
+                                <div class="role-card role-card-c fade-in-up" data-animate="up">
+                                        <div class="role-icon role-icon-c"><i class="fa-solid fa-hourglass-half"></i>
+                                        </div>
+                                        <span class="role-tag role-tag-c" data-i18n="role_c_tag">Роль В —
+                                                отложено</span>
+                                        <h3 data-i18n="role_c_title">Собственная сертификация</h3>
+                                        <p data-i18n="role_c_desc">Стать сертифицированным фискальным провайдером
+                                                самим (как fiskaly/efsta) — дорогой многолетний путь. Решение
+                                                принимается не раньше 2028 года, под подтверждённый масштаб.</p>
+                                </div>
+                        </div>
+                        <p class="roles-note" data-i18n="roles_note">Гарантии, история владения и перепродажа техники
+                                работают поверх обеих ролей как надстройка — они делают возврат в приложение
+                                осмысленным, но не являются целью сами по себе.</p>
+                </div>
+        </section>
 
         <section class="roadmap-section">
                 <div class="container timeline-container">
 
                         <div class="timeline-card" data-animate="left">
-                                <div class="card-status current" data-i18n="phase_1_badge"><i
-                                                class="fa-solid fa-rocket"></i> Q3–Q4
-                                        2026: Текущий этап</div>
-                                <h2 data-i18n="phase_1_title">MVP: Базовый учёт и валидация</h2>
+                                <div class="card-status current" data-i18n="step0_badge"><i
+                                                class="fa-solid fa-rocket"></i> Ближайшие 30 дней</div>
+                                <span class="role-tag role-tag-neutral" data-i18n="step0_role_tag">Роль А + Роль Б —
+                                        основа</span>
+                                <h2 data-i18n="step0_title">Шаг 0: техническая база под честное «официально»</h2>
                                 <ul class="feature-list">
-                                        <li><i class="fa-solid fa-check"></i> <span data-i18n="phase_1_item_1">Ручное
-                                                        добавление активов с
-                                                        точным расчётом гарантийных сроков</span></li>
-                                        <li><i class="fa-solid fa-check"></i> <span data-i18n="phase_1_item_2">Поддержка
-                                                        тёмной темы и
-                                                        локализация (RU/EN)</span></li>
-                                        <li><i class="fa-solid fa-check"></i> <span data-i18n="phase_1_item_3">Загрузка
-                                                        и хранение
-                                                        фото чеков с привязкой к карточке товара</span></li>
-                                        <li><i class="fa-solid fa-check"></i> <span data-i18n="phase_1_item_4">Система
-                                                        уведомлений об
-                                                        истечении гарантийных сроков</span></li>
+                                        <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_1">Исправлена
+                                                        ошибка: статус чека при создании и при импорте теперь
+                                                        отображается сразу, без переключения языка</span></li>
                                         <li><i class="fa-solid fa-spinner fa-spin"></i> <span
-                                                        data-i18n="phase_1_item_5">Достижение метрики 1 000
-                                                        MAU (Monthly Active Users)</span></li>
+                                                        data-i18n="step0_item_2">Настоящая криптографическая подпись
+                                                        чека (Ed25519/WebCrypto) вместо обычного хеша</span></li>
+                                        <li><i class="fa-solid fa-spinner fa-spin"></i> <span
+                                                        data-i18n="step0_item_3">Полный аудит RLS-политик Supabase по
+                                                        всем таблицам</span></li>
+                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="step0_item_4">Явное
+                                                        разделение статусов: чек, выпущенный Valuon, и чек,
+                                                        импортированный из государственной системы — не одно поле
+                                                        «verified» на оба случая</span></li>
+                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="step0_item_5">Воронка
+                                                        аналитики: активация → первый чек → возврат на 7-й и 30-й
+                                                        день</span></li>
                                 </ul>
                         </div>
 
                         <div class="timeline-card" data-animate="right">
-                                <div class="card-status upcoming" data-i18n="phase_2_badge"><i
-                                                class="fa-solid fa-wand-magic-sparkles"></i> Q1–Q2 2027</div>
-                                <h2 data-i18n="phase_2_title">Автоматизация ввода данных и OCR</h2>
+                                <div class="card-status upcoming" data-i18n="step1_badge"><i
+                                                class="fa-solid fa-flag"></i> Месяцы 1–3</div>
+                                <span class="role-tag role-tag-a" data-i18n="step1_role_tag">Роль А</span>
+                                <h2 data-i18n="step1_title">Шаг 1: доказать Роль А на одном рынке</h2>
                                 <ul class="feature-list">
+                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_1">Пилот в
+                                                        Эстонии: 5–10 малых продавцов/мастерских без собственной
+                                                        кассовой системы — Valuon как их единственная система цифровых
+                                                        чеков</span></li>
                                         <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_2_item_1">OCR-сканирование чеков с
-                                                        извлечением даты, суммы, наименования и магазина</span></li>
+                                                        data-i18n="step1_item_2">Параллельный
+                                                        точечный пилот в США — там нет даже федерального требования
+                                                        просто выдавать чек</span></li>
                                         <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_2_item_2">Автоматическое определение
-                                                        модели и срока гарантии по штрихкоду или серийному номеру</span>
+                                                        data-i18n="step1_item_3">Событийные
+                                                        уведомления: истечение гарантии и её продление на 12 месяцев
+                                                        после ремонта по Праву на ремонт (действует с 31.07.2026)</span>
                                         </li>
-                                        <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_2_item_3">Настраиваемые уведомления:
-                                                        выбор каналов (Push/Email/Telegram) и порогов оповещения</span>
-                                        </li>
-                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_2_item_4">База
-                                                        знаний гарантийных
-                                                        условий: автоматическая подстановка сроков для 500+
-                                                        брендов</span></li>
-                                        <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_2_item_5">Экспорт списка покупок в
-                                                        PDF/CSV для личного учёта и планирования бюджета</span></li>
+                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_4">Метрика:
+                                                        Retention D30 ≥ 25% — а не число выпущенных чеков</span></li>
                                 </ul>
-                        </div>
-
-                        <div class="timeline-card" data-animate="left">
-                                <div class="card-status future" data-i18n="phase_3_badge"><i
-                                                class="fa-solid fa-users"></i> Q3–Q4 2027
+                                <div class="decision-gate">
+                                        <i class="fa-solid fa-signs-post"></i>
+                                        <span data-i18n="step1_gate">Точка решения (день 90): если retention низкий —
+                                                рассмотреть встраиваемый виджет вместо отдельного приложения, прежде
+                                                чем продолжать инвестировать в B2C.</span>
                                 </div>
-                                <h2 data-i18n="phase_3_title">Расширенный функционал для пользователей</h2>
+                        </div>
+
+                        <div class="timeline-card" data-animate="left">
+                                <div class="card-status future" data-i18n="step2_badge"><i class="fa-solid fa-plug"></i>
+                                        Месяцы 3–6</div>
+                                <span class="role-tag role-tag-b" data-i18n="step2_role_tag">Роль Б</span>
+                                <h2 data-i18n="step2_title">Шаг 2: первая интеграция для Роли Б</h2>
                                 <ul class="feature-list">
+                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_1">Один
+                                                        интеграционный коннектор к POS/кассовому API в фискализированной
+                                                        стране (например, TSE-приложение Shopify для Германии)</span>
+                                        </li>
+                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_2">Импорт
+                                                        уже
+                                                        подписанного государством чека — с явной пометкой источника
+                                                        подписи, без выдачи его за собственную подпись Valuon</span>
+                                        </li>
+                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_3">3–5
+                                                        пилотных магазинов на этой интеграции — не 50 сразу, цель шага
+                                                        чисто техническая</span></li>
                                         <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_3_item_1">Цифровой паспорт товара:
-                                                        верифицированная история покупки, ремонтов и обслуживания для
-                                                        перепродажи</span></li>
-                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="phase_3_item_2">Карта
-                                                        авторизованных
-                                                        сервисных центров с фильтрацией по бренду, модели и рейтингу
-                                                        пользователей</span></li>
-                                        <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_3_item_3">Трекинг стоимости
-                                                        владения: учёт расходов на ремонт, аксессуары и обслуживание по
-                                                        каждому активу</span></li>
-                                        <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_3_item_4">Напоминания о плановом
-                                                        обслуживании: замена фильтров, ТО, чистка по регламенту
-                                                        производителя</span></li>
-                                        <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_3_item_5">Монетизация:
-                                                        Premium-подписка (безлимит, OCR, приоритетная поддержка) и
-                                                        Lifetime Deal для ранних
-                                                        пользователей</span></li>
+                                                        data-i18n="step2_item_4">Юридическая
+                                                        консультация по конкретному вопросу: можно ли называть
+                                                        импортированный чек «официальным» на стороне Valuon</span></li>
                                 </ul>
                         </div>
 
                         <div class="timeline-card" data-animate="right">
-                                <div class="card-status vision" data-i18n="phase_4_badge"><i
-                                                class="fa-solid fa-store"></i> 2028</div>
-                                <h2 data-i18n="phase_4_title">B2B-интеграции и экосистема</h2>
+                                <div class="card-status future" data-i18n="step3_badge"><i
+                                                class="fa-solid fa-earth-europe"></i> Месяцы 6–12</div>
+                                <span class="role-tag role-tag-both" data-i18n="step3_role_tag">Роль А + Роль Б</span>
+                                <h2 data-i18n="step3_title">Шаг 3: расширение и решение о географии</h2>
                                 <ul class="feature-list">
                                         <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_4_item_1">Retailer API:
-                                                        автоматическая передача данных о покупке в Valuon при оформлении
-                                                        заказа онлайн или на
-                                                        кассе</span></li>
+                                                        data-i18n="step3_item_1">Расширение
+                                                        Роли А на Ирландию или Финляндию — только если Эстония
+                                                        показала повторное использование чека пользователем</span>
+                                        </li>
                                         <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_4_item_2">Система цифровых
-                                                        возвратов: сканирование QR-кода покупателем → мгновенная
-                                                        верификация чека → оформление
-                                                        возврата без участия менеджера</span></li>
-                                        <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_4_item_3">White-label модуль:
-                                                        встроенный трекер гарантий под брендом магазина с кобрендингом и
-                                                        push-уведомлениями от
-                                                        ритейлера</span></li>
-                                        <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_4_item_4">Аналитический дашборд для
-                                                        производителей: частота отказов по моделям, география поломок,
-                                                        среднее время до первого
-                                                        обращения в сервис</span></li>
-                                        <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_4_item_5">Программа лояльности:
-                                                        триггерные рассылки перед окончанием гарантии с персональными
-                                                        предложениями на апгрейд или
-                                                        аксессуары</span></li>
+                                                        data-i18n="step3_item_2">Расширение
+                                                        Роли Б на Францию — обязательная сертификация касс с сентября
+                                                        2026 форсирует продавцов пересматривать системы именно
+                                                        сейчас</span></li>
+                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_3">Выбор
+                                                        одной основной юрисдикции для юрлица (Эстония)</span></li>
+                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_4">Платные
+                                                        тарифы Merchant Starter/Bridge — только после того, как
+                                                        пилотные магазины подтвердят готовность платить</span></li>
                                 </ul>
+                                <div class="decision-gate">
+                                        <i class="fa-solid fa-signs-post"></i>
+                                        <span data-i18n="step3_gate">Точка решения: платный тариф запускается по
+                                                предзаказу или письменному подтверждению магазина, а не одновременно с
+                                                самим пилотом.</span>
+                                </div>
                         </div>
 
                         <div class="timeline-card" data-animate="left">
-                                <div class="card-status vision" data-i18n="phase_5_badge"><i
-                                                class="fa-solid fa-earth-americas"></i>
-                                        2029+</div>
-                                <h2 data-i18n="phase_5_title">Глобальная инфраструктура</h2>
+                                <div class="card-status vision" data-i18n="step4_badge"><i
+                                                class="fa-solid fa-earth-americas"></i> Год 2</div>
+                                <span class="role-tag role-tag-both" data-i18n="step4_role_tag">Роль А + Роль Б →
+                                        решение по Роли В</span>
+                                <h2 data-i18n="step4_title">Шаг 4: масштабирование и решение по Роли В</h2>
                                 <ul class="feature-list">
                                         <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_5_item_1">Мультиюрисдикционная
-                                                        поддержка: адаптация гарантийных правил под законодательство 50+
-                                                        стран</span></li>
+                                                        data-i18n="step4_item_1">Измеримая
+                                                        функция реестра: у пользователя — чеки из нескольких магазинов
+                                                        и стран в одном месте</span></li>
+                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_2">Решение
+                                                        об
+                                                        инвестициях в сертификацию Роли В в одной стране — только под
+                                                        подтверждённый спрос, не заранее</span></li>
                                         <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_5_item_2">IoT-интеграция:
-                                                        подключённые устройства автоматически передают данные о
-                                                        состоянии и ошибках в профиль
-                                                        владельца</span></li>
-                                        <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_5_item_3">Встроенное страхование:
-                                                        оформление расширенной гарантии или страховки от поломок в один
-                                                        клик из карточки
-                                                        товара</span></li>
-                                        <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_5_item_4">Децентрализованная
-                                                        верификация: независимое подтверждение истории владения через
-                                                        открытые реестры (без привязки
-                                                        к конкретному вендору)</span></li>
-                                        <li><i class="fa-regular fa-circle"></i> <span
-                                                        data-i18n="phase_5_item_5">Предиктивная аналитика:
-                                                        прогноз остаточной стоимости актива на основе истории
-                                                        обслуживания и рыночных данных</span>
-                                        </li>
+                                                        data-i18n="step4_item_3">Расширение
+                                                        на новые категории товаров и страны — только после измеримого
+                                                        эффекта в уже проверенных нишах</span></li>
+                                        <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_4">Более
+                                                        сложная инфраструктура (Merkle-дерево, DID, ZK-proofs) — только
+                                                        под запрос конкретного партнёра (страховая, площадка
+                                                        перепродажи)</span></li>
                                 </ul>
                         </div>
 
+                </div>
+        </section>
+
+        <section class="out-of-scope-section section">
+                <div class="container">
+                        <div class="out-of-scope-card fade-in-up">
+                                <div class="out-of-scope-header">
+                                        <i class="fa-solid fa-ban"></i>
+                                        <h3 data-i18n="out_of_scope_title">Что мы сознательно не обещаем сейчас</h3>
+                                </div>
+                                <p data-i18n="out_of_scope_desc">Раньше в планах Valuon фигурировали формулировки,
+                                        которые опережали то, что реально построено. Здесь мы явно проговариваем, что
+                                        отложено — и почему.</p>
+                                <ul class="out-of-scope-list">
+                                        <li><i class="fa-solid fa-xmark"></i> <span
+                                                        data-i18n="out_of_scope_item_1">Единый глобальный реестр и
+                                                        лоббирование стандарта ISO/CEN — раньше Шага 4 и без
+                                                        подтверждённого спроса партнёров это преждевременно</span></li>
+                                        <li><i class="fa-solid fa-xmark"></i> <span
+                                                        data-i18n="out_of_scope_item_2">Кросс-граничный паспорт покупки
+                                                        (например, из Китая для сервиса в Германии) — интересная идея
+                                                        на будущее, не задача ближайших 12 месяцев</span></li>
+                                        <li><i class="fa-solid fa-xmark"></i> <span
+                                                        data-i18n="out_of_scope_item_4">Замена фискальных систем
+                                                        (TSE/RKSV/NF525 и др.) — Valuon встраивается поверх них, а не
+                                                        конкурирует с ними за подпись чека</span></li>
+                                </ul>
+                        </div>
                 </div>
         </section>
 
