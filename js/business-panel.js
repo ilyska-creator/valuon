@@ -331,8 +331,8 @@ async function initBusinessPanel() {
 
         try {
             const [totalRes, pendingRes, receiptsRes] = await Promise.all([
-                client.from('business_receipts').select('id', { count: 'exact', head: true }).eq('shop_id', shopId),
-                client.from('business_receipts').select('id', { count: 'exact', head: true }).eq('shop_id', shopId).eq('status', 'pending'),
+                client.from('business_receipts').select('*', { count: 'exact', head: true }).eq('shop_id', shopId),
+                client.from('business_receipts').select('*', { count: 'exact', head: true }).eq('shop_id', shopId).eq('status', 'pending'),
                 client.from('business_receipts').select('id, status, purchase_date, item_name, customer_email, gross_total, created_at').eq('shop_id', shopId).order('created_at', { ascending: false })
             ]);
 

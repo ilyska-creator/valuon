@@ -131,7 +131,7 @@ const dashboardTranslations = {
 
         
         calendar_title: "Календарь гарантий",
-        calendar_active: "Активна",
+        calendar_active: "Покупка",
         calendar_expiring: "Истекает",
         calendar_expired: "Истекла",
         calendar_today: "Сегодня",
@@ -269,7 +269,7 @@ const dashboardTranslations = {
 
         
         calendar_title: "Warranty Calendar",
-        calendar_active: "Active",
+        calendar_active: "Purchase",
         calendar_expiring: "Expiring",
         calendar_expired: "Expired",
         calendar_today: "Today",

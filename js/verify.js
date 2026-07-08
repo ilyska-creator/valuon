@@ -113,6 +113,7 @@ function parseQRData(text) {
         vat: parseFloat(map['TAX']) || 0,
         total: parseFloat(map['TOTAL']) || 0,
         taxId: map['SELLER'] || '',
+        shopId: map['SHOP_ID'] || '',
         signature: map['SIG'] || '',
     };
 }
@@ -267,7 +268,18 @@ async function verifyReceiptFromQRData(qrRaw) {
         }
 
         const receipt = data.receipt;
-        const shop = data.shop;
+
+        const { data: shop, error: shopError } = await supabase
+            .from('shops')
+            .select('public_key, tax_id, shop_name')
+            .eq('id', receipt.shop_id)
+            .single();
+
+        if (shopError || !shop) {
+            console.error('[verify] Shop not found for receipt.shop_id:', receipt.shop_id, shopError);
+            showResult('error', t('shop_not_found') || 'Магазин не найден');
+            return;
+        }
         console.log('[verify] Receipt found, shop:', shop.shop_name);
 
         if (!Ed25519Signer.isSupported()) {
