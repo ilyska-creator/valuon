@@ -123,7 +123,7 @@ export function downloadReceiptPDF(receipt, shop) {
         doc.setFont(undefined, 'bold');
         doc.text(`Payment:`, leftCol, y);
         doc.setFont(undefined, 'normal');
-        doc.text(receipt.payment_method, leftCol + 25, y);
+        doc.text(receipt.payment_method || '—', leftCol + 25, y);
         y += 10;
 
         

@@ -340,7 +340,7 @@ async function initBusinessPanel() {
             const [totalRes, pendingRes, receiptsRes] = await Promise.all([
                 client.from('business_receipts').select('*', { count: 'exact', head: true }).eq('shop_id', shopId),
                 client.from('business_receipts').select('*', { count: 'exact', head: true }).eq('shop_id', shopId).eq('status', 'pending'),
-                client.from('business_receipts').select('id, status, purchase_date, item_name, customer_email, gross_total, net_total, vat_amount, fiscal_hash, shop_id, created_at, shop_name').eq('shop_id', shopId).order('created_at', { ascending: false })
+                client.from('business_receipts').select('id, status, purchase_date, item_name, customer_email, gross_total, net_total, vat_amount, fiscal_hash, shop_id, created_at, shop_name, payment_method, qty, unit_price').eq('shop_id', shopId).order('created_at', { ascending: false })
             ]);
 
             if (statsEl.total) statsEl.total.textContent = totalRes.count || 0;
