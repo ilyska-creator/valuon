@@ -152,6 +152,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Автооткрытие модалки восстановления, если пришли сюда с reset-password.html
+    // после протухшей ссылки (см. кнопку "Запросить новую ссылку", ?forgot=1).
+    if (new URLSearchParams(window.location.search).get('forgot') === '1') {
+        openForgotModal();
+        // Убираем параметр из адресной строки, чтобы при обновлении страницы
+        // модалка не открывалась повторно без причины.
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+
     if (forgotClose) {
         forgotClose.addEventListener('click', closeForgotModal);
     }
