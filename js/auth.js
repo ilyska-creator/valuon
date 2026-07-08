@@ -116,6 +116,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const stepSuccess = document.getElementById('forgot-step-success');
     const backToLoginBtn = forgotModal?.querySelector('.forgot-back-login');
 
+    let forgotWidgetId = null;
+
     function openForgotModal() {
         if (!forgotModal) return;
 
@@ -128,6 +130,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         stepSuccess?.classList.add('hidden');
 
         forgotModal.classList.add('active');
+
+        // Рендерим виджет только сейчас, когда контейнер уже видим —
+        // Turnstile не умеет авто-рендериться в display:none элементах.
+        if (forgotWidgetId === null && typeof turnstile !== 'undefined') {
+            forgotWidgetId = turnstile.render('#forgot-turnstile', {
+                sitekey: '0x4AAAAAADxC9yNLOh3uKLe-',
+                theme: 'auto'
+            });
+        }
     }
 
     function closeForgotModal() {
@@ -187,7 +198,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            const captchaToken = typeof turnstile !== 'undefined' ? turnstile.getResponse('forgot-turnstile') : null;
+            const captchaToken = (typeof turnstile !== 'undefined' && forgotWidgetId !== null)
+                ? turnstile.getResponse(forgotWidgetId)
+                : null;
             if (!captchaToken) {
                 showToast(lang ? 'Подтвердите, что вы не робот' : 'Please complete the captcha', 'warning');
                 return;
@@ -212,7 +225,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 showToast(lang === 'ru'
                     ? 'Ошибка отправки. Проверьте email и попробуйте снова.'
                     : 'Failed to send. Check email and try again.');
-                if (typeof turnstile !== 'undefined') turnstile.reset('forgot-turnstile');
+                if (typeof turnstile !== 'undefined' && forgotWidgetId !== null) turnstile.reset(forgotWidgetId);
             } finally {
                 resetLoadingButton(btn, originalText);
             }
