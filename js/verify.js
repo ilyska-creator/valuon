@@ -243,10 +243,8 @@ async function verifyReceiptFromQRData(qrRaw) {
     verifying = true;
     try {
         const parsed = parseQRData(qrRaw);
-        console.log('[verify] QR parsed:', parsed);
 
         if (!parsed.signature || !parsed.taxId) {
-            console.error('[verify] Missing signature or taxId in QR');
             showResult('invalid');
             return;
         }
@@ -256,26 +254,27 @@ async function verifyReceiptFromQRData(qrRaw) {
             .maybeSingle();
 
         if (error) {
-            console.error('[verify] RPC error:', error);
             showResult('error', t('rpc_error') + ': ' + error.message);
             return;
         }
 
         if (!data?.found) {
-            console.error('[verify] Receipt not found for fiscal_hash:', parsed.signature);
             showResult('not-found');
             return;
         }
 
         const receipt = data.receipt;
-        const shop = data.shop;
 
-        if (!shop) {
-            console.error('[verify] Shop data missing from RPC response for receipt.shop_id:', receipt.shop_id);
+        const { data: shop, error: shopError } = await supabase
+            .from('shops')
+            .select('public_key, tax_id, shop_name')
+            .eq('id', receipt.shop_id)
+            .single();
+
+        if (shopError || !shop) {
             showResult('error', t('shop_not_found') || 'Магазин не найден');
             return;
         }
-        console.log('[verify] Receipt found, shop:', shop.shop_name);
 
         if (!Ed25519Signer.isSupported()) {
             console.error('[verify] Ed25519 not supported in this browser');
@@ -285,7 +284,6 @@ async function verifyReceiptFromQRData(qrRaw) {
 
         const verifier = new ReceiptVerifier();
         const result = await verifier.verifyReceipt(receipt, shop);
-        console.log('[verify] Verification result:', result);
 
         if (result.valid) {
             const dateStr = receipt.purchase_date

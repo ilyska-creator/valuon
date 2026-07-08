@@ -69,12 +69,11 @@ async function initBusinessPanel() {
     try {
         const { data: shop, error } = await client
             .from('shops')
-            .select('id, shop_name, tax_id, address, public_key, private_key, owner_id')
+            .select('id, shop_name, tax_id, address, public_key, owner_id')
             .eq('owner_id', user.id)
             .maybeSingle();
 
         if (error && error.code !== 'PGRST116') {
-            console.error('Shop load failed:', error);
             window.showToast('Не удалось загрузить данные магазина. Проверьте подключение.', 'error');
 
             if (currentShop) {
@@ -165,7 +164,7 @@ async function initBusinessPanel() {
 
                 const { data: newShop } = await client
                     .from('shops')
-                    .select('id, shop_name, tax_id, address, public_key, private_key, owner_id')
+                    .select('id, shop_name, tax_id, address, public_key, owner_id')
                     .eq('owner_id', currentUser.id)
                     .maybeSingle();
 
@@ -254,16 +253,20 @@ async function initBusinessPanel() {
                 const gross = net + vat;
 
 
-                const signer = new Ed25519Signer();
+                const { data: keyData } = await client
+                    .from('shops')
+                    .select('private_key')
+                    .eq('id', currentShop.id)
+                    .eq('owner_id', currentUser.id)
+                    .single();
 
-
-                if (!currentShop.private_key) {
+                if (!keyData?.private_key) {
                     window.showToast('Криптографический ключ магазина не найден. Пересоздайте магазин.', 'error');
                     return;
                 }
 
-                const privateKey = await signer.importPrivateKey(currentShop.private_key);
-
+                const signer = new Ed25519Signer();
+                const privateKey = await signer.importPrivateKey(keyData.private_key);
 
                 const signData = buildSignaturePayload({
                     taxId: currentShop.tax_id,
@@ -541,20 +544,13 @@ async function initBusinessPanel() {
             daysMap[key] = true;
         }
 
-        console.log('[chart] receipts:', receipts.length, receipts.map(r => ({ id: r.id.slice(0, 8), date: r.purchase_date })));
         receipts.forEach(r => {
-            if (!r.purchase_date) {
-                console.warn('[chart] receipt missing purchase_date:', r.id);
-                return;
-            }
+            if (!r.purchase_date) return;
             const dateStr = r.purchase_date.slice(0, 10);
             if (daysMap[dateStr]) {
                 groups[dateStr].count++;
-            } else {
-                console.warn('[chart] date not in range:', dateStr);
             }
         });
-        console.log('[chart] aggregated:', Object.entries(groups).filter(([, v]) => v.count > 0).map(([k, v]) => `${k}:${v.count}`));
 
         const labels = [];
         const data = [];

@@ -241,7 +241,7 @@ function renderPersonalCard(r, t) {
                 <button class="btn-action secondary btn-download-receipt" data-url="${escapeHtml(r.file_url)}" data-name="${escapeHtml(r.display_name)}" title="${t.btn_download || 'Скачать'}">
                     <i class="fa-solid fa-download"></i> <span>${t.btn_download || 'Скачать'}</span>
                 </button>
-                <button class="btn-action danger btn-delete-receipt" data-id="${escapeHtml(r.id)}" data-path="${escapeHtml(r.file_path)}" title="${t.btn_delete || 'Удалить'}">
+                <button class="btn-action danger btn-delete-receipt" data-id="${escapeHtml(r.id)}" title="${t.btn_delete || 'Удалить'}">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
@@ -332,7 +332,6 @@ function restoreListeners(client, userId) {
     document.querySelectorAll('.btn-delete-receipt').forEach(btn => {
         btn.addEventListener('click', () => {
             pendingDeleteId = btn.dataset.id;
-            pendingDeletePath = btn.dataset.path;
             document.getElementById('delete-receipt-modal')?.classList.add('active');
         });
     });
@@ -417,10 +416,17 @@ function setupDeleteModal(client, userId) {
         confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
-            if (pendingDeletePath) {
+            const { data: delReceipt } = await client
+                .from('receipts')
+                .select('file_path')
+                .eq('id', pendingDeleteId)
+                .eq('user_id', userId)
+                .single();
+
+            if (delReceipt?.file_path) {
                 const { error: storageError } = await client.storage
                     .from('receipts')
-                    .remove([pendingDeletePath]);
+                    .remove([delReceipt.file_path]);
 
                 if (storageError) {
                     console.warn('Storage delete warning:', storageError.message);
