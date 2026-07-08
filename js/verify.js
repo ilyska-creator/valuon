@@ -339,7 +339,6 @@ async function startCamera() {
     resultBlockWrapper?.classList.remove('active');
     startScanLoop();
     setupCameraControls();
-    document.body.classList.add('camera-fullscreen');
     } catch (err) {
         console.error('[verify] camera error:', err);
         scanFileInput?.click();
@@ -395,7 +394,6 @@ function stopCamera() {
     scanBtn.innerHTML = '<i class="fa-solid fa-camera"></i> ' + t('scan_btn_open');
     scanBtn.classList.remove('btn-outline');
     scanBtn.classList.add('btn-primary');
-    document.body.classList.remove('camera-fullscreen');
 }
 
 function startScanLoop() {
