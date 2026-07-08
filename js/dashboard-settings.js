@@ -263,48 +263,6 @@ async function initSettings() {
             }
         });
     }
-
-    const deleteBtn = document.getElementById('delete-account-btn');
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', async () => {
-            const t = getSettingsT();
-
-            const firstConfirm = confirm(t.confirm_delete_title || 'Are you sure?');
-            if (!firstConfirm) return;
-
-            const secondConfirm = prompt(t.prompt_delete_email || 'Enter your email:');
-            if (secondConfirm !== user.email) {
-                showToast(t.msg_email_mismatch || 'Email mismatch', 'warning');
-                return;
-            }
-
-            deleteBtn.disabled = true;
-            const originalText = deleteBtn.textContent;
-            deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-            try {
-                const { data: files } = await client.storage.from('receipts').list(user.id);
-                if (files && files.length > 0) {
-                    const paths = files.map(f => `${user.id}/${f.name}`);
-                    await client.storage.from('receipts').remove(paths);
-                }
-
-                await client.from('receipts').delete().eq('user_id', user.id);
-                await client.from('items').delete().eq('user_id', user.id);
-                await client.from('profiles').delete().eq('id', user.id);
-                await client.auth.signOut();
-
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = 'index.html';
-            } catch (err) {
-                console.error(err);
-                showToast(t.msg_delete_failed || 'Deletion failed', 'error');
-                deleteBtn.textContent = originalText;
-                deleteBtn.disabled = false;
-            }
-        });
-    }
 }
 
 const settingsLink = document.querySelector('[data-view="settings"]');

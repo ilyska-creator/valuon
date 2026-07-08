@@ -140,6 +140,9 @@ async function loadNotifications(userId, client) {
 const notifLink = document.querySelector('[data-view="notifications"]');
 let notifInitialized = false;
 
+let cachedUserId = null;
+let cachedClient = null;
+
 async function ensureNotifLoaded() {
     if (notifInitialized) return;
     const auth = await requireAuth();
@@ -157,9 +160,6 @@ if (notifLink) {
 if (window.location.hash === '#view-notifications') {
     ensureNotifLoaded();
 }
-
-let cachedUserId = null;
-let cachedClient = null;
 
 window.addEventListener('lang-changed', async () => {
     if (notifInitialized && cachedUserId && cachedClient) {
