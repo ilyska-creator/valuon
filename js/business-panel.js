@@ -13,6 +13,8 @@ async function initBusinessPanel() {
     }
 
     let currentReceiptsList = [];
+    let receiptsChartInstance = null;
+    let chartPeriod = 'week';
 
     const auth = await requireAuth();
     if (!auth) return;
@@ -512,10 +514,6 @@ async function initBusinessPanel() {
         });
     }
 
-    
-    let receiptsChartInstance = null;
-    let chartPeriod = 'week';
-
     function aggregateReceiptsByPeriod(receipts, period) {
         if (!receipts || receipts.length === 0) return { labels: [], data: [] };
 
@@ -561,7 +559,7 @@ async function initBusinessPanel() {
         let wrapper = document.querySelector('.chart-wrapper');
         if (!wrapper) return;
 
-        const lang = window.businessCurrentLang || localStorage.getItem('valuon-lang') || 'ru';
+        const lang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
         const bt = window.businessTranslations || {};
         const t = bt[lang] || bt.ru || {};
 

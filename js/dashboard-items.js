@@ -337,7 +337,7 @@ function renderWarrantyCalendar(items) {
         const daysLeft = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         let status = daysLeft > 30 ? 'active' : daysLeft > 0 ? 'warning' : 'expired';
 
-        addDateDot(startDate, status);
+        addDateDot(startDate, 'active');
         if (endDate.getTime() !== startDate.getTime()) {
             addDateDot(endDate, status);
         }
