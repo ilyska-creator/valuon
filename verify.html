@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valuon — Верификация чека</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <script>
+        (function () { const t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); })();
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/verify.css">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+</head>
+<body class="verify-body">
+
+    <div class="verify-container">
+        <div class="verify-card" data-animate-group data-animate-step="80">
+
+            <div class="verify-logo" data-animate="zoom">
+                <div class="shield-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                </div>
+                <h1>Верификация чека</h1>
+            </div>
+
+            <p class="verify-subtitle" data-animate>
+                Проверьте подлинность чека по QR-коду или загрузите фото/PDF
+            </p>
+
+            <div class="verify-tabs" data-animate>
+                <button class="verify-tab active" data-tab="scan">
+                    <i class="fa-solid fa-camera"></i>
+                    Сканировать
+                </button>
+                <button class="verify-tab" data-tab="upload">
+                    <i class="fa-solid fa-image"></i>
+                    Фото
+                </button>
+            </div>
+
+            <div id="scan-panel" class="verify-panel active">
+                <div id="scan-area" class="scanner-area" data-animate>
+                    <div class="scan-corner tl"></div>
+                    <div class="scan-corner tr"></div>
+                    <div class="scan-corner bl"></div>
+                    <div class="scan-corner br"></div>
+                    <div class="scan-line"></div>
+                    <div class="scanner-content" id="scanner-placeholder">
+                        <i class="fa-solid fa-qrcode"></i>
+                        <span id="scan-hint">Наведите камеру на QR-код</span>
+                    </div>
+                    <video id="scanner-video" class="scanner-video" playsinline muted></video>
+                    <canvas id="scanner-canvas" hidden></canvas>
+                    <input type="file" id="scan-file-input" accept="image/*" capture="environment" hidden>
+                </div>
+                <button id="verify-scan-btn" class="btn btn-primary auth-btn" data-animate>
+                    <i class="fa-solid fa-camera"></i> Открыть камеру
+                </button>
+            </div>
+
+            <div id="upload-panel" class="verify-panel">
+                <div id="upload-zone" class="upload-zone" data-animate>
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <p>Загрузите фото или PDF чека</p>
+                    <span>JPG, PNG, PDF до 10 МБ</span>
+                    <input type="file" id="receipt-file" accept="image/*,application/pdf" hidden>
+                </div>
+                <div id="upload-preview" class="upload-preview">
+                    <img id="preview-img" src="" alt="Превью чека">
+                </div>
+                <button id="verify-upload-btn" class="btn btn-primary auth-btn" data-animate>
+                    <i class="fa-solid fa-qrcode"></i> Проверить
+                </button>
+            </div>
+
+            <div id="result-block" class="verify-result-block">
+                <div id="verify-result" class="verify-result">
+                    <i id="result-icon" class="fa-solid fa-circle-check"></i>
+                    <h3 id="result-title">Чек верифицирован</h3>
+                    <p id="result-desc">Данные чека совпадают с записью в реестре.</p>
+                    <div id="result-badge" class="verify-badge verified">Подлинный</div>
+                    <dl id="result-details" class="result-details">
+                        <dt>Товар</dt>
+                        <dd id="result-receipt-name">—</dd>
+                        <dt>Дата покупки</dt>
+                        <dd id="result-receipt-date">—</dd>
+                        <dt>Сумма</dt>
+                        <dd id="result-receipt-amount">—</dd>
+                        <dt>Продавец</dt>
+                        <dd id="result-receipt-store">—</dd>
+                        <dt>Статус продавца</dt>
+                        <dd id="result-seller-status">—</dd>
+                    </dl>
+                </div>
+                <button id="verify-retry-btn" class="btn btn-outline auth-btn" data-animate style="display:none">
+                    <i class="fa-solid fa-rotate"></i> Проверить другой чек
+                </button>
+            </div>
+
+            <div class="verify-footer" data-animate="fade">
+                <p>Все данные проверяются по защищённому реестру.</p>
+                <p class="brand-highlight">Valuon — гарантия подлинности</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="js/theme.js"></script>
+    <script src="js/animations.js"></script>
+    <script type="module" src="js/verify.js"></script>
+    <div id="toast-container" class="toast-container"></div>
+</body>
+</html>
