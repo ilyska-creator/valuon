@@ -268,15 +268,10 @@ async function verifyReceiptFromQRData(qrRaw) {
         }
 
         const receipt = data.receipt;
+        const shop = data.shop;
 
-        const { data: shop, error: shopError } = await supabase
-            .from('shops')
-            .select('public_key, tax_id, shop_name')
-            .eq('id', receipt.shop_id)
-            .single();
-
-        if (shopError || !shop) {
-            console.error('[verify] Shop not found for receipt.shop_id:', receipt.shop_id, shopError);
+        if (!shop) {
+            console.error('[verify] Shop data missing from RPC response for receipt.shop_id:', receipt.shop_id);
             showResult('error', t('shop_not_found') || 'Магазин не найден');
             return;
         }
@@ -296,7 +291,7 @@ async function verifyReceiptFromQRData(qrRaw) {
             const dateStr = receipt.purchase_date
                 ? new Date(receipt.purchase_date).toLocaleDateString(getVerifyLocale(), {
                     day: 'numeric', month: 'long', year: 'numeric'
-                  })
+                })
                 : '—';
             const gross = parseFloat(receipt.gross_total);
             const amount = Number.isFinite(gross) ? '$' + gross.toFixed(2) : '—';
