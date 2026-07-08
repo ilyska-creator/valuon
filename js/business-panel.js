@@ -497,8 +497,10 @@ async function initBusinessPanel() {
     
     const themeBtn = document.getElementById('theme-toggle-btn');
     if (themeBtn) {
+        let themeTimer = null;
         themeBtn.addEventListener('click', () => {
-            setTimeout(updateChart, 100);
+            if (themeTimer) clearTimeout(themeTimer);
+            themeTimer = setTimeout(updateChart, 150);
         });
     }
 
@@ -559,7 +561,9 @@ async function initBusinessPanel() {
         let wrapper = document.querySelector('.chart-wrapper');
         if (!wrapper) return;
 
-        const t = businessTranslations[businessCurrentLang] || businessTranslations.ru;
+        const lang = window.businessCurrentLang || localStorage.getItem('valuon-lang') || 'ru';
+        const bt = window.businessTranslations || {};
+        const t = bt[lang] || bt.ru || {};
 
         const aggregated = aggregateReceiptsByPeriod(currentReceiptsList || [], period);
         const hasData = aggregated.data.some(v => v > 0);
@@ -569,12 +573,13 @@ async function initBusinessPanel() {
                 receiptsChartInstance.destroy();
                 receiptsChartInstance = null;
             }
+            const emptyText = t.chart_empty || 'Нет данных для графика';
             if (!canvas) {
-                wrapper.innerHTML = `<div class="chart-empty">${t.chart_empty}</div>`;
+                wrapper.innerHTML = `<div class="chart-empty">${emptyText}</div>`;
             } else {
                 const parent = canvas.parentElement;
                 if (parent && parent.classList.contains('chart-wrapper')) {
-                    parent.innerHTML = `<div class="chart-empty">${t.chart_empty}</div>`;
+                    parent.innerHTML = `<div class="chart-empty">${emptyText}</div>`;
                 }
             }
             return;
@@ -591,12 +596,17 @@ async function initBusinessPanel() {
         const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
         const textColor = isDark ? '#888' : '#64748b';
 
+        if (receiptsChartInstance) {
+            receiptsChartInstance.destroy();
+            receiptsChartInstance = null;
+        }
+
         receiptsChartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: aggregated.labels,
                 datasets: [{
-                    label: t.chart_label_receipts,
+                    label: t.chart_label_receipts || (lang === 'en' ? 'Sales count' : 'Количество продаж'),
                     data: aggregated.data,
                     backgroundColor: 'rgba(59, 130, 246, 0.6)',
                     borderColor: '#3b82f6',

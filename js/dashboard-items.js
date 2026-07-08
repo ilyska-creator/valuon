@@ -328,14 +328,18 @@ function renderWarrantyCalendar(items) {
         if (endDate.getDate() !== day) endDate.setDate(0);
 
         
-        let current = new Date(startDate);
-        while (current <= endDate) {
-            const key = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+        function addDateDot(date, status) {
+            const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             if (!warrantyMap[key]) warrantyMap[key] = [];
-            const daysLeft = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-            let status = daysLeft > 30 ? 'active' : daysLeft > 0 ? 'warning' : 'expired';
             warrantyMap[key].push({ name: item.name, status });
-            current.setDate(current.getDate() + 1);
+        }
+
+        const daysLeft = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        let status = daysLeft > 30 ? 'active' : daysLeft > 0 ? 'warning' : 'expired';
+
+        addDateDot(startDate, status);
+        if (endDate.getTime() !== startDate.getTime()) {
+            addDateDot(endDate, status);
         }
     });
 

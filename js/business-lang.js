@@ -28,7 +28,7 @@ const businessTranslations = {
         total_receipts_label: 'Всего чеков',
         pending_receipts_label: 'Ожидают привязки',
 
-        issued_receipts_title: 'Выписанные чеки',
+        issued_receipts_title: '🧾 Выписанные чеки',
         no_receipts_title: 'У вас пока нет выписанных чеков',
         no_receipts_desc: 'Нажмите кнопку «Создать чек», чтобы выдать первый цифровой документ клиенту.',
         create_first_receipt_btn: 'Создать первый чек',
@@ -80,12 +80,12 @@ const businessTranslations = {
         data_load_error: 'Ошибка загрузки данных',
 
         
-        chart_title: 'Динамика выписки чеков',
+        chart_title: '📊 Динамика выписки чеков',
         chart_week: 'Неделя',
         chart_month: 'Месяц',
         chart_year: 'Год',
         chart_empty: 'Нет данных для графика',
-        chart_label_receipts: 'Чеки',
+        chart_label_receipts: 'Количество продаж',
         chart_period_week: 'За последние 7 дней',
         chart_period_month: 'За последние 30 дней',
         chart_period_year: 'За последние 12 месяцев',
@@ -119,7 +119,7 @@ const businessTranslations = {
         total_receipts_label: 'Total Receipts',
         pending_receipts_label: 'Pending Binding',
 
-        issued_receipts_title: 'Issued Receipts',
+        issued_receipts_title: '🧾 Issued Receipts',
         no_receipts_title: 'You have no receipts yet',
         no_receipts_desc: 'Click the "Create Receipt" button to issue your first digital document to a customer.',
         create_first_receipt_btn: 'Create First Receipt',
@@ -168,12 +168,12 @@ const businessTranslations = {
         data_load_error: 'Data loading error',
 
         
-        chart_title: 'Receipt Issuance Dynamics',
+        chart_title: '📊 Receipt Issuance Dynamics',
         chart_week: 'Week',
         chart_month: 'Month',
         chart_year: 'Year',
         chart_empty: 'No data for chart',
-        chart_label_receipts: 'Receipts',
+        chart_label_receipts: 'Sales count',
         chart_period_week: 'Last 7 days',
         chart_period_month: 'Last 30 days',
         chart_period_year: 'Last 12 months',
@@ -394,4 +394,6 @@ document.addEventListener('DOMContentLoaded', () => {
     applyBusinessTranslations();
 });
 
+window.businessTranslations = businessTranslations;
+window.businessCurrentLang = businessCurrentLang;
 window.applyBusinessTranslations = applyBusinessTranslations;

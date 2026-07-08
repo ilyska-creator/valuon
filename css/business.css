@@ -382,10 +382,13 @@
 }
 
 .section-title {
-    font-size: 1.1rem;
+    font-size: 1.4rem;
     font-weight: 700;
     margin-bottom: 1.2rem;
     color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
 }
 
 .items-grid {
