@@ -1,4 +1,5 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
+import { escapeHtml } from './security.js';
 
 let pendingDeleteId = null;
 let pendingDeletePath = null;
@@ -28,11 +29,6 @@ function validateFileSize(file) {
         return false;
     }
     return true;
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 async function initReceipts() {

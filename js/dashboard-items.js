@@ -1,4 +1,5 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
+import { escapeHtml } from './security.js';
 
 let currentClient = null;
 let currentUserId = null;
@@ -15,11 +16,6 @@ const DEVICE_ICONS = {
     appliance: 'fa-blender',
     other: 'fa-box-open'
 };
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
 
 async function initDashboardItems() {
     const auth = await requireAuth();

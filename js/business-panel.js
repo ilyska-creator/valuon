@@ -1,6 +1,7 @@
 import { requireAuth } from './dashboard-auth.js';
 import { downloadReceiptPDF } from './receipt-generator.js';
 import Ed25519Signer, { buildSignaturePayload } from './crypto-signature.js';
+import { escapeHtml } from './security.js';
 
 let currentClient = null;
 let currentUser = null;
@@ -632,16 +633,6 @@ async function initBusinessPanel() {
             if (statsEl.pending) statsEl.pending.textContent = '—';
             listEl.grid.innerHTML = `<p style="text-align:center;color:var(--text-muted);padding:2rem;">${refreshLang === 'en' ? 'Data load error' : 'Ошибка загрузки данных'}</p>`;
         }
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
     }
 
 

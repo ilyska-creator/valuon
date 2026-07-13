@@ -1,12 +1,8 @@
 import { requireAuth } from './dashboard-auth.js';
+import { escapeHtml } from './security.js';
 
 function getNotifLang() {
     return localStorage.getItem('valuon-lang') || 'ru';
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function getNotifT() {
