@@ -35,7 +35,7 @@
 .verify-back-link {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     text-decoration: none;
     display: inline-flex;
     align-items: center;

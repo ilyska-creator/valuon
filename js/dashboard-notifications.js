@@ -39,7 +39,8 @@ async function loadNotifications(userId, client) {
     const container = document.getElementById('notifications-container');
     if (!container) return;
 
-    container.innerHTML = '<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> <span data-i18n="notif_checking"></span></div>';
+    const checkingText = window.dashboardTranslations?.[localStorage.getItem('valuon-lang') || 'ru']?.notif_checking || 'Проверка статусов...';
+    container.innerHTML = `<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> ${checkingText}</div>`;
 
     const { data: profile } = await client
         .from('profiles')

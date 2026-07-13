@@ -468,7 +468,7 @@
 
 .item-status-badge.expired {
     background: rgba(239, 68, 68, 0.1);
-    color: var(--danger);
+    color: var(--error);
 }
 
 [data-theme="dark"] .item-status-badge.active {
@@ -1326,14 +1326,14 @@
     border-radius: 10px;
     background: rgba(239, 68, 68, 0.08);
     border: 1px solid rgba(239, 68, 68, 0.2);
-    color: var(--danger);
+    color: var(--error);
     cursor: pointer;
     transition: var(--transition-fast);
 }
 
 .receipt-item-row .btn-remove-item:hover {
     background: rgba(239, 68, 68, 0.15);
-    border-color: var(--danger);
+    border-color: var(--error);
     transform: translateY(-1px);
 }
 

@@ -573,8 +573,8 @@ async function initBusinessPanel() {
                             await refreshDashboard(client, shopId, statsEl, listEl);
 
 
-                            if (typeof applyBusinessTranslations === 'function') {
-                                applyBusinessTranslations();
+                            if (typeof window.applyBusinessTranslations === 'function') {
+                                window.applyBusinessTranslations();
                             }
                         } catch (e) {
                             console.error('Delete failed:', e);
@@ -640,7 +640,8 @@ async function initBusinessPanel() {
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
 

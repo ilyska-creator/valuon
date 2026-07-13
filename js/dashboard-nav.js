@@ -68,5 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activateView(hash);
     }
 
-    unlockScroll();
+    if (document.body.classList.contains('scroll-locked')) {
+        unlockScroll();
+    }
 });
