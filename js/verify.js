@@ -213,7 +213,7 @@ function showResult(status, data) {
             const lineItems = Array.isArray(data.items) ? data.items : [];
             if (resultItemsList && resultItemsRow && resultItemsWrap) {
                 resultItemsList.innerHTML = '';
-                if (lineItems.length > 1) {
+                if (lineItems.length > 0) {
                     lineItems.forEach(it => {
                         const li = document.createElement('li');
                         const qty = it.qty ?? 1;
@@ -226,9 +226,6 @@ function showResult(status, data) {
                     });
                     resultItemsRow.style.display = '';
                     resultItemsWrap.style.display = '';
-                } else {
-                    resultItemsRow.style.display = 'none';
-                    resultItemsWrap.style.display = 'none';
                 }
             }
         } else {

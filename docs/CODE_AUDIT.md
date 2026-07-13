@@ -6,7 +6,7 @@
 
 ## 🔴 КРИТИЧЕСКИЕ (Critical)
 
-### C1. RLS-политики Supabase не проверяемы и, вероятно, неполны
+[x] C1. RLS-политики Supabase не проверяемы и, вероятно, неполны
 - **Где:** `supabase/migrations/` содержит только `add_crypto_keys_to_shops.sql`. Политики RLS для таблиц `profiles`, `items`, `receipts`, `business_receipts`, `shops`, `waitlist` **отсутствуют в репозитории**.
 - **Риск:** Весь клиентский код полагается на RLS как единственный контроль доступа (anon-ключ публичен). При некорректных RLS: утечка `private_key` всех магазинов (см. C2); чтение чужих `receipts`, `items`, `profiles`.
 - **Действие:** Опубликовать/проверить RLS для каждой таблицы в Supabase Dashboard.
