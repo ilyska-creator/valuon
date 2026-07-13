@@ -35,6 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.dispatchEvent(new CustomEvent('themeChange'));
     }
 
+    window.addEventListener('themeChange', () => updateThemeIcon());
+
     window.addEventListener('storage', (e) => {
         if (e.key === 'valuon-theme') {
             const newTheme = e.newValue || 'light';

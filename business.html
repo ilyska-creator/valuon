@@ -321,6 +321,7 @@
                 document.documentElement.setAttribute('data-theme', newTheme);
                 localStorage.setItem('valuon-theme', newTheme);
                 updateIcon();
+                window.dispatchEvent(new CustomEvent('themeChange'));
             });
 
             updateIcon();

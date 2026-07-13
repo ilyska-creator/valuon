@@ -286,6 +286,7 @@ async function initSettings() {
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('valuon-theme', newTheme);
             updateThemeBtn();
+            window.dispatchEvent(new CustomEvent('themeChange'));
         });
 
         document.addEventListener('themeChange', updateThemeBtn);

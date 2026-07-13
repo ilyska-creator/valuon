@@ -354,6 +354,7 @@ function restoreListeners(client, userId) {
         btn.addEventListener('click', () => {
             pendingDeleteId = btn.dataset.id;
             document.getElementById('delete-receipt-modal')?.classList.add('active');
+            document.body.classList.add('modal-open');
         });
     });
 
@@ -382,6 +383,12 @@ function restoreListeners(client, userId) {
                 const files = e.dataTransfer.files;
                 if (files.length > 0) {
                     if (!validateFileSize(files[0])) return;
+                    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+                    if (!allowedTypes.includes(files[0].type)) {
+                        const lang = getLang();
+                        showToast(lang === 'ru' ? 'Неподдерживаемый тип файла. Загрузите изображение или PDF.' : 'Unsupported file type. Please upload an image or PDF.', 'error');
+                        return;
+                    }
                     uploadModal.open();
                     uploadModal.setFile(files[0]);
                 }
@@ -421,6 +428,7 @@ function setupDeleteModal(client, userId) {
 
     function closeDeleteModal() {
         modal?.classList.remove('active');
+        document.body.classList.remove('modal-open');
         pendingDeleteId = null;
         pendingDeletePath = null;
     }
@@ -536,10 +544,12 @@ function createUploadModal(client, userId) {
 
     function open() {
         modal.classList.add('active');
+        document.body.classList.add('modal-open');
     }
 
     function close() {
         modal.classList.remove('active');
+        document.body.classList.remove('modal-open');
         form.reset();
         miniDropZone?.classList.remove('has-file');
         setFieldsLocked(false);

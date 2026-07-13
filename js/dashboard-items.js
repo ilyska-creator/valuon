@@ -208,6 +208,7 @@ function renderItems(items) {
         btn.addEventListener('click', () => {
             pendingDeleteItemId = btn.dataset.id;
             document.getElementById('delete-item-modal')?.classList.add('active');
+            document.body.classList.add('modal-open');
         });
     });
 
@@ -277,6 +278,7 @@ async function openEditModal(itemId, client, userId) {
     }
 
     modal.classList.add('active');
+    document.body.classList.add('modal-open');
 }
 
 let calendarCurrentMonth = new Date().getMonth();
@@ -425,6 +427,7 @@ function setupEditModal(client, userId) {
     function closeModal() {
         modal.classList.remove('active');
         form.reset();
+        document.body.classList.remove('modal-open');
     }
 
     closeBtn?.addEventListener('click', closeModal);
@@ -487,6 +490,7 @@ function setupDeleteItemModal(client, userId) {
 
     function closeDeleteModal() {
         modal?.classList.remove('active');
+        document.body.classList.remove('modal-open');
         pendingDeleteItemId = null;
     }
 
@@ -533,12 +537,12 @@ function setupModal(client) {
 
     let isSubmitting = false;
 
-    addBtn.addEventListener('click', () => modal.classList.add('active'));
-    closeBtn?.addEventListener('click', () => { modal.classList.remove('active'); form.reset(); });
-    cancelBtn?.addEventListener('click', () => { modal.classList.remove('active'); form.reset(); });
+    addBtn.addEventListener('click', () => { modal.classList.add('active'); document.body.classList.add('modal-open'); });
+    closeBtn?.addEventListener('click', () => { modal.classList.remove('active'); form.reset(); document.body.classList.remove('modal-open'); });
+    cancelBtn?.addEventListener('click', () => { modal.classList.remove('active'); form.reset(); document.body.classList.remove('modal-open'); });
 
     modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.remove('active');
+        if (e.target === modal) { modal.classList.remove('active'); document.body.classList.remove('modal-open'); }
     });
 
     form?.addEventListener('submit', async (e) => {

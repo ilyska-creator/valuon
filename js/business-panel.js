@@ -56,7 +56,7 @@ async function initBusinessPanel() {
         <div class="item-card status-${r.status}" data-receipt-id="${r.id}" data-receipt-status="${r.status}" data-receipt-date="${r.purchase_date}">
             <div class="item-header">
                 <div class="item-icon"><i class="fa-solid fa-receipt"></i></div>
-                <span class="item-status-badge ${statusClass}" data-i18n="${statusKey}"></span>
+                <span class="item-status-badge ${statusClass}" data-i18n="${statusKey}">${bt[currentLang]?.[statusKey] || ''}</span>
             </div>
             <div class="item-body">
                 <h3 class="item-title" title="${escapeHtml(receiptNum)}">${escapeHtml(receiptNum)}</h3>
@@ -356,7 +356,7 @@ async function initBusinessPanel() {
     modal.closeBtn?.addEventListener('click', () => toggleModal(false));
     modal.cancelBtn?.addEventListener('click', () => toggleModal(false));
     modal.el?.addEventListener('click', (e) => {
-        if (e.target === modal.el) toggleModal(false);
+        if (e.target === modal.el || e.target.classList.contains('modal-backdrop')) toggleModal(false);
     });
 
     if (forms.receipt) {
@@ -367,7 +367,8 @@ async function initBusinessPanel() {
             if (btn.disabled) return;
             btn.disabled = true;
             const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Выписка...';
+            const issueLang = localStorage.getItem('valuon-lang') || 'ru';
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> ' + (issueLang === 'en' ? 'Issuing...' : 'Выписка...');
 
             try {
                 if (!currentShop) return;
@@ -405,7 +406,8 @@ async function initBusinessPanel() {
                     .single();
 
                 if (!keyData?.private_key) {
-                    window.showToast('Криптографический ключ магазина не найден. Пересоздайте магазин.', 'error');
+                    const keyLang = localStorage.getItem('valuon-lang') || 'ru';
+                    window.showToast(keyLang === 'en' ? 'Crypto key not found. Recreate the shop.' : 'Криптографический ключ магазина не найден. Пересоздайте магазин.', 'error');
                     return;
                 }
 
@@ -544,6 +546,7 @@ async function initBusinessPanel() {
                     if (!deleteModal) return;
 
                     deleteModal.classList.remove('is-hidden');
+                    document.body.classList.add('modal-open');
 
                     confirmBtn.disabled = false;
                     const lang = localStorage.getItem('valuon-lang') || 'ru';
@@ -584,6 +587,7 @@ async function initBusinessPanel() {
 
                     const handleCancel = () => {
                         deleteModal.classList.add('is-hidden');
+                        document.body.classList.remove('modal-open');
                         cleanup();
                     };
 
@@ -621,10 +625,11 @@ async function initBusinessPanel() {
             updateChart();
         } catch (e) {
             console.error('Dashboard refresh failed:', e);
-            window.showToast('Не удалось обновить данные. Попробуйте позже.', 'error');
+            const refreshLang = localStorage.getItem('valuon-lang') || 'ru';
+            window.showToast(refreshLang === 'en' ? 'Failed to update data. Try again later.' : 'Не удалось обновить данные. Попробуйте позже.', 'error');
             if (statsEl.total) statsEl.total.textContent = '—';
             if (statsEl.pending) statsEl.pending.textContent = '—';
-            listEl.grid.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:2rem;">Ошибка загрузки данных</p>';
+            listEl.grid.innerHTML = `<p style="text-align:center;color:var(--text-muted);padding:2rem;">${refreshLang === 'en' ? 'Data load error' : 'Ошибка загрузки данных'}</p>`;
         }
     }
 
