@@ -617,7 +617,8 @@ async function initBusinessPanel() {
                     if (receipt && currentShop) {
                         downloadReceiptPDF(receipt, currentShop);
                     } else {
-                        window.showToast('Не удалось найти данные чека', 'error');
+                        const errLang = localStorage.getItem('valuon-lang') || 'ru';
+                        window.showToast(errLang === 'en' ? 'Receipt data not found' : 'Не удалось найти данные чека', 'error');
                     }
                 });
             });

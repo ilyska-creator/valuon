@@ -520,11 +520,11 @@ if (uploadZone && !('ontouchstart' in window)) {
         const file = files[0];
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
         if (!allowedTypes.includes(file.type)) {
-            alert(t('file_type_not_supported') || 'Unsupported file type. Please upload an image or PDF.');
+            window.showToast(t('file_type_not_supported') || 'Unsupported file type. Please upload an image or PDF.', 'error');
             return;
         }
         if (file.size > 10 * 1024 * 1024) {
-            alert(t('file_too_big'));
+            window.showToast(t('file_too_big'), 'error');
             return;
         }
 
@@ -572,7 +572,7 @@ scanFileInput?.addEventListener('change', async () => {
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-        alert(t('file_too_big'));
+        window.showToast(t('file_too_big'), 'error');
         scanFileInput.value = '';
         return;
     }
@@ -609,7 +609,7 @@ fileInput?.addEventListener('change', async () => {
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-        alert(t('file_too_big'));
+        window.showToast(t('file_too_big'), 'error');
         fileInput.value = '';
         return;
     }

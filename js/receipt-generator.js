@@ -68,7 +68,7 @@ export function downloadReceiptPDF(receipt, shop) {
         const grossTotal = receipt.gross_total;
         const items = Array.isArray(receipt.receipt_items) && receipt.receipt_items.length > 0
             ? receipt.receipt_items
-            : [{ item_name: 'Digital Receipt', qty: 1, unit_price: 0, vat_rate: 0, net_total: receipt.net_total || 0 }];
+            : [{ item_name: receipt.receipt_items?.[0]?.item_name || receipt.shop_name || 'Digital Receipt', qty: 1, unit_price: receipt.gross_total || 0, vat_rate: 0, net_total: receipt.net_total || 0 }];
 
 
         function qrEscape(v) { return encodeURIComponent(String(v)); }

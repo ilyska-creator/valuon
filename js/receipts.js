@@ -319,7 +319,7 @@ function restoreListeners(client, userId) {
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             try {
                 const { downloadReceiptPDF } = await import('./receipt-generator.js');
-                const { data: receipt, error } = await client
+                let { data: receipt, error } = await client
                     .from('business_receipts')
                     .select('*, receipt_items(*)')
                     .eq('id', btn.dataset.receiptId)
@@ -328,6 +328,15 @@ function restoreListeners(client, userId) {
                     .single();
 
                 if (error || !receipt) throw error || new Error('Receipt not found');
+
+                if (!Array.isArray(receipt.receipt_items) || receipt.receipt_items.length === 0) {
+                    const { data: items } = await client
+                        .from('receipt_items')
+                        .select('*')
+                        .eq('receipt_id', receipt.id)
+                        .order('sort_order');
+                    if (items?.length) receipt.receipt_items = items;
+                }
 
                 const mockShop = {
                     shop_name: receipt.shop_name || 'Partner Store',
