@@ -140,8 +140,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.error('❌ Ошибка сохранения профиля:', profileError);
                         showToast('Ошибка сохранения данных профиля', 'error');
                     } else {
-                        console.log('✅ Профиль сохранен успешно');
-
                         const { error: lazyBindError, count } = await supabase
                             .from('business_receipts')
                             .update({ status: 'verified' })
@@ -150,11 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             .select('id', { count: 'exact' });
 
                         if (lazyBindError) {
-
-
                             console.error('❌ Ошибка привязки бизнес-чеков (lazy binding):', lazyBindError);
-                        } else {
-                            console.log(`✅ Привязано бизнес-чеков: ${count ?? 0}`);
                         }
                     }
                 }

@@ -157,6 +157,7 @@ async function initSettings() {
                 .eq('id', user.id);
         } catch (err) {
             console.error(err);
+            showToast((getSettingsT().msg_save_error || 'Save failed') + ': ' + (err.message || ''), 'error');
         }
     }
 

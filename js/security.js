@@ -63,19 +63,6 @@ export function checkSignupRateLimit(email) {
 
 
 
-export function setSafeHTML(element, html, allowHTML = false) {
-    if (!element) return;
-
-    if (allowHTML) {
-        
-        element.innerHTML = html;
-    } else {
-        
-        element.textContent = html;
-    }
-}
-
-
 export function setLoadingButton(button) {
     if (!button) return;
     button.disabled = true;

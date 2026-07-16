@@ -56,10 +56,6 @@ async function loadItems(userId, client) {
     renderWarrantyCalendar(safeItems);
     window._lastLoadedItems = safeItems;
 
-    if (typeof window.renderNotifications === 'function') {
-        window.renderNotifications(safeItems);
-    }
-
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(localStorage.getItem('valuon-lang') || 'ru');
     }

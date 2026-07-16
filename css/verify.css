@@ -808,7 +808,7 @@
         font-size: 1.25rem;
     }
 
-    .verify-logo .lang-toggle {
+.verify-top-bar .lang-toggle {
         width: 32px;
         height: 32px;
         font-size: 0.75rem;

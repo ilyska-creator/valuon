@@ -1108,18 +1108,6 @@ ul {
     flex: 1;
 }
 
-.form-message.success {
-    color: var(--success);
-}
-
-.form-message.warning {
-    color: #f59e0b;
-}
-
-.form-message.error {
-    color: #ef4444;
-}
-
 @media (max-width: 968px) {
     .hero-section {
         padding: 120px 0 40px;

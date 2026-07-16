@@ -18,10 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.remove('scroll-locked');
         document.body.style.top = '';
         window.scrollTo(0, scrollPosition);
-
-        if ('ontouchstart' in window) {
-            document.body.dispatchEvent(new Event('touchstart'));
-        }
     }
 
     function activateView(targetId) {

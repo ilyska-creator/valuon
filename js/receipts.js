@@ -2,7 +2,6 @@ import { requireAuth, setupLogout } from './dashboard-auth.js';
 import { escapeHtml } from './security.js';
 
 let pendingDeleteId = null;
-let pendingDeletePath = null;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const SIGNED_URL_TTL = 60 * 60;
 
@@ -42,6 +41,7 @@ async function initReceipts() {
     currentUserEmail = user.email;
 
     uploadModal = createUploadModal(client, currentUserId);
+    setupUploadListeners(uploadModal);
     setupDeleteModal(client, currentUserId);
 
     await loadAllReceipts(currentUserEmail, currentUserId, client);
@@ -265,6 +265,45 @@ function renderPersonalCard(r, t) {
     `;
 }
 
+function setupUploadListeners(modal) {
+    if (!modal) return;
+    document.getElementById('upload-receipt-btn')?.addEventListener('click', modal.open);
+    document.getElementById('empty-upload-receipt-btn')?.addEventListener('click', modal.open);
+
+    const dropZone = document.getElementById('drop-zone');
+    if (!dropZone) return;
+
+    dropZone.addEventListener('click', modal.open);
+    ['dragenter', 'dragover'].forEach(evt => {
+        dropZone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--primary)';
+            dropZone.style.background = 'rgba(59, 130, 246, 0.05)';
+        });
+    });
+    ['dragleave', 'drop'].forEach(evt => {
+        dropZone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '';
+            dropZone.style.background = '';
+        });
+    });
+    dropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            if (!validateFileSize(files[0])) return;
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+            if (!allowedTypes.includes(files[0].type)) {
+                const lang = getLang();
+                showToast(lang === 'ru' ? 'Неподдерживаемый тип файла. Загрузите изображение или PDF.' : 'Unsupported file type. Please upload an image or PDF.', 'error');
+                return;
+            }
+            modal.open();
+            modal.setFile(files[0]);
+        }
+    });
+}
+
 function restoreListeners(client, userId) {
     const lang = getLang();
 
@@ -362,44 +401,6 @@ function restoreListeners(client, userId) {
             document.body.classList.add('modal-open');
         });
     });
-
-    if (uploadModal) {
-        document.getElementById('upload-receipt-btn')?.addEventListener('click', uploadModal.open);
-        document.getElementById('empty-upload-receipt-btn')?.addEventListener('click', uploadModal.open);
-
-        const dropZone = document.getElementById('drop-zone');
-        if (dropZone) {
-            dropZone.addEventListener('click', uploadModal.open);
-            ['dragenter', 'dragover'].forEach(evt => {
-                dropZone.addEventListener(evt, (e) => {
-                    e.preventDefault();
-                    dropZone.style.borderColor = 'var(--primary)';
-                    dropZone.style.background = 'rgba(59, 130, 246, 0.05)';
-                });
-            });
-            ['dragleave', 'drop'].forEach(evt => {
-                dropZone.addEventListener(evt, (e) => {
-                    e.preventDefault();
-                    dropZone.style.borderColor = '';
-                    dropZone.style.background = '';
-                });
-            });
-            dropZone.addEventListener('drop', (e) => {
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    if (!validateFileSize(files[0])) return;
-                    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
-                    if (!allowedTypes.includes(files[0].type)) {
-                        const lang = getLang();
-                        showToast(lang === 'ru' ? 'Неподдерживаемый тип файла. Загрузите изображение или PDF.' : 'Unsupported file type. Please upload an image or PDF.', 'error');
-                        return;
-                    }
-                    uploadModal.open();
-                    uploadModal.setFile(files[0]);
-                }
-            });
-        }
-    }
 }
 
 async function populateItemSelect(userId, client) {
@@ -435,7 +436,6 @@ function setupDeleteModal(client, userId) {
         modal?.classList.remove('active');
         document.body.classList.remove('modal-open');
         pendingDeleteId = null;
-        pendingDeletePath = null;
     }
 
     cancelBtn?.addEventListener('click', closeDeleteModal);
