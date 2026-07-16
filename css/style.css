@@ -587,14 +587,14 @@ ul {
 }
 
 .card-1 {
-    top: -15px;
-    left: -20px;
+    top: 50px;
+    left: 10px;
     animation-delay: 2s;
 }
 
 .card-2 {
-    bottom: 20px;
-    right: -30px;
+    bottom: 30px;
+    right: 50px;
     animation-delay: 4s;
 }
 
