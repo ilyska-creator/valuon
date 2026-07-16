@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ru: {
             roadmap_back: "← На главную",
             roadmap_title: "Дорожная карта Valuon: единая платформа официальных чеков",
+            meta_description: "Valuon — Дорожная карта развития. Планы по запуску, новым возможностям и международной экспансии.",
             roadmap_desc: "План развития от рабочего MVP до единой платформы доступа к официальным чекам в разных странах.",
 
             roles_section_title: "Две роли Valuon, а не одна универсальная",
@@ -109,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         en: {
             roadmap_back: "← Back to Home",
             roadmap_title: "Valuon Roadmap: a unified platform for official digital receipts",
+            meta_description: "Valuon — Development roadmap. Launch plans, new features and international expansion.",
             roadmap_desc: "Development plan from a working MVP to a unified access platform for official receipts across countries.",
 
             roles_section_title: "Two roles for Valuon, not one universal one",
@@ -221,6 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentLang = lang;
 
         document.title = t.roadmap_title;
+        const desc = document.querySelector('meta[name="description"]');
+        if (desc) desc.content = t.meta_description;
 
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');

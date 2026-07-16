@@ -1,6 +1,7 @@
 const verifyTranslations = {
     ru: {
         page_title: 'Valuon — Верификация чека',
+        meta_description: 'Valuon — Проверьте подлинность чека по QR-коду. Криптографическая верификация Ed25519.',
         title: 'Верификация чека',
         subtitle: 'Проверьте подлинность чека по QR-коду или загрузите фото/PDF',
         tab_scan: 'Сканировать',
@@ -56,6 +57,7 @@ const verifyTranslations = {
     },
     en: {
         page_title: 'Valuon — Receipt Verification',
+        meta_description: 'Valuon — Verify receipt authenticity by QR code. Cryptographic Ed25519 verification.',
         title: 'Receipt Verification',
         subtitle: 'Verify a receipt by scanning its QR code or uploading a photo/PDF',
         tab_scan: 'Scan',
@@ -123,6 +125,8 @@ export function getVerifyLocale() {
 
 function applyStaticTranslations() {
     document.title = t('page_title');
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.content = t('meta_description');
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (verifyTranslations.ru[key]) {

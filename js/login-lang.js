@@ -3,6 +3,9 @@ const translations = {
         page_title: "Valuon — Вход",
         page_title_reg: "Valuon — Регистрация",
         page_title_reset: "Valuon — Сброс пароля",
+        meta_description: "Valuon — Войдите в аккаунт для управления покупками, гарантиями и цифровыми чеками.",
+        meta_description_reg: "Valuon — Регистрация. Создайте аккаунт и начните управлять гарантиями на покупки бесплатно.",
+        meta_description_reset: "Valuon — Сброс пароля. Восстановите доступ к вашему аккаунту.",
         back_home: "← На главную",
         back_to_login: "← Ко входу",
 
@@ -59,6 +62,9 @@ const translations = {
         page_title: "Valuon — Sign In",
         page_title_reg: "Valuon — Sign Up",
         page_title_reset: "Valuon — Reset Password",
+        meta_description: "Valuon — Sign in to manage your purchases, warranties and digital receipts.",
+        meta_description_reg: "Valuon — Sign Up. Create an account and start managing your purchase warranties for free.",
+        meta_description_reset: "Valuon — Reset Password. Recover access to your account.",
         back_home: "← Back to Home",
         back_to_login: "← Back to Login",
 
@@ -127,6 +133,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (path.includes('reset-password')) titleKey = 'page_title_reset';
 
     document.title = translations[currentLang][titleKey];
+    let descKey = 'meta_description';
+    if (path.includes('register')) descKey = 'meta_description_reg';
+    if (path.includes('reset-password')) descKey = 'meta_description_reset';
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.content = translations[currentLang][descKey];
 
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');

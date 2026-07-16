@@ -1,6 +1,7 @@
 const dashboardTranslations = {
     ru: {
         page_title: "Valuon — Личный кабинет",
+        meta_description: "Valuon — Личный кабинет. Управляйте гарантиями, отслеживайте чеки и получайте напоминания об окончании срока.",
         nav_items: "Мои вещи",
         nav_receipts: "Чеки и документы",
         nav_business: "Для бизнеса",
@@ -149,6 +150,7 @@ const dashboardTranslations = {
     },
     en: {
         page_title: "Valuon — Dashboard",
+        meta_description: "Valuon — Dashboard. Manage your warranties, track receipts and get expiry reminders.",
         nav_items: "My Items",
         nav_receipts: "Receipts & Docs",
         nav_business: "For Business",
@@ -306,6 +308,8 @@ function applyDashboardLang(lang) {
     currentLang = lang;
 
     document.title = t.page_title;
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.content = t.meta_description;
 
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
