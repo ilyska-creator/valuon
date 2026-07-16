@@ -122,15 +122,20 @@ const translations = {
 
 let currentLang = localStorage.getItem('valuon-lang') || 'ru';
 
+function sanitizeHTML(str) {
+    return str
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(/href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, 'href="#"');
+}
+
 function applyTranslations() {
     document.title = translations[currentLang].page_title;
 
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (translations[currentLang][key]) {
-
-
-            el.innerHTML = translations[currentLang][key];
+            el.innerHTML = sanitizeHTML(translations[currentLang][key]);
         }
     });
 

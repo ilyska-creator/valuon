@@ -679,7 +679,6 @@ window.addEventListener('verify-lang-changed', () => {
     }
 });
 
-window.addEventListener('beforeunload', stopCamera);
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopCamera();
 });

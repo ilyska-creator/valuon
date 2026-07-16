@@ -41,19 +41,19 @@ function showToast(message, type = 'error', duration = 4000) {
 
     container.appendChild(toast);
 
-    const timer = setTimeout(() => removeToast(toast), duration);
+    const startTime = Date.now();
+    let remaining = duration;
+    let timer = setTimeout(() => removeToast(toast), duration);
 
-    let hoverTimer;
     toast.addEventListener('mouseenter', () => {
         clearTimeout(timer);
-        clearTimeout(hoverTimer);
+        remaining = Math.max(0, duration - (Date.now() - startTime));
         toast.querySelector('.toast-progress').style.animationPlayState = 'paused';
     });
 
     toast.addEventListener('mouseleave', () => {
         toast.querySelector('.toast-progress').style.animationPlayState = 'running';
-        clearTimeout(hoverTimer);
-        hoverTimer = setTimeout(() => removeToast(toast), 1500);
+        timer = setTimeout(() => removeToast(toast), remaining);
     });
 }
 
