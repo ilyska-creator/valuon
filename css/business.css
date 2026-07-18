@@ -539,7 +539,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 40px 20px 72px;
+    padding: 1rem;
     opacity: 1;
     visibility: visible;
     transition: opacity 0.25s ease, visibility 0.25s ease;
