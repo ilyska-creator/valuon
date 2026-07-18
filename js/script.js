@@ -57,7 +57,7 @@ const translations = {
         vision_desc: "Единая платформа, где каждый чек подписан цифровой подписью, а гарантия отслеживается автоматически. Сейчас — работающий MVP. Дальше — международные рынки, интеграция с кассами и доверие между покупателем и магазином.",
         vision_btn: "Читать Roadmap", footer_tagline: "Управляйте гарантиями умнее.",
         footer_prod: "Продукт", footer_sec: "Безопасность", footer_biz: "Для бизнеса",
-        footer_comp: "Компания", footer_about: "О нас", footer_career: "Карьера", footer_contact: "Контакты", footer_social: "Соцсети",
+        footer_comp: "Компания", footer_about: "О нас", footer_career: "Карьера", footer_contact: "Контакты", footer_privacy: "Политика конфиденциальности", footer_terms: "Условия пользования", footer_social: "Соцсети",
         footer_copyright: "© 2026 Valuon. Все права защищены.",
         msg_success: "Спасибо! Вы в списке ожидания.",
         msg_duplicate: "Этот email уже зарегистрирован.",
@@ -112,7 +112,7 @@ const translations = {
         vision_desc: "A unified platform where every receipt is cryptographically signed and every warranty is tracked automatically. Today — a working MVP. Next — international markets, POS integrations, and trust between buyers and stores.",
         vision_btn: "Read Roadmap", footer_tagline: "Manage warranties smarter.",
         footer_prod: "Product", footer_sec: "Security", footer_biz: "For Business",
-        footer_comp: "Company", footer_about: "About Us", footer_career: "Careers", footer_contact: "Contact", footer_social: "Socials",
+        footer_comp: "Company", footer_about: "About Us", footer_career: "Careers", footer_contact: "Contact", footer_privacy: "Privacy Policy", footer_terms: "Terms of Use", footer_social: "Socials",
         footer_copyright: "© 2026 Valuon. All rights reserved.",
         msg_duplicate: "This email is already registered.",
         msg_error: "Error. Please try again later."

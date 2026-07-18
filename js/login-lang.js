@@ -25,7 +25,9 @@ const translations = {
         btn_register: "Зарегистрироваться",
         footer_have_account: "Уже есть аккаунт?",
         footer_link_login: "Войти",
-        reg_terms: "Я согласен с <a href='#' style='color:var(--primary)'>условиями</a>",
+        login_privacy_link: "Политика конфиденциальности",
+        login_terms_link: "Условия пользования",
+        reg_terms: "Я согласен с <a href='terms.html' style='color:var(--primary)'>условиями пользования</a> и <a href='privacy.html' style='color:var(--primary)'>политикой конфиденциальности</a>",
 
         forgot_title: "Восстановление пароля",
         forgot_desc: "Введите email, привязанный к аккаунту. Мы отправим ссылку для сброса пароля.",
@@ -84,7 +86,9 @@ const translations = {
         btn_register: "Sign Up",
         footer_have_account: "Already have an account?",
         footer_link_login: "Sign In",
-        reg_terms: "I agree to the <a href='#' style='color:var(--primary)'>Terms</a>",
+        login_privacy_link: "Privacy Policy",
+        login_terms_link: "Terms of Use",
+        reg_terms: "I agree to the <a href='terms.html' style='color:var(--primary)'>Terms of Use</a> and <a href='privacy.html' style='color:var(--primary)'>Privacy Policy</a>",
 
         forgot_title: "Reset Password",
         forgot_desc: "Enter the email linked to your account. We'll send a password reset link.",

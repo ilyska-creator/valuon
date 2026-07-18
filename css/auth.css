@@ -9,7 +9,7 @@
 }
 
 .back-link {
-    position: absolute;
+    position: fixed;
     top: var(--space-6);
     left: var(--space-6);
     color: var(--text-muted);
@@ -147,6 +147,10 @@
 .auth-footer a {
     color: var(--primary);
     font-weight: 700;
+}
+
+.auth-footer+.auth-footer {
+    margin-top: 24px;
 }
 
 .checkbox-label input[type="checkbox"] {
