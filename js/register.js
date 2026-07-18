@@ -1,5 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-import { checkSignupRateLimit, setLoadingButton, resetLoadingButton } from './security.js';
+import { checkSignupRateLimit } from './security.js';
 
 const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL)
     || 'https://qjnzawjivqvgupbgxdao.supabase.co';
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.error('❌ Ошибка сохранения профиля:', profileError);
                         showToast('Ошибка сохранения данных профиля', 'error');
                     } else {
-                        const { error: lazyBindError, count } = await supabase
+                        const { error: lazyBindError } = await supabase
                             .from('business_receipts')
                             .update({ status: 'verified' })
                             .eq('customer_email', email.toLowerCase().trim())

@@ -77,15 +77,6 @@ export function resetLoadingButton(button, originalHTML) {
 }
 
 
-export function createSafeElement(tag, html, className = '') {
-    const el = document.createElement(tag);
-    if (className) el.className = className;
-    el.innerHTML = html;
-    return el;
-}
-
-
-
 
 
 
@@ -105,48 +96,11 @@ export function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-function passwordIssues(lang) {
-    if (lang === 'en') {
-        return [
-            'At least 8 characters',
-            'At least one uppercase letter',
-            'At least one lowercase letter',
-            'At least one digit',
-            'At least one special character (!@#$%^&*-_+=)',
-        ];
-    }
-    return [
-        'Минимум 8 символов',
-        'Хотя бы одна заглавная буква',
-        'Хотя бы одна строчная буква',
-        'Хотя бы одна цифра',
-        'Хотя бы один спецсимвол (!@#$%^&*-_+=)',
-    ];
-}
-
-export function validatePassword(password, lang = 'ru') {
-    const issues = [];
-    const msgs = passwordIssues(lang);
-
-    if (password.length < 8) issues.push(msgs[0]);
-    if (!/[A-Z]/.test(password)) issues.push(msgs[1]);
-    if (!/[a-z]/.test(password)) issues.push(msgs[2]);
-    if (!/\d/.test(password)) issues.push(msgs[3]);
-    if (!/[!@#$%^&*\-_+=]/.test(password)) issues.push(msgs[4]);
-
-    let strength = 'weak';
-    if (issues.length <= 1) strength = 'strong';
-    else if (issues.length <= 2) strength = 'medium';
-
-    return {
-        valid: issues.length === 0,
-        strength,
-        issues
-    };
-}
+let cleanupInterval = null;
 
 export function cleanupOldAttempts() {
-    setInterval(() => {
+    if (cleanupInterval) clearInterval(cleanupInterval);
+    cleanupInterval = setInterval(() => {
         const now = Date.now();
 
         for (const [key, attempts] of loginAttempts.entries()) {
@@ -171,4 +125,5 @@ export function cleanupOldAttempts() {
 
 if (typeof window !== 'undefined') {
     window.addEventListener('load', cleanupOldAttempts);
+    window.addEventListener('beforeunload', () => { if (cleanupInterval) clearInterval(cleanupInterval); });
 }

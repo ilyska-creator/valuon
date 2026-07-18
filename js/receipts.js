@@ -715,7 +715,8 @@ function createUploadModal(client, userId) {
             const storeName = form.querySelector('[name="store_name"]').value.trim();
             const rawItemId = form.querySelector('[name="item_id"]').value;
             const itemId = rawItemId || null;
-            const parsedAmount = Math.max(0, parseFloat(amount) || 0);
+            const rawAmount = parseFloat(amount);
+            const parsedAmount = isNaN(rawAmount) ? null : Math.max(0, rawAmount);
 
             const { error: dbError } = await client.from('receipts').insert({
                 user_id: userId,
@@ -724,7 +725,7 @@ function createUploadModal(client, userId) {
                 file_url: signedData.signedUrl,
                 file_path: filePath,
                 file_type: file.type,
-                amount: parsedAmount || null,
+                amount: parsedAmount,
                 purchase_date: purchaseDate,
                 store_name: storeName,
                 status: 'pending'

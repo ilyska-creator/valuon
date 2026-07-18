@@ -15,9 +15,9 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/business.css">
     <link rel="stylesheet" href="css/toast.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
         (function () {
             const savedTheme = localStorage.getItem('valuon-theme');
@@ -62,7 +62,7 @@
                             чеков клиентам.</p>
                     </div>
 
-                    <form id="create-shop-form" class="mt-6">
+                    <form id="create-shop-form" class="mt-6" action="#">
                         <div class="input-group">
                             <label for="shop_name">Название бизнеса</label>
                             <input type="text" id="shop_name" name="shop_name" required placeholder="My Awesome Store"
@@ -175,7 +175,7 @@
                     <h2>Выписать новый чек</h2>
                     <button id="close-receipt-modal" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <form id="issue-receipt-form" class="modal-form">
+                <form id="issue-receipt-form" class="modal-form" action="#">
                     <div class="input-group">
                         <label>Email покупателя</label>
                         <input type="email" name="customer_email" placeholder="client@example.com" required>

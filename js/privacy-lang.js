@@ -96,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             privacy_s12_title: "12. Контакты",
             privacy_s12_p1: "По любым вопросам о персональных данных и этой политике пишите нам:",
-            privacy_callout: "Этот email — заглушка на этапе пилота. Замените на реальный рабочий адрес и, при появлении зарегистрированного юрлица, добавьте сюда его название и юридический адрес как контролёра данных.",
 
             footer_copyright: "© 2026 Valuon. Все права защищены."
         },
@@ -196,7 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             privacy_s12_title: "12. Contact",
             privacy_s12_p1: "For any questions about personal data and this policy, contact us at:",
-            privacy_callout: "This email is a placeholder for the pilot stage. Replace it with a real working address and, once a registered legal entity exists, add its name and registered address here as the data controller.",
 
             footer_copyright: "© 2026 Valuon. All rights reserved."
         }

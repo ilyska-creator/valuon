@@ -18,7 +18,7 @@ async function initBusinessPanel() {
                 document.body.appendChild(container);
             }
             const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
+            toast.className = `toast ${type}`;
             toast.innerHTML = escapeHtml(msg);
             container.appendChild(toast);
             setTimeout(() => toast.remove(), 4000);
@@ -549,8 +549,12 @@ async function initBusinessPanel() {
 
             window.applyBusinessTranslations?.();
 
+            let currentDeleteCleanup = null;
+
             listEl.grid.querySelectorAll('.btn-delete-receipt').forEach(btn => {
                 btn.addEventListener('click', () => {
+                    if (currentDeleteCleanup) currentDeleteCleanup();
+
                     const receiptId = btn.dataset.id;
                     const deleteModal = document.getElementById('delete-confirm-modal');
                     const confirmBtn = document.getElementById('confirm-delete-btn');
@@ -608,6 +612,7 @@ async function initBusinessPanel() {
                         confirmBtn.removeEventListener('click', handleConfirm);
                         cancelBtn.removeEventListener('click', handleCancel);
                         deleteModal.removeEventListener('click', handleClickOutside);
+                        currentDeleteCleanup = null;
                     };
 
                     const handleClickOutside = (e) => {
@@ -619,6 +624,7 @@ async function initBusinessPanel() {
                     confirmBtn.addEventListener('click', handleConfirm);
                     cancelBtn.addEventListener('click', handleCancel);
                     deleteModal.addEventListener('click', handleClickOutside);
+                    currentDeleteCleanup = cleanup;
                 });
             });
 

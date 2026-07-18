@@ -13,13 +13,13 @@ const translations = {
         hero_badge: "Альфа доступ открыт",
         hero_title: 'Гарантия больше не <br><span class="highlight">бумажка в ящике</span>',
         hero_desc: "Цифровой профиль для каждой покупки. Храните чеки, отслеживайте гарантии и никогда не теряйте право на бесплатный ремонт.",
-        form_placeholder: "Ваш email",
+
         hero_btn_start: "Начать бесплатно",
         hero_btn_login: "Войти в аккаунт",
         hero_btn_verify: "Проверить чек",
         hero_subtext_social: "Мы только начинаем — ваш голос повлияет на то, каким Valuon станет",
         card_status: "Активна", demo_days_left: "Осталось 285 дней",
-        card_manual: "Инструкция", card_service: "Сервис",
+
         float_receipt: "Чек сохранен", float_reminder: "Напоминание",
         feat_title: "Все инструменты защиты <br>ваших покупок",
         feat_desc: "Мы убрали хаос из гарантийного обслуживания, оставив только то, что действительно важно.",
@@ -69,12 +69,12 @@ const translations = {
         hero_badge: "Alpha Access Open",
         hero_title: 'Warranty is no longer <br><span class="highlight">paper in a drawer</span>',
         hero_desc: "A digital profile for every purchase. Store receipts, track warranties and never lose your right to free repair.",
-        form_placeholder: "Your email",
+
         hero_btn_start: "Get Started Free",
         hero_btn_login: "Sign In",
         hero_btn_verify: "Verify Receipt",
         hero_subtext_social: "We're just getting started — your feedback will shape what Valuon becomes",
-        card_status: "Active", demo_days_left: "285 days left", card_manual: "Manual", card_service: "Service",
+        card_status: "Active", demo_days_left: "285 days left",
         float_receipt: "Receipt saved", float_reminder: "Reminder",
         feat_title: "All protection tools <br>for your purchases",
         feat_desc: "We removed the chaos from warranty service, keeping only what truly matters.",
@@ -114,6 +114,7 @@ const translations = {
         footer_prod: "Product", footer_sec: "Security", footer_biz: "For Business",
         footer_comp: "Company", footer_about: "About Us", footer_career: "Careers", footer_contact: "Contact", footer_privacy: "Privacy Policy", footer_terms: "Terms of Use", footer_social: "Socials",
         footer_copyright: "© 2026 Valuon. All rights reserved.",
+        msg_success: "Thank you! You're on the waiting list.",
         msg_duplicate: "This email is already registered.",
         msg_error: "Error. Please try again later."
     }
