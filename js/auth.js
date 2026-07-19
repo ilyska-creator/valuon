@@ -169,7 +169,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function closeForgotModal() {
-        forgotModal?.classList.remove('active');
+        if (forgotModal?.classList.contains('closing')) return;
+        forgotModal?.classList.add('closing');
+        setTimeout(() => {
+            forgotModal?.classList.remove('active', 'closing');
+        }, 250);
     }
 
     if (forgotLink) {

@@ -502,9 +502,13 @@ function setupDeleteModal(client, userId) {
     const cancelBtn = document.getElementById('cancel-delete-receipt');
 
     function closeDeleteModal() {
-        modal?.classList.remove('active');
-        document.body.classList.remove('modal-open');
-        pendingDeleteId = null;
+        if (modal?.classList.contains('closing')) return;
+        modal?.classList.add('closing');
+        setTimeout(() => {
+            modal?.classList.remove('active', 'closing');
+            document.body.classList.remove('modal-open');
+            pendingDeleteId = null;
+        }, 250);
     }
 
     cancelBtn?.addEventListener('click', closeDeleteModal);
@@ -622,17 +626,21 @@ function createUploadModal(client, userId) {
     }
 
     function close() {
-        modal.classList.remove('active');
-        document.body.classList.remove('modal-open');
-        form.reset();
-        miniDropZone?.classList.remove('has-file');
-        setFieldsLocked(false);
-        clearLockedFields();
-        if (fileNameDisplay) {
-            const lang = getLang();
-            const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
-            fileNameDisplay.textContent = t.upload_select_hint || 'Нажмите для выбора файла (Макс. 10 МБ)';
-        }
+        if (modal.classList.contains('closing')) return;
+        modal.classList.add('closing');
+        setTimeout(() => {
+            modal.classList.remove('active', 'closing');
+            document.body.classList.remove('modal-open');
+            form.reset();
+            miniDropZone?.classList.remove('has-file');
+            setFieldsLocked(false);
+            clearLockedFields();
+            if (fileNameDisplay) {
+                const lang = getLang();
+                const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+                fileNameDisplay.textContent = t.upload_select_hint || 'Нажмите для выбора файла (Макс. 10 МБ)';
+            }
+        }, 250);
     }
 
     function setFile(file) {

@@ -1054,13 +1054,22 @@ ul {
     overflow-y: auto;
     box-shadow: var(--shadow-xl);
     border: 1px solid var(--border);
-    transform: translateY(20px);
-    transition: transform var(--transition-base);
+    transform: translateY(40px);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
 }
 
 .modal-overlay.active .modal-content,
 .modal-overlay.is-active .modal-content {
     transform: translateY(0);
+    opacity: 1;
+}
+
+.modal-overlay.closing .modal-content,
+.modal-overlay.closing.is-active .modal-content {
+    transform: translateY(30px);
+    opacity: 0;
+    transition: transform 0.25s ease, opacity 0.2s ease;
 }
 
 .modal-header {

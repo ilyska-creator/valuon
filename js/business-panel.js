@@ -358,10 +358,16 @@ async function initBusinessPanel() {
                 forms.receipt.purchase_date.value = `${y}-${m}-${d}T${h}:${min}`;
             }
         } else {
-            modal.el.classList.add('is-hidden');
-            document.body.classList.remove('modal-open');
-            forms.receipt?.reset();
-            resetItemRows();
+            const el = modal.el;
+            if (el.classList.contains('closing')) return;
+            el.classList.add('closing');
+            setTimeout(() => {
+                el.classList.remove('closing');
+                el.classList.add('is-hidden');
+                document.body.classList.remove('modal-open');
+                forms.receipt?.reset();
+                resetItemRows();
+            }, 250);
         }
     }
 
@@ -585,14 +591,16 @@ async function initBusinessPanel() {
 
                             const successMsg = lang === 'en' ? 'Receipt successfully deleted' : 'Чек успешно удален';
                             window.showToast(successMsg, 'success');
-                            deleteModal.classList.add('is-hidden');
-                            cleanup();
-                            await refreshDashboard(client, shopId, statsEl, listEl);
-
-
-                            if (typeof window.applyBusinessTranslations === 'function') {
-                                window.applyBusinessTranslations();
-                            }
+                            deleteModal.classList.add('closing');
+                            setTimeout(async () => {
+                                deleteModal.classList.add('is-hidden');
+                                deleteModal.classList.remove('closing');
+                                cleanup();
+                                await refreshDashboard(client, shopId, statsEl, listEl);
+                                if (typeof window.applyBusinessTranslations === 'function') {
+                                    window.applyBusinessTranslations();
+                                }
+                            }, 250);
                         } catch (e) {
                             console.error('Delete failed:', e);
                             const errorMsg = lang === 'en' ? 'Error deleting receipt' : 'Ошибка при удалении чека';
@@ -603,9 +611,14 @@ async function initBusinessPanel() {
                     };
 
                     const handleCancel = () => {
-                        deleteModal.classList.add('is-hidden');
-                        document.body.classList.remove('modal-open');
-                        cleanup();
+                        if (deleteModal.classList.contains('closing')) return;
+                        deleteModal.classList.add('closing');
+                        setTimeout(() => {
+                            deleteModal.classList.add('is-hidden');
+                            deleteModal.classList.remove('closing');
+                            document.body.classList.remove('modal-open');
+                            cleanup();
+                        }, 250);
                     };
 
                     const cleanup = () => {

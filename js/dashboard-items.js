@@ -178,7 +178,7 @@ function renderItems(items) {
 
                 <div class="item-footer">
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill ${status.class}" style="width: ${progress}%"></div>
+                        <div class="progress-bar-fill ${status.class}" style="width: 0" data-progress="${progress}"></div>
                     </div>
                     <div class="days-left-text ${status.class}" 
                          data-i18n="${progressTextKey}" 
@@ -197,6 +197,15 @@ function renderItems(items) {
             </div>
         `;
     }).join('');
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            grid.querySelectorAll('.progress-bar-fill[data-progress]').forEach(el => {
+                el.style.width = el.dataset.progress + '%';
+                el.removeAttribute('data-progress');
+            });
+        });
+    });
 
     grid.querySelectorAll('.btn-edit-item').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -285,7 +294,7 @@ function renderVerifiedItems(receipts, t) {
 
                 <div class="item-footer">
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill ${status.class}" style="width: ${progress}%"></div>
+                        <div class="progress-bar-fill ${status.class}" style="width: 0" data-progress="${progress}"></div>
                     </div>
                     <div class="days-left-text ${status.class}" 
                          data-i18n="${progressTextKey}" 
@@ -295,6 +304,15 @@ function renderVerifiedItems(receipts, t) {
                 </div>
             </div>`;
     }).join('');
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            grid.querySelectorAll('.progress-bar-fill[data-progress]').forEach(el => {
+                el.style.width = el.dataset.progress + '%';
+                el.removeAttribute('data-progress');
+            });
+        });
+    });
 
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(lang);
@@ -343,12 +361,31 @@ async function loadVerifiedItems(userEmail, client) {
     if (expiredEl) expiredEl.textContent = (parseInt(expiredEl.textContent) || 0) + verifiedExpired;
 }
 
-function playGridEnterAnimation(grid) {
-    if (!grid) return;
-    grid.classList.remove('items-grid-anim');
-    // Force reflow so the animation restarts every time the tab is switched.
-    void grid.offsetWidth;
-    grid.classList.add('items-grid-anim');
+let _switchingTab = false;
+
+function switchGridTab(oldGrid, newGrid) {
+    if (_switchingTab || !newGrid) return;
+    _switchingTab = true;
+    if (oldGrid) {
+        oldGrid.classList.add('fade-out');
+        setTimeout(() => {
+            oldGrid.classList.add('hidden');
+            oldGrid.classList.remove('fade-out');
+            showNewGrid();
+        }, 180);
+    } else {
+        showNewGrid();
+    }
+    function showNewGrid() {
+        newGrid.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            newGrid.classList.add('fade-in');
+            setTimeout(() => {
+                newGrid.classList.remove('fade-in');
+                _switchingTab = false;
+            }, 300);
+        });
+    }
 }
 
 function moveItemsTabIndicator() {
@@ -379,9 +416,9 @@ function setupItemsTabs(userId, userEmail, client) {
             const target = tab.dataset.itemsTab;
             const mineGrid = document.querySelector('#items-grid-mine');
             const verifiedGrid = document.querySelector('#items-grid-verified');
-            mineGrid?.classList.toggle('hidden', target !== 'mine');
-            verifiedGrid?.classList.toggle('hidden', target !== 'verified');
-            playGridEnterAnimation(target === 'mine' ? mineGrid : verifiedGrid);
+            const oldGrid = target === 'mine' ? verifiedGrid : mineGrid;
+            const newGrid = target === 'mine' ? mineGrid : verifiedGrid;
+            switchGridTab(oldGrid, newGrid);
         });
     });
 
@@ -465,9 +502,13 @@ function setupEditModal(client, userId) {
     if (!modal || !form) return;
 
     function closeModal() {
-        modal.classList.remove('active');
-        form.reset();
-        document.body.classList.remove('modal-open');
+        if (modal.classList.contains('closing')) return;
+        modal.classList.add('closing');
+        setTimeout(() => {
+            modal.classList.remove('active', 'closing');
+            form.reset();
+            document.body.classList.remove('modal-open');
+        }, 250);
     }
 
     closeBtn?.addEventListener('click', closeModal);
@@ -529,9 +570,13 @@ function setupDeleteItemModal(client, userId) {
     const cancelBtn = document.getElementById('cancel-delete-item');
 
     function closeDeleteModal() {
-        modal?.classList.remove('active');
-        document.body.classList.remove('modal-open');
-        pendingDeleteItemId = null;
+        if (modal?.classList.contains('closing')) return;
+        modal?.classList.add('closing');
+        setTimeout(() => {
+            modal?.classList.remove('active', 'closing');
+            document.body.classList.remove('modal-open');
+            pendingDeleteItemId = null;
+        }, 250);
     }
 
     cancelBtn?.addEventListener('click', closeDeleteModal);
@@ -577,12 +622,22 @@ function setupModal(client) {
 
     let isSubmitting = false;
 
+    function closeAddModal() {
+        if (modal.classList.contains('closing')) return;
+        modal.classList.add('closing');
+        setTimeout(() => {
+            modal.classList.remove('active', 'closing');
+            form.reset();
+            document.body.classList.remove('modal-open');
+        }, 250);
+    }
+
     addBtn.addEventListener('click', () => { modal.classList.add('active'); document.body.classList.add('modal-open'); });
-    closeBtn?.addEventListener('click', () => { modal.classList.remove('active'); form.reset(); document.body.classList.remove('modal-open'); });
-    cancelBtn?.addEventListener('click', () => { modal.classList.remove('active'); form.reset(); document.body.classList.remove('modal-open'); });
+    closeBtn?.addEventListener('click', closeAddModal);
+    cancelBtn?.addEventListener('click', closeAddModal);
 
     modal.addEventListener('click', (e) => {
-        if (e.target === modal) { modal.classList.remove('active'); document.body.classList.remove('modal-open'); }
+        if (e.target === modal) closeAddModal();
     });
 
     form?.addEventListener('submit', async (e) => {
@@ -632,12 +687,16 @@ function setupModal(client) {
             showToast(t.msg_item_added || 'Товар добавлен', 'success');
 
             setTimeout(() => {
-                modal.classList.remove('active');
-                form.reset();
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                isSubmitting = false;
-                loadItems(user.id, client);
+                if (modal.classList.contains('closing')) return;
+                modal.classList.add('closing');
+                setTimeout(() => {
+                    modal.classList.remove('active', 'closing');
+                    form.reset();
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    isSubmitting = false;
+                    loadItems(user.id, client);
+                }, 250);
             }, 800);
 
         } catch (err) {
