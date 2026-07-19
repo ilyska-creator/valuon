@@ -625,11 +625,15 @@ html {
 }
 
 .modal-content {
+    position: relative;
     background: var(--card-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     width: 100%;
     max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     border-radius: var(--radius-2xl);
     padding: var(--space-8);
     transform: translateY(20px);
@@ -974,7 +978,7 @@ html {
 @media (max-width: 900px) {
     .modal-overlay {
         overflow-y: auto;
-        align-items: flex-start;
+        align-items: center;
         padding: 40px 20px calc(72px + env(safe-area-inset-bottom, 0));
         box-sizing: border-box;
     }
@@ -982,8 +986,8 @@ html {
     .modal-content {
         width: 100%;
         max-width: 480px;
+        max-height: calc(100vh - 8rem);
         margin: auto;
-        min-height: auto;
         transform: translateY(0);
     }
 

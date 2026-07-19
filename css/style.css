@@ -1052,6 +1052,7 @@ ul {
     max-width: 500px;
     max-height: 90vh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     box-shadow: var(--shadow-xl);
     border: 1px solid var(--border);
     transform: translateY(40px);
@@ -1528,6 +1529,19 @@ ul {
 .input-group:has([required]) label::after {
     content: ' *';
     color: var(--error);
+}
+
+@media (max-width: 768px) {
+    .modal-overlay {
+        padding: 2rem 1rem;
+        align-items: center;
+    }
+
+    .modal-content {
+        max-height: calc(100vh - 4rem);
+        padding: var(--space-6);
+        border-radius: var(--radius-xl);
+    }
 }
 
 body.modal-open {
