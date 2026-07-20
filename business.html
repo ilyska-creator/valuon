@@ -52,49 +52,48 @@
     </header>
 
     <main class="business-main">
+        <div id="app-loader" class="app-loader">
+            <div class="loader-spinner"></div>
+            <p class="loader-text" data-i18n="loading_shop">Проверка данных магазина...</p>
+        </div>
         <section id="create-shop-view" class="view">
-            <div class="shop-setup-wrapper">
-                <div class="card shop-setup-card max-w-md" data-animate="zoom">
-                    <div class="shop-setup-header">
-                        <div class="card-icon large-icon"><i class="fa-solid fa-store"></i></div>
-                        <h1>Регистрация магазина</h1>
-                        <p class="setup-subtitle">Создайте цифровой профиль вашего бизнеса для автоматической выдачи
-                            чеков клиентам.</p>
-                    </div>
-
-                    <form id="create-shop-form" class="mt-6" action="#">
-                        <div class="input-group">
-                            <label for="shop_name">Название бизнеса</label>
-                            <input type="text" id="shop_name" name="shop_name" required placeholder="My Awesome Store"
-                                autocomplete="organization">
-                            <small class="field-hint">Как вас знают клиенты</small>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="tax_id">Налоговый номер (Tax ID / INN)</label>
-                            <input type="text" id="tax_id" name="tax_id" required placeholder="1234567890"
-                                autocomplete="off">
-                            <small class="field-hint">Основной идентификатор для налоговой отчетности</small>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="address">Юридический адрес</label>
-                            <textarea id="address" name="address" rows="3" required
-                                placeholder="ул. Примерная, д. 1, офис 101" autocomplete="street-address"></textarea>
-                            <small class="field-hint">Адрес регистрации компании</small>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-full mt-4 btn-lg">
-                            <i class="fa-solid fa-check-circle"></i> Зарегистрировать магазин
-                        </button>
-                    </form>
+            <div class="card max-w-md" data-animate="zoom" style="margin: 2rem auto 0;">
+                <div class="shop-setup-header">
+                    <div class="card-icon large-icon"><i class="fa-solid fa-store"></i></div>
+                    <h1>Регистрация магазина</h1>
+                    <p class="setup-subtitle">Создайте цифровой профиль вашего бизнеса для автоматической выдачи
+                        чеков клиентам.</p>
                 </div>
 
-                <div class="bg-decoration bg-blob-1"></div>
-                <div class="bg-decoration bg-blob-2"></div>
+                <form id="create-shop-form" class="mt-6" action="#">
+                    <div class="input-group">
+                        <label for="shop_name">Название бизнеса</label>
+                        <input type="text" id="shop_name" name="shop_name" required placeholder="My Awesome Store"
+                            autocomplete="organization">
+                        <small class="field-hint">Как вас знают клиенты</small>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="tax_id">Налоговый номер (Tax ID / INN)</label>
+                        <input type="text" id="tax_id" name="tax_id" required placeholder="1234567890"
+                            autocomplete="off">
+                        <small class="field-hint">Основной идентификатор для налоговой отчетности</small>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="address">Юридический адрес</label>
+                        <textarea id="address" name="address" rows="3" required
+                            placeholder="ул. Примерная, д. 1, офис 101" autocomplete="street-address"></textarea>
+                        <small class="field-hint">Адрес регистрации компании</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full mt-4 btn-lg">
+                        <i class="fa-solid fa-check-circle"></i> Зарегистрировать магазин
+                    </button>
+                </form>
             </div>
         </section>
-        <section id="shop-dashboard-view" class="view is-active">
+        <section id="shop-dashboard-view" class="view">
             <div class="content-header" data-animate>
                 <h1>Мой магазин</h1>
                 <button id="open-create-receipt-btn" class="btn btn-primary">

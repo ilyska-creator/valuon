@@ -119,6 +119,7 @@ async function initBusinessPanel() {
         shop: document.getElementById('create-shop-view'),
         dashboard: document.getElementById('shop-dashboard-view')
     };
+    const loader = document.getElementById('app-loader');
     const forms = {
         shop: document.getElementById('create-shop-form'),
         receipt: document.getElementById('issue-receipt-form')
@@ -266,6 +267,7 @@ async function initBusinessPanel() {
     }
 
     function renderView(targetView) {
+        loader?.classList.add('is-hidden');
         Object.values(views).forEach(v => v?.classList.remove('is-active'));
         targetView?.classList.add('is-active');
     }

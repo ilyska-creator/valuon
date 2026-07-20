@@ -104,6 +104,8 @@ const businessTranslations = {
         chart_period_week: 'За последние 7 дней',
         chart_period_month: 'За последние 30 дней',
         chart_period_year: 'За последние 12 месяцев',
+
+        loading_shop: 'Проверка данных магазина...',
     },
     en: {
 
@@ -207,6 +209,8 @@ const businessTranslations = {
         chart_period_week: 'Last 7 days',
         chart_period_month: 'Last 30 days',
         chart_period_year: 'Last 12 months',
+
+        loading_shop: 'Checking store data...',
     }
 };
 
