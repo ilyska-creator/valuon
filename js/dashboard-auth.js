@@ -1,20 +1,16 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
 
-const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL)
-    || 'https://qjnzawjivqvgupbgxdao.supabase.co';
-const supabaseKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY)
-    || 'sb_publishable_AwSiUBE-lYKiQAvA_T5ryw_2r_JOOH8';
-
-if (!supabaseUrl || !supabaseKey) {
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
 }
 
 export async function getAuthSession() {
-    let client = createClient(supabaseUrl, supabaseKey, { auth: { storage: localStorage } });
+    let client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storage: localStorage } });
     let { data: { session } } = await client.auth.getSession();
 
     if (!session) {
-        client = createClient(supabaseUrl, supabaseKey, { auth: { storage: sessionStorage } });
+        client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storage: sessionStorage } });
         ({ data: { session } } = await client.auth.getSession());
     }
 

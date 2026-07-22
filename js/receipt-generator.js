@@ -1,3 +1,5 @@
+import { SUPABASE_URL } from './supabase-client.js';
+
 export function generateQRDataURL(text, size = 80) {
     if (typeof qrcode === 'undefined') {
         console.error('qrcode-generator library is not loaded');
@@ -57,7 +59,6 @@ export async function downloadReceiptPDF(receipt, shop) {
         let logoDataUrl = null;
         if (shop?.logo_path) {
             try {
-                const SUPABASE_URL = 'https://qjnzawjivqvgupbgxdao.supabase.co';
                 const logoUrl = `${SUPABASE_URL}/storage/v1/object/public/shop-logos/${shop.logo_path}`;
                 const resp = await fetch(logoUrl);
                 if (resp.ok) {

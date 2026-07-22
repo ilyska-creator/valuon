@@ -6,10 +6,10 @@
 
 ## 🔴 КРИТИЧЕСКИЕ (Critical)
 
-[x] C1. RLS-политики Supabase не проверяемы и, вероятно, неполны
-- **Где:** `supabase/migrations/` содержит только `add_crypto_keys_to_shops.sql`. Политики RLS для таблиц `profiles`, `items`, `receipts`, `business_receipts`, `shops`, `waitlist` **отсутствуют в репозитории**.
-- **Риск:** Весь клиентский код полагается на RLS как единственный контроль доступа (anon-ключ публичен). При некорректных RLS: утечка `private_key` всех магазинов (см. C2); чтение чужих `receipts`, `items`, `profiles`.
-- **Действие:** Опубликовать/проверить RLS для каждой таблицы в Supabase Dashboard.
+[x] ~~C1. RLS-политики Supabase не проверяемы и, вероятно, неполны~~ ✅ Проверено 22 июля 2026
+- ~~**Где:** `supabase/migrations/` содержит только `add_crypto_keys_to_shops.sql`. Политики RLS для таблиц `profiles`, `items`, `receipts`, `business_receipts`, `shops`, `waitlist` **отсутствуют в репозитории**.~~
+- ~~**Риск:** Весь клиентский код полагается на RLS как единственный контроль доступа (anon-ключ публичен). При некорректных RLS: утечка `private_key` всех магазинов (см. C2); чтение чужих `receipts`, `items`, `profiles`.~~
+- ~~**Действие:** Опубликовать/проверить RLS для каждой таблицы в Supabase Dashboard.~~
 
 ### C2. Приватные ключи Ed25519 хранятся в открытом виде
 - **Где:** `js/business-panel.js:149-156` — insert `private_key` в таблицу `shops`; кэш в `sessionStorage` (`js/business-panel.js:26-33`).

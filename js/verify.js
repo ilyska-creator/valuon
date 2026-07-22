@@ -1,11 +1,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
 import { t, getVerifyLocale, applyVerifyTranslations, initVerifyLang } from './verify-lang.js';
-
-const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL)
-    || 'https://qjnzawjivqvgupbgxdao.supabase.co';
-const supabaseKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY)
-    || 'sb_publishable_AwSiUBE-lYKiQAvA_T5ryw_2r_JOOH8';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const tabs = document.querySelectorAll('.verify-tab');
 const panels = {
@@ -291,7 +287,7 @@ async function verifyReceiptFromQRData(qrRaw) {
         // verify-receipt). Клиент отправляет только сырую подпись из QR и
         // получает уже готовый вердикт — приватный ключ, публичный ключ
         // магазина и сырые данные чека клиенту больше не передаются.
-        const resp = await fetch('https://qjnzawjivqvgupbgxdao.supabase.co/functions/v1/verify-receipt', {
+        const resp = await fetch(`${SUPABASE_URL}/functions/v1/verify-receipt`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fiscal_hash: parsed.signature }),
@@ -344,7 +340,6 @@ async function verifyReceiptFromQRData(qrRaw) {
 
         let shopLogoUrl = null;
         if (shop.logoPath) {
-            const SUPABASE_URL = 'https://qjnzawjivqvgupbgxdao.supabase.co';
             shopLogoUrl = `${SUPABASE_URL}/storage/v1/object/public/shop-logos/${shop.logoPath}`;
         }
 
