@@ -466,17 +466,17 @@ html {
 
 .item-status-badge.active {
     background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
+    color: var(--success);
 }
 
 .item-status-badge.warning {
     background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
+    color: var(--warning);
 }
 
 .item-status-badge.expired {
     background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    color: var(--error);
 }
 
 [data-theme="dark"] .item-status-badge.active {
@@ -612,15 +612,15 @@ html {
 }
 
 .progress-bar-fill.active {
-    background: #10b981;
+    background: var(--success);
 }
 
 .progress-bar-fill.warning {
-    background: #f59e0b;
+    background: var(--warning);
 }
 
 .progress-bar-fill.expired {
-    background: #ef4444;
+    background: var(--error);
 }
 
 .days-left-text {
@@ -629,15 +629,15 @@ html {
 }
 
 .days-left-text.active {
-    color: #10b981;
+    color: var(--success);
 }
 
 .days-left-text.warning {
-    color: #f59e0b;
+    color: var(--warning);
 }
 
 .days-left-text.expired {
-    color: #ef4444;
+    color: var(--error);
 }
 
 .modal-overlay {
@@ -885,7 +885,7 @@ html {
 }
 
 .empty-state.error {
-    color: #ef4444;
+    color: var(--error);
 }
 
 .controls-row {
@@ -937,7 +937,7 @@ html {
 #logout-btn {
     margin-top: 8px;
     background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
+    color: var(--error);
     border: 1px solid rgba(239, 68, 68, 0.1);
     justify-content: center;
 }
@@ -948,9 +948,9 @@ html {
 }
 
 #logout-btn:hover {
-    background: #ef4444 !important;
+    background: var(--error) !important;
     color: #ffffff !important;
-    border-color: #ef4444 !important;
+    border-color: var(--error) !important;
     transform: translateY(-2px);
 }
 
@@ -966,7 +966,7 @@ html {
     width: 100%;
     padding: 14px 20px;
     background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
+    color: var(--error);
     border: 1px solid rgba(239, 68, 68, 0.1);
     border-radius: 12px;
     font-size: 1rem;
@@ -982,9 +982,9 @@ html {
 }
 
 #logout-btn-mobile:hover {
-    background: #ef4444 !important;
+    background: var(--error) !important;
     color: #fff !important;
-    border-color: #ef4444 !important;
+    border-color: var(--error) !important;
 }
 
 @media (max-width: 900px) {
@@ -1231,11 +1231,11 @@ html {
 }
 
 .notification-card.warning::before {
-    background: #f59e0b;
+    background: var(--warning);
 }
 
 .notification-card.expired::before {
-    background: #ef4444;
+    background: var(--error);
 }
 
 .notification-card.info::before {
@@ -1255,12 +1255,12 @@ html {
 
 .warning .notif-icon {
     background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
+    color: var(--warning);
 }
 
 .expired .notif-icon {
     background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    color: var(--error);
 }
 
 .info .notif-icon {
@@ -1717,11 +1717,11 @@ html {
 }
 
 .danger-zone h2 {
-    color: #ef4444;
+    color: var(--error);
 }
 
 .danger-zone h2 i {
-    color: #ef4444;
+    color: var(--error);
 }
 
 .btn-danger {
@@ -1731,7 +1731,7 @@ html {
     font-weight: 600;
     border: 1px solid rgba(239, 68, 68, 0.3);
     background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    color: var(--error);
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
@@ -1739,9 +1739,9 @@ html {
 }
 
 .btn-danger:hover {
-    background: #ef4444;
+    background: var(--error);
     color: white;
-    border-color: #ef4444;
+    border-color: var(--error);
 }
 
 .disabled-section {
@@ -1944,7 +1944,7 @@ html {
 
 .btn-action.danger {
     background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    color: var(--error);
 }
 
 .btn-action.danger:hover {
@@ -2037,7 +2037,7 @@ html {
     flex: 0 0 auto;
     min-width: 44px;
     background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    color: var(--error);
 }
 
 .item-actions .btn-action.danger:hover {
@@ -2108,7 +2108,7 @@ html {
 
 .business-card .receipt-icon {
     background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
+    color: var(--success);
 }
 
 [data-theme="dark"] .business-card .receipt-icon {
@@ -2308,7 +2308,7 @@ html {
     gap: 6px;
     margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) 0;
     padding: 8px var(--space-6);
-    background: #10b981;
+    background: var(--success);
     color: #fff;
     font-size: 0.73rem;
     font-weight: 700;
@@ -2327,7 +2327,7 @@ html {
 
 .item-icon.verified {
     background: rgba(16, 185, 129, 0.12);
-    color: #10b981;
+    color: var(--success);
 }
 
 [data-theme="dark"] .item-icon.verified {
@@ -2352,7 +2352,7 @@ html {
 }
 
 .verified-lock-note i {
-    color: #10b981;
+    color: var(--success);
 }
 
 /* Grid switch transition */

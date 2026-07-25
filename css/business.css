@@ -300,7 +300,7 @@
 
 .stat-icon.orange {
     background: #fff7ed;
-    color: #f59e0b;
+    color: var(--warning);
 }
 
 [data-theme="dark"] .stat-icon.orange {
@@ -382,7 +382,7 @@
 }
 
 .item-card.status-pending::before {
-    background: #f59e0b;
+    background: var(--warning);
 }
 
 .item-header {
@@ -424,7 +424,7 @@
 
 .item-status-badge.warning {
     background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
+    color: var(--warning);
 }
 
 .item-status-badge.expired {
@@ -599,8 +599,8 @@
 
 .btn-close:hover {
     background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-    border-color: #ef4444;
+    color: var(--error);
+    border-color: var(--error);
 }
 
 .modal-actions {
@@ -717,7 +717,7 @@
     height: 28px;
     border-radius: 50%;
     border: none;
-    background: #ef4444;
+    background: var(--error);
     color: #fff;
     font-size: 1rem;
     cursor: pointer;
@@ -1006,12 +1006,12 @@
 
     background: rgba(239, 68, 68, 0.05);
     border-color: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
+    color: var(--error);
 }
 
 .btn-action.delete:hover {
     background: rgba(239, 68, 68, 0.1);
-    border-color: #ef4444;
+    border-color: var(--error);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
 }
@@ -1034,7 +1034,7 @@
     height: 64px;
     margin: 0 auto 1.5rem;
     background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    color: var(--error);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1064,7 +1064,7 @@
 }
 
 .btn-danger {
-    background: #ef4444;
+    background: var(--error);
     color: white;
     border: none;
 }
@@ -1196,7 +1196,7 @@
     margin-bottom: 0.75rem;
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: var(--bg-body);
+    background: var(--card-bg);
 }
 
 .receipt-item-row .input-row:first-child {

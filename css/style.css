@@ -5,7 +5,6 @@ html {
 }
 
 :root {
-
     --primary: #3b82f6;
     --primary-dark: #2563eb;
     --primary-light: #60a5fa;
@@ -701,7 +700,7 @@ ul {
 .vs-icon {
     width: 64px;
     height: 64px;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1315,17 +1314,17 @@ ul {
 
 .item-status-badge.active {
     background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
+    color: var(--success);
 }
 
 .item-status-badge.warning {
     background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
+    color: var(--warning);
 }
 
 .item-status-badge.expired {
     background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    color: var(--error);
 }
 
 [data-theme="dark"] .item-status-badge.active {
@@ -1434,15 +1433,15 @@ ul {
 }
 
 .progress-bar-fill.active {
-    background: #10b981;
+    background: var(--success);
 }
 
 .progress-bar-fill.warning {
-    background: #f59e0b;
+    background: var(--warning);
 }
 
 .progress-bar-fill.expired {
-    background: #ef4444;
+    background: var(--error);
 }
 
 .days-left-text {
@@ -1451,15 +1450,15 @@ ul {
 }
 
 .days-left-text.active {
-    color: #10b981;
+    color: var(--success);
 }
 
 .days-left-text.warning {
-    color: #f59e0b;
+    color: var(--warning);
 }
 
 .days-left-text.expired {
-    color: #ef4444;
+    color: var(--error);
 }
 
 .iphone-frame {
@@ -1608,17 +1607,17 @@ ul {
     }
 
     42% {
-        border-color: #10b981;
+        border-color: var(--success);
         opacity: 1;
     }
 
     48% {
-        border-color: #10b981;
+        border-color: var(--success);
         opacity: 0.8;
     }
 
     55% {
-        border-color: #10b981;
+        border-color: var(--success);
         opacity: 0;
     }
 
@@ -1705,7 +1704,7 @@ ul {
     42% {
         opacity: 0.9;
         transform: translateY(-30px) scale(1.2);
-        background: #10b981;
+        background: var(--success);
     }
 
     48% {
@@ -2027,7 +2026,7 @@ ul {
 
 .qr-result-icon {
     font-size: 1.5rem;
-    color: #10b981;
+    color: var(--success);
     flex-shrink: 0;
     z-index: 1;
     animation: checkmarkPop 5.5s ease-in-out infinite;
@@ -2102,7 +2101,7 @@ ul {
     font-size: 0.66rem;
     font-weight: 600;
     letter-spacing: 0.01em;
-    color: #10b981;
+    color: var(--success);
     background: rgba(16, 185, 129, 0.12);
     border: 1px solid rgba(16, 185, 129, 0.25);
     border-radius: 20px;
@@ -2240,7 +2239,7 @@ ul {
 }
 
 .total-amount {
-    color: #10b981;
+    color: var(--success);
 }
 
 @keyframes spin {
@@ -2310,7 +2309,7 @@ ul {
 }
 
 .email-link {
-    color: var(--primary-color, #3b82f6);
+    color: #3b82f6;
     text-decoration: none;
     transition: opacity 0.2s;
 }

@@ -643,7 +643,7 @@ fileInput?.addEventListener('change', async () => {
             previewImg.src = c.toDataURL();
         } catch (e) {
             console.error('[verify] PDF preview error:', e);
-            previewImg.src = '';
+            previewImg.removeAttribute('src');
         }
     } else {
         previewImg.src = URL.createObjectURL(file);
