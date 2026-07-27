@@ -46,8 +46,6 @@ const translations = {
         reset_error_title: "Ссылка недействительна",
         reset_error_desc: "Срок действия ссылки истёк или она уже была использована. Запросите новую ссылку.",
         btn_request_new: "Запросить новую",
-        ph_new_password: "Минимум 6 символов",
-        ph_confirm_password: "Повторите пароль",
 
         msg_pass_mismatch: "Пароли не совпадают",
         msg_weak_pass: "Пароль должен быть не менее 6 символов",
@@ -107,8 +105,6 @@ const translations = {
         reset_error_title: "Invalid Link",
         reset_error_desc: "This link has expired or was already used. Request a new one.",
         btn_request_new: "Request New",
-        ph_new_password: "At least 6 characters",
-        ph_confirm_password: "Repeat password",
 
         msg_pass_mismatch: "Passwords do not match",
         msg_weak_pass: "Password must be at least 6 characters",
@@ -123,6 +119,7 @@ const translations = {
 
 document.addEventListener('DOMContentLoaded', () => {
     const currentLang = localStorage.getItem('valuon-lang') || 'ru';
+    document.documentElement.lang = currentLang === 'en' ? 'en' : 'ru';
     const path = window.location.pathname;
 
     let titleKey = 'page_title';

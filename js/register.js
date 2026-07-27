@@ -1,11 +1,14 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
 import { checkSignupRateLimit } from './security.js';
+import { initPasswordStrength, checkPasswordStrength } from './password-strength.js';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const getLang = () => localStorage.getItem('valuon-lang') || 'ru';
 
 document.addEventListener('DOMContentLoaded', () => {
+    initPasswordStrength('password', { getLang });
+
     const setupPasswordToggle = (btnClass, inputId) => {
         const toggleBtn = document.querySelector(btnClass);
         const passwordInput = document.getElementById(inputId);
@@ -41,8 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (password.length < 6) {
-                showToast(lang === 'ru' ? 'Пароль должен быть не менее 6 символов' : 'Password must be at least 6 characters', 'warning');
+            const strength = checkPasswordStrength(password);
+            if (strength.score < 3) {
+                showToast(lang === 'ru' ? 'Пароль слишком слабый. Используйте минимум 8 символов, заглавные, строчные буквы, цифры и спецсимволы.' : 'Password is too weak. Use at least 8 characters, uppercase, lowercase, numbers and special characters.', 'warning');
                 return;
             }
 

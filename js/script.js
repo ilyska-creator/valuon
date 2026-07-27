@@ -61,10 +61,7 @@ const translations = {
         vision_btn: "Читать Roadmap", footer_tagline: "Цифровые чеки, которым можно доверять.",
         footer_prod: "Продукт", footer_sec: "Безопасность", footer_biz: "Для бизнеса",
         footer_comp: "Компания", footer_about: "О нас", footer_career: "Карьера", footer_contact: "Контакты", footer_privacy: "Политика конфиденциальности", footer_terms: "Условия пользования", footer_social: "Соцсети",
-        footer_copyright: "© 2026 Valuon. Все права защищены.",
-        msg_success: "Спасибо! Вы в списке ожидания.",
-        msg_duplicate: "Этот email уже зарегистрирован.",
-        msg_error: "Ошибка. Попробуйте позже."
+        footer_copyright: "© 2026 Valuon. Все права защищены."
     },
     en: {
         page_title: "Valuon — Home",
@@ -123,10 +120,7 @@ const translations = {
         vision_btn: "Read Roadmap", footer_tagline: "Digital receipts you can trust.",
         footer_prod: "Product", footer_sec: "Security", footer_biz: "For Business",
         footer_comp: "Company", footer_about: "About Us", footer_career: "Careers", footer_contact: "Contact", footer_privacy: "Privacy Policy", footer_terms: "Terms of Use", footer_social: "Socials",
-        footer_copyright: "© 2026 Valuon. All rights reserved.",
-        msg_success: "Thank you! You're on the waiting list.",
-        msg_duplicate: "This email is already registered.",
-        msg_error: "Error. Please try again later."
+        footer_copyright: "© 2026 Valuon. All rights reserved."
     }
 };
 

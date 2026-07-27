@@ -11,44 +11,44 @@
 - ~~**Риск:** Весь клиентский код полагается на RLS как единственный контроль доступа (anon-ключ публичен). При некорректных RLS: утечка `private_key` всех магазинов (см. C2); чтение чужих `receipts`, `items`, `profiles`.~~
 - ~~**Действие:** Опубликовать/проверить RLS для каждой таблицы в Supabase Dashboard.~~
 
-### C2. Приватные ключи Ed25519 хранятся в открытом виде
-- **Где:** `js/business-panel.js:149-156` — insert `private_key` в таблицу `shops`; кэш в `sessionStorage` (`js/business-panel.js:26-33`).
-- **Риск:** Приватный ключ магазина лежит в БД в plaintext. Любой XSS или утечка БД → полная компрометация подписей магазина.
-- **Действие:** Не хранить `private_key` в таблице, доступной по RLS. Хранить в отдельной `security definer` функции или Vault.
+### ~~C2. Приватные ключи Ed25519 хранятся в открытом виде~~ **СКИПНУТО (MVP)**
+~~- **Где:** `js/business-panel.js:149-156` — insert `private_key` в таблицу `shops`; кэш в `sessionStorage` (`js/business-panel.js:26-33`).~~
+~~- **Риск:** Приватный ключ магазина лежит в БД в plaintext. Любой XSS или утечка БД → полная компрометация подписей магазина.~~
+~~- **Действие:** Не хранить `private_key` в таблице, доступной по RLS. Хранить в отдельной `security definer` функции или Vault.~~
 
-### C3. `security definer` в `verify_get_receipt` без `search_path` (НОВОЕ)
-- **Где:** SQL-функция `verify_get_receipt(p_fiscal_hash text)` с `security definer` **без explicit `search_path`**.
-- **Риск:** Классическая вектор атаки: если злоумышленник может создать объекты в схеме, которая раньше в `search_path` (например, `public`), он может подменить таблицу `business_receipts` или `shops` своей, и функция, выполняющаяся с правами владельца, выполнит произвольный код.
-- **Действие:** Добавить `set search_path = ''` (или `set search_path = 'public'`) в функцию.
+### ~~C3. `security definer` в `verify_get_receipt` без `search_path` (НОВОЕ)~~ **СКИПНУТО (MVP)**
+~~- **Где:** SQL-функция `verify_get_receipt(p_fiscal_hash text)` с `security definer` **без explicit `search_path`**.~~
+~~- **Риск:** Классическая вектор атаки: если злоумышленник может создать объекты в схеме, которая раньше в `search_path` (например, `public`), он может подменить таблицу `business_receipts` или `shops` своей, и функция, выполняющаяся с правами владельца, выполнит произвольный код.~~
+~~- **Действие:** Добавить `set search_path = ''` (или `set search_path = 'public'`) в функцию.~~
 
 ---
 
 ## 🟠 ВЫСОКИЙ (High)
 
-### H1. SQL-функция `verify_get_receipt` не проверяет владельца чека (НОВОЕ)
-- **Где:** SQL-функция `verify_get_receipt(p_fiscal_hash text)`.
-- **Риск:** Функция возвращает `public_key` магазина и данные чека любому, кто знает `fiscal_hash`. Это делает возможным enumeration: если fiscal_hash — это просто подпись (не hash), то короткие подписи можно брутфорсить.
-- **Действие:** Убедиться что `fiscal_hash` — это действительно hash (SHA-256 от подписи), а не сама сырая подпись Ed25519 (которая сейчас используется). Сейчас `fiscal_hash` = `fiscalSignature` — это Base64-encoded Ed25519 подпись, не hash. Добавить хеширование подписи перед сохранением.
+### ~~H1. SQL-функция `verify_get_receipt` не проверяет владельца чека (НОВОЕ)~~ **СКИПНУТО (MVP)**
+~~- **Где:** SQL-функция `verify_get_receipt(p_fiscal_hash text)`.~~
+~~- **Риск:** Функция возвращает `public_key` магазина и данные чека любому, кто знает `fiscal_hash`. Это делает возможным enumeration: если fiscal_hash — это просто подпись (не hash), то короткие подписи можно брутфорсить.~~
+~~- **Действие:** Убедиться что `fiscal_hash` — это действительно hash (SHA-256 от подписи), а не сама сырая подпись Ed25519 (которая сейчас используется). Сейчас `fiscal_hash` = `fiscalSignature` — это Base64-encoded Ed25519 подпись, не hash. Добавить хеширование подписи перед сохранением.~~
 
-### H2. Слабая политика паролей при регистрации
-- **Где:** `js/register.js:48` (только `password.length < 6`); `validatePassword` в `security.js` не вызывается.
-- **Действие:** Использовать `validatePassword` в `register.js`.
+### ~~H2. Слабая политика паролей при регистрации~~ **FIXED**
+~~- **Где:** `js/register.js:48` (только `password.length < 6`); `validatePassword` в `security.js` не вызывается.~~
+~~- **Действие:** Использовать `validatePassword` в `register.js`.~~
 
-### H3. Нет CAPTCHA на форме waitlist
-- **Где:** `js/script.js` — форма `#waitlist-form` шлёт insert без Turnstile.
-- **Действие:** Добавить Turnstile.
+### ~~H3. Нет CAPTCHA на форме waitlist~~ **УДАЛЕНО**
+~~- **Где:** `js/script.js` — форма `#waitlist-form` шлёт insert без Turnstile.~~
+~~- **Действие:** Добавить Turnstile.~~
 
-### H4. Rate-limit только на клиенте
-- **Где:** `js/security.js` (`Map` в памяти браузера).
-- **Действие:** Серверный rate-limit (Edge Function).
+### ~~H4. Rate-limit только на клиенте~~ **СКИПНУТО (MVP, Cloudflare WAF покрывает)**
+~~- **Где:** `js/security.js` (`Map` в памяти браузера).~~
+~~- **Действие:** Серверный rate-limit (Edge Function).~~
 
-### H5. Загрузка файлов без серверной проверки MIME
-- **Где:** `js/receipts.js:588-598` — проверка только размера и клиентский `accept`.
-- **Действие:** Проверка MIME через `storage` bucket policy, запрет `text/html`/`image/svg+xml`.
+### ~~H5. Загрузка файлов без серверной проверки MIME~~ **СКИПНУТО (MVP)**
+~~- **Где:** `js/receipts.js:588-598` — проверка только размера и клиентский `accept`.~~
+~~- **Действие:** Проверка MIME через `storage` bucket policy, запрет `text/html`/`image/svg+xml`.~~
 
-### H6. Неполное удаление аккаунта
-- **Где:** `js/dashboard-settings.js` — не удаляет `auth.users`, не чистит `business_receipts` с `customer_email`, `storage.list` не пагинирован (>100 файлов не удаляются).
-- **Действие:** Edge Function с `auth.admin.deleteUser` + каскад.
+### ~~H6. Неполное удаление аккаунта~~ **НЕАКТУАЛЬНО (функционал удаления ещё не реализован)**
+~~- **Где:** `js/dashboard-settings.js` — не удаляет `auth.users`, не чистит `business_receipts` с `customer_email`, `storage.list` не пагинирован (>100 файлов не удаляются).~~
+~~- **Действие:** Edge Function с `auth.admin.deleteUser` + каскад.~~
 
 ### H7. Нет CSP-заголовков (было L8, повышаю до High)
 - **Где:** Vercel — на всех страницах нет `Content-Security-Policy`.
