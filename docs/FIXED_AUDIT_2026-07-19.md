@@ -166,18 +166,18 @@ using (auth.uid() = owner_id);
 ~~**Файл:** `dashboard.css:700-701`~~
 ~~`.sidebar-overlay { display: none !important; }` в `@media (max-width: 900px)` — `!important` перекрывает `.sidebar-overlay.active { display: block; }`. Overlay не появится на мобильных даже с JS.~~
 
-### 4.7 Мёртвый media query
+### ~~4.7 Мёртвый media query~~ **FIXED**
 
-**Файл:** `style.css:536` — `@media (max-width: 767px)` содержит `.btn.large { width: 70%; }`, но `@media (max-width: 768px)` ниже переопределяет на `width: 100%` для всех экранов ≤768px. Первый медиа-запрос никогда не применяется.
+~~**Файл:** `style.css:536` — `@media (max-width: 767px)` содержит `.btn.large { width: 70%; }`, но `@media (max-width: 768px)` ниже переопределяет на `width: 100%` для всех экранов ≤768px. Первый медиа-запрос никогда не применяется.~~
 
-### 4.8 Неопределённые CSS-переменные
+### ~~4.8 Неопределённые CSS-переменные~~ **FIXED**
 
-- `--primary-color` в `style.css:1465` (`.email-link`) — не определена в `:root`, всегда срабатывает fallback
-- `--text-heading` в `business.css:1196` — не определена
+~~- `--primary-color` в `style.css:1465` (`.email-link`) — не определена в `:root`, всегда срабатывает fallback~~
+~~- `--text-heading` в `business.css:1196` — не определена~~
 
-### 4.9 ~30KB неиспользуемого CSS
+### ~~4.9 ~30KB неиспользуемого CSS~~ **СКИПНУТО (MVP)**
 
-Страницы dashboard, business, verify, receipts подключают `css/style.css`, который содержит стили лендинга (hero, features, timeline, footer), не нужные на этих страницах.
+~~Страницы dashboard, business, verify, receipts подключают `css/style.css`, который содержит стили лендинга (hero, features, timeline, footer), не нужные на этих страницах.~~
 
 ---
 
@@ -187,9 +187,9 @@ using (auth.uid() = owner_id);
 
 Добавлен `action="#"` ко всем формам.
 
-### 5.2 Хардкодные Supabase credentials в inline-скриптах
+### ~~5.2 Хардкодные Supabase credentials в inline-скриптах~~ **СКИПНУТО (MVP)**
 
-**Файл:** `reset-password.html:98-101` — Supabase URL и anon-ключ дублируются в inline-скрипте. Дубликат 5 других файлов.
+~~**Файл:** `reset-password.html:98-101` — Supabase URL и anon-ключ дублируются в inline-скрипте. Дубликат 5 других файлов.~~
 
 ### ~~5.3 Блокирующие скрипты без async/defer~~ **FIXED**
 
@@ -207,17 +207,17 @@ using (auth.uid() = owner_id);
 
 Удалены `form_placeholder`, `card_manual`, `card_service` из `js/script.js` и `privacy_callout` из `js/privacy-lang.js`. Нигде не использовались.
 
-### 6.3 Хардкодные строки в JS без i18n
+### ~~6.3 Хардкодные строки в JS без i18n~~ **FIXED**
 
-| # | Файл | Сколько |
+~~| # | Файл | Сколько |
 |---|------|---------|
 | H1 | `js/dashboard-items.js:54,317` | 2 строки ("Ошибка загрузки") |
 | H2 | `js/business-panel.js` | ~20 строк (ошибки, статусы, тосты) |
-| H3 | `js/receipts.js` | ~15 строк (ошибки, навигация) |
+| H3 | `js/receipts.js` | ~15 строк (ошибки, навигация) |~~
 
-### 6.4 `business.html` — русский текст без data-i18n
+### ~~6.4 `business.html` — русский текст без data-i18n~~ **FIXED**
 
-~30 элементов на странице бизнеса не имеют `data-i18n`. Перевод выполняется через JS-функцию после загрузки. При первом рендере — flash of untranslated content. При отключённом JS — весь текст остаётся на русском.
+~~~30 элементов на странице бизнеса не имеют `data-i18n`. Перевод выполняется через JS-функцию после загрузки. При первом рендере — flash of untranslated content. При отключённом JS — весь текст остаётся на русском.~~
 
 ---
 
@@ -270,12 +270,13 @@ using (auth.uid() = owner_id);
 | **JS — баги** | 1 (B5) | 1 (B4) | 3 (B1, B2, B3) | 2 (B6, B7) | 1.1, 3.6 |
 | **JS — unhandled promises** | 4 (A1-A4) | — | — | — | — |
 | **JS — необъявленные глобалы** | — | — | — | — | G1–G8 |
-| **CSS** | — | — | 1 (4.8) | 1 (4.7) | 4.1, 4.2, 4.3, 4.4*, 4.5, 4.6 |
-| \*4.4 скипнут (MVP) |
-| **HTML** | — | — | 1 (5.2) | — | 5.1, 5.3 |
-| **i18n** | — | — | 2 (6.3, 6.4) | — | 6.1, 6.2 |
+| **CSS** | — | — | — | — | 4.1, 4.2, 4.3, 4.4*, 4.5, 4.6, 4.7, 4.8, 4.9* |
+| \*4.4, 4.9 скипнуты (MVP) |
+| **HTML** | — | — | — | — | 5.1, 5.2*, 5.3 |
+| \*5.2 скипнут (MVP) |
+| **i18n** | — | — | — | — | 6.1, 6.2, 6.3, 6.4 |
 | **Функционал** | — | — | — | — | 7.1–7.6 |
-| **Итого** | **5** | **1** | **10** | **5** | **30** |
+| **Итого** | **5** | **1** | **6** | **4** | **36** |
 
 *1.3, 1.4 — решено не фиксить (риск принят)
 
@@ -283,12 +284,12 @@ using (auth.uid() = owner_id);
 
 ## Топ-10 что чинить в первую очередь
 
-1. **Unhandled Promise Rejections** — 4 места (A1-A4)
-2. ~~**CDN-глобалы без защиты** — 6 мест (G1-G6)~~ **FIXED** — G1/G2 добавлены guard'ы, G3 — ошибка аудита, G4-G8 уже имели защиту
-3. **`!important` на `.sidebar-overlay`** — блокирует `.active` на мобильных
-4. **`msg_success` отсутствует в en** — `js/script.js`
-5. **Дублирование theme-кода** — 4 копии в разных файлах
-7. **Неиспользуемые ключи переводов** — `form_placeholder`, `card_manual`, `card_service`, `privacy_callout`
-8. **Отсутствие `backdrop-filter`** — 7 мест (только `-webkit-`)
-9. **Множественные listener'ы при быстрых кликах** — `business-panel.js:609`
-10. **`r.id.slice(0, 8)` без проверки типа** — `business-panel.js:37`, `receipts.js:180`
+1. ~~**Unhandled Promise Rejections** — 4 места (A1-A4)~~ **FIXED**
+2. ~~**CDN-глобалы без защиты** — 6 мест (G1-G6)~~ **FIXED**
+3. ~~**`!important` на `.sidebar-overlay`** — блокирует `.active` на мобильных~~ **FIXED**
+4. ~~**`msg_success` отсутствует в en** — `js/script.js`~~ **FIXED**
+5. ~~**Дублирование theme-кода** — 4 копии в разных файлах~~ **FIXED**
+7. ~~**Неиспользуемые ключи переводов** — `form_placeholder`, `card_manual`, `card_service`, `privacy_callout`~~ **FIXED**
+8. ~~**Отсутствие `backdrop-filter`** — 7 мест (только `-webkit-`)~~ **FIXED**
+9. ~~**Множественные listener'ы при быстрых кликах** — `business-panel.js:609`~~ **FIXED**
+10. ~~**`r.id.slice(0, 8)` без проверки типа** — `business-panel.js:37`, `receipts.js:180`~~ **FIXED**

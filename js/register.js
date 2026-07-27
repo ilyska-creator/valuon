@@ -75,8 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const dayDiff = today.getDate() - birthDateObj.getDate();
             const actualAge = age - (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? 1 : 0);
 
-            if (actualAge < 14) {
-                showToast(lang === 'ru' ? 'Вам должно быть не менее 14 лет' : 'You must be at least 14 years old', 'warning');
+            if (actualAge < 16) {
+                showToast(lang === 'ru' ? 'Вам должно быть не менее 16 лет' : 'You must be at least 16 years old', 'warning');
                 return;
             }
 

@@ -51,7 +51,8 @@ async function loadItems(userId, client) {
 
     if (error) {
         console.error(error);
-        grid.innerHTML = '<p class="empty-state error">Ошибка загрузки данных.</p>';
+        const loadLang = localStorage.getItem('valuon-lang') || 'ru';
+        grid.innerHTML = '<p class="empty-state error">' + (loadLang === 'en' ? 'Data load error.' : 'Ошибка загрузки данных.') + '</p>';
         return;
     }
 

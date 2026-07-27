@@ -336,7 +336,8 @@ async function initBusinessPanel() {
             .maybeSingle();
 
         if (error && error.code !== 'PGRST116') {
-            window.showToast('Не удалось загрузить данные магазина. Проверьте подключение.', 'error');
+            const loadLang = localStorage.getItem('valuon-lang') || 'ru';
+            window.showToast(loadLang === 'en' ? 'Failed to load shop data. Check your connection.' : 'Не удалось загрузить данные магазина. Проверьте подключение.', 'error');
 
             if (currentShop) {
                 updateShopInfo(currentShop);
@@ -436,7 +437,11 @@ async function initBusinessPanel() {
                 }]);
 
                 if (error) {
-                    window.showToast(error.code === '23505' ? 'Магазин уже существует' : 'Ошибка создания', 'error');
+                    const createLang = localStorage.getItem('valuon-lang') || 'ru';
+                    const createMsg = error.code === '23505'
+                        ? (createLang === 'en' ? 'Shop already exists' : 'Магазин уже существует')
+                        : (createLang === 'en' ? 'Creation error' : 'Ошибка создания');
+                    window.showToast(createMsg, 'error');
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
                     return;
@@ -484,7 +489,8 @@ async function initBusinessPanel() {
                 }
             } catch (err) {
                 console.error('Shop creation error:', err);
-                window.showToast('Ошибка создания магазина: ' + err.message, 'error');
+                const catchLang = localStorage.getItem('valuon-lang') || 'ru';
+                window.showToast((catchLang === 'en' ? 'Shop creation error: ' : 'Ошибка создания магазина: ') + err.message, 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
@@ -999,7 +1005,9 @@ async function initBusinessPanel() {
     });
 
     window.addEventListener('business-lang-changed', () => {
-        if (currentShop) refreshDashboard(client, currentShop.id, stats, list);
+        if (!currentShop) return;
+        renderReceiptCards(list, currentReceiptsList);
+        window.applyBusinessTranslations?.();
         setTimeout(updateChart, 50);
     });
 }
