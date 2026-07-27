@@ -20,7 +20,7 @@ const translations = {
         footer_link: "Зарегистрироваться",
 
         reg_title: "Создать аккаунт",
-        reg_subtitle: "Начните управлять гарантиями бесплатно",
+        reg_subtitle: "Все чеки и гарантии в одном аккаунте",
         label_confirm_password: "Повторите пароль",
         btn_register: "Зарегистрироваться",
         footer_have_account: "Уже есть аккаунт?",
@@ -80,7 +80,7 @@ const translations = {
         footer_link: "Sign Up",
 
         reg_title: "Create Account",
-        reg_subtitle: "Start managing warranties for free",
+        reg_subtitle: "All receipts and warranties in one account",
         label_confirm_password: "Confirm Password",
         btn_register: "Sign Up",
         footer_have_account: "Already have an account?",
