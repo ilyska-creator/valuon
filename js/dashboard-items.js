@@ -67,6 +67,7 @@ async function loadItems(userId, client) {
 
 export function calculateDaysLeft(purchaseDate, months) {
     if (!purchaseDate || months == null || months === '') return -999;
+    if (typeof purchaseDate !== 'string') return -999;
 
     const parts = purchaseDate.split('-');
     if (parts.length !== 3) return -999;

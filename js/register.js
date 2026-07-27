@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             .update({ status: 'verified' })
                             .eq('customer_email', email.toLowerCase().trim())
                             .eq('status', 'pending')
-                            .select('id', { count: 'exact' });
+                            .select('id');
 
                         if (lazyBindError) {
                             console.error('❌ Ошибка привязки бизнес-чеков (lazy binding):', lazyBindError);

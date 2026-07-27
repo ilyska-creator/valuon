@@ -46,7 +46,7 @@ async function initBusinessPanel() {
             const dateStr = new Date(r.purchase_date).toLocaleDateString(currentLang === 'ru' ? 'ru-RU' : 'en-US');
 
             const lineItems = Array.isArray(r.receipt_items) ? r.receipt_items : [];
-            const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${r.id.slice(0, 8).toUpperCase()}`;
+            const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
             const itemsCount = lineItems.length;
             const payMethodVal = r.payment_method ? r.payment_method.toLowerCase() : '';
             const payMethod = payMethodMap[payMethodVal] || r.payment_method || '—';
