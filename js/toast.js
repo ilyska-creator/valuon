@@ -28,7 +28,7 @@ function showToast(message, type = 'error', duration = 4000) {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `
-        <div class="toast-icon"><i class="${icons[type]}"></i></div>
+        <div class="toast-icon"><i class="${icons[type] || icons.info}"></i></div>
         <div class="toast-body">
             <div class="toast-title">${titles[type]}</div>
             <div class="toast-message">${escapeToastHtml(message)}</div>
