@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             sitekey: '0x4AAAAAADxC9yNLOh3uKLe-',
             theme: 'auto'
         });
+        document.getElementById('login-turnstile-skel')?.classList.add('loaded');
     }
 
     const savedEmail = localStorage.getItem('valuon-remember-email');
@@ -167,9 +168,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     function closeForgotModal() {
         if (forgotModal?.classList.contains('closing')) return;
         forgotModal?.classList.add('closing');
+        forgotModal?.classList.remove('active');
         setTimeout(() => {
-            forgotModal?.classList.remove('active', 'closing');
-        }, 250);
+            forgotModal?.classList.remove('closing');
+        }, 350);
     }
 
     if (forgotLink) {

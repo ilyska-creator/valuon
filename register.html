@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Valuon — Регистрация</title>
-    <meta name="description" content="Valuon — Регистрация. Создайте аккаунт и начните управлять гарантиями на покупки бесплатно.">
+    <meta name="description"
+        content="Valuon — Регистрация. Создайте аккаунт и начните управлять гарантиями на покупки бесплатно.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -22,11 +23,11 @@
 </head>
 
 <body class="auth-body">
-    <a href="index.html" class="back-link" data-i18n="back_home">← На главную</a>
+    <a href="index.html" class="back-link" data-i18n="back_home" data-animate="fade">← На главную</a>
 
     <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-logo">
+        <div class="auth-card" data-animate-group data-animate-step="70">
+            <div class="auth-logo" data-animate="zoom">
                 <svg width="48" height="48" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M20 4L5 10V20C5 29.5 11.5 37.5 20 39C28.5 37.5 35 29.5 35 20V10L20 4Z" fill="#3b82f6"
                         stroke="#2563eb" stroke-width="1.5" stroke-linejoin="round" />
@@ -35,16 +36,19 @@
                 </svg>
                 <h1 data-i18n="reg_title">Создать аккаунт</h1>
             </div>
-            <p class="auth-subtitle" data-i18n="reg_subtitle">Начните управлять гарантиями бесплатно</p>
+            <p class="auth-subtitle" data-i18n="reg_subtitle" data-animate>Начните управлять гарантиями бесплатно</p>
 
-            <form id="register-form" class="auth-form" action="#">
-                <div class="input-group">
+            <form id="register-form" class="auth-form" action="#" novalidate>
+                <div class="input-group" data-animate>
                     <label for="email" data-i18n="label_email">Email</label>
-                    <input type="email" id="email" name="email" required placeholder="name@example.com"
-                        autocomplete="email">
+                    <div class="input-wrap">
+                        <span class="input-icon"><i class="fa-regular fa-envelope"></i></span>
+                        <input type="email" id="email" name="email" required placeholder="name@example.com"
+                            autocomplete="email">
+                    </div>
                 </div>
 
-                <div class="input-row">
+                <div class="input-row" data-animate>
                     <div class="input-group">
                         <label for="first-name" data-i18n="label_first_name">Имя</label>
                         <input type="text" id="first-name" name="firstName" required
@@ -62,20 +66,22 @@
                     </div>
                 </div>
 
-                <div class="input-group">
+                <div class="input-group" data-animate>
                     <label for="password" data-i18n="label_password">Пароль</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="password" name="newPassword" required
-                            placeholder="••••••••" autocomplete="new-password">
+                    <div class="input-wrap">
+                        <span class="input-icon"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="password" name="newPassword" required placeholder="••••••••"
+                            autocomplete="new-password">
                         <button type="button" class="toggle-password" aria-label="Toggle password visibility">
                             <i class="fa-regular fa-eye"></i>
                         </button>
                     </div>
                 </div>
 
-                <div class="input-group">
+                <div class="input-group" data-animate>
                     <label for="confirm-password" data-i18n="label_confirm_password">Повторите пароль</label>
-                    <div class="password-wrapper">
+                    <div class="input-wrap">
+                        <span class="input-icon"><i class="fa-solid fa-lock"></i></span>
                         <input type="password" id="confirm-password" name="confirmPassword" required
                             placeholder="••••••••" autocomplete="new-password">
                         <button type="button" class="toggle-password-confirm" aria-label="Toggle password visibility">
@@ -84,38 +90,72 @@
                     </div>
                 </div>
 
-                <div class="form-options">
+                <div class="form-options" data-animate>
                     <label class="checkbox-label">
                         <input type="checkbox" id="terms" required>
+                        <span class="checkbox-custom"><span class="check-icon"><svg viewBox="0 0 11 9" fill="none">
+                                    <path d="M1 4.5l3 3 6-6" stroke="currentColor" stroke-width="1.8"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg></span></span>
                         <span data-i18n="reg_terms">Я согласен с <a href="terms.html"
                                 style="color:var(--primary)">условиями пользования</a> и <a href="privacy.html"
                                 style="color:var(--primary)">политикой конфиденциальности</a></span>
                     </label>
                 </div>
 
-                <div class="cf-turnstile" data-sitekey="0x4AAAAAADxC9yNLOh3uKLe-" data-theme="auto"></div>
+                <div class="turnstile-wrap" data-animate>
+                    <div class="turnstile-skel" id="register-turnstile-skel">
+                        <span class="skel-pulse"></span>
+                        <span data-i18n="turnstile_checking">Проверка...</span>
+                    </div>
+                    <div id="register-turnstile"></div>
+                </div>
 
-                <button type="submit" class="btn btn-primary auth-btn"
+                <button type="submit" class="btn btn-primary auth-btn" data-animate
                     data-i18n="btn_register">Зарегистрироваться</button>
             </form>
 
-            <div class="auth-footer">
+            <div class="auth-footer" data-animate>
                 <span data-i18n="footer_have_account">Уже есть аккаунт?</span>
                 <a href="login.html" data-i18n="footer_link_login">Войти</a>
+            </div>
+
+            <div class="auth-footer" data-animate>
+                <a href="privacy.html" data-i18n="login_privacy_link">Политика конфиденциальности</a>
+                <span style="margin:0 6px;color:var(--text-muted)">·</span>
+                <a href="terms.html" data-i18n="login_terms_link">Условия пользования</a>
             </div>
         </div>
     </div>
 
     <script src="js/theme.js"></script>
+    <script>
+        (function () {
+            var items = document.querySelectorAll('[data-animate]');
+            items.forEach(function (el) {
+                var delay = 0;
+                var group = el.closest('[data-animate-group]');
+                if (group) {
+                    var step = parseInt(group.dataset.animateStep, 10) || 80;
+                    var siblings = Array.prototype.slice.call(group.querySelectorAll('[data-animate]'));
+                    var index = siblings.indexOf(el);
+                    if (index >= 0) delay = index * step;
+                }
+                setTimeout(function () { el.classList.add('is-visible'); }, delay);
+            });
+        })();
+    </script>
     <script src="js/toast.js"></script>
     <script src="js/login-lang.js"></script>
     <script type="module" src="js/register.js"></script>
     <div id="toast-container" class="toast-container"></div>
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href="privacy.html">Политикой конфиденциальности</a>.</p>
-        <button id="cookie-btn" class="btn btn-primary small" onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
+                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <button id="cookie-btn" class="btn btn-primary small"
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
     </div>
-    <script>(function(){function c(){var l=localStorage.getItem('valuon-lang');if(l==='en'){document.getElementById('cookie-text').innerHTML='We use cookies to operate the site. By continuing, you agree to our <a href=\"privacy.html\">Privacy Policy</a>.';document.getElementById('cookie-btn').textContent='Accept'}else{document.getElementById('cookie-text').innerHTML='Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href=\"privacy.html\">Политикой конфиденциальности</a>.';document.getElementById('cookie-btn').textContent='Принять'}}c();document.addEventListener('click',function(e){if(e.target.closest('#lang-toggle'))setTimeout(c,50)});if(!localStorage.getItem('cookie-consent')){setTimeout(function(){document.getElementById('cookie-banner').classList.add('show')},800)}})();</script>
+    <script>(function () { function c() { var l = localStorage.getItem('valuon-lang'); if (l === 'en') { document.getElementById('cookie-text').innerHTML = 'We use cookies to operate the site. By continuing, you agree to our <a href=\"privacy.html\">Privacy Policy</a>.'; document.getElementById('cookie-btn').textContent = 'Accept' } else { document.getElementById('cookie-text').innerHTML = 'Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href=\"privacy.html\">Политикой конфиденциальности</a>.'; document.getElementById('cookie-btn').textContent = 'Принять' } } c(); document.addEventListener('click', function (e) { if (e.target.closest('#lang-toggle')) setTimeout(c, 50) }); if (!localStorage.getItem('cookie-consent')) { setTimeout(function () { document.getElementById('cookie-banner').classList.add('show') }, 800) } })();</script>
 </body>
 
 </html>

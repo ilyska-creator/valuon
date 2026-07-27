@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Valuon — Вход</title>
-    <meta name="description" content="Valuon — Войдите в аккаунт для управления покупками, гарантиями и цифровыми чеками.">
+    <meta name="description"
+        content="Valuon — Войдите в аккаунт для управления покупками, гарантиями и цифровыми чеками.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -22,11 +23,11 @@
 </head>
 
 <body class="auth-body">
-    <a href="index.html" class="back-link" data-i18n="back_home">← На главную</a>
+    <a href="index.html" class="back-link" data-i18n="back_home" data-animate="fade">← На главную</a>
 
     <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-logo">
+        <div class="auth-card" data-animate-group data-animate-step="70">
+            <div class="auth-logo" data-animate="zoom">
                 <svg width="48" height="48" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M20 4L5 10V20C5 29.5 11.5 37.5 20 39C28.5 37.5 35 29.5 35 20V10L20 4Z" fill="#3b82f6"
                         stroke="#2563eb" stroke-width="1.5" stroke-linejoin="round" />
@@ -35,18 +36,22 @@
                 </svg>
                 <h1 data-i18n="auth_title">С возвращением!</h1>
             </div>
-            <p class="auth-subtitle" data-i18n="auth_subtitle">Введите данные для входа в аккаунт</p>
+            <p class="auth-subtitle" data-i18n="auth_subtitle" data-animate>Введите данные для входа в аккаунт</p>
 
-            <form id="login-form" class="auth-form" action="#">
-                <div class="input-group">
+            <form id="login-form" class="auth-form no-required-mark" action="#" novalidate>
+                <div class="input-group" data-animate>
                     <label for="email" data-i18n="label_email">Email</label>
-                    <input type="email" id="email" name="email" required placeholder="name@example.com"
-                        autocomplete="email">
+                    <div class="input-wrap">
+                        <span class="input-icon"><i class="fa-regular fa-envelope"></i></span>
+                        <input type="email" id="email" name="email" required placeholder="name@example.com"
+                            autocomplete="email">
+                    </div>
                 </div>
 
-                <div class="input-group">
+                <div class="input-group" data-animate>
                     <label for="password" data-i18n="label_password">Пароль</label>
-                    <div class="password-wrapper">
+                    <div class="input-wrap">
+                        <span class="input-icon"><i class="fa-solid fa-lock"></i></span>
                         <input type="password" id="password" name="currentPassword" required placeholder="••••••••"
                             autocomplete="current-password">
                         <button type="button" class="toggle-password" aria-label="Toggle password visibility">
@@ -55,25 +60,35 @@
                     </div>
                 </div>
 
-                <div class="form-options">
+                <div class="form-options" data-animate>
                     <label class="checkbox-label">
                         <input type="checkbox" id="remember">
+                        <span class="checkbox-custom"><span class="check-icon"><svg viewBox="0 0 11 9" fill="none">
+                                    <path d="M1 4.5l3 3 6-6" stroke="currentColor" stroke-width="1.8"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg></span></span>
                         <span data-i18n="login_remember">Запомнить меня</span>
                     </label>
                     <a href="#" class="forgot-link" data-i18n="login_forgot">Забыли пароль?</a>
                 </div>
 
-                <div id="login-turnstile"></div>
+                <div class="turnstile-wrap" data-animate>
+                    <div class="turnstile-skel" id="login-turnstile-skel">
+                        <span class="skel-pulse"></span>
+                        <span data-i18n="turnstile_checking">Проверка...</span>
+                    </div>
+                    <div id="login-turnstile"></div>
+                </div>
 
-                <button type="submit" class="btn btn-primary auth-btn" data-i18n="btn_login">Войти</button>
+                <button type="submit" class="btn btn-primary auth-btn" data-i18n="btn_login" data-animate>Войти</button>
             </form>
 
-            <div class="auth-footer">
+            <div class="auth-footer" data-animate>
                 <span data-i18n="footer_text">Нет аккаунта?</span>
                 <a href="register.html" data-i18n="footer_link">Зарегистрироваться</a>
             </div>
 
-            <div class="auth-footer">
+            <div class="auth-footer" data-animate>
                 <a href="privacy.html" data-i18n="login_privacy_link">Политика конфиденциальности</a>
                 <span style="margin:0 6px;color:var(--text-muted)">·</span>
                 <a href="terms.html" data-i18n="login_terms_link">Условия пользования</a>
@@ -90,10 +105,10 @@
                 <h3 data-i18n="forgot_title">Восстановление пароля</h3>
                 <p class="forgot-desc" data-i18n="forgot_desc">Введите email, привязанный к аккаунту. Мы отправим ссылку
                     для сброса пароля.</p>
-                <form id="forgot-form" class="auth-form" action="#">
+                <form id="forgot-form" class="auth-form" action="#" novalidate>
                     <div class="input-group">
                         <label for="forgot-email" data-i18n="label_email">Email</label>
-                        <input type="email" id="forgot-email" name="forgotEmail" required placeholder="name@example.com"
+                        <input type="email" id="forgot-email" name="forgotEmail" placeholder="name@example.com"
                             autocomplete="email">
                     </div>
                     <div id="forgot-turnstile"></div>
@@ -118,12 +133,30 @@
     <script src="js/toast.js"></script>
     <script type="module" src="js/auth.js"></script>
     <script src="js/theme.js"></script>
+    <script>
+        (function () {
+            var items = document.querySelectorAll('[data-animate]');
+            items.forEach(function (el) {
+                var delay = 0;
+                var group = el.closest('[data-animate-group]');
+                if (group) {
+                    var step = parseInt(group.dataset.animateStep, 10) || 80;
+                    var siblings = Array.prototype.slice.call(group.querySelectorAll('[data-animate]'));
+                    var index = siblings.indexOf(el);
+                    if (index >= 0) delay = index * step;
+                }
+                setTimeout(function () { el.classList.add('is-visible'); }, delay);
+            });
+        })();
+    </script>
     <div id="toast-container" class="toast-container"></div>
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href="privacy.html">Политикой конфиденциальности</a>.</p>
-        <button id="cookie-btn" class="btn btn-primary small" onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
+                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <button id="cookie-btn" class="btn btn-primary small"
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
     </div>
-    <script>(function(){function c(){var l=localStorage.getItem('valuon-lang');if(l==='en'){document.getElementById('cookie-text').innerHTML='We use cookies to operate the site. By continuing, you agree to our <a href=\"privacy.html\">Privacy Policy</a>.';document.getElementById('cookie-btn').textContent='Accept'}else{document.getElementById('cookie-text').innerHTML='Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href=\"privacy.html\">Политикой конфиденциальности</a>.';document.getElementById('cookie-btn').textContent='Принять'}}c();document.addEventListener('click',function(e){if(e.target.closest('#lang-toggle'))setTimeout(c,50)});if(!localStorage.getItem('cookie-consent')){setTimeout(function(){document.getElementById('cookie-banner').classList.add('show')},800)}})();</script>
+    <script>(function () { function c() { var l = localStorage.getItem('valuon-lang'); if (l === 'en') { document.getElementById('cookie-text').innerHTML = 'We use cookies to operate the site. By continuing, you agree to our <a href=\"privacy.html\">Privacy Policy</a>.'; document.getElementById('cookie-btn').textContent = 'Accept' } else { document.getElementById('cookie-text').innerHTML = 'Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href=\"privacy.html\">Политикой конфиденциальности</a>.'; document.getElementById('cookie-btn').textContent = 'Принять' } } c(); document.addEventListener('click', function (e) { if (e.target.closest('#lang-toggle')) setTimeout(c, 50) }); if (!localStorage.getItem('cookie-consent')) { setTimeout(function () { document.getElementById('cookie-banner').classList.add('show') }, 800) } })();</script>
 </body>
 
 </html>

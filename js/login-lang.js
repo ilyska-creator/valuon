@@ -56,6 +56,7 @@ const translations = {
         ph_first_name: "Иван",
         ph_last_name: "Иванов",
 
+        turnstile_checking: "Проверка...",
 
     },
     en: {
@@ -114,6 +115,7 @@ const translations = {
         label_last_name: "Last Name",
         ph_first_name: "James",
         ph_last_name: "Smith",
+        turnstile_checking: "Verifying...",
     }
 };
 
@@ -150,5 +152,48 @@ document.addEventListener('DOMContentLoaded', () => {
         if (translations[currentLang][key]) {
             el.placeholder = translations[currentLang][key];
         }
+    });
+
+    document.querySelectorAll('input[required], select[required], textarea[required]').forEach(el => {
+        const form = el.closest('form');
+        if (!form) return;
+        const container = el.closest('.input-group') || el.parentNode;
+
+        const error = document.createElement('div');
+        error.className = 'field-error';
+        const dot = document.createElement('span');
+        dot.className = 'error-dot';
+        error.appendChild(dot);
+        error.appendChild(document.createTextNode(''));
+        container.appendChild(error);
+
+        form.addEventListener('submit', (e) => {
+            if (form.id === 'register-form') return;
+            const lang = localStorage.getItem('valuon-lang') || 'ru';
+            const msg = lang === 'en' ? 'Please fill out this field' : 'Заполните это поле';
+            el.setCustomValidity('');
+            if (el.validity.valueMissing) {
+                error.lastChild.textContent = msg;
+                error.classList.add('visible');
+                container.classList.remove('shake');
+                void container.offsetWidth;
+                container.classList.add('shake');
+                setTimeout(() => container.classList.remove('shake'), 500);
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        }, true);
+
+        el.addEventListener('input', () => {
+            error.classList.remove('visible');
+            container.classList.remove('shake');
+            el.setCustomValidity('');
+        });
+
+        el.addEventListener('blur', () => {
+            if (el.value) {
+                error.classList.remove('visible');
+            }
+        });
     });
 });
