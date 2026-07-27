@@ -318,10 +318,14 @@ async function initSettings() {
 
 let settingsInitialized = false;
 
-function ensureSettingsLoaded() {
-    if (!settingsInitialized) {
-        initSettings();
-        settingsInitialized = true;
+async function ensureSettingsLoaded() {
+    if (settingsInitialized) return;
+    settingsInitialized = true;
+    try {
+        await initSettings();
+    } catch (e) {
+        console.error('Settings init failed:', e);
+        settingsInitialized = false;
     }
 }
 

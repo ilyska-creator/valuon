@@ -1004,4 +1004,4 @@ async function initBusinessPanel() {
     });
 }
 
-initBusinessPanel();
+initBusinessPanel().catch(e => console.error('Business panel init failed:', e));

@@ -143,12 +143,16 @@ let cachedClient = null;
 
 async function ensureNotifLoaded() {
     if (notifInitialized) return;
-    const auth = await requireAuth();
-    if (!auth) return;
-    cachedUserId = auth.user.id;
-    cachedClient = auth.client;
-    await loadNotifications(auth.user.id, auth.client);
-    notifInitialized = true;
+    try {
+        const auth = await requireAuth();
+        if (!auth) return;
+        cachedUserId = auth.user.id;
+        cachedClient = auth.client;
+        await loadNotifications(auth.user.id, auth.client);
+        notifInitialized = true;
+    } catch (e) {
+        console.error('Notif load failed:', e);
+    }
 }
 
 document.querySelectorAll('[data-view="notifications"]').forEach(el => {

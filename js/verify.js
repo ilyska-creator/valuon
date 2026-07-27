@@ -133,6 +133,7 @@ async function decodeQRFromImage(img, maxSize = 1024) {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(img, 0, 0, w, h);
     const imageData = ctx.getImageData(0, 0, w, h);
+    if (!window.jsQR) return null;
     const code = window.jsQR(imageData.data, w, h, { inversionAttempts: 'dontInvert' });
     return code ? code.data : null;
 }
@@ -140,6 +141,10 @@ async function decodeQRFromImage(img, maxSize = 1024) {
 async function decodeQR(file) {
     if (file.type === 'application/pdf') {
         try {
+            if (typeof pdfjsLib === 'undefined') {
+                console.warn('[verify] pdfjsLib not loaded');
+                return null;
+            }
             const buf = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
             const page = await pdf.getPage(1);
@@ -151,6 +156,7 @@ async function decodeQR(file) {
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
             await page.render({ canvasContext: ctx, viewport }).promise;
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            if (!window.jsQR) return null;
             const code = window.jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' });
             return code ? code.data : null;
         } catch (e) {
@@ -410,6 +416,10 @@ function stopCamera() {
 
 function startScanLoop() {
     if (!mediaStream) return;
+    if (!window.jsQR) {
+        console.warn('[verify] jsQR not loaded, cannot start scan loop');
+        return;
+    }
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
     scanInterval = setInterval(() => {
@@ -631,6 +641,10 @@ fileInput?.addEventListener('change', async () => {
 
     if (file.type === 'application/pdf') {
         try {
+            if (typeof pdfjsLib === 'undefined') {
+                console.warn('[verify] pdfjsLib not loaded, cannot preview PDF');
+                return;
+            }
             const buf = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
             const page = await pdf.getPage(1);

@@ -680,7 +680,7 @@
     }
 }
 
-@keyframes badgePulse {
+@keyframes badgePopIn {
     0% {
         transform: scale(0.8);
         opacity: 0;
@@ -731,7 +731,7 @@
 }
 
 .verify-result.success .verify-badge.verified {
-    animation: badgePulse 0.6s ease 0.3s both;
+    animation: badgePopIn 0.6s ease 0.3s both;
 }
 
 .verify-badge.invalid {

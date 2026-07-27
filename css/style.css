@@ -904,6 +904,14 @@ ul {
     font-size: 0.9rem;
 }
 
+.contact-links {
+    margin-top: var(--space-2);
+    display: flex;
+    justify-content: center;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
 .fade-in-up {
     opacity: 0;
     animation: fadeInUp 0.8s forwards;
@@ -923,17 +931,6 @@ ul {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-.reveal {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: all 0.8s ease;
-}
-
-.reveal.active {
-    opacity: 1;
-    transform: translateY(0);
 }
 
 .hero-text h1 {
