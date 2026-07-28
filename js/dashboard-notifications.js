@@ -11,7 +11,7 @@ function getNotifT() {
 }
 
 function calculateDaysLeft(purchaseDate, months) {
-    if (!purchaseDate || !months) return -999;
+    if (!purchaseDate || months == null || months === '') return -999;
     if (typeof purchaseDate !== 'string') return -999;
     const [year, month, day] = purchaseDate.split('-').map(Number);
     const endDate = new Date(year, month - 1, day);

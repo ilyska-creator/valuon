@@ -753,7 +753,13 @@ if (backBtn) {
     const params = new URLSearchParams(window.location.search);
     const fromParam = params.get('from');
     if (fromParam) {
-        backBtn.href = fromParam;
+        try {
+            const fromUrl = new URL(fromParam, window.location.origin);
+            const allowedPaths = ['/dashboard.html', '/business.html', '/receipts.html', '/index.html'];
+            if (fromUrl.origin === window.location.origin && allowedPaths.includes(fromUrl.pathname)) {
+                backBtn.href = fromUrl.pathname;
+            }
+        } catch (_) { }
     } else if (document.referrer) {
         try {
             const refUrl = new URL(document.referrer);
