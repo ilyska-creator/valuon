@@ -236,7 +236,7 @@
 }
 
 .scanner-content .scan-hint .rotating-loader {
-    gap: 6px;
+    gap: 10px;
     flex-direction: row;
     justify-content: center;
 }

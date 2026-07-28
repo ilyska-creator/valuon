@@ -626,10 +626,12 @@ scanFileInput?.addEventListener('change', async () => {
     scanArea?.classList.add('has-qr');
     const icon = scanArea?.querySelector('.scanner-content i');
     if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
-    if (scanHint) {
-        clearScanLoader();
-        scanHint.textContent = t('decoding');
-    }
+    if (scanHint) setScanLoader([
+        t('decoding'),
+        t('scanning'),
+        t('checking_sig'),
+        t('forming_result')
+    ]);
 
     try {
         const qrData = await decodeQR(file);
