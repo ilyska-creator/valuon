@@ -55,6 +55,13 @@ async function initReceipts() {
 async function attachFreshSignedUrls(receipts, client) {
     return Promise.all(receipts.map(async (r) => {
         if (!r.file_path) return r;
+
+        const msPerSecond = 1000;
+        const expiresAt = new Date(r.created_at).getTime() + SIGNED_URL_TTL * msPerSecond;
+        if (r.file_url && r.created_at && Date.now() < expiresAt) {
+            return { ...r, file_url: r.file_url };
+        }
+
         const { data, error } = await client.storage
             .from('receipts')
             .createSignedUrl(r.file_path, SIGNED_URL_TTL);

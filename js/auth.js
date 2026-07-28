@@ -80,21 +80,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             const rememberMe = document.getElementById('remember')?.checked;
             const originalText = btn.innerHTML;
 
-            const rateLimitCheck = checkLoginRateLimit(email);
-            if (!rateLimitCheck.allowed) {
-                const lang = localStorage.getItem('valuon-lang') === 'ru';
-                showToast(lang
-                    ? `Слишком много попыток входа. Попробуйте через ${rateLimitCheck.resetIn}`
-                    : `Too many login attempts. Try again in ${rateLimitCheck.resetIn}`);
-                return;
-            }
-
             const captchaToken = (typeof turnstile !== 'undefined' && loginWidgetId !== null)
                 ? turnstile.getResponse(loginWidgetId)
                 : null;
             if (!captchaToken) {
                 const lang = localStorage.getItem('valuon-lang') === 'ru';
                 showToast(lang ? 'Подтвердите, что вы не робот' : 'Please complete the captcha', 'warning');
+                return;
+            }
+
+            const rateLimitCheck = checkLoginRateLimit(email);
+            if (!rateLimitCheck.allowed) {
+                const lang = localStorage.getItem('valuon-lang') === 'ru';
+                showToast(lang
+                    ? `Слишком много попыток входа. Попробуйте через ${rateLimitCheck.resetIn}`
+                    : `Too many login attempts. Try again in ${rateLimitCheck.resetIn}`);
                 return;
             }
 
@@ -235,19 +235,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            const rateLimitCheck = checkLoginRateLimit(`reset_${email}`);
-            if (!rateLimitCheck.allowed) {
-                showToast(lang
-                    ? `Слишком много попыток. Попробуйте через ${rateLimitCheck.resetIn}`
-                    : `Too many attempts. Try again in ${rateLimitCheck.resetIn}`);
-                return;
-            }
-
             const captchaToken = (typeof turnstile !== 'undefined' && forgotWidgetId !== null)
                 ? turnstile.getResponse(forgotWidgetId)
                 : null;
             if (!captchaToken) {
                 showToast(lang ? 'Подтвердите, что вы не робот' : 'Please complete the captcha', 'warning');
+                return;
+            }
+
+            const rateLimitCheck = checkLoginRateLimit(`reset_${email}`);
+            if (!rateLimitCheck.allowed) {
+                showToast(lang
+                    ? `Слишком много попыток. Попробуйте через ${rateLimitCheck.resetIn}`
+                    : `Too many attempts. Try again in ${rateLimitCheck.resetIn}`);
                 return;
             }
 
