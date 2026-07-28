@@ -53,8 +53,7 @@
 
     <main class="business-main">
         <div id="app-loader" class="app-loader">
-            <div class="loader-spinner"></div>
-            <p class="loader-text" data-i18n="loading_shop">Проверка данных магазина...</p>
+            <div class="rotating-loader" id="business-loader"></div>
         </div>
         <section id="create-shop-view" class="view">
             <div class="card max-w-md" data-animate="zoom" style="margin: 2rem auto 0;">
@@ -319,11 +318,36 @@
 
     <div id="toast-container" class="toast-container"></div>
 
+    <script src="js/rotating-loader.js"></script>
     <script src="js/toast.js"></script>
     <script src="js/business-lang.js"></script>
     <script type="module" src="js/business-panel.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/animations.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const el = document.getElementById('business-loader');
+            if (el) {
+                const lang = localStorage.getItem('valuon-lang') || 'ru';
+                const bt = window.businessTranslations?.[lang] || window.businessTranslations?.ru || {};
+                const loader = new RotatingTextLoader(el, [
+                    bt.loading_shop || 'Загружаем магазин…',
+                    bt.loading_signatures || 'Проверяем подписи…',
+                    bt.loading_sync || 'Синхронизируем данные…'
+                ], { interval: 800 });
+
+                window.addEventListener('business-lang-changed', () => {
+                    const l = localStorage.getItem('valuon-lang') || 'ru';
+                    const tr = window.businessTranslations?.[l] || window.businessTranslations?.ru || {};
+                    loader.setPhrases([
+                        tr.loading_shop || 'Загружаем магазин…',
+                        tr.loading_signatures || 'Проверяем подписи…',
+                        tr.loading_sync || 'Синхронизируем данные…'
+                    ]);
+                });
+            }
+        });
+    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

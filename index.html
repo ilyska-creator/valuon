@@ -88,7 +88,7 @@
         <div class="hero-blob hero-blob-2" aria-hidden="true"></div>
         <div class="container hero-grid">
             <div class="hero-text fade-in-up">
-                <div class="badge"><span class="badge-dot"></span><span data-i18n="hero_badge">Альфа доступ
+                <div class="badge neon-glow"><span class="badge-dot"></span><span data-i18n="hero_badge">Альфа доступ
                         открыт</span></div>
 
                 <h1 data-i18n="hero_title">Единая система <br>электронных чеков</h1>
@@ -207,9 +207,8 @@
 
                         <div class="qr-demo-arrow"><i class="fa-solid fa-chevron-down"></i></div>
 
-                        <div class="qr-demo-processing">
-                            <div class="processing-spinner"><i class="fa-solid fa-circle-notch"></i></div>
-                            <span data-i18n="demo_processing">Проверяем данные...</span>
+                        <div class="qr-demo-processing" id="qr-demo-loader-wrap">
+                            <div class="rotating-loader rotating-loader--inline" id="qr-demo-loader"></div>
                         </div>
 
                         <div class="qr-demo-result">
@@ -451,8 +450,29 @@
     </footer>
 
     <script src="js/theme.js"></script>
+    <script src="js/rotating-loader.js"></script>
     <script src="js/animations.js"></script>
     <script type="module" src="js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const el = document.getElementById('qr-demo-loader');
+            if (el) {
+                const lang = localStorage.getItem('valuon-lang') || 'ru';
+                const phrases = lang === 'en'
+                    ? ['Scanning QR…', 'Checking signature…', 'Generating result…']
+                    : ['Сканируем QR…', 'Проверяем подпись…', 'Формируем результат…'];
+                const loader = new RotatingTextLoader(el, phrases, { interval: 800 });
+
+                document.getElementById('lang-toggle')?.addEventListener('click', () => {
+                    const newLang = localStorage.getItem('valuon-lang') || 'ru';
+                    const newPhrases = newLang === 'en'
+                        ? ['Scanning QR…', 'Checking signature…', 'Generating result…']
+                        : ['Сканируем QR…', 'Проверяем подпись…', 'Формируем результат…'];
+                    loader.setPhrases(newPhrases);
+                }, { once: false });
+            }
+        });
+    </script>
     <div id="cookie-banner" class="cookie-banner">
         <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href="privacy.html">Политикой конфиденциальности</a>.</p>
         <button id="cookie-btn" class="btn btn-primary small" onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>

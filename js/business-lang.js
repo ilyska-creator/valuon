@@ -106,13 +106,15 @@ const businessTranslations = {
         chart_period_month: 'За последние 30 дней',
         chart_period_year: 'За последние 12 месяцев',
 
-        loading_shop: 'Проверка данных магазина...',
         shop_badge: 'Магазин',
         logo_label: 'Логотип (опционально)',
         logo_drop: 'Нажмите, чтобы выбрать логотип',
         logo_hint: 'PNG или JPG, до 2 МБ',
         logo_bad_format: 'Только PNG и JPG.',
         logo_too_large: 'Файл слишком большой. Максимум 2 МБ.',
+        loading_shop: 'Загружаем магазин…',
+        loading_signatures: 'Проверяем подписи…',
+        loading_sync: 'Синхронизируем данные…',
     },
     en: {
 
@@ -218,13 +220,15 @@ const businessTranslations = {
         chart_period_month: 'Last 30 days',
         chart_period_year: 'Last 12 months',
 
-        loading_shop: 'Checking store data...',
         shop_badge: 'Store',
         logo_label: 'Logo (optional)',
         logo_drop: 'Click to select a logo',
         logo_hint: 'PNG or JPG, up to 2 MB',
         logo_bad_format: 'Only PNG and JPG.',
         logo_too_large: 'File too large. Maximum 2 MB.',
+        loading_shop: 'Loading shop…',
+        loading_signatures: 'Checking signatures…',
+        loading_sync: 'Syncing data…',
     }
 };
 

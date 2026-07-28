@@ -154,6 +154,9 @@ const dashboardTranslations = {
         verified_locked: "Подтверждено продавцом — нельзя изменить",
         verified_badge: "Подтверждено",
         item_name_unknown: "Товар",
+        loading_receipts: "Загружаем чеки…",
+        loading_signatures: "Проверяем подписи…",
+        loading_statuses: "Обновляем статусы…",
     },
     en: {
         page_title: "Valuon — Dashboard",
@@ -310,6 +313,9 @@ const dashboardTranslations = {
         verified_locked: "Confirmed by seller — cannot be edited",
         verified_badge: "Confirmed",
         item_name_unknown: "Item",
+        loading_receipts: "Loading receipts…",
+        loading_signatures: "Checking signatures…",
+        loading_statuses: "Updating statuses…",
     }
 };
 window.dashboardTranslations = dashboardTranslations;

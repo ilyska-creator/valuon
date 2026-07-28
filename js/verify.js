@@ -32,6 +32,21 @@ const scanArea = document.getElementById('scan-area');
 const scanFileInput = document.getElementById('scan-file-input');
 const scanHint = document.getElementById('scan-hint');
 
+let scanLoader = null;
+
+function setScanLoader(phrases) {
+    clearScanLoader();
+    if (!scanHint) return;
+    scanLoader = new RotatingTextLoader(scanHint, phrases, { interval: 800 });
+}
+
+function clearScanLoader() {
+    if (scanHint && scanHint._rotatingLoader) {
+        scanHint._rotatingLoader.destroy();
+    }
+    scanLoader = null;
+}
+
 tabs.forEach(tab => {
     tab.addEventListener('click', () => {
         stopCamera();
@@ -79,7 +94,10 @@ function resetAll() {
     scanArea?.classList.remove('has-qr');
     const icon = scanArea?.querySelector('.scanner-content i');
     if (icon) icon.className = 'fa-solid fa-qrcode';
-    if (scanHint) scanHint.textContent = t('scan_hint');
+    if (scanHint) {
+        clearScanLoader();
+        scanHint.textContent = t('scan_hint');
+    }
 }
 
 retryBtn?.addEventListener('click', resetAll);
@@ -184,6 +202,7 @@ async function decodeQR(file) {
 function showResult(status, data) {
     if (!resultBlock) return;
     stopCamera();
+    clearScanLoader();
 
     Object.values(panels).forEach(p => p?.classList.add('done'));
     resultBlockWrapper?.classList.add('active');
@@ -485,7 +504,11 @@ function startScanLoop() {
 
             navigator.vibrate?.(100);
 
-            if (scanHint) scanHint.textContent = t('scanning');
+            if (scanHint) setScanLoader([
+                t('scanning'),
+                t('checking_sig'),
+                t('forming_result')
+            ]);
 
             setTimeout(() => {
                 stopCamera();
@@ -603,20 +626,30 @@ scanFileInput?.addEventListener('change', async () => {
     scanArea?.classList.add('has-qr');
     const icon = scanArea?.querySelector('.scanner-content i');
     if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
-    if (scanHint) scanHint.textContent = t('decoding');
+    if (scanHint) {
+        clearScanLoader();
+        scanHint.textContent = t('decoding');
+    }
 
     try {
         const qrData = await decodeQR(file);
 
         if (!qrData) {
             if (icon) icon.className = 'fa-solid fa-circle-xmark';
-            if (scanHint) scanHint.textContent = t('qr_not_found_text');
+            if (scanHint) {
+                clearScanLoader();
+                scanHint.textContent = t('qr_not_found_text');
+            }
             showResult('no-qr');
             return;
         }
 
         if (icon) icon.className = 'fa-solid fa-check-circle';
-        if (scanHint) scanHint.textContent = t('scanning');
+        if (scanHint) setScanLoader([
+            t('scanning'),
+            t('checking_sig'),
+            t('forming_result')
+        ]);
         navigator.vibrate?.(100);
         await verifyReceiptFromQRData(qrData);
     } catch (err) {
