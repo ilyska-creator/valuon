@@ -65,6 +65,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             passwordInput.setAttribute('type', type);
             const icon = toggleBtn.querySelector('i');
             icon.className = type === 'password' ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+            icon.classList.add('anim-pop');
+            setTimeout(() => icon.classList.remove('anim-pop'), 350);
         });
     }
 
@@ -116,6 +118,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (error) throw error;
 
                 if (data.session) {
+                    const card = loginForm.closest('.auth-card');
+                    btn.innerHTML = '<i class="fa-solid fa-circle-check" style="font-size:1.25rem;animation:checkPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;color:var(--success);"></i>';
+                    await new Promise(r => setTimeout(r, 800));
+                    if (card) card.classList.add('auth-card--leaving');
+                    await new Promise(r => setTimeout(r, 350));
                     window.location.href = 'dashboard.html';
                 }
             } catch (err) {

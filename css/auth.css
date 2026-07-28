@@ -87,6 +87,12 @@
     transition: var(--transition-base);
 }
 
+.auth-card--leaving {
+    opacity: 0;
+    transform: scale(0.97) translateY(-6px);
+    pointer-events: none;
+}
+
 .auth-logo {
     display: flex;
     flex-direction: column;
@@ -100,6 +106,97 @@
     font-weight: 800;
     color: var(--text-main);
     margin: 0;
+}
+
+/* ----- Logo animations ----- */
+
+/* Login: shield settles into place */
+.auth-logo--settle svg {
+    opacity: 0;
+    transform: translateY(-30px);
+}
+
+.auth-logo--settle.is-visible svg {
+    animation: settleDrop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes settleDrop {
+    0% { opacity: 0; transform: translateY(-30px); }
+    50% { opacity: 1; transform: translateY(5px); }
+    72% { transform: translateY(-2px); }
+    88% { transform: translateY(1px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Register: shield draws, fills, then checkmark appears */
+.auth-logo--draw svg {
+    opacity: 0;
+}
+
+.auth-logo--draw.is-visible svg {
+    opacity: 1;
+}
+
+.auth-logo--draw .shield-outline {
+    fill: none;
+    stroke: #2563eb;
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+    animation: drawLine 0.55s ease-out 0.05s forwards;
+}
+
+.auth-logo--draw .shield-fill {
+    fill: #3b82f6;
+    opacity: 0;
+    animation: fadeIn 0.25s ease-out 0.4s forwards;
+}
+
+.auth-logo--draw .check-draw {
+    fill: none;
+    stroke: white;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 28;
+    stroke-dashoffset: 28;
+    animation: drawLine 0.3s ease-out 0.65s forwards;
+}
+
+@keyframes drawLine {
+    to { stroke-dashoffset: 0; }
+}
+
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
+
+/* Reset: lock shackle opens */
+.auth-logo--unlock svg {
+    opacity: 0;
+}
+
+.is-visible .auth-logo--unlock svg {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.auth-logo--unlock .lock-shackle {
+    transform-origin: 26px 18px;
+    transform: rotate(0deg);
+    transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s;
+}
+
+.is-visible .auth-logo--unlock .lock-shackle {
+    transform: rotate(-105deg);
+}
+
+/* Login success: checkmark pop on button + card fade */
+@keyframes checkPop {
+    0% { transform: scale(0); opacity: 0; }
+    55% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 .auth-subtitle {
@@ -154,6 +251,11 @@
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.input-group input:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
 .password-wrapper {
@@ -543,22 +645,43 @@
 
 .ps-meter-bar {
     flex: 1;
+    display: flex;
+    gap: 4px;
     height: 6px;
-    background: var(--border);
     border-radius: 4px;
-    overflow: hidden;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.35s ease;
 }
 
-[data-theme="dark"] .ps-meter-bar {
+.ps-meter-bar.glow {
+    box-shadow: 0 0 14px rgba(34, 197, 94, 0.35);
+}
+
+.ps-segment {
+    flex: 1;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--border);
+    transition: background 0.25s ease;
+}
+
+[data-theme="dark"] .ps-segment {
     background: rgba(255, 255, 255, 0.08);
 }
 
-.ps-meter-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1), background 0.45s ease;
-    min-width: 0;
+.ps-segment.filled {
+    background: var(--segment-color, var(--primary));
+    animation: segmentPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.ps-segment[data-idx="1"] { animation-delay: 0.04s; }
+.ps-segment[data-idx="2"] { animation-delay: 0.08s; }
+.ps-segment[data-idx="3"] { animation-delay: 0.12s; }
+.ps-segment[data-idx="4"] { animation-delay: 0.16s; }
+
+@keyframes segmentPop {
+    0% { transform: scaleY(0.3); opacity: 0.4; }
+    55% { transform: scaleY(1.18); }
+    100% { transform: scaleY(1); opacity: 1; }
 }
 
 .ps-meter-label {
@@ -665,6 +788,17 @@
 [data-theme="dark"] .ps-req-passed .ps-req-circle {
     background: #22c55e;
     border-color: #22c55e;
+}
+
+.ps-req-bounce .ps-req-circle {
+    animation: reqBounce 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes reqBounce {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.3); }
+    65% { transform: scale(0.88); }
+    100% { transform: scale(1); }
 }
 
 .field-error {
@@ -789,6 +923,11 @@
     background: color-mix(in srgb, var(--card-bg) 98%, var(--primary));
 }
 
+.input-wrap input:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
 @supports not (color-mix(in srgb, red, blue)) {
     .input-wrap input:focus {
         background: var(--card-bg);
@@ -798,6 +937,10 @@
 [data-theme="dark"] .input-wrap input:focus {
     box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
     background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .input-wrap input:focus-visible {
+    outline-color: #60a5fa;
 }
 
 .input-icon {
@@ -826,9 +969,21 @@
     z-index: 1;
 }
 
+.toggle-password i.anim-pop,
+.toggle-password-confirm i.anim-pop {
+    animation: iconEyePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 .input-wrap:focus-within .toggle-password i,
 .input-wrap:focus-within .toggle-password-confirm i {
     animation: pulse-eye 0.5s ease-out;
+}
+
+@keyframes iconEyePop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.25); }
+    65% { transform: scale(0.88); }
+    100% { transform: scale(1); }
 }
 
 @keyframes pulse-eye {

@@ -961,6 +961,21 @@ ul {
     transition: var(--transition-fast);
 }
 
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--card-bg) inset;
+    -webkit-text-fill-color: var(--text-main);
+    caret-color: var(--text-main);
+    transition: background-color 9999s ease-in-out 0s;
+}
+
 .input-group input:focus,
 .input-group textarea:focus,
 .input-group select:focus {
@@ -968,6 +983,13 @@ ul {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     background: var(--white);
+}
+
+.input-group input:focus-visible,
+.input-group textarea:focus-visible,
+.input-group select:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
 [data-theme="dark"] .input-group input,
@@ -982,6 +1004,12 @@ ul {
 [data-theme="dark"] .input-group select:focus {
     background: rgba(255, 255, 255, 0.1);
     border-color: var(--primary);
+}
+
+[data-theme="dark"] .input-group input:focus-visible,
+[data-theme="dark"] .input-group textarea:focus-visible,
+[data-theme="dark"] .input-group select:focus-visible {
+    outline-color: #60a5fa;
 }
 
 .input-row {

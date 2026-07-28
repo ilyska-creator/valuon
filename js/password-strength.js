@@ -28,20 +28,19 @@ const STRENGTH_TEXTS = {
     en: { 0: 'Very weak', 1: 'Weak', 2: 'Fair', 3: 'Good', 4: 'Strong', 5: 'Strong' },
 };
 
-const STRENGTH_CONFIG = [
-    { pct: 0, color: '#ef4444' },
-    { pct: 25, color: '#ef4444' },
-    { pct: 50, color: '#f59e0b' },
-    { pct: 75, color: '#22c55e' },
-    { pct: 100, color: '#16a34a' },
+const SEGMENT_COLORS = [
+    '#ef4444',
+    '#ef4444',
+    '#f59e0b',
+    '#22c55e',
+    '#16a34a',
 ];
 
 export function checkPasswordStrength(password) {
     const checks = REQUIREMENTS.map(r => ({ key: r.key, passed: r.test(password) }));
     const score = checks.filter(c => c.passed).length;
     const pct = (score / checks.length) * 100;
-    const cfg = STRENGTH_CONFIG[score] || STRENGTH_CONFIG[STRENGTH_CONFIG.length - 1];
-    return { score, pct, color: cfg.color, checks };
+    return { score, pct, checks };
 }
 
 function getStrengthText(score, lang = 'ru') {
@@ -61,9 +60,12 @@ export function createStrengthContainer(passwordInput) {
 
     const bar = document.createElement('div');
     bar.className = 'ps-meter-bar';
-    const fill = document.createElement('div');
-    fill.className = 'ps-meter-fill';
-    bar.appendChild(fill);
+    for (let i = 0; i < 5; i++) {
+        const seg = document.createElement('span');
+        seg.className = 'ps-segment';
+        seg.dataset.idx = i;
+        bar.appendChild(seg);
+    }
 
     const text = document.createElement('span');
     text.className = 'ps-meter-label';
@@ -103,7 +105,7 @@ export function createStrengthContainer(passwordInput) {
 
 export function updateStrengthUI(container, password, lang = 'ru') {
     const labels = getLabels(lang);
-    const { score, pct, color, checks } = checkPasswordStrength(password);
+    const { score, checks } = checkPasswordStrength(password);
 
     if (password.length === 0) {
         container.classList.remove('ps-visible');
@@ -111,17 +113,36 @@ export function updateStrengthUI(container, password, lang = 'ru') {
     }
     container.classList.add('ps-visible');
 
-    const fill = container.querySelector('.ps-meter-fill');
-    const text = container.querySelector('.ps-meter-label');
-    fill.style.width = `${Math.max(pct, 4)}%`;
-    fill.style.background = color;
+    const segments = container.querySelectorAll('.ps-segment');
+    segments.forEach((seg, i) => {
+        const filled = i < score;
+        seg.classList.toggle('filled', filled);
+        if (filled) {
+            seg.style.setProperty('--segment-color', SEGMENT_COLORS[i]);
+        }
+    });
 
+    const bar = container.querySelector('.ps-meter-bar');
+    bar.classList.toggle('glow', score >= 3);
+
+    const LABEL_COLORS = ['#ef4444', '#ef4444', '#f59e0b', '#22c55e', '#16a34a', '#16a34a'];
+
+    const text = container.querySelector('.ps-meter-label');
     const strengthText = getStrengthText(score, lang);
-    text.textContent = strengthText ? `${strengthText}` : '';
+    text.textContent = strengthText;
+    text.style.color = LABEL_COLORS[score] || '';
 
     const items = container.querySelectorAll('.ps-req');
     items.forEach((li, i) => {
         const passed = checks[i].passed;
+        const wasPassed = li.dataset.passed === 'true';
+
+        if (passed && !wasPassed) {
+            li.classList.add('ps-req-bounce');
+            setTimeout(() => li.classList.remove('ps-req-bounce'), 400);
+        }
+
+        li.dataset.passed = passed;
         li.classList.toggle('ps-req-passed', passed);
         li.classList.toggle('ps-req-fail', !passed);
         const label = li.querySelector('.ps-req-label');
