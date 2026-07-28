@@ -153,6 +153,23 @@ function applyTranslations() {
 document.addEventListener('DOMContentLoaded', () => {
     applyTranslations();
 
+    let scrollPos = 0;
+
+    function toggleScrollLock() {
+        const root = document.documentElement;
+        if (root.classList.contains('scroll-locked')) {
+            unlockScroll();
+        } else {
+            scrollPos = window.scrollY;
+            root.classList.add('scroll-locked');
+        }
+    }
+
+    function unlockScroll() {
+        document.documentElement.classList.remove('scroll-locked');
+        window.scrollTo(0, scrollPos);
+    }
+
     const mobileMenu = document.getElementById('mobile-menu');
     const navList = document.querySelector('.nav-list');
 
@@ -163,8 +180,18 @@ document.addEventListener('DOMContentLoaded', () => {
             navList.classList.toggle('active');
             mobileMenu.classList.toggle('is-active');
             navbar?.classList.toggle('nav-open');
+            toggleScrollLock();
         });
     }
+
+    document.addEventListener('click', (e) => {
+        if (!navList?.classList.contains('active')) return;
+        if (navList.contains(e.target) || mobileMenu?.contains(e.target)) return;
+        navList.classList.remove('active');
+        navbar?.classList.remove('nav-open');
+        mobileMenu?.classList.remove('is-active');
+        unlockScroll();
+    });
 
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
@@ -172,6 +199,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (navList) {
                 navList.classList.remove('active');
                 navbar?.classList.remove('nav-open');
+                mobileMenu?.classList.remove('is-active');
+                unlockScroll();
             }
 
             const targetId = this.getAttribute('href');
