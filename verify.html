@@ -16,6 +16,7 @@
         (function () { const t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); })();
     </script>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
     <link rel="stylesheet" href="css/verify.css">
     <link rel="stylesheet" href="css/toast.css">
     <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
@@ -27,7 +28,7 @@
     </script>
 </head>
 
-<body class="verify-body">
+<body class="auth-body verify-body">
 
     <div class="verify-container">
         <div class="verify-card" data-animate-group data-animate-step="80">
@@ -146,15 +147,15 @@
         </div>
     </div>
 
-    <script src="js/toast.js"></script>
-    <script src="js/theme.js"></script>
-    <script src="js/animations.js"></script>
-    <script type="module" src="js/verify.js"></script>
     <div id="toast-container" class="toast-container"></div>
     <div id="cookie-banner" class="cookie-banner">
         <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href="privacy.html">Политикой конфиденциальности</a>.</p>
         <button id="cookie-btn" class="btn btn-primary small" onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
     </div>
+    <script src="js/toast.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/animations.js"></script>
+    <script type="module" src="js/verify.js"></script>
     <script>(function(){function c(){var l=localStorage.getItem('valuon-lang');if(l==='en'){document.getElementById('cookie-text').innerHTML='We use cookies to operate the site. By continuing, you agree to our <a href=\"privacy.html\">Privacy Policy</a>.';document.getElementById('cookie-btn').textContent='Accept'}else{document.getElementById('cookie-text').innerHTML='Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href=\"privacy.html\">Политикой конфиденциальности</a>.';document.getElementById('cookie-btn').textContent='Принять'}}c();document.addEventListener('click',function(e){if(e.target.closest('#lang-toggle'))setTimeout(c,50)});if(!localStorage.getItem('cookie-consent')){setTimeout(function(){document.getElementById('cookie-banner').classList.add('show')},800)}})();</script>
 </body>
 

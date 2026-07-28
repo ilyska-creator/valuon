@@ -6,6 +6,47 @@
     min-height: 100vh;
     padding: var(--space-5);
     position: relative;
+    overflow: hidden;
+}
+
+/* Light theme: same three acid-wave hues (lime / teal / cyan). First pass
+   at low alpha was invisible against white — pushed opacity up and pulled
+   the fade-out stop in so the color patches actually read, while still
+   staying well clear of the centered card. */
+:not([data-theme="dark"]) .auth-body {
+    background-image:
+        radial-gradient(640px circle at 6% 4%, rgba(200, 244, 0, 0.32), transparent 55%),
+        radial-gradient(680px circle at 96% 10%, rgba(0, 245, 212, 0.28), transparent 52%),
+        radial-gradient(760px circle at 50% 108%, rgba(0, 194, 255, 0.26), transparent 50%);
+}
+
+@media (max-width: 700px) {
+    :not([data-theme="dark"]) .auth-body {
+        background-image:
+            radial-gradient(420px circle at 10% 0%, rgba(200, 244, 0, 0.30), transparent 55%),
+            radial-gradient(460px circle at 100% 100%, rgba(0, 194, 255, 0.28), transparent 55%);
+    }
+}
+
+/* Dark-mode only: onyx-black base with soft acid-wave glows tucked into the
+   corners (lime / teal / cyan from the "Кислотная волна" reference), faded
+   out well before the center so the card always sits on flat near-black —
+   color lives at the edges, not behind the content. Pure CSS, no extra DOM
+   elements, so it can't interfere with the translucent card/inputs on top. */
+[data-theme="dark"] .auth-body {
+    background-color: #0a0a0a;
+    background-image:
+        radial-gradient(640px circle at 6% 4%, rgba(200, 244, 0, 0.16), transparent 62%),
+        radial-gradient(680px circle at 96% 10%, rgba(0, 245, 212, 0.13), transparent 60%),
+        radial-gradient(760px circle at 50% 108%, rgba(0, 194, 255, 0.12), transparent 58%);
+}
+
+@media (max-width: 700px) {
+    [data-theme="dark"] .auth-body {
+        background-image:
+            radial-gradient(420px circle at 10% 0%, rgba(200, 244, 0, 0.14), transparent 60%),
+            radial-gradient(460px circle at 100% 100%, rgba(0, 194, 255, 0.13), transparent 60%);
+    }
 }
 
 .back-link {
