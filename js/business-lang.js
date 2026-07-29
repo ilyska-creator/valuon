@@ -317,9 +317,7 @@ function toggleBusinessLanguage() {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    applyBusinessTranslations();
-});
+applyBusinessTranslations();
 
 window.businessTranslations = businessTranslations;
 window.businessCurrentLang = businessCurrentLang;

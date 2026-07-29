@@ -1,5 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const roadmapTranslations = {
+const roadmapTranslations = {
         ru: {
             roadmap_back: "← На главную",
             roadmap_title: "Дорожная карта Valuon: единая платформа официальных чеков",
@@ -214,42 +213,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
             footer_copyright: "© 2026 Valuon. All rights reserved."
         }
-    };
+};
 
-    let currentLang = localStorage.getItem('valuon-lang') || 'ru';
+let currentLang = localStorage.getItem('valuon-lang') || 'ru';
 
-    function applyRoadmapTranslations(lang) {
-        const t = roadmapTranslations[lang] || roadmapTranslations.ru;
-        currentLang = lang;
+function applyRoadmapTranslations(lang) {
+    const t = roadmapTranslations[lang] || roadmapTranslations.ru;
+    currentLang = lang;
 
-        document.title = t.roadmap_title;
-        const desc = document.querySelector('meta[name="description"]');
-        if (desc) desc.content = t.meta_description;
+    document.title = t.roadmap_title;
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.content = t.meta_description;
 
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (!t[key]) return;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (!t[key]) return;
 
-            if (el.classList.contains('card-status')) {
-                const icon = el.querySelector('i');
-                const iconHtml = icon ? icon.outerHTML + ' ' : '';
-                el.innerHTML = `${iconHtml}${t[key]}`;
-            } else {
-                el.textContent = t[key];
-            }
-        });
-
-        const langBtn = document.getElementById('lang-toggle');
-        if (langBtn) {
-            const span = langBtn.querySelector('span');
-            if (span) span.textContent = lang.toUpperCase();
+        if (el.classList.contains('card-status')) {
+            const icon = el.querySelector('i');
+            const iconHtml = icon ? icon.outerHTML + ' ' : '';
+            el.innerHTML = `${iconHtml}${t[key]}`;
+        } else {
+            el.textContent = t[key];
         }
+    });
 
-        localStorage.setItem('valuon-lang', lang);
+    const langBtn = document.getElementById('lang-toggle');
+    if (langBtn) {
+        const span = langBtn.querySelector('span');
+        if (span) span.textContent = lang.toUpperCase();
     }
 
-    applyRoadmapTranslations(currentLang);
+    localStorage.setItem('valuon-lang', lang);
+}
 
+applyRoadmapTranslations(currentLang);
+
+document.addEventListener('DOMContentLoaded', () => {
     const langToggle = document.getElementById('lang-toggle');
     if (langToggle) {
         langToggle.addEventListener('click', () => {

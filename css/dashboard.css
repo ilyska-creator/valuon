@@ -152,8 +152,8 @@ html {
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-md);
     color: var(--secondary);
-    font-weight: 600;
     font: inherit;
+    font-weight: 600;
     transition: var(--transition-base);
     text-decoration: none;
     border: none;
@@ -411,6 +411,18 @@ html {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: var(--space-6);
 }
+
+.items-grid .rotating-loader {
+    grid-column: 1 / -1;
+    justify-self: center;
+    padding: 60px 20px;
+}
+
+.main-content > .rotating-loader {
+    min-height: calc(100vh - 250px);
+    justify-content: center;
+}
+
 
 .item-card {
     background: var(--card-bg);

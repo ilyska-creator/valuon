@@ -292,6 +292,7 @@ async function initSettings() {
         });
 
         window.addEventListener('themeChange', updateThemeBtn);
+        window.addEventListener('lang-changed', updateThemeBtn);
     }
 
     if (langBtn) {
@@ -318,9 +319,22 @@ async function initSettings() {
 
 let settingsInitialized = false;
 
+function updateThemeLabelSync() {
+    const label = document.getElementById('settings-theme-label');
+    if (!label) return;
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+    label.textContent = isDark ? (t.setting_light_theme || 'Светлая') : (t.setting_dark_theme || 'Тёмная');
+}
+
+updateThemeLabelSync();
+window.addEventListener('lang-changed', updateThemeLabelSync);
+
 async function ensureSettingsLoaded() {
     if (settingsInitialized) return;
     settingsInitialized = true;
+    updateThemeLabelSync();
     try {
         await initSettings();
     } catch (e) {

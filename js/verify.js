@@ -307,11 +307,6 @@ async function verifyReceiptFromQRData(qrRaw) {
             showResult('invalid');
             return;
         }
-
-        // Вся проверка подписи теперь происходит на сервере (Edge Function
-        // verify-receipt). Клиент отправляет только сырую подпись из QR и
-        // получает уже готовый вердикт — приватный ключ, публичный ключ
-        // магазина и сырые данные чека клиенту больше не передаются.
         const resp = await fetch(`${SUPABASE_URL}/functions/v1/verify-receipt`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

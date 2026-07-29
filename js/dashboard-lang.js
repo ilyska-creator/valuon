@@ -157,6 +157,11 @@ const dashboardTranslations = {
         loading_receipts: "Загружаем чеки…",
         loading_signatures: "Проверяем подписи…",
         loading_statuses: "Обновляем статусы…",
+        loading_items: "Загружаем покупки…",
+        loading_items_check: "Проверяем данные…",
+        loading_items_update: "Обновляем статусы…",
+        items_load_error: "Ошибка загрузки. Обновите страницу.",
+        receipts_load_error: "Ошибка загрузки. Обновите страницу.",
     },
     en: {
         page_title: "Valuon — Dashboard",
@@ -316,6 +321,11 @@ const dashboardTranslations = {
         loading_receipts: "Loading receipts…",
         loading_signatures: "Checking signatures…",
         loading_statuses: "Updating statuses…",
+        loading_items: "Loading purchases…",
+        loading_items_check: "Checking data…",
+        loading_items_update: "Updating statuses…",
+        items_load_error: "Load error. Please refresh.",
+        receipts_load_error: "Load error. Please refresh.",
     }
 };
 window.dashboardTranslations = dashboardTranslations;
@@ -386,14 +396,13 @@ function applyDashboardLang(lang) {
 
 
     });
-
 }
 
 window.applyDashboardLang = applyDashboardLang;
 
-document.addEventListener('DOMContentLoaded', () => {
-    applyDashboardLang(currentLang);
+applyDashboardLang(currentLang);
 
+document.addEventListener('DOMContentLoaded', () => {
     const langToggle = document.getElementById('lang-toggle');
     if (langToggle) {
         langToggle.addEventListener('click', (e) => {

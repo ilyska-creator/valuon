@@ -33,15 +33,22 @@ async function initDashboardItems() {
     setupLogout(auth.client);
 }
 
-function skeletonCards(count = 3) {
-    return Array.from({ length: count }, () => '<div class="item-card-skeleton"></div>').join('');
-}
 
 async function loadItems(userId, client) {
     const grid = document.querySelector('#items-grid-mine');
     if (!grid) return;
 
-    grid.innerHTML = skeletonCards();
+    grid.innerHTML = '<div class="rotating-loader"></div>';
+    const loaderEl = grid.querySelector('.rotating-loader');
+    if (loaderEl && typeof RotatingTextLoader !== 'undefined') {
+        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+        new RotatingTextLoader(loaderEl, [
+            t.loading_items || 'Загружаем покупки…',
+            t.loading_items_check || 'Проверяем данные…',
+            t.loading_items_update || 'Обновляем статусы…'
+        ], { interval: 800 });
+    }
 
     const { data: items, error } = await client
         .from('items')
@@ -361,7 +368,18 @@ function renderVerifiedItems(receipts, t) {
 async function loadVerifiedItems(userEmail, client) {
     const grid = document.querySelector('#items-grid-verified');
     if (!grid) return;
-    grid.innerHTML = skeletonCards();
+
+    grid.innerHTML = '<div class="rotating-loader"></div>';
+    const loaderEl = grid.querySelector('.rotating-loader');
+    if (loaderEl && typeof RotatingTextLoader !== 'undefined') {
+        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+        new RotatingTextLoader(loaderEl, [
+            t.loading_items || 'Загружаем покупки…',
+            t.loading_items_check || 'Проверяем данные…',
+            t.loading_items_update || 'Обновляем статусы…'
+        ], { interval: 800 });
+    }
 
     const { data, error } = await client
         .from('business_receipts')
@@ -757,4 +775,11 @@ function setupModal(client) {
     });
 }
 
-initDashboardItems();
+initDashboardItems().catch(e => {
+    console.error('Items init failed:', e);
+    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+    const msg = t.items_load_error || (lang === 'ru' ? 'Ошибка загрузки. Обновите страницу.' : 'Load error. Please refresh.');
+    const el = document.querySelector('#items-grid-mine');
+    if (el) el.innerHTML = `<p class="empty-state error">${msg}</p>`;
+});

@@ -78,7 +78,17 @@ async function loadAllReceipts(userEmail, userId, client) {
     const mainContent = document.querySelector('.main-content');
     if (!mainContent) return;
 
-    mainContent.innerHTML = '<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i></div>';
+    mainContent.innerHTML = '<div class="rotating-loader"></div>';
+    const loaderEl = mainContent.querySelector('.rotating-loader');
+    if (loaderEl && typeof RotatingTextLoader !== 'undefined') {
+        const lang = getLang();
+        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+        new RotatingTextLoader(loaderEl, [
+            t.loading_receipts || 'Загружаем чеки…',
+            t.loading_signatures || 'Проверяем подписи…',
+            t.loading_statuses || 'Обновляем статусы…'
+        ], { interval: 800 });
+    }
 
     try {
         const { data: businessData, error: bizError } = await client
@@ -768,4 +778,11 @@ function createUploadModal(client, userId) {
     return { open, setFile };
 }
 
-initReceipts();
+initReceipts().catch(e => {
+    console.error('Receipts init failed:', e);
+    const lang = getLang();
+    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+    const msg = t.receipts_load_error || (lang === 'ru' ? 'Ошибка загрузки. Обновите страницу.' : 'Load error. Please refresh.');
+    const el = document.querySelector('.main-content');
+    if (el) el.innerHTML = `<p class="empty-state error">${msg}</p>`;
+});

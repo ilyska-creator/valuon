@@ -195,12 +195,6 @@ const canonicalItemLine = (item) => [
     canonicalAmount(item.vatAmount),
 ].join('~');
 
-/**
- * Строит каноническую строку для подписи/проверки чека с одной или
- * несколькими позициями. Порядок позиций в массиве `items` — часть
- * подписанных данных: и при выписке, и при проверке позиции должны идти
- * в одном и том же порядке (сортировка по sort_order на обеих сторонах).
- */
 export function buildSignaturePayload({ taxId, purchaseDate, items, netTotal, vatAmount, grossTotal }) {
     const itemsPart = (items || []).map(canonicalItemLine).join(';');
 

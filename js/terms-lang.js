@@ -1,5 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const termsTranslations = {
+const termsTranslations = {
         ru: {
             terms_back: "← На главную",
             terms_title: "Условия использования",
@@ -154,35 +153,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
             footer_copyright: "© 2026 Valuon. All rights reserved."
         }
-    };
+};
 
-    let currentLang = localStorage.getItem('valuon-lang') || 'ru';
+let currentLang = localStorage.getItem('valuon-lang') || 'ru';
 
-    function applyTermsTranslations(lang) {
-        const t = termsTranslations[lang] || termsTranslations.ru;
-        currentLang = lang;
+function applyTermsTranslations(lang) {
+    const t = termsTranslations[lang] || termsTranslations.ru;
+    currentLang = lang;
 
-        document.title = t.terms_title + ' — Valuon';
-        const desc = document.querySelector('meta[name="description"]');
-        if (desc) desc.content = t.meta_description;
+    document.title = t.terms_title + ' — Valuon';
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.content = t.meta_description;
 
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (!t[key]) return;
-            el.textContent = t[key];
-        });
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (!t[key]) return;
+        el.textContent = t[key];
+    });
 
-        const langBtn = document.getElementById('lang-toggle');
-        if (langBtn) {
-            const span = langBtn.querySelector('span');
-            if (span) span.textContent = lang.toUpperCase();
-        }
-
-        localStorage.setItem('valuon-lang', lang);
+    const langBtn = document.getElementById('lang-toggle');
+    if (langBtn) {
+        const span = langBtn.querySelector('span');
+        if (span) span.textContent = lang.toUpperCase();
     }
 
-    applyTermsTranslations(currentLang);
+    localStorage.setItem('valuon-lang', lang);
+}
 
+applyTermsTranslations(currentLang);
+
+document.addEventListener('DOMContentLoaded', () => {
     const langToggle = document.getElementById('lang-toggle');
     if (langToggle) {
         langToggle.addEventListener('click', () => {
