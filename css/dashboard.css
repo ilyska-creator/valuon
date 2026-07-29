@@ -22,7 +22,7 @@ html {
     bottom: 16px;
     left: 12px;
     right: 12px;
-    z-index: 9999;
+    z-index: var(--z-bottom-nav);
     height: 56px;
     padding-bottom: 0;
     backdrop-filter: blur(10px);
@@ -670,7 +670,7 @@ html {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10000;
+    z-index: var(--z-modal-overlay);
     opacity: 0;
     visibility: hidden;
     transition: 0.3s;

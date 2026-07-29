@@ -631,11 +631,28 @@ async function initBusinessPanel() {
                 });
                 const fiscalSignature = await signer.sign(signData, privateKey);
 
-                const { data: emailIsRegistered, error: checkError } = await client
-                    .rpc('check_profile_exists', { p_email: email });
+                let emailIsRegistered = null;
+                let checkError = null;
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    const res = await client.rpc('check_profile_exists', { p_email: email });
+                    if (!res.error) {
+                        emailIsRegistered = res.data;
+                        checkError = null;
+                        break;
+                    }
+                    checkError = res.error;
+                    if (attempt < 3) {
+                        await new Promise(r => setTimeout(r, attempt * 800));
+                    }
+                }
 
                 if (checkError) {
-                    console.error('Ошибка проверки email покупателя:', checkError);
+                    const warnLang = localStorage.getItem('valuon-lang') || 'ru';
+                    const warnMsg = warnLang === 'en'
+                        ? 'Could not verify customer email. Receipt will be issued as pending.'
+                        : 'Не удалось проверить email покупателя. Чек будет выписан как неподтверждённый.';
+                    window.showToast(warnMsg, 'warning');
+                    console.error('Email check failed after 3 retries:', checkError);
                 }
 
                 const status = emailIsRegistered ? 'verified' : 'pending';

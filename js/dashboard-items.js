@@ -417,6 +417,7 @@ async function loadVerifiedItems(userEmail, client) {
     (data || []).forEach(r => {
         (r.receipt_items || []).forEach(it => {
             verifiedTotal++;
+            if (!it.warranty_months) return;
             const days = calculateDaysLeft(it.purchase_date || r.purchase_date, it.warranty_months);
             if (days > 30) verifiedActive++;
             else if (days > 0 && days <= 30) verifiedExpiring++;
