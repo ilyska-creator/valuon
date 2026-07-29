@@ -165,6 +165,10 @@ if (window.location.hash === '#view-notifications' || window.__targetView === 'v
 
 window.addEventListener('lang-changed', async () => {
     if (notifInitialized && cachedUserId && cachedClient) {
-        await loadNotifications(cachedUserId, cachedClient);
+        try {
+            await loadNotifications(cachedUserId, cachedClient);
+        } catch (e) {
+            console.error('Notif reload on lang change failed:', e);
+        }
     }
 });

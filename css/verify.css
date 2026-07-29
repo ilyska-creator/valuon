@@ -499,8 +499,10 @@
     animation: panelIn 0.3s ease;
 }
 
-.auth-btn {
+.verify-auth-btn {
     width: 100%;
+    margin-top: 4px;
+    font-size: 1.05rem;
     justify-content: center;
 }
 

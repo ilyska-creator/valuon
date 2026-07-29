@@ -253,7 +253,9 @@ function renderItems(items) {
 
     grid.querySelectorAll('.btn-edit-item').forEach(btn => {
         btn.addEventListener('click', () => {
-            openEditModal(btn.dataset.id, currentClient, currentUserId);
+            openEditModal(btn.dataset.id, currentClient, currentUserId).catch(e => {
+                console.error('openEditModal failed:', e);
+            });
         });
     });
 

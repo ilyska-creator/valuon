@@ -79,6 +79,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             const password = document.getElementById('password').value;
             const rememberMe = document.getElementById('remember')?.checked;
             const originalText = btn.innerHTML;
+            const subLang = localStorage.getItem('valuon-lang') === 'ru';
+
+            if (!email && !password) {
+                showToast(subLang ? 'Введите email и пароль' : 'Enter your email and password', 'warning');
+                document.getElementById('email').focus();
+                return;
+            }
+            if (!email) {
+                showToast(subLang ? 'Введите email' : 'Enter your email', 'warning');
+                document.getElementById('email').focus();
+                return;
+            }
+            if (!password) {
+                showToast(subLang ? 'Введите пароль' : 'Enter your password', 'warning');
+                document.getElementById('password').focus();
+                return;
+            }
 
             const captchaToken = (typeof turnstile !== 'undefined' && loginWidgetId !== null)
                 ? turnstile.getResponse(loginWidgetId)

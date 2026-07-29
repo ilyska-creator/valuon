@@ -180,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.classList.add('shake');
                 setTimeout(() => container.classList.remove('shake'), 500);
                 e.preventDefault();
-                e.stopImmediatePropagation();
             }
         }, true);
 

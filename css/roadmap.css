@@ -406,77 +406,9 @@
 }
 
 
-
-.out-of-scope-section {
-    padding-top: 0;
-}
-
-.out-of-scope-card {
-    max-width: 800px;
-    margin: 0 auto;
-    background: var(--card-bg);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-2xl);
-    padding: var(--space-10);
-}
-
-.out-of-scope-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    margin-bottom: var(--space-4);
-}
-
-.out-of-scope-header i {
-    color: #9a3412;
-    font-size: 1.1rem;
-}
-
-.out-of-scope-header h3 {
-    font-size: 1.3rem;
-    font-weight: 800;
-    color: var(--text-main);
-}
-
-.out-of-scope-card>p {
-    color: var(--text-muted);
-    margin-bottom: var(--space-6);
-}
-
-.out-of-scope-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
-.out-of-scope-list li {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-3);
-    font-size: 0.98rem;
-    color: var(--text-muted);
-}
-
-.out-of-scope-list li i {
-    color: #b91c1c;
-    margin-top: 4px;
-    flex-shrink: 0;
-}
-
-[data-theme="dark"] .out-of-scope-list li i {
-    color: #f87171;
-}
-
 @media (max-width: 900px) {
     .role-grid {
         grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 768px) {
-    .out-of-scope-card {
-        padding: var(--space-6);
     }
 }
 
