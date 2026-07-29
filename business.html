@@ -153,11 +153,25 @@
                         <span class="stat-value" id="pending-receipts">0</span>
                     </div>
                 </div>
+                <div class="stat-card" data-animate="zoom">
+                    <div class="stat-icon green"><i class="fa-solid fa-dollar-sign"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label" data-i18n="total_revenue_label">Общая выручка</span>
+                        <span class="stat-value" id="total-revenue">$0.00</span>
+                    </div>
+                </div>
+                <div class="stat-card" data-animate="zoom">
+                    <div class="stat-icon purple"><i class="fa-solid fa-calculator"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label" data-i18n="avg_receipt_label">Средний чек</span>
+                        <span class="stat-value" id="avg-receipt">$0.00</span>
+                    </div>
+                </div>
             </div>
 
             <div class="chart-section mb-6" data-animate>
                 <div class="chart-header">
-                    <h2 class="section-title" data-i18n="chart_title">📊 Динамика выписки чеков</h2>
+                    <h2 class="section-title" data-i18n="analytics_title">📊 Аналитика</h2>
                     <div class="chart-controls">
                         <button class="chart-period-btn active" data-period="week"
                             data-i18n="chart_week">Неделя</button>
@@ -165,8 +179,19 @@
                         <button class="chart-period-btn" data-period="year" data-i18n="chart_year">Год</button>
                     </div>
                 </div>
-                <div class="chart-wrapper">
-                    <canvas id="receipts-chart"></canvas>
+                <div class="chart-grid">
+                    <div class="chart-box">
+                        <span class="chart-box-label" data-i18n="chart_sub_receipts">Продажи</span>
+                        <div class="chart-wrapper">
+                            <canvas id="receipts-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-box">
+                        <span class="chart-box-label" data-i18n="chart_sub_revenue">Выручка</span>
+                        <div class="chart-wrapper">
+                            <canvas id="revenue-chart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
 

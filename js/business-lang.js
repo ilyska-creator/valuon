@@ -35,6 +35,8 @@ const businessTranslations = {
 
         total_receipts_label: 'Всего чеков',
         pending_receipts_label: 'Ожидают привязки',
+        total_revenue_label: 'Общая выручка',
+        avg_receipt_label: 'Средний чек',
 
         issued_receipts_title: '🧾 Выписанные чеки',
         no_receipts_title: 'У вас пока нет выписанных чеков',
@@ -96,7 +98,11 @@ const businessTranslations = {
         data_load_error: 'Ошибка загрузки данных',
 
 
+        analytics_title: '📊 Аналитика',
+        chart_sub_receipts: 'Продажи',
+        chart_sub_revenue: 'Выручка',
         chart_title: '📊 Динамика выписки чеков',
+        revenue_chart_label: 'Выручка',
         chart_week: 'Неделя',
         chart_month: 'Месяц',
         chart_year: 'Год',
@@ -152,6 +158,8 @@ const businessTranslations = {
 
         total_receipts_label: 'Total Receipts',
         pending_receipts_label: 'Pending Binding',
+        total_revenue_label: 'Total Revenue',
+        avg_receipt_label: 'Avg Receipt',
 
         issued_receipts_title: '🧾 Issued Receipts',
         no_receipts_title: 'You have no receipts yet',
@@ -210,7 +218,11 @@ const businessTranslations = {
         data_load_error: 'Data loading error',
 
 
+        analytics_title: '📊 Analytics',
+        chart_sub_receipts: 'Sales',
+        chart_sub_revenue: 'Revenue',
         chart_title: '📊 Receipt Issuance Dynamics',
+        revenue_chart_label: 'Revenue',
         chart_week: 'Week',
         chart_month: 'Month',
         chart_year: 'Year',
@@ -261,6 +273,52 @@ window.animateCount = function(el, target, duration) {
             el._countRaf = requestAnimationFrame(step);
         } else {
             el.textContent = String(target);
+            el._countRaf = null;
+        }
+    }
+
+    el._countRaf = requestAnimationFrame(step);
+};
+
+function formatMoney(value) {
+    if (!Number.isFinite(value)) return '$0.00';
+    const sign = value < 0 ? '-' : '';
+    const rounded = Math.round(Math.abs(value) * 100) / 100;
+    const intPart = Math.floor(rounded);
+    const decPart = Math.round((rounded - intPart) * 100);
+    const formattedInt = intPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return sign + '$' + formattedInt + '.' + String(decPart).padStart(2, '0');
+}
+
+window.animateAmount = function(el, target, duration) {
+    if (!el) return;
+    const raw = el.textContent.replace(/[^0-9.\-]/g, '');
+    const start = raw ? parseFloat(raw) : 0;
+    if (start === target) { el.textContent = formatMoney(target); return; }
+
+    if (duration == null) {
+        const diff = Math.abs(target - start);
+        if (diff <= 100) duration = 400;
+        else if (diff <= 1000) duration = 600;
+        else if (diff <= 10000) duration = 800;
+        else duration = Math.min(1200, 600 + Math.floor(diff / 10000) * 40);
+    }
+
+    if (el._countRaf) cancelAnimationFrame(el._countRaf);
+
+    const startTime = performance.now();
+
+    function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = start + (target - start) * eased;
+        el.textContent = formatMoney(current);
+
+        if (progress < 1) {
+            el._countRaf = requestAnimationFrame(step);
+        } else {
+            el.textContent = formatMoney(target);
             el._countRaf = null;
         }
     }

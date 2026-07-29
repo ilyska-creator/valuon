@@ -27,6 +27,7 @@ async function initBusinessPanel() {
 
     let currentReceiptsList = [];
     let receiptsChartInstance = null;
+    let revenueChartInstance = null;
     let chartPeriod = 'week';
 
     function renderReceiptCards(gridEl, receiptsList) {
@@ -201,7 +202,9 @@ async function initBusinessPanel() {
 
     const stats = {
         total: document.getElementById('total-receipts'),
-        pending: document.getElementById('pending-receipts')
+        pending: document.getElementById('pending-receipts'),
+        revenue: document.getElementById('total-revenue'),
+        avgReceipt: document.getElementById('avg-receipt')
     };
     const list = {
         grid: document.getElementById('business-receipts-grid'),
@@ -704,8 +707,21 @@ async function initBusinessPanel() {
             if (statsEl.total) { statsEl.total.textContent = '0'; window.animateCount(statsEl.total, totalRes.count || 0); }
             if (statsEl.pending) { statsEl.pending.textContent = '0'; window.animateCount(statsEl.pending, pendingRes.count || 0); }
 
-            currentReceiptsList = receiptsRes.data || [];
-            const receipts = currentReceiptsList;
+            const receipts = receiptsRes.data || [];
+            const grossTotals = receipts.map(r => parseFloat(r.gross_total)).filter(v => Number.isFinite(v));
+            const totalRevenue = grossTotals.reduce((s, v) => s + v, 0);
+            const avgReceipt = grossTotals.length > 0 ? totalRevenue / grossTotals.length : 0;
+
+            if (statsEl.revenue) {
+                statsEl.revenue.textContent = '$0.00';
+                window.animateAmount(statsEl.revenue, totalRevenue);
+            }
+            if (statsEl.avgReceipt) {
+                statsEl.avgReceipt.textContent = '$0.00';
+                window.animateAmount(statsEl.avgReceipt, avgReceipt);
+            }
+
+            currentReceiptsList = receipts;
 
             if (receipts.length === 0) {
                 listEl.grid.innerHTML = '';
@@ -829,6 +845,8 @@ async function initBusinessPanel() {
             window.showToast(refreshLang === 'en' ? 'Failed to update data. Try again later.' : 'Не удалось обновить данные. Попробуйте позже.', 'error');
             if (statsEl.total) statsEl.total.textContent = '—';
             if (statsEl.pending) statsEl.pending.textContent = '—';
+            if (statsEl.revenue) statsEl.revenue.textContent = '—';
+            if (statsEl.avgReceipt) statsEl.avgReceipt.textContent = '—';
             listEl.grid.innerHTML = `<p style="text-align:center;color:var(--text-muted);padding:2rem;">${refreshLang === 'en' ? 'Data load error' : 'Ошибка загрузки данных'}</p>`;
         }
     }
@@ -893,12 +911,13 @@ async function initBusinessPanel() {
         return { labels, data };
     }
 
-    function renderChart(period) {
+    function renderReceiptChart(period) {
         if (!window.Chart) return;
 
-        let canvas = document.getElementById('receipts-chart');
-        let wrapper = document.querySelector('.chart-wrapper');
+        let wrapper = document.querySelector('.chart-box:first-child .chart-wrapper');
         if (!wrapper) return;
+
+        let canvas = document.getElementById('receipts-chart');
 
         const lang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
         const bt = window.businessTranslations || {};
@@ -989,8 +1008,162 @@ async function initBusinessPanel() {
         });
     }
 
+    function aggregateRevenueByPeriod(receipts, period) {
+        if (!receipts || receipts.length === 0) return { labels: [], data: [] };
+
+        const now = new Date();
+        const groups = {};
+        const daysMap = {};
+
+        const maxDays = period === 'week' ? 7 : period === 'month' ? 30 : 365;
+
+        for (let i = maxDays - 1; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const key = `${y}-${m}-${dd}`;
+            const label = d.toLocaleDateString(localStorage.getItem('valuon-lang') === 'en' ? 'en-US' : 'ru-RU', {
+                day: 'numeric', month: 'short'
+            });
+            groups[key] = { label, total: 0 };
+            daysMap[key] = true;
+        }
+
+        receipts.forEach(r => {
+            if (!r.purchase_date) return;
+            const dateStr = r.purchase_date.slice(0, 10);
+            if (daysMap[dateStr]) {
+                const gross = parseFloat(r.gross_total);
+                if (Number.isFinite(gross)) {
+                    groups[dateStr].total += gross;
+                }
+            }
+        });
+
+        const labels = [];
+        const data = [];
+        const sortedKeys = Object.keys(groups).sort();
+        sortedKeys.forEach(k => {
+            labels.push(groups[k].label);
+            data.push(parseFloat(groups[k].total.toFixed(2)));
+        });
+
+        return { labels, data };
+    }
+
+    function renderRevenueChart(period) {
+        if (!window.Chart) return;
+
+        let wrapper = document.querySelector('.chart-box:last-child .chart-wrapper');
+        if (!wrapper) return;
+
+        let canvas = document.getElementById('revenue-chart');
+
+        const lang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
+        const bt = window.businessTranslations || {};
+        const t = bt[lang] || bt.ru || {};
+
+        const aggregated = aggregateRevenueByPeriod(currentReceiptsList || [], period);
+        const hasData = aggregated.data.some(v => v > 0);
+
+        if (!hasData) {
+            if (revenueChartInstance) {
+                revenueChartInstance.destroy();
+                revenueChartInstance = null;
+            }
+            const emptyText = t.chart_empty || 'Нет данных для графика';
+            if (!canvas) {
+                wrapper.innerHTML = `<div class="chart-empty">${emptyText}</div>`;
+            } else {
+                const parent = canvas.parentElement;
+                if (parent && parent.classList.contains('chart-wrapper')) {
+                    parent.innerHTML = `<div class="chart-empty">${emptyText}</div>`;
+                }
+            }
+            return;
+        }
+
+        if (!canvas || !wrapper.contains(canvas)) {
+            wrapper.innerHTML = '<canvas id="revenue-chart"></canvas>';
+        }
+        canvas = document.getElementById('revenue-chart');
+        wrapper = canvas.parentElement;
+
+        const ctx = canvas.getContext('2d');
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+        const textColor = isDark ? '#888' : '#64748b';
+
+        if (revenueChartInstance) {
+            revenueChartInstance.destroy();
+            revenueChartInstance = null;
+        }
+
+        const chartLabel = t.revenue_chart_label || (lang === 'en' ? 'Revenue' : 'Выручка');
+
+        revenueChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: aggregated.labels,
+                datasets: [{
+                    label: chartLabel,
+                    data: aggregated.data,
+                    backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                    borderColor: '#10b981',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barPercentage: 0.6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDark ? '#1a1a1a' : '#fff',
+                        titleColor: isDark ? '#fff' : '#0f172a',
+                        bodyColor: isDark ? '#ccc' : '#64748b',
+                        borderColor: isDark ? '#333' : '#e2e8f0',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                const val = context.parsed.y;
+                                if (!Number.isFinite(val)) return '$0.00';
+                                return '$' + val.toFixed(2);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: gridColor },
+                        ticks: { color: textColor, font: { size: 11 } },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: gridColor },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 11 },
+                            callback: function(value) {
+                                if (value >= 1000) return '$' + (value / 1000).toFixed(1) + 'k';
+                                return '$' + value.toFixed(0);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     function updateChart() {
-        renderChart(chartPeriod);
+        renderReceiptChart(chartPeriod);
+        renderRevenueChart(chartPeriod);
     }
 
 
