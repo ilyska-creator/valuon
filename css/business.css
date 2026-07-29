@@ -1193,6 +1193,20 @@
     min-width: 0;
 }
 
+.chart-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.chart-box-header-left {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
 .chart-box-label {
     font-size: 0.8rem;
     font-weight: 700;
@@ -1200,6 +1214,45 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     padding-left: 2px;
+    flex-shrink: 0;
+}
+
+.chart-period-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chart-change-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background: var(--border);
+    color: var(--text-muted);
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+.chart-change-badge.up {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+}
+
+.chart-change-badge.down {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+[data-theme="dark"] .chart-change-badge.up {
+    background: rgba(16, 185, 129, 0.2);
+}
+
+[data-theme="dark"] .chart-change-badge.down {
+    background: rgba(239, 68, 68, 0.2);
 }
 
 .chart-wrapper {

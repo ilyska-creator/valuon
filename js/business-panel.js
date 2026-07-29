@@ -30,6 +30,27 @@ async function initBusinessPanel() {
     let revenueChartInstance = null;
     let chartPeriod = 'week';
 
+    const crosshairPlugin = {
+        id: 'crosshair',
+        afterDraw: function(chart) {
+            const active = chart.tooltip?._active?.[0];
+            if (!active) return;
+            const ctx = chart.ctx;
+            const chartArea = chart.chartArea;
+            const x = active.element.x;
+            if (x < chartArea.left || x > chartArea.right) return;
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.moveTo(x, chartArea.top);
+            ctx.lineTo(x, chartArea.bottom);
+            ctx.stroke();
+            ctx.restore();
+        }
+    };
+
     function renderReceiptCards(gridEl, receiptsList) {
         const currentLang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
         const bt = window.businessTranslations || {};
@@ -869,29 +890,67 @@ async function initBusinessPanel() {
         });
     }
 
-    function aggregateReceiptsByPeriod(receipts, period) {
-        if (!receipts || receipts.length === 0) return { labels: [], data: [] };
+    function getMonday(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        d.setDate(diff);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }
 
-        const now = new Date();
+    function getCalendarPeriod(period, now) {
+        const d = new Date(now);
+        if (period === 'week') {
+            const mon = getMonday(d);
+            const sun = new Date(mon);
+            sun.setDate(sun.getDate() + 6);
+            const prevMon = new Date(mon);
+            prevMon.setDate(prevMon.getDate() - 7);
+            const prevSun = new Date(prevMon);
+            prevSun.setDate(prevSun.getDate() + 6);
+            return { currentStart: mon, currentEnd: sun, previousStart: prevMon, previousEnd: prevSun };
+        }
+        if (period === 'month') {
+            const year = d.getFullYear();
+            const month = d.getMonth();
+            const curStart = new Date(year, month, 1);
+            const curEnd = new Date(year, month + 1, 0);
+            const prevMonth = month === 0 ? 11 : month - 1;
+            const prevYear = month === 0 ? year - 1 : year;
+            const prevStart = new Date(prevYear, prevMonth, 1);
+            const prevEnd = new Date(prevYear, prevMonth + 1, 0);
+            return { currentStart: curStart, currentEnd: curEnd, previousStart: prevStart, previousEnd: prevEnd };
+        }
+        const year = d.getFullYear();
+        return {
+            currentStart: new Date(year, 0, 1),
+            currentEnd: new Date(year, 11, 31),
+            previousStart: new Date(year - 1, 0, 1),
+            previousEnd: new Date(year - 1, 11, 31),
+        };
+    }
+
+    function buildDayMap(startDate, endDate, lang) {
         const groups = {};
         const daysMap = {};
-
-        const maxDays = period === 'week' ? 7 : period === 'month' ? 30 : 365;
-
-        for (let i = maxDays - 1; i >= 0; i--) {
-            const d = new Date(now);
-            d.setDate(d.getDate() - i);
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
+        const cur = new Date(startDate);
+        while (cur <= endDate) {
+            const y = cur.getFullYear();
+            const m = String(cur.getMonth() + 1).padStart(2, '0');
+            const dd = String(cur.getDate()).padStart(2, '0');
             const key = `${y}-${m}-${dd}`;
-            const label = d.toLocaleDateString(localStorage.getItem('valuon-lang') === 'en' ? 'en-US' : 'ru-RU', {
+            const label = cur.toLocaleDateString(lang === 'en' ? 'en-US' : 'ru-RU', {
                 day: 'numeric', month: 'short'
             });
-            groups[key] = { label, count: 0 };
+            groups[key] = { label, count: 0, total: 0 };
             daysMap[key] = true;
+            cur.setDate(cur.getDate() + 1);
         }
+        return { groups, daysMap };
+    }
 
+    function fillReceiptCounts(receipts, groups, daysMap) {
         receipts.forEach(r => {
             if (!r.purchase_date) return;
             const dateStr = r.purchase_date.slice(0, 10);
@@ -899,138 +958,9 @@ async function initBusinessPanel() {
                 groups[dateStr].count++;
             }
         });
-
-        const labels = [];
-        const data = [];
-        const sortedKeys = Object.keys(groups).sort();
-        sortedKeys.forEach(k => {
-            labels.push(groups[k].label);
-            data.push(groups[k].count);
-        });
-
-        return { labels, data };
     }
 
-    function renderReceiptChart(period) {
-        if (!window.Chart) return;
-
-        let wrapper = document.querySelector('.chart-box:first-child .chart-wrapper');
-        if (!wrapper) return;
-
-        let canvas = document.getElementById('receipts-chart');
-
-        const lang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
-        const bt = window.businessTranslations || {};
-        const t = bt[lang] || bt.ru || {};
-
-        const aggregated = aggregateReceiptsByPeriod(currentReceiptsList || [], period);
-        const hasData = aggregated.data.some(v => v > 0);
-
-        if (!hasData) {
-            if (receiptsChartInstance) {
-                receiptsChartInstance.destroy();
-                receiptsChartInstance = null;
-            }
-            const emptyText = t.chart_empty || 'Нет данных для графика';
-            if (!canvas) {
-                wrapper.innerHTML = `<div class="chart-empty">${emptyText}</div>`;
-            } else {
-                const parent = canvas.parentElement;
-                if (parent && parent.classList.contains('chart-wrapper')) {
-                    parent.innerHTML = `<div class="chart-empty">${emptyText}</div>`;
-                }
-            }
-            return;
-        }
-
-        if (!canvas || !wrapper.contains(canvas)) {
-            wrapper.innerHTML = '<canvas id="receipts-chart"></canvas>';
-        }
-        canvas = document.getElementById('receipts-chart');
-        wrapper = canvas.parentElement;
-
-        const ctx = canvas.getContext('2d');
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-        const textColor = isDark ? '#888' : '#64748b';
-
-        if (receiptsChartInstance) {
-            receiptsChartInstance.destroy();
-            receiptsChartInstance = null;
-        }
-
-        receiptsChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: aggregated.labels,
-                datasets: [{
-                    label: t.chart_label_receipts || (lang === 'en' ? 'Sales count' : 'Количество продаж'),
-                    data: aggregated.data,
-                    backgroundColor: 'rgba(59, 130, 246, 0.6)',
-                    borderColor: '#3b82f6',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    barPercentage: 0.6,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: isDark ? '#1a1a1a' : '#fff',
-                        titleColor: isDark ? '#fff' : '#0f172a',
-                        bodyColor: isDark ? '#ccc' : '#64748b',
-                        borderColor: isDark ? '#333' : '#e2e8f0',
-                        borderWidth: 1,
-                        cornerRadius: 8,
-                        padding: 12,
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { color: gridColor },
-                        ticks: { color: textColor, font: { size: 11 } },
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: gridColor },
-                        ticks: {
-                            color: textColor,
-                            font: { size: 11 },
-                            stepSize: 1,
-                            precision: 0,
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function aggregateRevenueByPeriod(receipts, period) {
-        if (!receipts || receipts.length === 0) return { labels: [], data: [] };
-
-        const now = new Date();
-        const groups = {};
-        const daysMap = {};
-
-        const maxDays = period === 'week' ? 7 : period === 'month' ? 30 : 365;
-
-        for (let i = maxDays - 1; i >= 0; i--) {
-            const d = new Date(now);
-            d.setDate(d.getDate() - i);
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            const key = `${y}-${m}-${dd}`;
-            const label = d.toLocaleDateString(localStorage.getItem('valuon-lang') === 'en' ? 'en-US' : 'ru-RU', {
-                day: 'numeric', month: 'short'
-            });
-            groups[key] = { label, total: 0 };
-            daysMap[key] = true;
-        }
-
+    function fillRevenueTotals(receipts, groups, daysMap) {
         receipts.forEach(r => {
             if (!r.purchase_date) return;
             const dateStr = r.purchase_date.slice(0, 10);
@@ -1041,124 +971,321 @@ async function initBusinessPanel() {
                 }
             }
         });
+    }
 
+    function extractSeries(groups, field) {
         const labels = [];
         const data = [];
         const sortedKeys = Object.keys(groups).sort();
         sortedKeys.forEach(k => {
             labels.push(groups[k].label);
-            data.push(parseFloat(groups[k].total.toFixed(2)));
+            const g = groups[k];
+            data.push(field === 'revenue' ? parseFloat(g.total.toFixed(2)) : g.count);
         });
-
         return { labels, data };
     }
 
-    function renderRevenueChart(period) {
-        if (!window.Chart) return;
+    function formatCompactCurrency(value) {
+        if (!Number.isFinite(value)) return '$0';
+        const abs = Math.abs(value);
+        const sign = value < 0 ? '-' : '';
+        if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(1) + 'M';
+        if (abs >= 1e3) return sign + '$' + (abs / 1e3).toFixed(1) + 'K';
+        return sign + '$' + Math.round(abs);
+    }
 
-        let wrapper = document.querySelector('.chart-box:last-child .chart-wrapper');
-        if (!wrapper) return;
+    function computeChange(currentData, previousData) {
+        const curSum = currentData.reduce((s, v) => s + (v || 0), 0);
+        const prevSum = previousData.reduce((s, v) => s + (v || 0), 0);
+        const abs = curSum - prevSum;
+        const pct = prevSum > 0 ? ((curSum - prevSum) / prevSum) * 100 : (curSum > 0 ? 100 : 0);
+        return { absolute: parseFloat(abs.toFixed(2)), percent: parseFloat(pct.toFixed(1)) };
+    }
 
-        let canvas = document.getElementById('revenue-chart');
-
-        const lang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
-        const bt = window.businessTranslations || {};
-        const t = bt[lang] || bt.ru || {};
-
-        const aggregated = aggregateRevenueByPeriod(currentReceiptsList || [], period);
-        const hasData = aggregated.data.some(v => v > 0);
-
-        if (!hasData) {
-            if (revenueChartInstance) {
-                revenueChartInstance.destroy();
-                revenueChartInstance = null;
-            }
-            const emptyText = t.chart_empty || 'Нет данных для графика';
-            if (!canvas) {
-                wrapper.innerHTML = `<div class="chart-empty">${emptyText}</div>`;
-            } else {
-                const parent = canvas.parentElement;
-                if (parent && parent.classList.contains('chart-wrapper')) {
-                    parent.innerHTML = `<div class="chart-empty">${emptyText}</div>`;
-                }
-            }
+    function updateChangeBadge(badgeId, change) {
+        const badge = document.getElementById(badgeId);
+        if (!badge) return;
+        const abs = change.absolute;
+        const pct = change.percent;
+        if (abs === 0 && pct === 0) {
+            badge.textContent = '—';
+            badge.className = 'chart-change-badge';
             return;
         }
+        const arrow = abs >= 0 ? '▲' : '▼';
+        const cls = abs >= 0 ? 'up' : 'down';
+        badge.textContent = `${arrow} ${pct >= 0 ? '+' : ''}${pct}%`;
+        badge.className = `chart-change-badge ${cls}`;
+    }
 
+    function updatePeriodLabel(elementId, period) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const cal = getCalendarPeriod(period, new Date());
+        const fmt = { day: 'numeric', month: 'short' };
+        const loc = lang === 'en' ? 'en-US' : 'ru-RU';
+        const start = cal.currentStart.toLocaleDateString(loc, fmt);
+        const end = cal.currentEnd.toLocaleDateString(loc, fmt);
+        const year = cal.currentEnd.getFullYear();
+        el.textContent = `${start} — ${end} ${year}`;
+    }
+
+    function getChartColors(isDark) {
+        return {
+            gridColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+            textColor: isDark ? '#888' : '#64748b',
+            tooltipBg: isDark ? '#1a1a1a' : '#fff',
+            tooltipTitle: isDark ? '#fff' : '#0f172a',
+            tooltipBody: isDark ? '#ccc' : '#64748b',
+            tooltipBorder: isDark ? '#333' : '#e2e8f0',
+        };
+    }
+
+    function getChartContext(canvasId, wrapperSelector) {
+        let wrapper = document.querySelector(wrapperSelector);
+        if (!wrapper) return null;
+        let canvas = document.getElementById(canvasId);
         if (!canvas || !wrapper.contains(canvas)) {
-            wrapper.innerHTML = '<canvas id="revenue-chart"></canvas>';
+            wrapper.innerHTML = `<canvas id="${canvasId}"></canvas>`;
         }
-        canvas = document.getElementById('revenue-chart');
+        canvas = document.getElementById(canvasId);
         wrapper = canvas.parentElement;
+        return { canvas, wrapper, ctx: canvas.getContext('2d') };
+    }
 
-        const ctx = canvas.getContext('2d');
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-        const textColor = isDark ? '#888' : '#64748b';
+    function showChartEmpty(canvasId, wrapperSelector, chartInstanceRef, emptyText) {
+        const ref = chartInstanceRef();
+        if (ref) { ref.destroy(); }
+        const wrapper = document.querySelector(wrapperSelector);
+        if (!wrapper) return;
+        const canvas = document.getElementById(canvasId);
+        if (!canvas || !wrapper.contains(canvas)) {
+            wrapper.innerHTML = `<div class="chart-empty">${emptyText}</div>`;
+        } else {
+            const parent = canvas.parentElement;
+            if (parent && parent.classList.contains('chart-wrapper')) {
+                parent.innerHTML = `<div class="chart-empty">${emptyText}</div>`;
+            }
+        }
+    }
 
-        if (revenueChartInstance) {
-            revenueChartInstance.destroy();
-            revenueChartInstance = null;
+    function aggregateDualPeriod(field, receipts, period) {
+        if (!receipts || receipts.length === 0) {
+            return { labels: [], data: [], change: { absolute: 0, percent: 0 } };
         }
 
-        const chartLabel = t.revenue_chart_label || (lang === 'en' ? 'Revenue' : 'Выручка');
+        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const cal = getCalendarPeriod(period, new Date());
 
-        revenueChartInstance = new Chart(ctx, {
+        const cur = buildDayMap(cal.currentStart, cal.currentEnd, lang);
+        const prev = buildDayMap(cal.previousStart, cal.previousEnd, lang);
+
+        const fillFn = field === 'revenue' ? fillRevenueTotals : fillReceiptCounts;
+        fillFn(receipts, cur.groups, cur.daysMap);
+        fillFn(receipts, prev.groups, prev.daysMap);
+
+        const curSeries = extractSeries(cur.groups, field);
+        const prevSeries = extractSeries(prev.groups, field);
+
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        const daysElapsed = Math.max(0, Math.ceil((today - cal.currentStart) / 86400000));
+        const limit = Math.min(daysElapsed, curSeries.data.length);
+        const curData = limit > 0 ? curSeries.data.slice(0, limit) : [];
+        const prevData = limit > 0 ? prevSeries.data.slice(0, limit) : [];
+        const change = computeChange(curData, prevData);
+
+        return { labels: curSeries.labels, data: curSeries.data, change };
+    }
+
+    function buildReceiptChartDef(aggregated, t, lang, colors, period) {
+        const opts = buildCommonChartOptions(period, colors, t, lang);
+        opts.plugins.tooltip.callbacks = {
+            label: function(context) {
+                const val = context.parsed.y;
+                const label = t.chart_label_receipts || (lang === 'en' ? 'Sales' : 'Продажи');
+                return label + ': ' + (Number.isFinite(val) ? val : '0');
+            }
+        };
+        return {
             type: 'bar',
             data: {
                 labels: aggregated.labels,
                 datasets: [{
-                    label: chartLabel,
+                    label: t.chart_label_receipts || (lang === 'en' ? 'Sales count' : 'Количество продаж'),
                     data: aggregated.data,
-                    backgroundColor: 'rgba(16, 185, 129, 0.6)',
-                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                    borderColor: '#3b82f6',
                     borderWidth: 1,
                     borderRadius: 4,
-                    barPercentage: 0.6,
+                    barPercentage: 0.5,
+                    categoryPercentage: 0.7,
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: isDark ? '#1a1a1a' : '#fff',
-                        titleColor: isDark ? '#fff' : '#0f172a',
-                        bodyColor: isDark ? '#ccc' : '#64748b',
-                        borderColor: isDark ? '#333' : '#e2e8f0',
-                        borderWidth: 1,
-                        cornerRadius: 8,
-                        padding: 12,
-                        callbacks: {
-                            label: function(context) {
-                                const val = context.parsed.y;
-                                if (!Number.isFinite(val)) return '$0.00';
-                                return '$' + val.toFixed(2);
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { color: gridColor },
-                        ticks: { color: textColor, font: { size: 11 } },
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: gridColor },
-                        ticks: {
-                            color: textColor,
-                            font: { size: 11 },
-                            callback: function(value) {
-                                if (value >= 1000) return '$' + (value / 1000).toFixed(1) + 'k';
-                                return '$' + value.toFixed(0);
-                            }
-                        }
-                    }
-                }
+            options: opts,
+            plugins: [crosshairPlugin]
+        };
+    }
+
+    function buildRevenueChartDef(aggregated, t, lang, colors, period, isDark) {
+        const opts = buildCommonChartOptions(period, colors, t, lang);
+        opts.scales.y.ticks.callback = function(v) { return formatCompactCurrency(v); };
+        opts.plugins.tooltip.callbacks = {
+            label: function(context) {
+                const val = context.parsed.y;
+                if (!Number.isFinite(val)) return '$0.00';
+                return '$' + val.toFixed(2);
             }
-        });
+        };
+
+        const datasets = [{
+            label: t.revenue_chart_label || (lang === 'en' ? 'Revenue' : 'Выручка'),
+            data: aggregated.data,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+            borderWidth: 2.5,
+            pointRadius: 2.5,
+            pointHoverRadius: 5,
+            pointBackgroundColor: '#10b981',
+            pointBorderColor: isDark ? '#1a1a1a' : '#fff',
+            pointBorderWidth: 2,
+            tension: 0.3,
+            fill: true,
+        }];
+
+        return {
+            type: 'line',
+            data: { labels: aggregated.labels, datasets },
+            options: opts,
+            plugins: [{
+                id: 'revenueFill',
+                beforeDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    const chartArea = chart.chartArea;
+                    if (!chartArea) return;
+                    const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+                    gradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
+                    chart.data.datasets[0].backgroundColor = gradient;
+                }
+            }, crosshairPlugin]
+        };
+    }
+
+    function buildCommonChartOptions(period, colors, t, lang) {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 600, easing: 'easeOutQuart' },
+            interaction: { mode: 'nearest', axis: 'x', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: colors.tooltipBg,
+                    titleColor: colors.tooltipTitle,
+                    bodyColor: colors.tooltipBody,
+                    borderColor: colors.tooltipBorder,
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    padding: 12,
+                    titleFont: { weight: '600', size: 13 },
+                    bodyFont: { size: 12 },
+                    displayColors: true,
+                    boxPadding: 4,
+                },
+            },
+            scales: {
+                x: {
+                    grid: { color: colors.gridColor, drawBorder: false },
+                    ticks: {
+                        color: colors.textColor,
+                        font: { size: 11 },
+                        maxRotation: period === 'year' ? 45 : 0,
+                        maxTicksLimit: period === 'year' ? 18 : undefined,
+                    },
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: colors.gridColor, drawBorder: false },
+                    ticks: { color: colors.textColor, font: { size: 11 } },
+                },
+            },
+        };
+    }
+
+    function renderReceiptChart(period) {
+        if (!window.Chart) return;
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+        const context = getChartContext('receipts-chart', '.chart-box:first-child .chart-wrapper');
+        if (!context) return;
+
+        const lang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
+        const bt = window.businessTranslations || {};
+        const t = bt[lang] || bt.ru || {};
+        const colors = getChartColors(isDark);
+
+        const aggregated = aggregateDualPeriod('count', currentReceiptsList || [], period);
+        const hasData = aggregated.data.some(v => v > 0);
+
+        if (!hasData) {
+            showChartEmpty('receipts-chart', '.chart-box:first-child .chart-wrapper',
+                () => receiptsChartInstance, t.chart_empty || 'Нет данных для графика');
+            receiptsChartInstance = null;
+            updateChangeBadge('change-receipts', { absolute: 0, percent: 0 });
+            return;
+        }
+
+        if (receiptsChartInstance) { receiptsChartInstance.destroy(); receiptsChartInstance = null; }
+
+        const chartDef = buildReceiptChartDef(aggregated, t, lang, colors, period);
+        chartDef.options.scales.y.ticks.stepSize = 1;
+        chartDef.options.scales.y.ticks.precision = 0;
+
+        try {
+            receiptsChartInstance = new Chart(context.ctx, chartDef);
+        } catch (e) {
+            console.error('Receipts chart error:', e);
+        }
+        updateChangeBadge('change-receipts', aggregated.change);
+        updatePeriodLabel('period-receipts', period);
+    }
+
+    function renderRevenueChart(period) {
+        if (!window.Chart) return;
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+        const context = getChartContext('revenue-chart', '.chart-box:last-child .chart-wrapper');
+        if (!context) return;
+
+        const lang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
+        const bt = window.businessTranslations || {};
+        const t = bt[lang] || bt.ru || {};
+        const colors = getChartColors(isDark);
+
+        const aggregated = aggregateDualPeriod('revenue', currentReceiptsList || [], period);
+        const hasData = aggregated.data.some(v => v > 0);
+
+        if (!hasData) {
+            showChartEmpty('revenue-chart', '.chart-box:last-child .chart-wrapper',
+                () => revenueChartInstance, t.chart_empty || 'Нет данных для графика');
+            revenueChartInstance = null;
+            updateChangeBadge('change-revenue', { absolute: 0, percent: 0 });
+            return;
+        }
+
+        if (revenueChartInstance) { revenueChartInstance.destroy(); revenueChartInstance = null; }
+
+        const chartDef = buildRevenueChartDef(aggregated, t, lang, colors, period, isDark);
+        try {
+            revenueChartInstance = new Chart(context.ctx, chartDef);
+        } catch (e) {
+            console.error('Revenue chart error:', e);
+        }
+        updateChangeBadge('change-revenue', aggregated.change);
+        updatePeriodLabel('period-revenue', period);
     }
 
     function updateChart() {
