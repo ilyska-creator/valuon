@@ -1,5 +1,5 @@
 import { requireAuth } from './dashboard-auth.js';
-import { escapeHtml } from './security.js';
+import { escapeHtml, logError } from './security.js';
 
 function getNotifLang() {
     return localStorage.getItem('valuon-lang') || 'ru';
@@ -54,7 +54,7 @@ async function loadNotifications(userId, client) {
         .order('purchase_date', { ascending: false });
 
     if (error) {
-        console.error(error);
+        logError('notif:load', error);
         const t = getNotifT();
         container.innerHTML = `<div class="empty-state error">${t.msg_save_error || 'Error loading notifications'}</div>`;
         return;
@@ -151,7 +151,7 @@ async function ensureNotifLoaded() {
         await loadNotifications(auth.user.id, auth.client);
         notifInitialized = true;
     } catch (e) {
-        console.error('Notif load failed:', e);
+        logError('notif:load', e);
     }
 }
 
@@ -168,7 +168,7 @@ window.addEventListener('lang-changed', async () => {
         try {
             await loadNotifications(cachedUserId, cachedClient);
         } catch (e) {
-            console.error('Notif reload on lang change failed:', e);
+            logError('notif:reloadLang', e);
         }
     }
 });

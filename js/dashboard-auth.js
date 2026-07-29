@@ -1,5 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
+import { logError } from './security.js';
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
@@ -26,7 +27,7 @@ export function setupLogout(currentClient) {
                 sessionStorage.clear();
                 window.location.href = 'index.html';
             } catch (err) {
-                console.error(err);
+                logError('auth:logout', err);
                 localStorage.removeItem('valuon-remember-email');
                 sessionStorage.clear();
                 window.location.href = 'index.html';

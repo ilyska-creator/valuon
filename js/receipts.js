@@ -1,5 +1,5 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
-import { escapeHtml } from './security.js';
+import { escapeHtml, logError } from './security.js';
 
 let pendingDeleteId = null;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -98,7 +98,7 @@ async function loadAllReceipts(userEmail, userId, client) {
             .order('purchase_date', { ascending: false })
             .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
 
-        if (bizError) console.error('business_receipts error:', bizError);
+        if (bizError) logError('receipts:loadBiz', bizError);
 
         const { data: personalData, error: personalError } = await client
             .from('receipts')
@@ -112,7 +112,7 @@ async function loadAllReceipts(userEmail, userId, client) {
 
         renderSplitReceipts(businessData || [], personalWithFreshUrls, client, userId);
     } catch (e) {
-        console.error(e);
+        logError('receipts:load', e);
         mainContent.innerHTML = '<p class="empty-state error">Ошибка загрузки данных.</p>';
     }
 }
@@ -420,7 +420,7 @@ function restoreListeners(client, userId) {
                     URL.revokeObjectURL(blobUrl);
                 }, 200);
             } catch (err) {
-                console.error(err);
+                logError('receipts:download', err);
                 showToast(lang === 'ru' ? 'Не удалось скачать файл' : 'Failed to download file', 'error');
             } finally {
                 btn.innerHTML = originalHTML;
@@ -479,7 +479,7 @@ function restoreListeners(client, userId) {
                 };
                 await downloadReceiptPDF(receipt, mockShop);
             } catch (e) {
-                console.error('PDF generation error:', e);
+                logError('receipts:pdfGen', e);
                 showToast(
                     lang === 'ru'
                         ? 'Генератор PDF пока недоступен'
@@ -582,7 +582,7 @@ function setupDeleteModal(client, userId) {
             await loadAllReceipts(currentUserEmail, userId, client);
 
         } catch (err) {
-            console.error(err);
+            logError('receipts:delete', err);
             showToast(
                 lang === 'ru'
                     ? `Ошибка удаления записи: ${err.message}`
@@ -779,7 +779,7 @@ function createUploadModal(client, userId) {
             await loadAllReceipts(currentUserEmail, userId, client);
 
         } catch (err) {
-            console.error(err);
+            logError('receipts:upload', err);
             showToast(lang === 'ru' ? `Ошибка: ${err.message}` : `Error: ${err.message}`, 'error');
         } finally {
             btn.innerHTML = originalHTML;
@@ -791,7 +791,7 @@ function createUploadModal(client, userId) {
 }
 
 initReceipts().catch(e => {
-    console.error('Receipts init failed:', e);
+    logError('init:receipts', e);
     const lang = getLang();
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
     const msg = t.receipts_load_error || (lang === 'ru' ? 'Ошибка загрузки. Обновите страницу.' : 'Load error. Please refresh.');

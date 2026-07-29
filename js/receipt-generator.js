@@ -1,4 +1,5 @@
 import { SUPABASE_URL } from './supabase-client.js';
+import { logError } from './security.js';
 
 export function generateQRDataURL(text, size = 80) {
     if (typeof qrcode === 'undefined') {
@@ -274,7 +275,7 @@ export async function downloadReceiptPDF(receipt, shop) {
         doc.save(`${receiptSerial}_receipt.pdf`);
 
     } catch (e) {
-        console.error("PDF Generation failed:", e);
+        logError('receiptGen:pdf', e);
         if (typeof window.showToast === 'function') {
             const genLang = (typeof localStorage !== 'undefined' && localStorage.getItem('valuon-lang')) || 'ru';
             window.showToast(genLang === 'en' ? 'Error creating PDF' : 'Ошибка при создании PDF', 'error');

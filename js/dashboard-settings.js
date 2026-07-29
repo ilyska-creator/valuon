@@ -1,4 +1,5 @@
 import { requireAuth } from './dashboard-auth.js';
+import { logError } from './security.js';
 
 function getSettingsLang() {
     return localStorage.getItem('valuon-lang') || 'ru';
@@ -32,7 +33,7 @@ async function initSettings() {
             .single();
 
         if (error && error.code !== 'PGRST116') {
-            console.error(error);
+            logError('settings:loadProfile', error);
             return;
         }
 
@@ -142,7 +143,7 @@ async function initSettings() {
                     updateSaveButtonState();
                 }, 1500);
             } catch (err) {
-                console.error(err);
+                logError('settings:save', err);
                 showToast((t.msg_save_error || 'Save failed') + ': ' + (err.message || ''), 'error');
                 saveBtn.innerHTML = originalHTML;
                 updateSaveButtonState();
@@ -157,7 +158,7 @@ async function initSettings() {
                 .update({ [field]: value, updated_at: new Date().toISOString() })
                 .eq('id', user.id);
         } catch (err) {
-            console.error(err);
+            logError('settings:updateField', err);
             showToast((getSettingsT().msg_save_error || 'Save failed') + ': ' + (err.message || ''), 'error');
         }
     }
@@ -249,7 +250,7 @@ async function initSettings() {
                     showToast(msg, 'success');
                 }, 1000);
             } catch (err) {
-                console.error(err);
+                logError('settings:emailChange', err);
                 const errMsg = (err.message || '').toLowerCase();
                 let msg;
                 if (errMsg.includes('already') && errMsg.includes('registered')) {
@@ -338,7 +339,7 @@ async function ensureSettingsLoaded() {
     try {
         await initSettings();
     } catch (e) {
-        console.error('Settings init failed:', e);
+        logError('settings:init', e);
         settingsInitialized = false;
     }
 }

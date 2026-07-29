@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
-import { checkSignupRateLimit } from './security.js';
+import { checkSignupRateLimit, logError } from './security.js';
 import { initPasswordStrength, checkPasswordStrength } from './password-strength.js';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }, { onConflict: 'id' });
 
                     if (profileError) {
-                        console.error('❌ Ошибка сохранения профиля:', profileError);
+                        logError('reg:saveProfile', profileError);
                         showToast(lang === 'ru' ? 'Ошибка сохранения данных профиля' : 'Error saving profile data', 'error');
                     } else {
                         const { error: lazyBindError } = await supabase
@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             .select('id');
 
                         if (lazyBindError) {
-                            console.error('❌ Ошибка привязки бизнес-чеков (lazy binding):', lazyBindError);
+                            logError('reg:lazyBind', lazyBindError);
                         }
                     }
                 }
@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     setTimeout(() => { window.location.href = 'login.html'; }, 2000);
                 }
             } catch (err) {
-                console.error(err);
+                logError('reg:signup', err);
                 let errorMsg = err.message;
                 if (err.message.includes('User already registered')) {
                     errorMsg = lang === 'ru' ? 'Этот email уже зарегистрирован' : 'This email is already registered';

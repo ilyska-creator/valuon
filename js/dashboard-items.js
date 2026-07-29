@@ -1,5 +1,5 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
-import { escapeHtml } from './security.js';
+import { escapeHtml, logError } from './security.js';
 
 let currentClient = null;
 let currentUserId = null;
@@ -71,7 +71,7 @@ async function loadItems(userId, client) {
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error(error);
+        logError('items:load', error);
         const loadLang = localStorage.getItem('valuon-lang') || 'ru';
         grid.innerHTML = '<p class="empty-state error">' + (loadLang === 'en' ? 'Data load error.' : 'Ошибка загрузки данных.') + '</p>';
         return;
@@ -254,7 +254,7 @@ function renderItems(items) {
     grid.querySelectorAll('.btn-edit-item').forEach(btn => {
         btn.addEventListener('click', () => {
             openEditModal(btn.dataset.id, currentClient, currentUserId).catch(e => {
-                console.error('openEditModal failed:', e);
+                logError('items:openEditModal', e);
             });
         });
     });
@@ -404,7 +404,7 @@ async function loadVerifiedItems(userEmail, client) {
         .order('purchase_date', { ascending: false });
 
     if (error) {
-        console.error(error);
+        logError('items:loadVerified', error);
         grid.innerHTML = '<p class="empty-state error">Ошибка загрузки данных.</p>';
         return;
     }
@@ -632,7 +632,7 @@ function setupEditModal(client, userId) {
             }, 800);
 
         } catch (err) {
-            console.error(err);
+            logError('items:update', err);
             showToast((t.msg_item_update_failed || 'Update failed') + ': ' + err.message, 'error');
             btn.innerHTML = originalHTML;
             btn.disabled = false;
@@ -678,7 +678,7 @@ function setupDeleteItemModal(client, userId) {
             await loadItems(userId, client);
 
         } catch (err) {
-            console.error(err);
+            logError('items:delete', err);
             showToast((t.msg_item_delete_failed || 'Delete failed') + ': ' + err.message, 'error');
         } finally {
             confirmBtn.innerHTML = originalHTML;
@@ -776,7 +776,7 @@ function setupModal(client) {
             }, 800);
 
         } catch (err) {
-            console.error(err);
+            logError('items:warrantyUpdate', err);
             const lang = localStorage.getItem('valuon-lang') || 'ru';
             const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
@@ -794,7 +794,7 @@ function setupModal(client) {
 }
 
 initDashboardItems().catch(e => {
-    console.error('Items init failed:', e);
+    logError('init:dashboardItems', e);
     const lang = localStorage.getItem('valuon-lang') || 'ru';
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
     const msg = t.items_load_error || (lang === 'ru' ? 'Ошибка загрузки. Обновите страницу.' : 'Load error. Please refresh.');

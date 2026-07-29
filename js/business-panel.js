@@ -1,7 +1,7 @@
 import { requireAuth } from './dashboard-auth.js';
 import { downloadReceiptPDF } from './receipt-generator.js';
 import Ed25519Signer, { buildSignaturePayload } from './crypto-signature.js';
-import { escapeHtml } from './security.js';
+import { escapeHtml, logError } from './security.js';
 
 let currentClient = null;
 let currentUser = null;
@@ -132,7 +132,7 @@ async function initBusinessPanel() {
         try {
             currentShop = JSON.parse(cachedShop);
         } catch (e) {
-            console.error('Failed to parse cached shop:', e);
+            logError('biz:parseCachedShop', e);
             currentShop = null;
         }
     }
@@ -391,7 +391,7 @@ async function initBusinessPanel() {
             renderView(views.dashboard);
         }
     } catch (e) {
-        console.error('Shop load failed:', e);
+        logError('biz:loadShop', e);
         if (currentShop) {
             updateShopInfo(currentShop);
             renderView(views.dashboard);
@@ -513,7 +513,7 @@ async function initBusinessPanel() {
                     await refreshDashboard(client, newShop.id, stats, list);
                 }
             } catch (err) {
-                console.error('Shop creation error:', err);
+                logError('biz:createShop', err);
                 const catchLang = localStorage.getItem('valuon-lang') || 'ru';
                 window.showToast((catchLang === 'en' ? 'Shop creation error: ' : 'Ошибка создания магазина: ') + err.message, 'error');
             } finally {
@@ -591,7 +591,7 @@ async function initBusinessPanel() {
                 }
 
                 const items = readItemRows();
-                if (items.length === 0 || items.some(it => !it.itemName || it.qty <= 0 || it.warrantyMonths < 0)) {
+                if (items.length === 0 || items.some(it => !it.itemName || it.qty <= 0 || it.warrantyMonths < 0 || Number.isNaN(it.warrantyMonths))) {
                     window.showToast(
                         valLang === 'en'
                             ? 'Fill in every line item (product, quantity)'
@@ -652,7 +652,7 @@ async function initBusinessPanel() {
                         ? 'Could not verify customer email. Receipt will be issued as pending.'
                         : 'Не удалось проверить email покупателя. Чек будет выписан как неподтверждённый.';
                     window.showToast(warnMsg, 'warning');
-                    console.error('Email check failed after 3 retries:', checkError);
+                    logError('biz:emailCheckRetry', checkError);
                 }
 
                 const status = emailIsRegistered ? 'verified' : 'pending';
@@ -680,7 +680,7 @@ async function initBusinessPanel() {
                 if (error) {
                     const errLang = localStorage.getItem('valuon-lang') || 'ru';
                     window.showToast(errLang === 'en' ? 'Receipt issue error' : 'Ошибка выписки чека', 'error');
-                    console.error(error);
+                    logError('biz:issueReceipt', error);
                     return;
                 }
 
@@ -702,7 +702,7 @@ async function initBusinessPanel() {
                     // Шапка уже создана и подписана по этим items — без строк в
                     // receipt_items подпись потом невозможно будет перепроверить.
                     // Откатываем шапку, чтобы не оставлять "чек без товаров".
-                    console.error('Ошибка сохранения позиций чека:', itemsError);
+                    logError('biz:saveItems', itemsError);
                     await client.from('business_receipts').delete().eq('id', inserted.id);
                     const errLang = localStorage.getItem('valuon-lang') || 'ru';
                     window.showToast(errLang === 'en' ? 'Receipt issue error' : 'Ошибка выписки чека', 'error');
@@ -715,7 +715,7 @@ async function initBusinessPanel() {
                 toggleModal(false);
                 await refreshDashboard(client, currentShop.id, stats, list);
             } catch (err) {
-                console.error('Receipt issue error:', err);
+                logError('biz:issueReceiptCatch', err);
                 const errLang = localStorage.getItem('valuon-lang') || 'ru';
                 window.showToast(errLang === 'en' ? 'Error issuing receipt' : 'Ошибка выписки чека', 'error');
             } finally {
@@ -823,7 +823,7 @@ async function initBusinessPanel() {
                                 }
                             }, 250);
                         } catch (e) {
-                            console.error('Delete failed:', e);
+                            logError('biz:deleteReceipt', e);
                             const errorMsg = lang === 'en' ? 'Error deleting receipt' : 'Ошибка при удалении чека';
                             window.showToast(errorMsg, 'error');
                             confirmBtn.disabled = false;
@@ -878,7 +878,7 @@ async function initBusinessPanel() {
 
             updateChart();
         } catch (e) {
-            console.error('Dashboard refresh failed:', e);
+            logError('biz:refreshDashboard', e);
             const refreshLang = localStorage.getItem('valuon-lang') || 'ru';
             window.showToast(refreshLang === 'en' ? 'Failed to update data. Try again later.' : 'Не удалось обновить данные. Попробуйте позже.', 'error');
             if (statsEl.total) statsEl.total.textContent = '—';
@@ -1264,7 +1264,7 @@ async function initBusinessPanel() {
         try {
             receiptsChartInstance = new Chart(context.ctx, chartDef);
         } catch (e) {
-            console.error('Receipts chart error:', e);
+            logError('biz:receiptsChart', e);
         }
         updateChangeBadge('change-receipts', aggregated.change);
         updatePeriodLabel('period-receipts', period);
@@ -1299,7 +1299,7 @@ async function initBusinessPanel() {
         try {
             revenueChartInstance = new Chart(context.ctx, chartDef);
         } catch (e) {
-            console.error('Revenue chart error:', e);
+            logError('biz:revenueChart', e);
         }
         updateChangeBadge('change-revenue', aggregated.change);
         updatePeriodLabel('period-revenue', period);
@@ -1329,4 +1329,4 @@ async function initBusinessPanel() {
     });
 }
 
-initBusinessPanel().catch(e => console.error('Business panel init failed:', e));
+initBusinessPanel().catch(e => logError('init:bizPanel', e));

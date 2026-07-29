@@ -70,6 +70,7 @@ html {
 
     --text-main: var(--dark);
     --text-muted: var(--secondary);
+    --text-secondary: var(--secondary);
 }
 
 [data-theme="dark"] {
@@ -399,16 +400,16 @@ html.scroll-locked {
     background: rgba(59, 130, 246, 0.15);
 }
 
-
-/* ── Neon Glow ── */
-
 @keyframes neonPulse {
-    0%, 100% {
+
+    0%,
+    100% {
         text-shadow:
             0 0 4px rgba(59, 130, 246, 0.25),
             0 0 12px rgba(59, 130, 246, 0.10),
             0 0 24px rgba(59, 130, 246, 0.05);
     }
+
     50% {
         text-shadow:
             0 0 8px rgba(59, 130, 246, 0.45),
@@ -417,13 +418,16 @@ html.scroll-locked {
     }
 }
 
-[data-theme="dark"] @keyframes neonPulse {
-    0%, 100% {
+@keyframes neonPulseDark {
+
+    0%,
+    100% {
         text-shadow:
             0 0 4px rgba(96, 165, 250, 0.30),
             0 0 12px rgba(96, 165, 250, 0.15),
             0 0 24px rgba(96, 165, 250, 0.08);
     }
+
     50% {
         text-shadow:
             0 0 8px rgba(96, 165, 250, 0.50),
@@ -436,6 +440,10 @@ html.scroll-locked {
     animation: neonPulse 2s ease-in-out infinite;
 }
 
+[data-theme="dark"] .neon-glow {
+    animation: neonPulseDark 2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .neon-glow {
         animation: none;
@@ -443,6 +451,7 @@ html.scroll-locked {
             0 0 4px rgba(59, 130, 246, 0.25),
             0 0 12px rgba(59, 130, 246, 0.10);
     }
+
     [data-theme="dark"] .neon-glow {
         text-shadow:
             0 0 4px rgba(96, 165, 250, 0.30),
@@ -1356,12 +1365,29 @@ select:-webkit-autofill:focus {
         transform: translateX(0);
     }
 
-    .nav-list.active li:nth-child(1) { transition-delay: 0.05s; }
-    .nav-list.active li:nth-child(2) { transition-delay: 0.10s; }
-    .nav-list.active li:nth-child(3) { transition-delay: 0.15s; }
-    .nav-list.active li:nth-child(4) { transition-delay: 0.20s; }
-    .nav-list.active li:nth-child(5) { transition-delay: 0.25s; }
-    .nav-list.active li:nth-child(6) { transition-delay: 0.32s; }
+    .nav-list.active li:nth-child(1) {
+        transition-delay: 0.05s;
+    }
+
+    .nav-list.active li:nth-child(2) {
+        transition-delay: 0.10s;
+    }
+
+    .nav-list.active li:nth-child(3) {
+        transition-delay: 0.15s;
+    }
+
+    .nav-list.active li:nth-child(4) {
+        transition-delay: 0.20s;
+    }
+
+    .nav-list.active li:nth-child(5) {
+        transition-delay: 0.25s;
+    }
+
+    .nav-list.active li:nth-child(6) {
+        transition-delay: 0.32s;
+    }
 
     .footer-grid {
         grid-template-columns: 1fr;

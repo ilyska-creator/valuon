@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
-import { checkLoginRateLimit, setLoadingButton, resetLoadingButton, isValidEmail } from './security.js';
+import { checkLoginRateLimit, setLoadingButton, resetLoadingButton, isValidEmail, logError } from './security.js';
 
 function getSupabaseClient(rememberMe) {
     return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     window.location.href = 'dashboard.html';
                 }
             } catch (err) {
-                console.error(err);
+                logError('auth:login', err);
                 const lang = localStorage.getItem('valuon-lang') === 'ru';
                 const msg = lang
                     ? 'Неверный email или пароль'
@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 stepSuccess?.classList.remove('hidden');
 
             } catch (err) {
-                console.error(err);
+                logError('auth:forgotPassword', err);
                 showToast(lang
                     ? 'Ошибка отправки. Проверьте email и попробуйте снова.'
                     : 'Failed to send. Check email and try again.');

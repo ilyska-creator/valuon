@@ -80,6 +80,16 @@ export function resetLoadingButton(button, originalHTML) {
 
 
 
+export function logError(context, error) {
+    const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (isDev) {
+        console.error(`[${context}]`, error);
+    } else {
+        const msg = error?.message || error;
+        console.error(`[${context}] ${msg}`);
+    }
+}
+
 export function escapeHtml(str) {
     if (!str) return '';
     return String(str)

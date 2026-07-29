@@ -1,5 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
+import { logError } from './security.js';
 import { t, getVerifyLocale, applyVerifyTranslations, initVerifyLang } from './verify-lang.js';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -178,7 +179,7 @@ async function decodeQR(file) {
             const code = window.jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' });
             return code ? code.data : null;
         } catch (e) {
-            console.error('[verify] PDF decode error:', e);
+            logError('verify:pdfDecode', e);
             return null;
         }
     }
@@ -336,7 +337,7 @@ async function verifyReceiptFromQRData(qrRaw) {
         }
 
         if (!data?.valid) {
-            console.error('[verify] Signature invalid:', data?.error || 'no error detail');
+            logError('verify:signatureInvalid', data?.error || 'no error detail');
             showResult('invalid');
             return;
         }
@@ -373,7 +374,7 @@ async function verifyReceiptFromQRData(qrRaw) {
             shopLogo: shopLogoUrl,
         });
     } catch (err) {
-        console.error('[verify] Unexpected error:', err);
+        logError('verify:unexpected', err);
         showResult('error', t('internal_error'));
     } finally {
         verifying = false;
@@ -405,7 +406,7 @@ async function startCamera() {
         resultBlockWrapper?.classList.remove('active');
         startScanLoop();
     } catch (err) {
-        console.error('[verify] camera error:', err);
+        logError('verify:camera', err);
         scanFileInput?.click();
     }
 }
@@ -508,7 +509,7 @@ function startScanLoop() {
             setTimeout(() => {
                 stopCamera();
                 verifyReceiptFromQRData(code.data).catch(err => {
-                    console.error('[verify] scan loop error:', err);
+                    logError('verify:scanLoop', err);
                 });
             }, 350);
         }
@@ -604,7 +605,7 @@ copyBtn?.addEventListener('click', async () => {
             copyBtn.classList.remove('copied');
         }, 2000);
     } catch (err) {
-        console.error('[verify] copy error:', err);
+        logError('verify:copy', err);
     }
 });
 
@@ -650,7 +651,7 @@ scanFileInput?.addEventListener('change', async () => {
         navigator.vibrate?.(100);
         await verifyReceiptFromQRData(qrData);
     } catch (err) {
-        console.error('[verify] scan error:', err);
+        logError('verify:scan', err);
         showResult('error', t('scan_error'));
     } finally {
         if (scanFileInput) scanFileInput.value = '';
@@ -686,7 +687,7 @@ fileInput?.addEventListener('change', async () => {
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
             previewImg.src = c.toDataURL();
         } catch (e) {
-            console.error('[verify] PDF preview error:', e);
+            logError('verify:pdfPreview', e);
             previewImg.removeAttribute('src');
         }
     } else {
@@ -716,7 +717,7 @@ document.getElementById('verify-upload-btn')?.addEventListener('click', async ()
 
         await verifyReceiptFromQRData(qrData);
     } catch (err) {
-        console.error('[verify] upload error:', err);
+        logError('verify:upload', err);
         showResult('error', t('file_error'));
     } finally {
         showLoading(btn, false);

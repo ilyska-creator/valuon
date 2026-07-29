@@ -1,3 +1,5 @@
+import { logError } from './security.js';
+
 class Ed25519Signer {
     constructor() {
         this.keyPair = null;
@@ -23,7 +25,7 @@ class Ed25519Signer {
 
             return keyPair;
         } catch (error) {
-            console.error('Failed to generate Ed25519 key pair:', error);
+            logError('crypto:keyGen', error);
             throw new Error('Ed25519 is not supported in this browser. Please use Chrome 137+, Firefox 129+, or Safari 17+');
         }
     }
