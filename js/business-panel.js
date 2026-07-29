@@ -689,8 +689,6 @@ async function initBusinessPanel() {
     async function refreshDashboard(client, shopId, statsEl, listEl) {
         if (!shopId) return;
 
-        if (statsEl.total) statsEl.total.textContent = '...';
-        if (statsEl.pending) statsEl.pending.textContent = '...';
         listEl.grid.innerHTML = '<div class="loading-spinner" style="text-align:center;padding:2rem;"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i></div>';
 
         const emptyMsg = document.getElementById('no-receipts-msg');
@@ -703,8 +701,8 @@ async function initBusinessPanel() {
                 client.from('business_receipts').select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, fiscal_hash, shop_id, created_at, shop_name, payment_method, receipt_items(item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)').eq('shop_id', shopId).order('created_at', { ascending: false }).order('sort_order', { referencedTable: 'receipt_items', ascending: true })
             ]);
 
-            if (statsEl.total) statsEl.total.textContent = totalRes.count || 0;
-            if (statsEl.pending) statsEl.pending.textContent = pendingRes.count || 0;
+            if (statsEl.total) { statsEl.total.textContent = '0'; window.animateCount(statsEl.total, totalRes.count || 0); }
+            if (statsEl.pending) { statsEl.pending.textContent = '0'; window.animateCount(statsEl.pending, pendingRes.count || 0); }
 
             currentReceiptsList = receiptsRes.data || [];
             const receipts = currentReceiptsList;

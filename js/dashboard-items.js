@@ -17,6 +17,19 @@ const DEVICE_ICONS = {
     other: 'fa-box-open'
 };
 
+function applySavedItemsTab() {
+    const saved = sessionStorage.getItem('valuon-items-tab') || 'verified';
+    if (saved === 'verified') return;
+
+    document.querySelector('#items-tabs .items-tab[data-items-tab="verified"]')?.classList.remove('active');
+    document.querySelector('#items-tabs .items-tab[data-items-tab="verified"]')?.setAttribute('aria-selected', 'false');
+    document.querySelector('#items-tabs .items-tab[data-items-tab="mine"]')?.classList.add('active');
+    document.querySelector('#items-tabs .items-tab[data-items-tab="mine"]')?.setAttribute('aria-selected', 'true');
+
+    document.getElementById('items-grid-verified')?.classList.add('hidden');
+    document.getElementById('items-grid-mine')?.classList.remove('hidden');
+}
+
 async function initDashboardItems() {
     const auth = await requireAuth();
     if (!auth) return;
@@ -24,6 +37,7 @@ async function initDashboardItems() {
     currentClient = auth.client;
     currentUserId = auth.user.id;
 
+    applySavedItemsTab();
     setupItemsTabs(auth.user.id, auth.user.email, auth.client);
     await loadItems(auth.user.id, auth.client);
     await loadVerifiedItems(auth.user.email, auth.client);
@@ -117,7 +131,7 @@ function renderItems(items) {
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
     const countEl = document.getElementById('items-count-mine');
-    if (countEl) countEl.textContent = String(items.length);
+    if (countEl) window.animateCount(countEl, items.length);
 
     if (items.length === 0) {
         grid.innerHTML = `
@@ -269,7 +283,7 @@ function renderVerifiedItems(receipts, t) {
     });
 
     const countEl = document.getElementById('items-count-verified');
-    if (countEl) countEl.textContent = String(allItems.length);
+    if (countEl) window.animateCount(countEl, allItems.length);
 
     if (allItems.length === 0) {
         grid.innerHTML = `
@@ -412,10 +426,10 @@ async function loadVerifiedItems(userEmail, client) {
     const activeEl = document.getElementById('stat-active');
     const expiringEl = document.getElementById('stat-expiring');
     const expiredEl = document.getElementById('stat-expired');
-    if (totalEl) totalEl.textContent = (parseInt(totalEl.textContent) || 0) + verifiedTotal;
-    if (activeEl) activeEl.textContent = (parseInt(activeEl.textContent) || 0) + verifiedActive;
-    if (expiringEl) expiringEl.textContent = (parseInt(expiringEl.textContent) || 0) + verifiedExpiring;
-    if (expiredEl) expiredEl.textContent = (parseInt(expiredEl.textContent) || 0) + verifiedExpired;
+    if (totalEl) window.animateCount(totalEl, (parseInt(totalEl.textContent) || 0) + verifiedTotal);
+    if (activeEl) window.animateCount(activeEl, (parseInt(activeEl.textContent) || 0) + verifiedActive);
+    if (expiringEl) window.animateCount(expiringEl, (parseInt(expiringEl.textContent) || 0) + verifiedExpiring);
+    if (expiredEl) window.animateCount(expiredEl, (parseInt(expiredEl.textContent) || 0) + verifiedExpired);
 }
 
 let _switchingTab = false;
@@ -471,6 +485,7 @@ function setupItemsTabs(userId, userEmail, client) {
             moveItemsTabIndicator();
 
             const target = tab.dataset.itemsTab;
+            sessionStorage.setItem('valuon-items-tab', target);
             const mineGrid = document.querySelector('#items-grid-mine');
             const verifiedGrid = document.querySelector('#items-grid-verified');
             const oldGrid = target === 'mine' ? verifiedGrid : mineGrid;
@@ -506,10 +521,10 @@ function updateStats(items) {
         else if (days <= 0) expiredCount++;
     });
 
-    totalEl.textContent = items.length;
-    activeEl.textContent = activeCount;
-    expiringEl.textContent = expiringCount;
-    if (expiredEl) expiredEl.textContent = expiredCount;
+    window.animateCount(totalEl, items.length);
+    window.animateCount(activeEl, activeCount);
+    window.animateCount(expiringEl, expiringCount);
+    if (expiredEl) window.animateCount(expiredEl, expiredCount);
 }
 
 async function openEditModal(itemId, client, userId) {

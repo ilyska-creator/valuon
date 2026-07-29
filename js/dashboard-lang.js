@@ -328,6 +328,42 @@ const dashboardTranslations = {
         receipts_load_error: "Load error. Please refresh.",
     }
 };
+window.animateCount = function(el, target, duration) {
+    if (!el) return;
+    const start = parseInt(el.textContent) || 0;
+    if (start === target) { el.textContent = String(target); return; }
+
+    if (duration == null) {
+        const diff = Math.abs(target - start);
+        if (diff <= 5) duration = 300;
+        else if (diff <= 15) duration = 400;
+        else if (diff <= 30) duration = 500;
+        else if (diff <= 100) duration = 650;
+        else duration = Math.min(1000, 450 + Math.floor(diff / 50) * 40);
+    }
+
+    if (el._countRaf) cancelAnimationFrame(el._countRaf);
+
+    const startTime = performance.now();
+
+    function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(start + (target - start) * eased);
+        el.textContent = String(current);
+
+        if (progress < 1) {
+            el._countRaf = requestAnimationFrame(step);
+        } else {
+            el.textContent = String(target);
+            el._countRaf = null;
+        }
+    }
+
+    el._countRaf = requestAnimationFrame(step);
+};
+
 window.dashboardTranslations = dashboardTranslations;
 
 

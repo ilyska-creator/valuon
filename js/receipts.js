@@ -122,6 +122,9 @@ function renderSplitReceipts(businessReceipts, personalReceipts, client, userId)
     const lang = getLang();
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
+    const savedTab = sessionStorage.getItem('valuon-receipts-tab') || 'personal';
+    const isPersonal = savedTab === 'personal';
+
     const personalGridHTML = buildPersonalGridHTML(personalReceipts, t, lang);
     const businessGridHTML = buildBusinessGridHTML(businessReceipts, t, lang);
 
@@ -142,26 +145,32 @@ function renderSplitReceipts(businessReceipts, personalReceipts, client, userId)
                 <h2 data-i18n="section_documents">Чеки и документы</h2>
                 <div class="items-tabs" id="receipts-tabs" role="tablist">
                     <span class="items-tab-indicator" id="receipts-tab-indicator" aria-hidden="true"></span>
-                    <button class="items-tab active" data-receipts-tab="personal" role="tab" aria-selected="true">
+                    <button class="items-tab ${isPersonal ? 'active' : ''}" data-receipts-tab="personal" role="tab" aria-selected="${isPersonal}">
                         <i class="fa-solid fa-receipt"></i>
                         <span data-i18n="receipts_tab_personal">${t.receipts_tab_personal || 'Ваши чеки'}</span>
+                        <span class="items-tab-count" id="receipts-count-personal">0</span>
                     </button>
-                    <button class="items-tab" data-receipts-tab="business" role="tab" aria-selected="false">
+                    <button class="items-tab ${isPersonal ? '' : 'active'}" data-receipts-tab="business" role="tab" aria-selected="${!isPersonal}">
                         <i class="fa-solid fa-store"></i>
                         <span data-i18n="receipts_tab_business">${t.receipts_tab_business || 'Чеки от партнеров'}</span>
+                        <span class="items-tab-count" id="receipts-count-business">0</span>
                     </button>
                 </div>
             </div>
-            <div class="receipts-grid" id="receipts-grid-personal">
+            <div class="receipts-grid ${isPersonal ? '' : 'hidden'}" id="receipts-grid-personal">
                 ${personalGridHTML}
             </div>
-            <div class="receipts-grid hidden" id="receipts-grid-business">
+            <div class="receipts-grid ${isPersonal ? 'hidden' : ''}" id="receipts-grid-business">
                 ${businessGridHTML}
             </div>
         </section>
     `;
 
     mainContent.innerHTML = html;
+    requestAnimationFrame(() => {
+        window.animateCount(document.getElementById('receipts-count-personal'), personalReceipts.length);
+        window.animateCount(document.getElementById('receipts-count-business'), businessReceipts.length);
+    });
     setupReceiptsTabs();
     restoreListeners(client, userId);
     setupUploadListeners(uploadModal);
@@ -234,6 +243,7 @@ function setupReceiptsTabs() {
             moveIndicator();
 
             const target = tab.dataset.receiptsTab;
+            sessionStorage.setItem('valuon-receipts-tab', target);
             const personalGrid = document.getElementById('receipts-grid-personal');
             const businessGrid = document.getElementById('receipts-grid-business');
             personalGrid?.classList.toggle('hidden', target !== 'personal');
@@ -242,6 +252,8 @@ function setupReceiptsTabs() {
     });
 
     requestAnimationFrame(moveIndicator);
+    window.addEventListener('resize', moveIndicator);
+    window.addEventListener('lang-changed', () => requestAnimationFrame(moveIndicator));
 }
 
 function renderBusinessCard(r, t) {
