@@ -919,7 +919,7 @@
 
 .input-wrap input:focus {
     border-color: var(--primary) !important;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+    box-shadow: 0 0 0 1000px var(--card-bg) inset, 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
     background: color-mix(in srgb, var(--card-bg) 98%, var(--primary));
 }
 
@@ -935,7 +935,7 @@
 }
 
 [data-theme="dark"] .input-wrap input:focus {
-    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
+    box-shadow: 0 0 0 1000px var(--card-bg) inset, 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
     background: rgba(255, 255, 255, 0.06);
 }
 

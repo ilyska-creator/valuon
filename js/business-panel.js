@@ -684,6 +684,8 @@ async function initBusinessPanel() {
         });
     }
 
+    let currentDeleteCleanup = null;
+
     async function refreshDashboard(client, shopId, statsEl, listEl) {
         if (!shopId) return;
 
@@ -723,8 +725,6 @@ async function initBusinessPanel() {
 
 
             window.applyBusinessTranslations?.();
-
-            let currentDeleteCleanup = null;
 
             listEl.grid.querySelectorAll('.btn-delete-receipt').forEach(btn => {
                 btn.addEventListener('click', () => {

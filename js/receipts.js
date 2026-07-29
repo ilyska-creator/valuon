@@ -178,7 +178,7 @@ function buildPersonalGridHTML(receipts, t, lang) {
         ...r,
         item_name: r.items?.name || null,
         display_name: r.items?.name || r.receipt_name || r.store_name || 'Untitled Receipt',
-        display_amount: r.items?.price || r.amount,
+        display_amount: r.items?.price ?? r.amount,
         display_date: r.items?.purchase_date || r.purchase_date,
         display_store: r.items?.store_name || r.store_name,
         is_linked: !!r.items
@@ -495,7 +495,7 @@ async function populateItemSelect(userId, client) {
             const opt = document.createElement('option');
             opt.value = item.id;
             opt.textContent = item.name;
-            opt.dataset.price = item.price || '';
+            opt.dataset.price = item.price ?? '';
             opt.dataset.date = item.purchase_date || '';
             opt.dataset.store = item.store_name || '';
             opt.dataset.name = item.name || '';

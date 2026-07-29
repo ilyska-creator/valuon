@@ -518,7 +518,7 @@ async function openEditModal(itemId, client, userId) {
     form.querySelector('[name="name"]').value = item.name || '';
     form.querySelector('[name="type"]').value = item.type || 'other';
     form.querySelector('[name="brand"]').value = item.brand || '';
-    form.querySelector('[name="price"]').value = item.price || '';
+    form.querySelector('[name="price"]').value = item.price ?? '';
     form.querySelector('[name="store_name"]').value = item.store_name || '';
     form.querySelector('[name="serial_number"]').value = item.serial_number || '';
     form.querySelector('[name="purchase_date"]').value = item.purchase_date || '';
