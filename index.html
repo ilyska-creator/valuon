@@ -68,8 +68,8 @@
                 <li><a href="#vision"><i class="fa-regular fa-flag nav-icon"></i> <span data-i18n="nav_mission">Миссия</span></a></li>
 
                 <li class="controls">
-                    <button id="lang-toggle" class="icon-btn" title="Switch Language">EN</button>
-                    <button id="theme-toggle" class="icon-btn" title="Toggle Theme"><i
+                    <button type="button" id="lang-toggle" class="icon-btn" title="Switch Language" aria-label="Switch language / Переключить язык">EN</button>
+                    <button type="button" id="theme-toggle" class="icon-btn" title="Toggle Theme" aria-label="Toggle theme / Переключить тему"><i
                             class="fa-solid fa-moon"></i></button>
                     <a href="login.html" class="btn btn-primary small" data-i18n="nav_login">Вход</a>
                 </li>
@@ -477,7 +477,7 @@
         <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href="privacy.html">Политикой конфиденциальности</a>.</p>
         <button id="cookie-btn" class="btn btn-primary small" onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
     </div>
-    <script>(function(){function c(){var l=localStorage.getItem('valuon-lang');if(l==='en'){document.getElementById('cookie-text').innerHTML='We use cookies to operate the site. By continuing, you agree to our <a href=\"privacy.html\">Privacy Policy</a>.';document.getElementById('cookie-btn').textContent='Accept'}else{document.getElementById('cookie-text').innerHTML='Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href=\"privacy.html\">Политикой конфиденциальности</a>.';document.getElementById('cookie-btn').textContent='Принять'}}c();document.addEventListener('click',function(e){if(e.target.closest('#lang-toggle')&&!localStorage.getItem('cookie-consent'))setTimeout(c,50)});if(!localStorage.getItem('cookie-consent')){setTimeout(function(){document.getElementById('cookie-banner').classList.add('show')},800)}})();</script>
+    <script src="js/cookie-banner.js"></script>
 </body>
 
 </html>

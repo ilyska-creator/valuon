@@ -333,6 +333,6 @@ document.querySelectorAll('[data-view="settings"]').forEach(el => {
     el.addEventListener('click', ensureSettingsLoaded);
 });
 
-if (window.location.hash === '#view-settings') {
+if (window.location.hash === '#view-settings' || window.__targetView === 'view-settings' || sessionStorage.getItem('dashboard-view') === 'view-settings') {
     ensureSettingsLoaded();
 }

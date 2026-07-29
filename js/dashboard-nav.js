@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     const sidebarLinks = document.querySelectorAll('.sidebar-nav .nav-item[data-view]');
     const bottomLinks = document.querySelectorAll('.bottom-nav-item[data-view]');
     const views = document.querySelectorAll('.dashboard-view');
@@ -41,6 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const targetId = link.getAttribute('href').replace('#', '');
         activateView(targetId);
+        sessionStorage.setItem('dashboard-view', targetId);
+        history.replaceState(null, '', '#' + targetId);
 
         if (window.innerWidth <= 900 && sidebar?.classList.contains('active')) {
             sidebar.classList.remove('active');
@@ -59,9 +62,11 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', (e) => handleNavClick(e, link));
     });
 
-    const hash = window.__targetView || window.location.hash.replace('#', '');
+    const targetView = sessionStorage.getItem('dashboard-view');
+    const hash = window.__targetView || window.location.hash.replace('#', '') || targetView;
     if (hash && document.getElementById(hash)) {
         activateView(hash);
+        window.scrollTo(0, 0);
     }
 
     if (document.body.classList.contains('scroll-locked')) {

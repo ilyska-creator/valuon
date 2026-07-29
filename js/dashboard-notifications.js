@@ -159,7 +159,7 @@ document.querySelectorAll('[data-view="notifications"]').forEach(el => {
     el.addEventListener('click', ensureNotifLoaded);
 });
 
-if (window.location.hash === '#view-notifications') {
+if (window.location.hash === '#view-notifications' || window.__targetView === 'view-notifications' || sessionStorage.getItem('dashboard-view') === 'view-notifications') {
     ensureNotifLoaded();
 }
 
