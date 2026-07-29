@@ -3,7 +3,7 @@ const MAX_LOGIN_ATTEMPTS = 10;
 const LOGIN_TIMEOUT_MS = 15 * 60 * 1000; 
 
 
-export function checkLoginRateLimit(identifier) {
+export function checkLoginRateLimit(identifier, lang = 'ru') {
     const key = identifier.toLowerCase().trim();
     const now = Date.now();
 
@@ -20,7 +20,7 @@ export function checkLoginRateLimit(identifier) {
         return {
             allowed: false,
             remainingAttempts: 0,
-            resetIn: `${minutes} мин`
+            resetIn: `${minutes} ${lang === 'ru' ? 'мин' : 'min'}`
         };
     }
 

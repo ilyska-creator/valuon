@@ -42,7 +42,10 @@ export function generateQRDataURL(text, size = 80) {
 export async function downloadReceiptPDF(receipt, shop) {
     if (typeof window.jspdf === 'undefined') {
         console.error('jsPDF library is not loaded');
-        alert('Библиотека генерации PDF не загружена. Попробуйте обновить страницу.');
+        if (typeof window.showToast === 'function') {
+            const genLang = (typeof localStorage !== 'undefined' && localStorage.getItem('valuon-lang')) || 'ru';
+            window.showToast(genLang === 'en' ? 'PDF generation library not loaded. Please refresh the page.' : 'Библиотека генерации PDF не загружена. Попробуйте обновить страницу.', 'error');
+        }
         return;
     }
 
@@ -80,7 +83,7 @@ export async function downloadReceiptPDF(receipt, shop) {
         const qrDate = purchaseDate.toISOString();
         const receiptSerial = receipt.receipt_number
             ? `RCP-${receipt.receipt_number}`
-            : `RCP-${receipt.id.slice(0, 8).toUpperCase()}`;
+            : `RCP-${String(receipt.id).slice(0, 8).toUpperCase()}`;
 
         const netTotal = receipt.net_total;
         const vatAmount = receipt.vat_amount;
@@ -273,9 +276,8 @@ export async function downloadReceiptPDF(receipt, shop) {
     } catch (e) {
         console.error("PDF Generation failed:", e);
         if (typeof window.showToast === 'function') {
-            window.showToast('Ошибка при создании PDF', 'error');
-        } else {
-            alert('Ошибка при генерации чека. Проверьте консоль.');
+            const genLang = (typeof localStorage !== 'undefined' && localStorage.getItem('valuon-lang')) || 'ru';
+            window.showToast(genLang === 'en' ? 'Error creating PDF' : 'Ошибка при создании PDF', 'error');
         }
     }
 }

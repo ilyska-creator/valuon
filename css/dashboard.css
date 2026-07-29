@@ -153,8 +153,14 @@ html {
     border-radius: var(--radius-md);
     color: var(--secondary);
     font-weight: 600;
+    font: inherit;
     transition: var(--transition-base);
     text-decoration: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
 }
 
 .nav-item:hover,
@@ -785,6 +791,7 @@ html {
     }
 
     .sidebar.active {
+        display: flex;
         transform: none;
     }
 
@@ -1328,6 +1335,7 @@ html {
     }
 
     .sidebar-overlay.active {
+        display: block;
         pointer-events: auto;
         opacity: 1;
         visibility: visible;

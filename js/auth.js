@@ -89,10 +89,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            const rateLimitCheck = checkLoginRateLimit(email);
+            const lang = localStorage.getItem('valuon-lang') || 'ru';
+            const rateLimitCheck = checkLoginRateLimit(email, lang);
             if (!rateLimitCheck.allowed) {
-                const lang = localStorage.getItem('valuon-lang') === 'ru';
-                showToast(lang
+                const isRu = lang === 'ru';
+                showToast(isRu
                     ? `Слишком много попыток входа. Попробуйте через ${rateLimitCheck.resetIn}`
                     : `Too many login attempts. Try again in ${rateLimitCheck.resetIn}`);
                 return;
@@ -243,9 +244,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            const rateLimitCheck = checkLoginRateLimit(`reset_${email}`);
+            const rlLang = localStorage.getItem('valuon-lang') || 'ru';
+            const rateLimitCheck = checkLoginRateLimit(`reset_${email}`, rlLang);
             if (!rateLimitCheck.allowed) {
-                showToast(lang
+                showToast(rlLang === 'ru'
                     ? `Слишком много попыток. Попробуйте через ${rateLimitCheck.resetIn}`
                     : `Too many attempts. Try again in ${rateLimitCheck.resetIn}`);
                 return;

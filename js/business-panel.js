@@ -394,9 +394,10 @@ async function initBusinessPanel() {
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Создание...';
 
             try {
+                const createLang = localStorage.getItem('valuon-lang') || 'ru';
 
                 if (!Ed25519Signer.isSupported()) {
-                    window.showToast('Ваш браузер не поддерживает Ed25519. Пожалуйста, используйте Chrome 137+, Firefox 129+ или Safari 17+', 'error');
+                    window.showToast(createLang === 'en' ? 'Your browser does not support Ed25519. Please use Chrome 137+, Firefox 129+, or Safari 17+.' : 'Ваш браузер не поддерживает Ed25519. Пожалуйста, используйте Chrome 137+, Firefox 129+ или Safari 17+.', 'error');
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
                     return;
@@ -409,13 +410,13 @@ async function initBusinessPanel() {
                 const logoFile = fd.get('logo');
                 if (logoFile && logoFile.size && logoFile.size > 0) {
                     if (logoFile.size > 2 * 1024 * 1024) {
-                        window.showToast('Файл слишком большой. Максимум 2 МБ.', 'error');
+                        window.showToast(createLang === 'en' ? 'File too large. Maximum 2 MB.' : 'Файл слишком большой. Максимум 2 МБ.', 'error');
                         btn.disabled = false;
                         btn.innerHTML = originalHTML;
                         return;
                     }
                     if (!['image/png', 'image/jpeg'].includes(logoFile.type)) {
-                        window.showToast('Только PNG и JPG.', 'error');
+                        window.showToast(createLang === 'en' ? 'Only PNG and JPG are allowed.' : 'Только PNG и JPG.', 'error');
                         btn.disabled = false;
                         btn.innerHTML = originalHTML;
                         return;
@@ -503,7 +504,8 @@ async function initBusinessPanel() {
 
         if (show) {
             if (!currentShop) {
-                window.showToast('Сначала создайте магазин', 'warning');
+                const toastLang = localStorage.getItem('valuon-lang') || 'ru';
+                window.showToast(toastLang === 'en' ? 'Create a shop first' : 'Сначала создайте магазин', 'warning');
                 return;
             }
 
@@ -556,16 +558,16 @@ async function initBusinessPanel() {
 
                 const fd = new FormData(e.target);
                 const email = fd.get('customer_email').toLowerCase().trim();
+                const valLang = localStorage.getItem('valuon-lang') || 'ru';
 
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRegex.test(email)) {
-                    window.showToast('Введите корректный email покупателя', 'warning');
+                    window.showToast(valLang === 'en' ? 'Enter a valid customer email' : 'Введите корректный email покупателя', 'warning');
                     return;
                 }
 
                 const items = readItemRows();
                 if (items.length === 0 || items.some(it => !it.itemName || it.qty <= 0 || it.warrantyMonths < 0)) {
-                    const valLang = localStorage.getItem('valuon-lang') || 'ru';
                     window.showToast(
                         valLang === 'en'
                             ? 'Fill in every line item (product, quantity)'

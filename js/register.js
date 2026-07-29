@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     if (profileError) {
                         console.error('❌ Ошибка сохранения профиля:', profileError);
-                        showToast('Ошибка сохранения данных профиля', 'error');
+                        showToast(lang === 'ru' ? 'Ошибка сохранения данных профиля' : 'Error saving profile data', 'error');
                     } else {
                         const { error: lazyBindError } = await supabase
                             .from('business_receipts')
