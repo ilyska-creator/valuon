@@ -59,8 +59,8 @@ const translations = {
         vision_title: "Единая система электронных чеков — что дальше?",
         vision_desc: "Единая платформа, где каждый чек подписан цифровой подписью, а гарантия отслеживается автоматически. Сейчас — работающий MVP. Дальше — международные рынки, интеграция с кассами и доверие между покупателем и магазином.",
         vision_btn: "Читать Roadmap", footer_tagline: "Цифровые чеки, которым можно доверять.",
-        footer_prod: "Продукт", footer_sec: "Безопасность", footer_biz: "Для бизнеса",
-        footer_comp: "Компания", footer_about: "О нас", footer_career: "Карьера", footer_contact: "Контакты", footer_privacy: "Политика конфиденциальности", footer_terms: "Условия пользования", footer_social: "Соцсети",
+        footer_prod: "Продукт", footer_biz: "Для бизнеса",
+        footer_comp: "Компания", footer_about: "О нас", footer_privacy: "Политика конфиденциальности", footer_terms: "Условия пользования", footer_social: "Соцсети",
         footer_copyright: "© 2026 Valuon. Все права защищены."
     },
     en: {
@@ -118,8 +118,8 @@ const translations = {
         vision_title: "A unified system for digital receipts — what's next?",
         vision_desc: "A unified platform where every receipt is cryptographically signed and every warranty is tracked automatically. Today — a working MVP. Next — international markets, POS integrations, and trust between buyers and stores.",
         vision_btn: "Read Roadmap", footer_tagline: "Digital receipts you can trust.",
-        footer_prod: "Product", footer_sec: "Security", footer_biz: "For Business",
-        footer_comp: "Company", footer_about: "About Us", footer_career: "Careers", footer_contact: "Contact", footer_privacy: "Privacy Policy", footer_terms: "Terms of Use", footer_social: "Socials",
+        footer_prod: "Product", footer_biz: "For Business",
+        footer_comp: "Company", footer_about: "About Us", footer_privacy: "Privacy Policy", footer_terms: "Terms of Use", footer_social: "Socials",
         footer_copyright: "© 2026 Valuon. All rights reserved."
     }
 };

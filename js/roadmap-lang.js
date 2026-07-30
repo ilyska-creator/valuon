@@ -245,6 +245,7 @@ function applyRoadmapTranslations(lang) {
     }
 
     localStorage.setItem('valuon-lang', lang);
+    document.documentElement.lang = lang === 'en' ? 'en' : 'ru';
 }
 
 applyRoadmapTranslations(currentLang);

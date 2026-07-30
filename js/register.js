@@ -214,6 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                         if (lazyBindError) {
                             logError('reg:lazyBind', lazyBindError);
+                            showToast(lang === 'ru' ? 'Не удалось привязать старые чеки от партнёров' : 'Failed to link old partner receipts', 'warning');
                         }
                     }
                 }

@@ -405,6 +405,7 @@ function translateReceiptCards(t) {
 function toggleBusinessLanguage() {
     businessCurrentLang = businessCurrentLang === 'ru' ? 'en' : 'ru';
     localStorage.setItem('valuon-lang', businessCurrentLang);
+    document.documentElement.lang = businessCurrentLang === 'en' ? 'en' : 'ru';
     window.businessCurrentLang = businessCurrentLang;
     applyBusinessTranslations();
     window.dispatchEvent(new CustomEvent('business-lang-changed'));

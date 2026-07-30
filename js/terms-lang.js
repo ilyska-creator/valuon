@@ -178,6 +178,7 @@ function applyTermsTranslations(lang) {
     }
 
     localStorage.setItem('valuon-lang', lang);
+    document.documentElement.lang = lang === 'en' ? 'en' : 'ru';
 }
 
 applyTermsTranslations(currentLang);

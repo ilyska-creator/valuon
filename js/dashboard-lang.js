@@ -414,6 +414,7 @@ function applyDashboardLang(lang) {
     if (settingsLangLabel) settingsLangLabel.textContent = lang.toUpperCase();
 
     localStorage.setItem('valuon-lang', lang);
+    document.documentElement.lang = lang === 'en' ? 'en' : 'ru';
     window.dispatchEvent(new CustomEvent('lang-changed', { detail: { lang } }));
     const typeLabels = {
         ru: { laptop: '💻 Ноутбук', phone: '📱 Смартфон', tablet: '📟 Планшет', watch: '⌚ Часы', headphones: '🎧 Наушники', camera: '📷 Камера', console: '🎮 Консоль', appliance: '🏠 Бытовая техника', other: '📦 Другое' },

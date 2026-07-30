@@ -222,6 +222,7 @@ function applyPrivacyTranslations(lang) {
     }
 
     localStorage.setItem('valuon-lang', lang);
+    document.documentElement.lang = lang === 'en' ? 'en' : 'ru';
 }
 
 applyPrivacyTranslations(currentLang);

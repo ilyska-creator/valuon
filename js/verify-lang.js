@@ -165,6 +165,7 @@ export function initVerifyLang() {
             const newLang = verifyLang === 'ru' ? 'en' : 'ru';
             verifyLang = newLang;
             localStorage.setItem('valuon-lang', newLang);
+            document.documentElement.lang = newLang === 'en' ? 'en' : 'ru';
             applyVerifyTranslations();
             window.dispatchEvent(new CustomEvent('verify-lang-changed'));
         });
