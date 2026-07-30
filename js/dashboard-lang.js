@@ -34,7 +34,6 @@ const dashboardTranslations = {
 
         status_active: 'Активно',
         status_expiring: 'Заканчивается',
-        status_warning: 'Заканчивается',
         status_expired: 'Истекла',
         days_left: 'Осталось {count} дней',
         warranty_expired_text: 'Гарантия истекла',
@@ -156,12 +155,10 @@ const dashboardTranslations = {
         item_name_unknown: "Товар",
         loading_receipts: "Загружаем чеки…",
         loading_signatures: "Проверяем подписи…",
-        loading_statuses: "Обновляем статусы…",
         loading_items: "Загружаем покупки…",
         loading_items_check: "Проверяем данные…",
         loading_items_update: "Обновляем статусы…",
-        items_load_error: "Ошибка загрузки. Обновите страницу.",
-        receipts_load_error: "Ошибка загрузки. Обновите страницу.",
+        load_error: "Ошибка загрузки. Обновите страницу.",
     },
     en: {
         page_title: "Valuon — Dashboard",
@@ -197,7 +194,6 @@ const dashboardTranslations = {
 
         status_active: 'Active',
         status_expiring: 'Expiring Soon',
-        status_warning: 'Expiring Soon',
         status_expired: 'Expired',
         days_left: '{count} days left',
         warranty_expired_text: 'Warranty expired',
@@ -320,12 +316,10 @@ const dashboardTranslations = {
         item_name_unknown: "Item",
         loading_receipts: "Loading receipts…",
         loading_signatures: "Checking signatures…",
-        loading_statuses: "Updating statuses…",
         loading_items: "Loading purchases…",
         loading_items_check: "Checking data…",
         loading_items_update: "Updating statuses…",
-        items_load_error: "Load error. Please refresh.",
-        receipts_load_error: "Load error. Please refresh.",
+        load_error: "Load error. Please refresh.",
     }
 };
 window.animateCount = function(el, target, duration) {

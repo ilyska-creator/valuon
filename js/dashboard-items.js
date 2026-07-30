@@ -797,7 +797,7 @@ initDashboardItems().catch(e => {
     logError('init:dashboardItems', e);
     const lang = localStorage.getItem('valuon-lang') || 'ru';
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
-    const msg = t.items_load_error || (lang === 'ru' ? 'Ошибка загрузки. Обновите страницу.' : 'Load error. Please refresh.');
+    const msg = t.load_error || (lang === 'ru' ? 'Ошибка загрузки. Обновите страницу.' : 'Load error. Please refresh.');
     const el = document.querySelector('#items-grid-mine');
     if (el) el.innerHTML = `<p class="empty-state error">${msg}</p>`;
 });

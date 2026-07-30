@@ -86,7 +86,7 @@ async function loadAllReceipts(userEmail, userId, client) {
         new RotatingTextLoader(loaderEl, [
             t.loading_receipts || 'Загружаем чеки…',
             t.loading_signatures || 'Проверяем подписи…',
-            t.loading_statuses || 'Обновляем статусы…'
+            t.loading_items_update || 'Обновляем статусы…'
         ], { interval: 800 });
     }
 
@@ -794,7 +794,7 @@ initReceipts().catch(e => {
     logError('init:receipts', e);
     const lang = getLang();
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
-    const msg = t.receipts_load_error || (lang === 'ru' ? 'Ошибка загрузки. Обновите страницу.' : 'Load error. Please refresh.');
+    const msg = t.load_error || (lang === 'ru' ? 'Ошибка загрузки. Обновите страницу.' : 'Load error. Please refresh.');
     const el = document.querySelector('.main-content');
     if (el) el.innerHTML = `<p class="empty-state error">${msg}</p>`;
 });
