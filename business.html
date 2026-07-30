@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Valuon — Seller Panel</title>
-    <meta name="description" content="Valuon — Панель продавца. Выписывайте цифровые чеки с Ed25519-подписью и управляйте магазином.">
+    <meta name="description"
+        content="Valuon — Панель продавца. Выписывайте цифровые чеки с Ed25519-подписью и управляйте магазином.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -35,16 +36,11 @@
             <span data-i18n="back_to_dashboard">Вернуться в личный кабинет</span>
         </a>
         <a href="index.html" class="brand-small">
-            <svg width="20" height="20" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 4L5 10V20C5 29.5 11.5 37.5 20 39C28.5 37.5 35 29.5 35 20V10L20 4Z" fill="#3b82f6"
-                    stroke="#2563eb" stroke-width="1.5" stroke-linejoin="round" />
-                <path d="M13 20L18 25L27 15" stroke="white" stroke-width="3" stroke-linecap="round"
-                    stroke-linejoin="round" />
-            </svg>
-            <span>Valuon Seller</span>
+            <span>VALUON SELLER</span>
         </a>
         <div class="header-icons">
-            <button type="button" id="lang-toggle-business" class="icon-btn" title="EN/RU" aria-label="Switch language / Переключить язык">EN</button>
+            <button type="button" id="lang-toggle-business" class="icon-btn" title="EN/RU"
+                aria-label="Switch language / Переключить язык">EN</button>
             <button type="button" id="theme-toggle-btn" class="icon-btn" aria-label="Переключить тему">
                 <i class="fa-solid fa-moon"></i>
             </button>
@@ -60,54 +56,57 @@
                 <div class="shop-setup-header">
                     <div class="large-icon"><i class="fa-solid fa-store"></i></div>
                     <h1 data-i18n="shop_registration_title">Регистрация магазина</h1>
-                    <p class="setup-subtitle" data-i18n="shop_registration_desc">Создайте цифровой профиль вашего бизнеса для автоматической выдачи
+                    <p class="setup-subtitle" data-i18n="shop_registration_desc">Создайте цифровой профиль вашего
+                        бизнеса для автоматической выдачи
                         чеков клиентам.</p>
                 </div>
 
-                    <form id="create-shop-form" class="mt-6" action="#">
-                        <div class="input-group">
-                            <label data-i18n="logo_label">Логотип (опционально)</label>
-                            <div class="logo-drop-zone" id="logo-drop-zone">
-                                <input type="file" id="reg-logo-input" name="logo" accept="image/png,image/jpeg" hidden>
-                                <div class="logo-drop-content" id="logo-drop-content">
-                                    <div class="logo-drop-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-                                    <span class="logo-drop-text" data-i18n="logo_drop">Нажмите, чтобы выбрать логотип</span>
-                                    <span class="logo-drop-hint" data-i18n="logo_hint">PNG или JPG, до 2 МБ</span>
-                                </div>
-                                <div class="logo-drop-preview" id="logo-drop-preview" style="display:none">
-                                    <img src="" alt="preview">
-                                    <button type="button" class="logo-drop-remove" id="logo-drop-remove" title="Удалить">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                </div>
+                <form id="create-shop-form" class="mt-6" action="#">
+                    <div class="input-group">
+                        <label data-i18n="logo_label">Логотип (опционально)</label>
+                        <div class="logo-drop-zone" id="logo-drop-zone">
+                            <input type="file" id="reg-logo-input" name="logo" accept="image/png,image/jpeg" hidden>
+                            <div class="logo-drop-content" id="logo-drop-content">
+                                <div class="logo-drop-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                                <span class="logo-drop-text" data-i18n="logo_drop">Нажмите, чтобы выбрать логотип</span>
+                                <span class="logo-drop-hint" data-i18n="logo_hint">PNG или JPG, до 2 МБ</span>
+                            </div>
+                            <div class="logo-drop-preview" id="logo-drop-preview" style="display:none">
+                                <img src="" alt="preview">
+                                <button type="button" class="logo-drop-remove" id="logo-drop-remove" title="Удалить">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="input-group">
-                            <label data-i18n="shop_name_label" for="shop_name">Название бизнеса</label>
-                            <input type="text" id="shop_name" name="shop_name" required placeholder="My Awesome Store"
-                                autocomplete="organization" data-i18n-placeholder="shop_name_placeholder">
-                            <small class="field-hint" data-i18n="shop_name_hint">Как вас знают клиенты</small>
-                        </div>
+                    <div class="input-group">
+                        <label data-i18n="shop_name_label" for="shop_name">Название бизнеса</label>
+                        <input type="text" id="shop_name" name="shop_name" required placeholder="My Awesome Store"
+                            autocomplete="organization" data-i18n-placeholder="shop_name_placeholder">
+                        <small class="field-hint" data-i18n="shop_name_hint">Как вас знают клиенты</small>
+                    </div>
 
-                        <div class="input-group">
-                            <label data-i18n="tax_id_label" for="tax_id">Налоговый номер (Tax ID / INN)</label>
-                            <input type="text" id="tax_id" name="tax_id" required placeholder="1234567890"
-                                autocomplete="off" data-i18n-placeholder="tax_id_placeholder">
-                            <small class="field-hint" data-i18n="tax_id_hint">Основной идентификатор для налоговой отчетности</small>
-                        </div>
+                    <div class="input-group">
+                        <label data-i18n="tax_id_label" for="tax_id">Налоговый номер (Tax ID / INN)</label>
+                        <input type="text" id="tax_id" name="tax_id" required placeholder="1234567890"
+                            autocomplete="off" data-i18n-placeholder="tax_id_placeholder">
+                        <small class="field-hint" data-i18n="tax_id_hint">Основной идентификатор для налоговой
+                            отчетности</small>
+                    </div>
 
-                        <div class="input-group">
-                            <label data-i18n="address_label" for="address">Юридический адрес</label>
-                            <textarea id="address" name="address" rows="3" required
-                                placeholder="ул. Примерная, д. 1, офис 101" autocomplete="street-address" data-i18n-placeholder="address_placeholder"></textarea>
-                            <small class="field-hint" data-i18n="address_hint">Адрес регистрации компании</small>
-                        </div>
+                    <div class="input-group">
+                        <label data-i18n="address_label" for="address">Юридический адрес</label>
+                        <textarea id="address" name="address" rows="3" required
+                            placeholder="ул. Примерная, д. 1, офис 101" autocomplete="street-address"
+                            data-i18n-placeholder="address_placeholder"></textarea>
+                        <small class="field-hint" data-i18n="address_hint">Адрес регистрации компании</small>
+                    </div>
 
-                        <button type="submit" class="btn btn-primary w-full mt-4 btn-lg" data-i18n="register_shop_btn">
-                            <i class="fa-solid fa-check-circle"></i> Зарегистрировать магазин
-                        </button>
-                    </form>
+                    <button type="submit" class="btn btn-primary w-full mt-4 btn-lg" data-i18n="register_shop_btn">
+                        <i class="fa-solid fa-check-circle"></i> Зарегистрировать магазин
+                    </button>
+                </form>
             </div>
         </section>
         <section id="shop-dashboard-view" class="view">
@@ -134,7 +133,8 @@
                 </div>
                 <div class="shop-meta">
                     <div class="meta-item"><i class="fa-solid fa-hashtag"></i> <span id="display-tax-id">—</span></div>
-                    <div class="meta-item"><i class="fa-solid fa-location-dot"></i> <span id="display-address">—</span></div>
+                    <div class="meta-item"><i class="fa-solid fa-location-dot"></i> <span id="display-address">—</span>
+                    </div>
                 </div>
             </div>
 
@@ -214,8 +214,10 @@
                 <div id="no-receipts-msg" class="empty-state" style="display: none;">
                     <div class="empty-icon"><i class="fa-solid fa-receipt"></i></div>
                     <h3 data-i18n="no_receipts_title">У вас пока нет выписанных чеков</h3>
-                    <p data-i18n="no_receipts_desc">Нажмите кнопку «Создать чек», чтобы выдать первый цифровой документ клиенту.</p>
-                    <button id="create-first-receipt-btn" class="btn btn-outline mt-4" data-i18n="create_first_receipt_btn">
+                    <p data-i18n="no_receipts_desc">Нажмите кнопку «Создать чек», чтобы выдать первый цифровой документ
+                        клиенту.</p>
+                    <button id="create-first-receipt-btn" class="btn btn-outline mt-4"
+                        data-i18n="create_first_receipt_btn">
                         <i class="fa-solid fa-plus"></i> Создать первый чек
                     </button>
                 </div>
@@ -232,8 +234,10 @@
                 <form id="issue-receipt-form" class="modal-form" action="#">
                     <div class="input-group">
                         <label data-i18n="customer_email_label">Email покупателя</label>
-                        <input type="email" name="customer_email" data-i18n-placeholder="customer_email_placeholder" placeholder="client@example.com" required>
-                        <small data-i18n="customer_email_hint">Если клиент зарегистрирован, чек привяжется автоматически</small>
+                        <input type="email" name="customer_email" data-i18n-placeholder="customer_email_placeholder"
+                            placeholder="client@example.com" required>
+                        <small data-i18n="customer_email_hint">Если клиент зарегистрирован, чек привяжется
+                            автоматически</small>
                     </div>
 
                     <div id="receipt-items-list"></div>
@@ -300,8 +304,10 @@
                     </div>
 
                     <div class="modal-actions">
-                        <button type="button" id="cancel-receipt-modal" class="btn btn-outline" data-i18n="cancel_btn">Отмена</button>
-                        <button type="submit" class="btn btn-primary" data-i18n="issue_receipt_submit">Выписать чек</button>
+                        <button type="button" id="cancel-receipt-modal" class="btn btn-outline"
+                            data-i18n="cancel_btn">Отмена</button>
+                        <button type="submit" class="btn btn-primary" data-i18n="issue_receipt_submit">Выписать
+                            чек</button>
                     </div>
                 </form>
             </div>
@@ -314,10 +320,12 @@
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
                 <h2 data-i18n="delete_receipt_title">Удалить чек?</h2>
-                <p data-i18n="delete_receipt_desc">Это действие необратимо. Чек будет удален из системы безвозвратно.</p>
+                <p data-i18n="delete_receipt_desc">Это действие необратимо. Чек будет удален из системы безвозвратно.
+                </p>
 
                 <div class="modal-actions confirm-actions">
-                    <button type="button" id="cancel-delete-btn" class="btn btn-outline w-full" data-i18n="cancel_btn">Отмена</button>
+                    <button type="button" id="cancel-delete-btn" class="btn btn-outline w-full"
+                        data-i18n="cancel_btn">Отмена</button>
                     <button type="button" id="confirm-delete-btn" class="btn btn-danger w-full" data-i18n="delete_btn">
                         <i class="fa-solid fa-trash"></i> Удалить
                     </button>
@@ -421,8 +429,10 @@
     </script>
 
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href="privacy.html">Политикой конфиденциальности</a>.</p>
-        <button id="cookie-btn" class="btn btn-primary small" onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
+                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <button id="cookie-btn" class="btn btn-primary small"
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
     </div>
     <script src="js/cookie-banner.js"></script>
 </body>

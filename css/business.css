@@ -54,10 +54,11 @@
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
+    font-family: var(--font-brand);
     font-weight: 800;
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     color: var(--primary);
-    letter-spacing: -0.03em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     white-space: nowrap;
     z-index: 1;
@@ -1582,7 +1583,9 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .loader-text {

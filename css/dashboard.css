@@ -230,8 +230,15 @@ html {
 }
 
 @keyframes pulseAddBtn {
-    0%, 100% { box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4); }
-    50% { box-shadow: 0 4px 24px rgba(59, 130, 246, 0.55), 0 0 0 6px rgba(59, 130, 246, 0.1); }
+
+    0%,
+    100% {
+        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 4px 24px rgba(59, 130, 246, 0.55), 0 0 0 6px rgba(59, 130, 246, 0.1);
+    }
 }
 
 .stats-grid {
@@ -374,16 +381,18 @@ html {
     overflow: hidden;
     vertical-align: middle;
 }
+
 .stat-skeleton-pulse::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
     transform: translateX(-100%);
     animation: skeletonShimmer 1.4s ease-in-out infinite;
 }
+
 [data-theme="dark"] .stat-skeleton-pulse::after {
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
 }
 
 .items-section {
@@ -418,7 +427,7 @@ html {
     padding: 60px 20px;
 }
 
-.main-content > .rotating-loader {
+.main-content>.rotating-loader {
     min-height: calc(100vh - 250px);
     justify-content: center;
 }
@@ -585,13 +594,11 @@ html {
 
 .no-warranty-track {
     height: var(--space-2);
-    background: repeating-linear-gradient(
-        90deg,
-        var(--border) 0px,
-        var(--border) 6px,
-        transparent 6px,
-        transparent 10px
-    );
+    background: repeating-linear-gradient(90deg,
+            var(--border) 0px,
+            var(--border) 6px,
+            transparent 6px,
+            transparent 10px);
     border-radius: var(--radius-full);
     width: 100%;
     display: flex;
@@ -610,13 +617,11 @@ html {
 }
 
 [data-theme="dark"] .no-warranty-track {
-    background: repeating-linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.12) 0px,
-        rgba(255, 255, 255, 0.12) 6px,
-        transparent 6px,
-        transparent 10px
-    );
+    background: repeating-linear-gradient(90deg,
+            rgba(255, 255, 255, 0.12) 0px,
+            rgba(255, 255, 255, 0.12) 6px,
+            transparent 6px,
+            transparent 10px);
 }
 
 [data-theme="dark"] .no-warranty-track i {
@@ -1128,8 +1133,10 @@ html {
     display: flex;
     align-items: center;
     gap: 10px;
+    font-family: var(--font-brand);
     font-weight: 800;
-    font-size: 1.1rem;
+    font-size: 1.25rem;
+    letter-spacing: 0.06em;
     color: var(--text-main);
 
     position: absolute;
