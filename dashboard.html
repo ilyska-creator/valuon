@@ -15,6 +15,7 @@
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/custom-select.css">
     <link rel="stylesheet" href="css/toast.css">
     <script>(function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); })();</script>
     <script>if (location.hash) { window.__targetView = location.hash.replace('#', ''); history.replaceState(null, '', location.pathname); }</script>
@@ -337,7 +338,7 @@
                 <div class="input-row">
                     <div class="input-group">
                         <label data-i18n="label_type">Тип устройства</label>
-                        <select name="type" required>
+                        <select name="type" class="custom-select" required>
                             <option value="laptop">💻 Ноутбук</option>
                             <option value="phone">📱 Смартфон</option>
                             <option value="tablet">📟 Планшет</option>
@@ -409,7 +410,7 @@
                 <div class="input-row">
                     <div class="input-group">
                         <label data-i18n="label_type">Тип устройства</label>
-                        <select name="type" required>
+                        <select name="type" class="custom-select" required>
                             <option value="laptop">💻 Ноутбук</option>
                             <option value="phone">📱 Смартфон</option>
                             <option value="tablet">📟 Планшет</option>
@@ -486,6 +487,7 @@
     <script src="js/theme.js"></script>
     <script src="js/toast.js"></script>
 
+    <script src="js/custom-select.js"></script>
     <script src="js/dashboard-lang.js"></script>
     <script src="js/rotating-loader.js"></script>
     <script type="module" src="js/dashboard-auth.js"></script>

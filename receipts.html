@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/toast.css">
+    <link rel="stylesheet" href="css/custom-select.css">
     <script>
         (function () { const t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); })();
     </script>
@@ -121,7 +122,7 @@
             <form id="upload-receipt-form" class="modal-form" action="#">
                 <div class="input-group">
                     <label data-i18n="label_linked_item">Привязать к товару</label>
-                    <select name="item_id" id="linked-item-select">
+                    <select name="item_id" id="linked-item-select" class="custom-select">
                         <option value="" data-i18n="option_no_link">Не привязывать</option>
                     </select>
                     <p class="field-hint link-hint" id="link-hint" data-i18n="link_hint_manual">Ручной ввод данных</p>
@@ -197,6 +198,7 @@
 
     <script src="js/theme.js"></script>
     <script src="js/toast.js"></script>
+    <script src="js/custom-select.js"></script>
     <script src="js/dashboard-lang.js"></script>
     <script src="js/rotating-loader.js"></script>
     <script type="module" src="js/receipts.js"></script>

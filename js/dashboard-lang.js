@@ -424,9 +424,8 @@ function applyDashboardLang(lang) {
     document.querySelectorAll('select[name="type"] option').forEach(opt => {
         const val = opt.value;
         if (typeLabels[lang]?.[val]) opt.textContent = typeLabels[lang][val];
-
-
     });
+    if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
 }
 
 window.applyDashboardLang = applyDashboardLang;

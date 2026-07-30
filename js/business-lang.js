@@ -367,6 +367,7 @@ function applyBusinessTranslations() {
     applyDataI18n(document, t);
     const itemTemplate = document.getElementById('receipt-item-template');
     if (itemTemplate) applyDataI18n(itemTemplate.content, t);
+    if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
 }
 
 

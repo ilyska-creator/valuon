@@ -163,6 +163,11 @@ function renderItems(items) {
         }
         if (item.store_name) tags.push(`<span class="tag"><i class="fa-solid fa-store"></i> ${escapeHtml(item.store_name)}</span>`);
         if (item.price && item.price > 0) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(String(item.price))} $</span>`);
+        if (item.purchase_date) {
+            const d = item.purchase_date.slice(0, 10).split('-');
+            const dateStr = lang === 'ru' ? `${d[2]}.${d[1]}.${d[0]}` : `${d[1]}/${d[2]}/${d[0]}`;
+            tags.push(`<span class="tag"><i class="fa-regular fa-calendar"></i> ${escapeHtml(dateStr)}</span>`);
+        }
 
         const btnEditText = escapeHtml(t.btn_edit || 'Изменить');
         const btnDeleteText = escapeHtml(t.btn_delete || 'Удалить');
