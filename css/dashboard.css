@@ -898,6 +898,14 @@ html {
     .input-row {
         grid-template-columns: 1fr;
     }
+
+    .modal-form .input-row {
+        gap: 0;
+    }
+
+    .modal-form .input-group {
+        margin-bottom: var(--space-4);
+    }
 }
 
 .loading-state {

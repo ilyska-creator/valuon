@@ -127,6 +127,7 @@ const translations = {
 let currentLang = localStorage.getItem('valuon-lang') || 'ru';
 
 function applyTranslations() {
+    document.documentElement.lang = currentLang === 'en' ? 'en' : 'ru';
     document.title = translations[currentLang].page_title;
     const htmlKeys = ['hero_title', 'feat_title'];
 

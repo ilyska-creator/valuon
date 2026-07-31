@@ -622,7 +622,7 @@ input[type="datetime-local"].custom-datepicker {
 
 #add-modal .custom-datepicker-wrapper,
 #edit-modal .custom-datepicker-wrapper {
-    width: 100%;
+    max-width: none;
 }
 
 .auth-form .custom-datepicker-wrapper:has(.custom-datepicker-trigger.is-invalid) + .field-hint {

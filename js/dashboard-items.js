@@ -757,7 +757,7 @@ function setupModal(client) {
                 purchase_date: dateInput.value,
                 warranty_months: (m => isNaN(m) ? 12 : m)(parseInt(monthsInput.value)),
                 location: locationInput ? locationInput.value.trim() : '',
-                price: parseFloat(priceInput?.value) || 0,
+                price: Math.max(0, parseFloat(priceInput?.value) || 0),
                 store_name: storeInput ? storeInput.value.trim() : ''
             }]);
 
