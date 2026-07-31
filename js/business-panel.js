@@ -1250,7 +1250,7 @@ async function initBusinessPanel() {
 
         if (!hasData) {
             showChartEmpty('receipts-chart', '.chart-box:first-child .chart-wrapper',
-                () => receiptsChartInstance, t.chart_empty || 'Нет данных для графика');
+                () => receiptsChartInstance, t['chart_empty_' + period] || t.chart_empty || 'Нет данных для графика');
             receiptsChartInstance = null;
             updateChangeBadge('change-receipts', { absolute: 0, percent: 0 });
             return;
@@ -1268,7 +1268,6 @@ async function initBusinessPanel() {
             logError('biz:receiptsChart', e);
         }
         updateChangeBadge('change-receipts', aggregated.change);
-        updatePeriodLabel('period-receipts', period);
     }
 
     function renderRevenueChart(period) {
@@ -1288,7 +1287,7 @@ async function initBusinessPanel() {
 
         if (!hasData) {
             showChartEmpty('revenue-chart', '.chart-box:last-child .chart-wrapper',
-                () => revenueChartInstance, t.chart_empty || 'Нет данных для графика');
+                () => revenueChartInstance, t['chart_empty_' + period] || t.chart_empty || 'Нет данных для графика');
             revenueChartInstance = null;
             updateChangeBadge('change-revenue', { absolute: 0, percent: 0 });
             return;
@@ -1303,10 +1302,10 @@ async function initBusinessPanel() {
             logError('biz:revenueChart', e);
         }
         updateChangeBadge('change-revenue', aggregated.change);
-        updatePeriodLabel('period-revenue', period);
     }
 
     function updateChart() {
+        updatePeriodLabel('analytics-period', chartPeriod);
         renderReceiptChart(chartPeriod);
         renderRevenueChart(chartPeriod);
     }
