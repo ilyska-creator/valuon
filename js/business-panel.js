@@ -544,6 +544,7 @@ async function initBusinessPanel() {
                 const h = String(now.getHours()).padStart(2, '0');
                 const min = String(now.getMinutes()).padStart(2, '0');
                 forms.receipt.purchase_date.value = `${y}-${m}-${d}T${h}:${min}`;
+                if (forms.receipt.purchase_date._cdp) forms.receipt.purchase_date._cdp.syncDisplay();
             }
         } else {
             const el = modal.el;

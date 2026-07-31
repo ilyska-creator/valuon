@@ -562,7 +562,9 @@ async function openEditModal(itemId, client, userId) {
     form.querySelector('[name="price"]').value = item.price ?? '';
     form.querySelector('[name="store_name"]').value = item.store_name || '';
     form.querySelector('[name="serial_number"]').value = item.serial_number || '';
-    form.querySelector('[name="purchase_date"]').value = item.purchase_date || '';
+    const dateInput = form.querySelector('[name="purchase_date"]');
+    dateInput.value = item.purchase_date || '';
+    if (dateInput._cdp) dateInput._cdp.syncDisplay();
     form.querySelector('[name="warranty_months"]').value = item.warranty_months ?? 12;
     form.querySelector('[name="location"]').value = item.location || '';
 

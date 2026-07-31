@@ -368,6 +368,7 @@ function applyBusinessTranslations() {
     const itemTemplate = document.getElementById('receipt-item-template');
     if (itemTemplate) applyDataI18n(itemTemplate.content, t);
     if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+    if (typeof CustomDatePicker !== 'undefined') CustomDatePicker.refreshAll();
 }
 
 

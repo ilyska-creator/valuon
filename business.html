@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/business.css">
     <link rel="stylesheet" href="css/toast.css">
     <link rel="stylesheet" href="css/custom-select.css">
+    <link rel="stylesheet" href="css/custom-datepicker.css">
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -287,15 +288,15 @@
 
                     <div class="input-row mt-4">
                         <div class="input-group">
-                            <label data-i18n="purchase_date_label">Дата покупки</label>
-                            <input type="datetime-local" name="purchase_date" required>
-                        </div>
-                        <div class="input-group">
                             <label data-i18n="payment_method_label">Оплата</label>
                             <select name="payment_method" class="custom-select">
                                 <option value="card" data-i18n="payment_card">Карта</option>
                                 <option value="cash" data-i18n="payment_cash">Наличные</option>
                             </select>
+                        </div>
+                        <div class="input-group">
+                            <label data-i18n="purchase_date_label">Дата покупки</label>
+                            <input type="datetime-local" name="purchase_date" class="custom-datepicker" required>
                         </div>
                     </div>
 
@@ -367,6 +368,7 @@
     <script src="js/rotating-loader.js"></script>
     <script src="js/toast.js"></script>
     <script src="js/custom-select.js"></script>
+    <script src="js/custom-datepicker.js"></script>
     <script src="js/business-lang.js"></script>
     <script type="module" src="js/business-panel.js"></script>
     <script src="js/theme.js"></script>

@@ -1592,3 +1592,12 @@
     color: var(--text-secondary, #64748b);
     font-size: 0.95rem;
 }
+@media (max-width: 640px) {
+    #create-receipt-modal .input-row {
+        grid-template-columns: 1fr;
+    }
+
+    #create-receipt-modal .custom-datepicker-wrapper {
+        max-width: none;
+    }
+}

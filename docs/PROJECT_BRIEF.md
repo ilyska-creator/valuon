@@ -29,59 +29,62 @@ valuon/
 ├── register.html           # Регистрация
 ├── login.html              # Вход
 ├── reset-password.html     # Сброс пароля
-├── dashboard.html          # Личный кабинет покупателя
+├── dashboard.html          # Личный кабинет покупателя (SPA-вьюхи)
 ├── receipts.html           # Чеки и документы
 ├── business.html           # Панель продавца (регистрация магазина + выписка чеков)
 ├── verify.html             # Страница верификации чека по QR
+├── about.html              # О нас
 ├── privacy.html            # Политика конфиденциальности
 ├── terms.html              # Условия использования
 ├── roadmap.html            # Дорожная карта
 │
 ├── css/
-│   ├── style.css           # Глобальные стили, переменные, базовые компоненты
+│   ├── style.css           # Дизайн-система: переменные, темы, базовые компоненты
 │   ├── auth.css            # Стили страниц регистрации/входа
-│   ├── dashboard.css       # Стили дашборда покупателя
+│   ├── dashboard.css       # Стили дашборда покупателя + страницы чеков
 │   ├── business.css        # Стили панели продавца
 │   ├── verify.css          # Стили страницы верификации
+│   ├── roadmap.css         # Стили дорожной карты и about
+│   ├── privacy.css         # Стили privacy/terms
 │   ├── toast.css           # Компонент toast-уведомлений
-│   ├── roadmap.css         # Стили дорожной карты
-│   └── privacy.css         # Стили privacy/terms
+│   ├── custom-select.css   # Компонент кастомного селекта
+│   └── custom-datepicker.css # Компонент кастомного календаря
 │
 ├── js/
-│   ├── supabase-client.js  # Единый Supabase-клиент (один import во всех файлах)
-│   ├── auth.js             # Аутентификация (login + register flow)
+│   ├── supabase-client.js  # Единый Supabase-клиент (конфиг, корень зависимостей)
+│   ├── auth.js             # Аутентификация (login + forgot-password flow)
 │   ├── register.js         # Логика регистрации
-│   ├── dashboard-auth.js   # Авторизация дашборда (requireAuth)
+│   ├── dashboard-auth.js   # Авторизация дашборда (requireAuth, getAuthSession, setupLogout)
 │   ├── dashboard-lang.js   # Переводы дашборда (RU/EN) + applyDashboardLang
 │   ├── dashboard-items.js  # Мои вещи (рендер карточек, stats, модалки add/edit/delete)
-│   ├── dashboard-receipts.js # Чеки и документы (загрузка, отображение)
 │   ├── dashboard-notifications.js # Уведомления (рендер списка)
 │   ├── dashboard-settings.js # Настройки профиля
-│   ├── business-panel.js   # Панель продавца (регистрация магазина, логотип, форма чека)
+│   ├── dashboard-nav.js    # SPA-переключение вьюх дашборда
+│   ├── business-panel.js   # Панель продавца (магазин, выписка чеков, аналитика Chart.js)
 │   ├── business-lang.js    # Переводы панели продавца (RU/EN)
-│   ├── receipt-generator.js # Генерация PDF-чека (jsPDF) + скачивание
+│   ├── receipt-generator.js # Генерация PDF-чека (jsPDF) + QR
 │   ├── receipts.js         # Работа с чеками в receipts.html
-│   ├── verify.js           # Верификация чека (парсинг QR, проверка подписи)
-│   ├── crypto-signature.js # Ed25519 через WebCrypto (keypair, sign, verify)
-│   ├── script.js           # Общие скрипты (i18n для index/login/register)
-│   ├── security.js         # XSS-защита (escapeHtml)
-│   └── cookie-consent.js   # Cookie-баннер (GDPR)
+│   ├── verify.js           # Верификация чека (jsQR, pdf.js, Edge Function verify-receipt)
+│   ├── verify-lang.js      # Переводы страницы верификации
+│   ├── crypto-signature.js # Ed25519 через WebCrypto (keypair, sign, verify, канонический payload)
+│   ├── script.js           # Общие скрипты лендинга (i18n, мобильное меню, checkAuthOnHome)
+│   ├── login-lang.js       # Переводы auth-страниц + кастомная HTML5-валидация
+│   ├── security.js         # XSS-защита (escapeHtml), rate-limit, logError
+│   ├── password-strength.js # Индикатор надёжности пароля
+│   ├── custom-select.js    # Компонент кастомного селекта
+│   ├── custom-datepicker.js # Компонент кастомного календаря (date + datetime-local)
+│   ├── toast.js            # Глобальные toast-уведомления
+│   ├── theme.js            # Тёмная/светлая тема
+│   ├── cookie-banner.js    # Cookie-баннер (GDPR)
+│   ├── animations.js       # Scroll-reveal анимации
+│   └── rotating-loader.js  # Спиннер с ротацией фраз
 │
-├── assets/                 # Статические ресурсы (favicon, og-image, logo)
-│
-├── estonia-stores/         # ОТДЕЛЬНЫЙ ИНСТРУМЕНТ (не часть проекта)
-│   ├── parse.py            # Парсинг магазинов Эстонии из OpenStreetMap (Overpass API)
-│   ├── verify.py           # Проверка доступности сайтов магазинов
-│   ├── stores.json         # Данные магазинов
-│   ├── stores.csv          # Данные магазинов (CSV)
-│   └── index.html          # Карта + таблица магазинов (Leaflet)
-│
-└── docs/
-    ├── PROJECT_BRIEF.md    # Этот файл
-    ├── Valuon_Estonia_Backlog.md  # Бэклог задач (Estonia launch)
-    ├── VALUON_PRESENTATION.md     # Презентация продукта
-    └── AUDIT_*.md          # Результаты аудитов кода
+├── assets/                 # Статические ресурсы (favicon, og-image)
+├── docs/                   # ARCHITECTURE.md, бэклог, аудиты, QA-чеклисты
+└── vercel.json             # Vercel (cleanUrls)
 ```
+
+> Актуальная и подробная архитектура — в [docs/ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
@@ -111,7 +114,12 @@ valuon/
 - Самописная система: словари в JS-объектах, `data-i18n` атрибуты в HTML
 - `applyDashboardLang()` — рекурсивно обходит DOM и заменяет текст
 - Язык в `localStorage['valuon-lang']` (ru / en)
-- Три набора переводов: `script.js` (общие), `dashboard-lang.js` (дашборд), `business-lang.js` (бизнес)
+- Семь наборов переводов: `script.js` (лендинг), `login-lang.js` (auth-страницы), `dashboard-lang.js` (дашборд + чеки), `business-lang.js` (бизнес), `verify-lang.js`, `about-lang.js`/`privacy-lang.js`/`terms-lang.js`/`roadmap-lang.js` (статические)
+
+### 5. Кастомные компоненты форм (zero-dependency)
+- `custom-select.js` + `custom-select.css` — кастомный селект поверх скрытого `<select>` (portal в body, position: fixed, анимация scaleY)
+- `custom-datepicker.js` + `custom-datepicker.css` — кастомный календарь поверх скрытого `<input type="date">`/`datetime-local` (сетка 6×7, месяцы, «Сегодня/Очистить», пикер времени для datetime-local, lock-интеграция, RU/EN)
+- Оба компонента: `static init/refreshAll`, хранят инстанс как `el._cs` / `el._cdp`
 
 ---
 

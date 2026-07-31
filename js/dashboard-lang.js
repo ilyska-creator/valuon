@@ -426,6 +426,7 @@ function applyDashboardLang(lang) {
         if (typeLabels[lang]?.[val]) opt.textContent = typeLabels[lang][val];
     });
     if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+    if (typeof CustomDatePicker !== 'undefined') CustomDatePicker.refreshAll();
 }
 
 window.applyDashboardLang = applyDashboardLang;

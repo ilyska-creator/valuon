@@ -634,7 +634,11 @@ function createUploadModal(client, userId) {
     }
 
     function setFieldsLocked(locked) {
-        lockedFields.forEach(input => { if (input) input.readOnly = locked; });
+        lockedFields.forEach(input => {
+            if (!input) return;
+            input.readOnly = locked;
+            if (input._cdp) input._cdp.setLocked(locked);
+        });
         lockIcons.forEach(icon => icon.classList.toggle('hidden', !locked));
         updateHintText(locked);
     }
@@ -642,7 +646,10 @@ function createUploadModal(client, userId) {
     function fillFromItem(selected) {
         if (selected.dataset.name) receiptNameInput.value = selected.dataset.name;
         if (selected.dataset.price) amountInput.value = selected.dataset.price;
-        if (selected.dataset.date) dateInput.value = selected.dataset.date;
+        if (selected.dataset.date) {
+            dateInput.value = selected.dataset.date;
+            if (dateInput._cdp) dateInput._cdp.syncDisplay();
+        }
         if (selected.dataset.store) storeInput.value = selected.dataset.store;
     }
 

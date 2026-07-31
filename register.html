@@ -15,6 +15,7 @@
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/custom-datepicker.css">
     <link rel="stylesheet" href="css/toast.css">
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script>
@@ -56,7 +57,8 @@
                     </div>
                     <div class="input-group">
                         <label for="birthdate" data-i18n="label_birthdate">Дата рождения</label>
-                        <input type="date" id="birthdate" name="birthdate" required autocomplete="bday">
+                        <input type="date" id="birthdate" name="birthdate" class="custom-datepicker" required
+                            autocomplete="bday">
                         <span class="field-hint" data-i18n="birthdate_warning">Нельзя изменить после регистрации</span>
                     </div>
                 </div>
@@ -142,6 +144,7 @@
     </script>
     <script src="js/toast.js"></script>
     <script src="js/login-lang.js"></script>
+    <script src="js/custom-datepicker.js"></script>
     <script type="module" src="js/register.js"></script>
     <div id="toast-container" class="toast-container"></div>
     <div id="cookie-banner" class="cookie-banner">

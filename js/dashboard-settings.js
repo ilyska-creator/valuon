@@ -40,7 +40,10 @@ async function initSettings() {
         if (data) {
             if (firstNameInput && data.first_name) firstNameInput.value = data.first_name;
             if (lastNameInput && data.last_name) lastNameInput.value = data.last_name;
-            if (birthdateInput && data.birthdate) birthdateInput.value = data.birthdate;
+            if (birthdateInput && data.birthdate) {
+                birthdateInput.value = data.birthdate;
+                if (birthdateInput._cdp) birthdateInput._cdp.syncDisplay();
+            }
             if (toggleExpiry) toggleExpiry.checked = data.expiry_alerts ?? true;
             if (toggleDigest) toggleDigest.checked = data.weekly_digest ?? false;
         } else {
@@ -61,13 +64,17 @@ async function initSettings() {
 
             if (firstNameInput) firstNameInput.value = metaFirstName;
             if (lastNameInput) lastNameInput.value = metaLastName;
-            if (birthdateInput && metaBirthdate) birthdateInput.value = metaBirthdate;
+            if (birthdateInput && metaBirthdate) {
+                birthdateInput.value = metaBirthdate;
+                if (birthdateInput._cdp) birthdateInput._cdp.syncDisplay();
+            }
         }
 
         if (birthdateInput && !birthdateInput.value) {
             const { data: { user: freshUser } } = await client.auth.getUser();
             if (freshUser?.user_metadata?.birthdate) {
                 birthdateInput.value = freshUser.user_metadata.birthdate;
+                if (birthdateInput._cdp) birthdateInput._cdp.syncDisplay();
             }
         }
     }
