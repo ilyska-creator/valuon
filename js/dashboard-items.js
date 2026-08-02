@@ -4,6 +4,8 @@ import { escapeHtml, logError } from './security.js';
 let currentClient = null;
 let currentUserId = null;
 let pendingDeleteItemId = null;
+let verifiedStats = { total: 0, active: 0, expiring: 0, expired: 0 };
+let lastMineItems = [];
 
 const DEVICE_ICONS = {
     laptop: 'fa-laptop',
@@ -79,6 +81,7 @@ async function loadItems(userId, client) {
 
     const safeItems = items || [];
 
+    lastMineItems = safeItems;
     renderItems(safeItems);
     updateStats(safeItems);
 
@@ -153,6 +156,11 @@ function renderItems(items) {
     grid.innerHTML = items.map(item => {
         const iconClass = DEVICE_ICONS[item.type] || DEVICE_ICONS.other;
         const noWarranty = !item.warranty_months;
+        const daysLeft = noWarranty ? null : calculateDaysLeft(item.purchase_date, item.warranty_months);
+        const status = noWarranty ? null : getStatusInfo(daysLeft);
+        const totalDays = (item.warranty_months || 12) * 30;
+        const progress = noWarranty ? 0
+            : totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
 
         const tags = [];
         if (item.serial_number) {
@@ -172,7 +180,8 @@ function renderItems(items) {
         const btnEditText = escapeHtml(t.btn_edit || 'Изменить');
         const btnDeleteText = escapeHtml(t.btn_delete || 'Удалить');
 
-        let statusBadgeHtml, footerHtml;
+        let statusBadgeHtml = '';
+        let footerHtml;
 
         if (noWarranty) {
             statusBadgeHtml = `<div class="item-status-badge none" data-i18n="no_warranty">${escapeHtml(t.no_warranty || 'No warranty')}</div>`;
@@ -190,26 +199,9 @@ function renderItems(items) {
                     </div>
                 </div>`;
         } else {
-            const daysLeft = calculateDaysLeft(item.purchase_date, item.warranty_months);
-            const status = getStatusInfo(daysLeft);
-
-            const statusKeyMap = {
-                active: 'status_active',
-                warning: 'status_expiring',
-                expired: 'status_expired'
-            };
-            const statusTextKey = statusKeyMap[status.class] || 'status_active';
             const progressTextKey = daysLeft > 0 ? 'days_left' : 'warranty_expired_text';
-
-            const totalDays = (item.warranty_months || 12) * 30;
-            const progress = totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
-
-            statusBadgeHtml = `<div class="item-status-badge ${status.class}" data-i18n="${statusTextKey}">${escapeHtml(t[statusTextKey] || '')}</div>`;
             footerHtml = `
                 <div class="item-footer">
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill ${status.class}" style="width: 0" data-progress="${progress}"></div>
-                    </div>
                     <div class="days-left-text ${status.class}" 
                          data-i18n="${progressTextKey}" 
                          data-i18n-count="${daysLeft > 0 ? daysLeft : ''}">
@@ -226,11 +218,23 @@ function renderItems(items) {
                 </div>`;
         }
 
+        const itemIconHtml = noWarranty
+            ? `<div class="item-icon"><i class="fa-solid ${iconClass}"></i></div>`
+            : `
+                <div class="item-icon-ring">
+                    <svg class="progress-ring" width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+                        <circle class="progress-ring-track" cx="26" cy="26" r="23"></circle>
+                        <circle class="progress-ring-fill ${status.class}" cx="26" cy="26" r="23"
+                                data-progress="${progress}" style="stroke-dashoffset: 144.5"></circle>
+                    </svg>
+                    <div class="item-icon"><i class="fa-solid ${iconClass}"></i></div>
+                </div>`;
+
         return `
             <div class="item-card" data-item-id="${escapeHtml(item.id)}">
                 <div class="item-header">
-                    <div class="item-icon"><i class="fa-solid ${iconClass}"></i></div>
-                    ${statusBadgeHtml}
+                    ${itemIconHtml}
+                    ${noWarranty ? statusBadgeHtml : ''}
                 </div>
                 
                 <div class="item-body">
@@ -249,8 +253,11 @@ function renderItems(items) {
 
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            grid.querySelectorAll('.progress-bar-fill[data-progress]').forEach(el => {
-                el.style.width = el.dataset.progress + '%';
+            const RING_CIRCUMFERENCE = 144.5; // 2 * Math.PI * 23, r=23 из SVG выше
+            grid.querySelectorAll('.progress-ring-fill[data-progress]').forEach(el => {
+                const progress = parseFloat(el.dataset.progress);
+                const offset = RING_CIRCUMFERENCE - (RING_CIRCUMFERENCE * progress / 100);
+                el.style.strokeDashoffset = String(offset);
                 el.removeAttribute('data-progress');
             });
         });
@@ -302,20 +309,20 @@ function renderVerifiedItems(receipts, t) {
         return;
     }
 
-    const statusKeyMap = {
-        active: 'status_active',
-        warning: 'status_expiring',
-        expired: 'status_expired'
-    };
-
     grid.innerHTML = allItems.map(item => {
         const dateStr = item.purchase_date
             ? new Date(item.purchase_date).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US')
             : '—';
         const qty = parseInt(item.qty, 10) || 1;
         const noWarranty = !item.warranty_months;
+        const daysLeft = noWarranty ? null : calculateDaysLeft(item.purchase_date, item.warranty_months);
+        const status = noWarranty ? null : getStatusInfo(daysLeft);
+        const totalDays = (item.warranty_months || 12) * 30;
+        const progress = noWarranty ? 0
+            : totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
 
-        let statusBadgeHtml, footerHtml;
+        let statusBadgeHtml = '';
+        let footerHtml;
 
         if (noWarranty) {
             statusBadgeHtml = `<div class="item-status-badge none" data-i18n="no_warranty">${escapeHtml(t.no_warranty || 'No warranty')}</div>`;
@@ -325,19 +332,9 @@ function renderVerifiedItems(receipts, t) {
                     <div class="verified-lock-note"><i class="fa-solid fa-lock"></i> <span data-i18n="verified_locked">${escapeHtml(t.verified_locked || 'Подтверждено продавцом — нельзя изменить')}</span></div>
                 </div>`;
         } else {
-            const daysLeft = calculateDaysLeft(item.purchase_date, item.warranty_months);
-            const status = getStatusInfo(daysLeft);
-            const statusTextKey = statusKeyMap[status.class] || 'status_active';
-            const totalDays = (item.warranty_months || 12) * 30;
-            const progress = totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
             const progressTextKey = daysLeft > 0 ? 'days_left' : 'warranty_expired_text';
-
-            statusBadgeHtml = `<div class="item-status-badge ${status.class}" data-i18n="${statusTextKey}">${escapeHtml(t[statusTextKey] || '')}</div>`;
             footerHtml = `
                 <div class="item-footer">
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill ${status.class}" style="width: 0" data-progress="${progress}"></div>
-                    </div>
                     <div class="days-left-text ${status.class}" 
                          data-i18n="${progressTextKey}" 
                          data-i18n-count="${daysLeft > 0 ? daysLeft : ''}">
@@ -346,13 +343,31 @@ function renderVerifiedItems(receipts, t) {
                 </div>`;
         }
 
+        const itemIconHtml = noWarranty
+            ? `
+                <div class="item-icon-ring">
+                    <svg class="progress-ring" width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+                        <circle class="progress-ring-track none" cx="26" cy="26" r="23"></circle>
+                    </svg>
+                    <div class="item-icon verified"><i class="fa-solid fa-box-open"></i></div>
+                </div>`
+            : `
+                <div class="item-icon-ring">
+                    <svg class="progress-ring" width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+                        <circle class="progress-ring-track" cx="26" cy="26" r="23"></circle>
+                        <circle class="progress-ring-fill ${status.class}" cx="26" cy="26" r="23"
+                                data-progress="${progress}" style="stroke-dashoffset: 144.5"></circle>
+                    </svg>
+                    <div class="item-icon verified"><i class="fa-solid fa-box-open"></i></div>
+                </div>`;
+
         return `
             <div class="item-card verified-item-card">
                 <div class="verified-ribbon"><i class="fa-solid fa-check"></i> <span data-i18n="verified_badge">${escapeHtml(t.verified_badge || 'Confirmed')}</span></div>
                 <div class="item-header">
-                    <div class="item-icon verified"><i class="fa-solid fa-box-open"></i></div>
+                    ${itemIconHtml}
                     <div class="item-header-badges">
-                        ${statusBadgeHtml}
+                        ${noWarranty ? statusBadgeHtml : ''}
                     </div>
                 </div>
 
@@ -374,8 +389,11 @@ function renderVerifiedItems(receipts, t) {
 
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            grid.querySelectorAll('.progress-bar-fill[data-progress]').forEach(el => {
-                el.style.width = el.dataset.progress + '%';
+            const RING_CIRCUMFERENCE = 144.5; // 2 * Math.PI * 23, r=23 из SVG выше
+            grid.querySelectorAll('.progress-ring-fill[data-progress]').forEach(el => {
+                const progress = parseFloat(el.dataset.progress);
+                const offset = RING_CIRCUMFERENCE - (RING_CIRCUMFERENCE * progress / 100);
+                el.style.strokeDashoffset = String(offset);
                 el.removeAttribute('data-progress');
             });
         });
@@ -430,14 +448,8 @@ async function loadVerifiedItems(userEmail, client) {
         });
     });
 
-    const totalEl = document.getElementById('stat-total');
-    const activeEl = document.getElementById('stat-active');
-    const expiringEl = document.getElementById('stat-expiring');
-    const expiredEl = document.getElementById('stat-expired');
-    if (totalEl) window.animateCount(totalEl, (parseInt(totalEl.textContent) || 0) + verifiedTotal);
-    if (activeEl) window.animateCount(activeEl, (parseInt(activeEl.textContent) || 0) + verifiedActive);
-    if (expiringEl) window.animateCount(expiringEl, (parseInt(expiringEl.textContent) || 0) + verifiedExpiring);
-    if (expiredEl) window.animateCount(expiredEl, (parseInt(expiredEl.textContent) || 0) + verifiedExpired);
+    verifiedStats = { total: verifiedTotal, active: verifiedActive, expiring: verifiedExpiring, expired: verifiedExpired };
+    if (lastMineItems.length || verifiedTotal > 0) updateStats(lastMineItems);
 }
 
 let _switchingTab = false;
@@ -529,10 +541,10 @@ function updateStats(items) {
         else if (days <= 0) expiredCount++;
     });
 
-    window.animateCount(totalEl, items.length);
-    window.animateCount(activeEl, activeCount);
-    window.animateCount(expiringEl, expiringCount);
-    if (expiredEl) window.animateCount(expiredEl, expiredCount);
+    window.animateCount(totalEl, items.length + verifiedStats.total);
+    window.animateCount(activeEl, activeCount + verifiedStats.active);
+    window.animateCount(expiringEl, expiringCount + verifiedStats.expiring);
+    if (expiredEl) window.animateCount(expiredEl, expiredCount + verifiedStats.expired);
 }
 
 async function openEditModal(itemId, client, userId) {

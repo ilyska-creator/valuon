@@ -483,39 +483,58 @@ html {
     background: rgba(255, 255, 255, 0.05);
 }
 
-.item-status-badge {
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-full);
-    text-transform: uppercase;
+.item-icon-ring {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
 }
 
-.item-status-badge.active {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--success);
+.item-icon-ring .item-icon {
+    position: absolute;
+    inset: 0;
+    width: 40px;
+    height: 40px;
+    margin: auto;
+    border-radius: 50%;
 }
 
-.item-status-badge.warning {
-    background: rgba(245, 158, 11, 0.1);
-    color: var(--warning);
+.item-icon-ring .item-icon.verified {
+    border-radius: 50%;
 }
 
-.item-status-badge.expired {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--error);
+.progress-ring {
+    position: absolute;
+    inset: 0;
+    transform: rotate(-90deg);
+    pointer-events: none;
 }
 
-[data-theme="dark"] .item-status-badge.active {
-    background: rgba(16, 185, 129, 0.15);
+.progress-ring-track {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 3;
 }
 
-[data-theme="dark"] .item-status-badge.warning {
-    background: rgba(245, 158, 11, 0.15);
+.progress-ring-track.none {
+    stroke-dasharray: 4 6;
+    stroke-linecap: round;
 }
 
-[data-theme="dark"] .item-status-badge.expired {
-    background: rgba(239, 68, 68, 0.15);
+.progress-ring-fill {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 144.5;
+    transition: stroke-dashoffset 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.progress-ring-fill.active  { stroke: var(--success); }
+.progress-ring-fill.warning { stroke: var(--warning); }
+.progress-ring-fill.expired { stroke: var(--error); }
+
+@media (prefers-reduced-motion: reduce) {
+    .progress-ring-fill { transition: none; }
 }
 
 .item-status-badge.none {
@@ -580,18 +599,6 @@ html {
     gap: var(--space-3);
 }
 
-.progress-bar-bg {
-    height: var(--space-2);
-    background: var(--light);
-    border-radius: var(--radius-full);
-    overflow: hidden;
-    width: 100%;
-}
-
-[data-theme="dark"] .progress-bar-bg {
-    background: rgba(255, 255, 255, 0.08);
-}
-
 .no-warranty-track {
     height: var(--space-2);
     background: repeating-linear-gradient(90deg,
@@ -626,24 +633,6 @@ html {
 
 [data-theme="dark"] .no-warranty-track i {
     background: var(--card-bg);
-}
-
-.progress-bar-fill {
-    height: 100%;
-    border-radius: 100px;
-    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.progress-bar-fill.active {
-    background: var(--success);
-}
-
-.progress-bar-fill.warning {
-    background: var(--warning);
-}
-
-.progress-bar-fill.expired {
-    background: var(--error);
 }
 
 .days-left-text {
