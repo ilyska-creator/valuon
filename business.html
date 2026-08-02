@@ -352,7 +352,10 @@
             <span data-i18n="nav_verify">QR</span>
         </a>
         <a href="dashboard.html#view-notifications" class="bottom-nav-item">
-            <i class="fa-solid fa-bell"></i>
+            <span class="icon-badge-wrap">
+                <i class="fa-solid fa-bell"></i>
+                <span class="nav-badge hidden" data-notif-badge></span>
+            </span>
             <span data-i18n="nav_notifications">Уведомления</span>
         </a>
         <a href="dashboard.html#view-settings" class="bottom-nav-item">
@@ -369,6 +372,7 @@
     <script src="js/custom-datepicker.js"></script>
     <script src="js/business-lang.js"></script>
     <script type="module" src="js/business-panel.js"></script>
+    <script type="module" src="js/dashboard-notifications.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/animations.js"></script>
     <script>

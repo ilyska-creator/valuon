@@ -1512,9 +1512,50 @@
         display: none;
     }
 
+    .bottom-nav-item .icon-badge-wrap {
+        display: inline-flex;
+    }
+
+    .bottom-nav-item .nav-badge {
+        display: inline-block;
+    }
+
+    .bottom-nav-item .nav-badge.hidden {
+        display: none;
+    }
+
     .bottom-nav-item i {
         font-size: 22px;
     }
+}
+
+.icon-badge-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-badge {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--error);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--card-bg);
+    margin: 0;
+}
+
+.nav-badge.hidden {
+    display: none;
 }
 
 @media (max-width: 900px) {

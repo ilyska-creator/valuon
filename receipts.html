@@ -51,8 +51,10 @@
             <a href="verify.html" class="nav-item">
                 <i class="fa-solid fa-qrcode"></i> <span data-i18n="nav_verify">Проверить чек</span>
             </a>
-            <a href="dashboard.html#view-notifications" class="nav-item"><i class="fa-solid fa-bell"></i> <span
-                    data-i18n="nav_notifications">Уведомления</span></a>
+            <a href="dashboard.html#view-notifications" class="nav-item"><span class="icon-badge-wrap"><i
+                            class="fa-solid fa-bell"></i><span class="nav-badge hidden"
+                            data-notif-badge></span></span>
+                <span data-i18n="nav_notifications">Уведомления</span></a>
             <a href="dashboard.html#view-settings" class="nav-item"><i class="fa-solid fa-gear"></i> <span
                     data-i18n="nav_settings">Настройки</span></a>
         </nav>
@@ -105,7 +107,10 @@
             <span data-i18n="nav_verify">QR</span>
         </a>
         <a href="dashboard.html#view-notifications" class="bottom-nav-item">
-            <i class="fa-solid fa-bell"></i>
+            <span class="icon-badge-wrap">
+                <i class="fa-solid fa-bell"></i>
+                <span class="nav-badge hidden" data-notif-badge></span>
+            </span>
             <span data-i18n="nav_notifications">Уведомления</span>
         </a>
         <a href="dashboard.html#view-settings" class="bottom-nav-item">
@@ -204,6 +209,7 @@
     <script src="js/dashboard-lang.js"></script>
     <script src="js/rotating-loader.js"></script>
     <script type="module" src="js/receipts.js"></script>
+    <script type="module" src="js/dashboard-notifications.js"></script>
     <script src="js/animations.js"></script>
 
     <script>

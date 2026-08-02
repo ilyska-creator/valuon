@@ -2,6 +2,7 @@ import { requireAuth } from './dashboard-auth.js';
 import { downloadReceiptPDF } from './receipt-generator.js';
 import Ed25519Signer, { buildSignaturePayload } from './crypto-signature.js';
 import { escapeHtml, logError } from './security.js';
+import { attachModalA11y } from './modal-a11y.js';
 
 let currentClient = null;
 let currentUser = null;
@@ -560,6 +561,8 @@ async function initBusinessPanel() {
         }
     }
 
+    attachModalA11y(modal.el, { mode: 'hidden', onClose: () => toggleModal(false) });
+
     modal.openBtn?.addEventListener('click', () => toggleModal(true));
     modal.closeBtn?.addEventListener('click', () => toggleModal(false));
     modal.cancelBtn?.addEventListener('click', () => toggleModal(false));
@@ -789,6 +792,8 @@ async function initBusinessPanel() {
                     const cancelBtn = document.getElementById('cancel-delete-btn');
 
                     if (!deleteModal) return;
+
+                    attachModalA11y(deleteModal, { mode: 'hidden', onClose: () => handleCancel() });
 
                     deleteModal.classList.remove('is-hidden');
                     document.body.classList.add('modal-open');

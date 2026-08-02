@@ -54,7 +54,11 @@
                 <i class="fa-solid fa-qrcode"></i> <span data-i18n="nav_verify">Проверить чек</span>
             </a>
             <a href="#view-notifications" class="nav-item" data-view="notifications">
-                <i class="fa-solid fa-bell"></i> <span data-i18n="nav_notifications">Уведомления</span>
+                <span class="icon-badge-wrap">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="nav-badge hidden" data-notif-badge></span>
+                </span>
+                <span data-i18n="nav_notifications">Уведомления</span>
             </a>
             <a href="#view-settings" class="nav-item" data-view="settings">
                 <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Настройки</span>
@@ -316,7 +320,10 @@
             <span data-i18n="nav_verify">QR</span>
         </a>
         <a href="#view-notifications" class="bottom-nav-item" data-view="notifications">
-            <i class="fa-solid fa-bell"></i>
+            <span class="icon-badge-wrap">
+                <i class="fa-solid fa-bell"></i>
+                <span class="nav-badge hidden" data-notif-badge></span>
+            </span>
             <span data-i18n="nav_notifications">Уведомления</span>
         </a>
         <a href="#view-settings" class="bottom-nav-item" data-view="settings">

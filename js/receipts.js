@@ -1,5 +1,6 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
+import { attachModalA11y } from './modal-a11y.js';
 
 let pendingDeleteId = null;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -541,6 +542,8 @@ function setupDeleteModal(client, userId) {
         }, 250);
     }
 
+    attachModalA11y(modal, { mode: 'active', onClose: closeDeleteModal });
+
     cancelBtn?.addEventListener('click', closeDeleteModal);
     modal?.addEventListener('click', (e) => { if (e.target === modal) closeDeleteModal(); });
 
@@ -679,6 +682,8 @@ function createUploadModal(client, userId) {
             }
         }, 250);
     }
+
+    attachModalA11y(modal, { mode: 'active', onClose: close });
 
     function setFile(file) {
         const dataTransfer = new DataTransfer();

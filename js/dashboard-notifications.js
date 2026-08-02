@@ -32,6 +32,45 @@ function formatDate(dateStr) {
     return date.toLocaleDateString(locale, { day: 'numeric', month: 'numeric', year: 'numeric' });
 }
 
+function updateNotifBadge(count) {
+    document.querySelectorAll('[data-notif-badge]').forEach(el => {
+        if (count > 0) {
+            el.textContent = count > 99 ? '99+' : String(count);
+            el.classList.remove('hidden');
+        } else {
+            el.textContent = '';
+            el.classList.add('hidden');
+        }
+    });
+}
+
+async function computeActiveAlertsCount(userId, client) {
+    const { data: profile } = await client
+        .from('profiles')
+        .select('expiry_alerts')
+        .eq('id', userId)
+        .single();
+
+    const expiryAlertsEnabled = profile?.expiry_alerts ?? true;
+    if (!expiryAlertsEnabled) return 0;
+
+    const { data: items, error } = await client
+        .from('items')
+        .select('purchase_date, warranty_months')
+        .eq('user_id', userId);
+
+    if (error || !items) return 0;
+
+    let count = 0;
+    items.forEach(item => {
+        if (!item.warranty_months) return;
+        const daysLeft = calculateDaysLeft(item.purchase_date, item.warranty_months);
+        if (daysLeft <= 30) count++;
+    });
+
+    return count;
+}
+
 async function loadNotifications(userId, client) {
     const container = document.getElementById('notifications-container');
     if (!container) return;
@@ -134,6 +173,8 @@ async function loadNotifications(userId, client) {
             </div>
         `).join('');
     }
+
+    updateNotifBadge(notifications.length);
 }
 
 let notifInitialized = false;
@@ -172,3 +213,14 @@ window.addEventListener('lang-changed', async () => {
         }
     }
 });
+
+(async function initNotifBadge() {
+    try {
+        const auth = await requireAuth();
+        if (!auth) return;
+        const count = await computeActiveAlertsCount(auth.user.id, auth.client);
+        updateNotifBadge(count);
+    } catch (e) {
+        logError('notif:badgeInit', e);
+    }
+})();

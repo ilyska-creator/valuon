@@ -1,5 +1,6 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
+import { attachModalA11y } from './modal-a11y.js';
 
 let currentClient = null;
 let currentUserId = null;
@@ -606,6 +607,8 @@ function setupEditModal(client, userId) {
         }, 250);
     }
 
+    attachModalA11y(modal, { mode: 'active', onClose: closeModal });
+
     closeBtn?.addEventListener('click', closeModal);
     cancelBtn?.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
@@ -674,6 +677,8 @@ function setupDeleteItemModal(client, userId) {
         }, 250);
     }
 
+    attachModalA11y(modal, { mode: 'active', onClose: closeDeleteModal });
+
     cancelBtn?.addEventListener('click', closeDeleteModal);
     modal?.addEventListener('click', (e) => { if (e.target === modal) closeDeleteModal(); });
 
@@ -726,6 +731,8 @@ function setupModal(client) {
             document.body.classList.remove('modal-open');
         }, 250);
     }
+
+    attachModalA11y(modal, { mode: 'active', onClose: closeAddModal });
 
     addBtn.addEventListener('click', () => { modal.classList.add('active'); document.body.classList.add('modal-open'); });
     closeBtn?.addEventListener('click', closeAddModal);
