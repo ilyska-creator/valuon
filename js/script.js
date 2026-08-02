@@ -242,19 +242,15 @@ async function checkAuthOnHome() {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session) {
-        const startBtn = document.querySelector('a[href="register.html"]');
-        const loginBtn = document.querySelector('a[href="login.html"]');
-        const t = translations[currentLang] || translations.ru;
-
-        if (startBtn) {
-            startBtn.href = 'dashboard.html';
-            const span = startBtn.querySelector('span');
-            if (span) span.textContent = t.hero_btn_start;
-        }
-        if (loginBtn) {
-            loginBtn.href = 'dashboard.html';
-            loginBtn.textContent = t.hero_btn_login;
-        }
+        // Обновляем ВСЕ ссылки на логин/регистрацию (и в навбаре, и в hero),
+        // а не только первое совпадение — иначе большая кнопка в hero
+        // остаётся href="login.html" и гоняет залогиненного через страницу
+        // логина (которая сама редиректит на дашборд).
+        const heroAction = document.querySelector('.hero-actions');
+        const links = heroAction
+            ? document.querySelectorAll('.hero-actions a[href="login.html"], .hero-actions a[href="register.html"], .nav-list a[href="login.html"], .nav-list a[href="register.html"]')
+            : document.querySelectorAll('a[href="login.html"], a[href="register.html"]');
+        links.forEach(link => { link.href = 'dashboard.html'; });
     }
 }
 
