@@ -1,5 +1,6 @@
 import { requireAuth } from './dashboard-auth.js';
 import { logError } from './security.js';
+import { refreshNotifBadge } from './dashboard-notifications.js';
 
 function getSettingsLang() {
     return localStorage.getItem('valuon-lang') || 'ru';
@@ -176,6 +177,7 @@ async function initSettings() {
     if (toggleExpiry) {
         toggleExpiry.addEventListener('change', (e) => {
             saveToggle('expiry_alerts', e.target.checked);
+            refreshNotifBadge();
         });
     }
 

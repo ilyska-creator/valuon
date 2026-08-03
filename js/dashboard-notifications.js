@@ -77,6 +77,17 @@ async function computeActiveAlertsCount(userId, client) {
     return count;
 }
 
+export async function refreshNotifBadge() {
+    try {
+        const auth = await requireAuth();
+        if (!auth) return;
+        const count = await computeActiveAlertsCount(auth.user.id, auth.client);
+        updateNotifBadge(count);
+    } catch (e) {
+        logError('notif:badgeRefresh', e);
+    }
+}
+
 async function loadNotifications(userId, client) {
     const container = document.getElementById('notifications-container');
     if (!container) return;

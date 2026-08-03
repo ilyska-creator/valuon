@@ -1,6 +1,7 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
 import { downloadICS } from './calendar-export.js';
+import { refreshNotifBadge } from './dashboard-notifications.js';
 import { attachModalA11y } from './modal-a11y.js';
 
 let currentClient = null;
@@ -688,6 +689,7 @@ function setupEditModal(client, userId) {
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;
                 loadItems(userId, client);
+                refreshNotifBadge();
             }, 800);
 
         } catch (err) {
@@ -737,6 +739,7 @@ function setupDeleteItemModal(client, userId) {
             showToast(t.msg_item_deleted || 'Item deleted', 'success');
             closeDeleteModal();
             await loadItems(userId, client);
+            refreshNotifBadge();
 
         } catch (err) {
             logError('items:delete', err);
@@ -835,6 +838,7 @@ function setupModal(client) {
                     btn.disabled = false;
                     isSubmitting = false;
                     loadItems(user.id, client);
+                    refreshNotifBadge();
                 }, 250);
             }, 800);
 
