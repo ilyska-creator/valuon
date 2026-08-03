@@ -2107,6 +2107,32 @@ html {
     background: rgba(239, 68, 68, 0.25);
 }
 
+.item-actions .btn-action.btn-add-calendar {
+    flex: 0 0 auto;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+}
+
+.item-actions .btn-action.btn-add-calendar:hover {
+    background: rgba(16, 185, 129, 0.2);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .item-actions .btn-action.btn-add-calendar {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+}
+
+[data-theme="dark"] .item-actions .btn-action.btn-add-calendar:hover {
+    background: rgba(16, 185, 129, 0.25);
+}
+
+.item-actions.verified-actions {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
 
 .section-divider {
     height: 1px;

@@ -17,7 +17,7 @@ const translations = {
         demo_qr_verified: "Чек подлинный",
         demo_processing: "Проверяем подпись...",
         demo_signature_verified: "Подпись Ed25519 подтверждена",
-        demo_store: "TechStore Tallinn · €284.50",
+        demo_store: "TechStore Tallinn · $284.50",
         demo_item1: "MacBook Air M2",
         demo_item2: "Magic Cover",
         demo_item3: "AppleCare+",

@@ -1,5 +1,6 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
+import { downloadICS } from './calendar-export.js';
 import { attachModalA11y } from './modal-a11y.js';
 
 let currentClient = null;
@@ -7,6 +8,7 @@ let currentUserId = null;
 let pendingDeleteItemId = null;
 let verifiedStats = { total: 0, active: 0, expiring: 0, expired: 0 };
 let lastMineItems = [];
+let lastVerifiedItems = [];
 
 const DEVICE_ICONS = {
     laptop: 'fa-laptop',
@@ -91,25 +93,16 @@ async function loadItems(userId, client) {
     }
 }
 
-export function calculateDaysLeft(purchaseDate, months) {
-    if (!purchaseDate || months == null || months === '') return -999;
-    if (typeof purchaseDate !== 'string') return -999;
+export function calculateDaysLeft(warrantyEndDate) {
+    let endDate;
 
-    const parts = purchaseDate.split('-');
-    if (parts.length !== 3) return -999;
-
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    const day = parseInt(parts[2], 10);
-
-    const endDate = new Date(year, month, day);
-
-    const targetMonth = endDate.getMonth() + parseInt(months);
-    endDate.setFullYear(endDate.getFullYear() + Math.floor(targetMonth / 12));
-    endDate.setMonth(targetMonth % 12);
-
-    if (endDate.getDate() !== day) {
-        endDate.setDate(0);
+    if (warrantyEndDate instanceof Date) {
+        endDate = new Date(warrantyEndDate.getTime());
+    } else if (typeof warrantyEndDate === 'string' && /^\d{4}-\d{2}-\d{2}/.test(warrantyEndDate)) {
+        const [year, month, day] = warrantyEndDate.slice(0, 10).split('-').map(Number);
+        endDate = new Date(year, month - 1, day);
+    } else {
+        return -999;
     }
 
     const today = new Date();
@@ -157,7 +150,7 @@ function renderItems(items) {
     grid.innerHTML = items.map(item => {
         const iconClass = DEVICE_ICONS[item.type] || DEVICE_ICONS.other;
         const noWarranty = !item.warranty_months;
-        const daysLeft = noWarranty ? null : calculateDaysLeft(item.purchase_date, item.warranty_months);
+        const daysLeft = noWarranty ? null : calculateDaysLeft(item.warranty_end_date);
         const status = noWarranty ? null : getStatusInfo(daysLeft);
         const totalDays = (item.warranty_months || 12) * 30;
         const progress = noWarranty ? 0
@@ -180,6 +173,12 @@ function renderItems(items) {
 
         const btnEditText = escapeHtml(t.btn_edit || 'Изменить');
         const btnDeleteText = escapeHtml(t.btn_delete || 'Удалить');
+        const btnCalendarText = escapeHtml(t.add_to_calendar || 'В календарь');
+        const calendarButtonHtml = item.warranty_end_date && daysLeft > 0 ? `
+                        <button type="button" class="btn-action btn-add-calendar" data-id="${escapeHtml(item.id)}"
+                                title="${btnCalendarText}" aria-label="${btnCalendarText}">
+                            <i class="fa-solid fa-calendar-plus"></i>
+                        </button>` : '';
 
         let statusBadgeHtml = '';
         let footerHtml;
@@ -190,6 +189,7 @@ function renderItems(items) {
                 <div class="item-footer">
                     <div class="no-warranty-track"><i class="fa-solid fa-shield-slash"></i></div>
                     <div class="item-actions">
+                        ${calendarButtonHtml}
                         <button class="btn-action primary btn-edit-item" data-id="${escapeHtml(item.id)}" title="${btnEditText}">
                             <i class="fa-solid fa-pen"></i>
                             <span data-i18n="btn_edit">${btnEditText}</span>
@@ -208,6 +208,7 @@ function renderItems(items) {
                          data-i18n-count="${daysLeft > 0 ? daysLeft : ''}">
                     </div>
                     <div class="item-actions">
+                        ${calendarButtonHtml}
                         <button class="btn-action primary btn-edit-item" data-id="${escapeHtml(item.id)}" title="${btnEditText}">
                             <i class="fa-solid fa-pen"></i>
                             <span data-i18n="btn_edit">${btnEditText}</span>
@@ -280,6 +281,18 @@ function renderItems(items) {
         });
     });
 
+    grid.querySelectorAll('.btn-add-calendar').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = lastMineItems.find(it => String(it.id) === btn.dataset.id);
+            if (!item) {
+                logError('items:calendar', new Error('Item not found'));
+                showToast(t.msg_calendar_error || 'Не удалось создать событие календаря', 'error');
+                return;
+            }
+            downloadICS(item);
+        });
+    });
+
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(lang);
     }
@@ -310,17 +323,26 @@ function renderVerifiedItems(receipts, t) {
         return;
     }
 
+    lastVerifiedItems = allItems;
+
     grid.innerHTML = allItems.map(item => {
         const dateStr = item.purchase_date
             ? new Date(item.purchase_date).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US')
             : '—';
         const qty = parseInt(item.qty, 10) || 1;
         const noWarranty = !item.warranty_months;
-        const daysLeft = noWarranty ? null : calculateDaysLeft(item.purchase_date, item.warranty_months);
+        const daysLeft = noWarranty ? null : calculateDaysLeft(item.warranty_end_date);
         const status = noWarranty ? null : getStatusInfo(daysLeft);
         const totalDays = (item.warranty_months || 12) * 30;
         const progress = noWarranty ? 0
             : totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
+
+        const btnCalendarText = escapeHtml(t.add_to_calendar || 'В календарь');
+        const calendarButtonHtml = item.warranty_end_date && daysLeft > 0 ? `
+                        <button type="button" class="btn-action btn-add-calendar" data-id="${escapeHtml(item.id)}"
+                                title="${btnCalendarText}" aria-label="${btnCalendarText}">
+                            <i class="fa-solid fa-calendar-plus"></i>
+                        </button>` : '';
 
         let statusBadgeHtml = '';
         let footerHtml;
@@ -341,6 +363,9 @@ function renderVerifiedItems(receipts, t) {
                          data-i18n-count="${daysLeft > 0 ? daysLeft : ''}">
                     </div>
                     <div class="verified-lock-note"><i class="fa-solid fa-lock"></i> <span data-i18n="verified_locked">${escapeHtml(t.verified_locked || 'Подтверждено продавцом — нельзя изменить')}</span></div>
+                    <div class="item-actions verified-actions">
+                        ${calendarButtonHtml}
+                    </div>
                 </div>`;
         }
 
@@ -400,6 +425,18 @@ function renderVerifiedItems(receipts, t) {
         });
     });
 
+    grid.querySelectorAll('.btn-add-calendar').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = lastVerifiedItems.find(it => String(it.id) === btn.dataset.id);
+            if (!item) {
+                logError('items:calendar', new Error('Item not found'));
+                showToast(t.msg_calendar_error || 'Не удалось создать событие календаря', 'error');
+                return;
+            }
+            downloadICS(item);
+        });
+    });
+
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(lang);
     }
@@ -423,7 +460,7 @@ async function loadVerifiedItems(userEmail, client) {
 
     const { data, error } = await client
         .from('business_receipts')
-        .select('purchase_date, shop_name, receipt_items(item_name, qty, gross_total, warranty_months)')
+        .select('purchase_date, shop_name, receipt_items(id, item_name, qty, gross_total, warranty_months, warranty_end_date)')
         .eq('customer_email', userEmail)
         .order('purchase_date', { ascending: false });
 
@@ -442,7 +479,7 @@ async function loadVerifiedItems(userEmail, client) {
         (r.receipt_items || []).forEach(it => {
             verifiedTotal++;
             if (!it.warranty_months) return;
-            const days = calculateDaysLeft(it.purchase_date || r.purchase_date, it.warranty_months);
+            const days = calculateDaysLeft(it.warranty_end_date);
             if (days > 30) verifiedActive++;
             else if (days > 0 && days <= 30) verifiedExpiring++;
             else verifiedExpired++;
@@ -536,7 +573,7 @@ function updateStats(items) {
 
     items.forEach(item => {
         if (!item.warranty_months) return;
-        const days = calculateDaysLeft(item.purchase_date, item.warranty_months);
+        const days = calculateDaysLeft(item.warranty_end_date);
         if (days > 30) activeCount++;
         else if (days > 0 && days <= 30) expiringCount++;
         else if (days <= 0) expiredCount++;
