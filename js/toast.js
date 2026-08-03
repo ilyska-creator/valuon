@@ -45,13 +45,15 @@ function showToast(message, type = 'error', duration = 4000) {
     let remaining = duration;
     let timer = setTimeout(() => removeToast(toast), duration);
 
-    toast.addEventListener('mouseenter', () => {
+    toast.addEventListener('pointerenter', (e) => {
+        if (e.pointerType !== 'mouse') return;
         clearTimeout(timer);
         remaining = Math.max(0, duration - (Date.now() - startTime));
         toast.querySelector('.toast-progress').style.animationPlayState = 'paused';
     });
 
-    toast.addEventListener('mouseleave', () => {
+    toast.addEventListener('pointerleave', (e) => {
+        if (e.pointerType !== 'mouse') return;
         toast.querySelector('.toast-progress').style.animationPlayState = 'running';
         timer = setTimeout(() => removeToast(toast), remaining);
     });
