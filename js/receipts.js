@@ -663,6 +663,14 @@ function createUploadModal(client, userId) {
     function open() {
         modal.classList.add('active');
         document.body.classList.add('modal-open');
+        if (dateInput) {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            dateInput.value = `${y}-${m}-${d}`;
+            if (dateInput._cdp) dateInput._cdp.syncDisplay();
+        }
     }
 
     function close() {

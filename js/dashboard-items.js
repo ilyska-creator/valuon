@@ -774,7 +774,19 @@ function setupModal(client) {
 
     attachModalA11y(modal, { mode: 'active', onClose: closeAddModal });
 
-    addBtn.addEventListener('click', () => { modal.classList.add('active'); document.body.classList.add('modal-open'); });
+    addBtn.addEventListener('click', () => {
+        modal.classList.add('active');
+        document.body.classList.add('modal-open');
+        const dateInput = form?.querySelector('[name="purchase_date"]');
+        if (dateInput) {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            dateInput.value = `${y}-${m}-${d}`;
+            if (dateInput._cdp) dateInput._cdp.syncDisplay();
+        }
+    });
     closeBtn?.addEventListener('click', closeAddModal);
     cancelBtn?.addEventListener('click', closeAddModal);
 
