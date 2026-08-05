@@ -1984,6 +1984,32 @@ html {
     background: rgba(255, 255, 255, 0.05);
 }
 
+.input-suffix {
+    position: relative;
+    display: block;
+    min-width: 0;
+}
+
+.suffix-hint {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    opacity: 0.75;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.input-suffix input {
+    padding-right: 2.7rem;
+}
+
+.input-with-lock .lock-icon:not(.hidden) ~ .suffix-hint {
+    display: none;
+}
+
 .link-hint {
     margin-top: 6px;
     font-size: 0.7rem;

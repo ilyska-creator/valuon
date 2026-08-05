@@ -153,7 +153,7 @@ function renderItems(items) {
             tags.push(`<span class="tag"><i class="fa-solid fa-barcode"></i> ${escapeHtml(shortSerial)}</span>`);
         }
         if (item.store_name) tags.push(`<span class="tag"><i class="fa-solid fa-store"></i> ${escapeHtml(item.store_name)}</span>`);
-        if (item.price && item.price > 0) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(String(item.price))} $</span>`);
+        if (item.price && item.price > 0) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(String(item.price))} €</span>`);
         if (item.purchase_date) {
             const d = item.purchase_date.slice(0, 10).split('-');
             const dateStr = lang === 'ru' ? `${d[2]}.${d[1]}.${d[0]}` : `${d[1]}/${d[2]}/${d[0]}`;
@@ -392,7 +392,7 @@ function renderVerifiedItems(receipts, t) {
 
                     <div class="item-tags">
                         ${qty > 1 ? `<span class="tag"><i class="fa-solid fa-layer-group"></i> ×${escapeHtml(String(qty))}</span>` : ''}
-                        <span class="tag"><i class="fa-solid fa-tag"></i> $${escapeHtml(parseFloat(item.gross_total || 0).toFixed(2))}</span>
+                        <span class="tag"><i class="fa-solid fa-tag"></i> €${escapeHtml(parseFloat(item.gross_total || 0).toFixed(2))}</span>
                         ${!noWarranty ? `<span class="tag"><i class="fa-solid fa-shield-halved"></i> ${escapeHtml(String(item.warranty_months || 0))} ${escapeHtml(t.months_short || 'mo')}.</span>` : ''}
                         <span class="tag"><i class="fa-regular fa-calendar"></i> ${escapeHtml(dateStr)}</span>
                     </div>

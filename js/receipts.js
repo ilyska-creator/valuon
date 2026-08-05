@@ -292,7 +292,7 @@ function renderBusinessCard(r, t) {
                 <p>${escapeHtml(r.customer_email)}</p>
             </div>
             <div class="receipt-meta">
-                <span class="tag"><i class="fa-solid fa-tag"></i> $${parseFloat(r.gross_total || 0).toFixed(2)}</span>
+                <span class="tag"><i class="fa-solid fa-tag"></i> €${parseFloat(r.gross_total || 0).toFixed(2)}</span>
                 <span class="tag"><i class="fa-regular fa-calendar"></i> ${dateStr}</span>
                 ${maxWarranty > 0 ? `<span class="tag"><i class="fa-solid fa-shield-halved"></i> ${maxWarranty} ${t.months_short || 'mo'}.</span>` : ''}
                 ${itemsCount > 1 ? `<span class="tag"><i class="fa-solid fa-boxes-stacked"></i> ${itemsCount}</span>` : ''}
@@ -313,7 +313,7 @@ function renderPersonalCard(r, t) {
     const iconClass = isPdf ? 'fa-file-pdf' : isImage ? 'fa-file-image' : 'fa-file-invoice';
     const tags = [];
 
-    if (r.display_amount) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> $${parseFloat(r.display_amount).toFixed(2)}</span>`);
+    if (r.display_amount) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> €${parseFloat(r.display_amount).toFixed(2)}</span>`);
     if (r.display_date) {
         const date = new Date(r.display_date).toLocaleDateString(getLang() === 'ru' ? 'ru-RU' : 'en-US');
         tags.push(`<span class="tag"><i class="fa-regular fa-calendar"></i> ${date}</span>`);

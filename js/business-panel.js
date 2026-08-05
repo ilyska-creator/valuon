@@ -100,7 +100,7 @@ async function initBusinessPanel() {
                     <i class="fa-regular fa-envelope"></i> ${escapeHtml(r.customer_email)}
                 </div>
                 <div class="item-tags">
-                    <span class="tag"><i class="fa-solid fa-tag"></i> $${Number.isFinite(parseFloat(r.gross_total)) ? parseFloat(r.gross_total).toFixed(2) : '0.00'}</span>
+                    <span class="tag"><i class="fa-solid fa-tag"></i> €${Number.isFinite(parseFloat(r.gross_total)) ? parseFloat(r.gross_total).toFixed(2) : '0.00'}</span>
                     <span class="tag"><i class="fa-solid fa-calendar-days"></i> <span class="receipt-date">${escapeHtml(dateStr)}</span></span>
                     <span class="tag"><i class="fa-solid fa-credit-card"></i> ${escapeHtml(payMethod)}</span>
                     ${itemsCount > 1 ? `<span class="tag"><i class="fa-solid fa-boxes-stacked"></i> ${itemsCount}</span>` : ''}
@@ -182,7 +182,7 @@ async function initBusinessPanel() {
     let emailCheckToken = 0;
 
     function fmtMoney(v) {
-        return '$' + v.toFixed(2);
+        return '€' + v.toFixed(2);
     }
 
     function pluralRu(n, one, few, many) {
@@ -1568,11 +1568,11 @@ async function initBusinessPanel() {
             const avgReceipt = grossTotals.length > 0 ? totalRevenue / grossTotals.length : 0;
 
             if (statsEl.revenue) {
-                statsEl.revenue.textContent = '$0.00';
+                statsEl.revenue.textContent = '€0.00';
                 window.animateAmount(statsEl.revenue, totalRevenue);
             }
             if (statsEl.avgReceipt) {
-                statsEl.avgReceipt.textContent = '$0.00';
+                statsEl.avgReceipt.textContent = '€0.00';
                 window.animateAmount(statsEl.avgReceipt, avgReceipt);
             }
 
@@ -1822,12 +1822,12 @@ async function initBusinessPanel() {
     }
 
     function formatCompactCurrency(value) {
-        if (!Number.isFinite(value)) return '$0';
+        if (!Number.isFinite(value)) return '€0';
         const abs = Math.abs(value);
         const sign = value < 0 ? '-' : '';
-        if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(1) + 'M';
-        if (abs >= 1e3) return sign + '$' + (abs / 1e3).toFixed(1) + 'K';
-        return sign + '$' + Math.round(abs);
+        if (abs >= 1e6) return sign + '€' + (abs / 1e6).toFixed(1) + 'M';
+        if (abs >= 1e3) return sign + '€' + (abs / 1e3).toFixed(1) + 'K';
+        return sign + '€' + Math.round(abs);
     }
 
     function computeChange(currentData, previousData) {
@@ -1970,8 +1970,8 @@ async function initBusinessPanel() {
         opts.plugins.tooltip.callbacks = {
             label: function (context) {
                 const val = context.parsed.y;
-                if (!Number.isFinite(val)) return '$0.00';
-                return '$' + val.toFixed(2);
+                if (!Number.isFinite(val)) return '€0.00';
+                return '€' + val.toFixed(2);
             }
         };
 

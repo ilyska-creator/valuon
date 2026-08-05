@@ -377,13 +377,13 @@ window.animateCount = function (el, target, duration) {
 };
 
 function formatMoney(value) {
-    if (!Number.isFinite(value)) return '$0.00';
+    if (!Number.isFinite(value)) return '€0.00';
     const sign = value < 0 ? '-' : '';
     const rounded = Math.round(Math.abs(value) * 100) / 100;
     const intPart = Math.floor(rounded);
     const decPart = Math.round((rounded - intPart) * 100);
     const formattedInt = intPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    return sign + '$' + formattedInt + '.' + String(decPart).padStart(2, '0');
+    return sign + '€' + formattedInt + '.' + String(decPart).padStart(2, '0');
 }
 
 window.animateAmount = function (el, target, duration) {
