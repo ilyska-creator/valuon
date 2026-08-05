@@ -33,7 +33,7 @@ async function initBusinessPanel() {
 
     const crosshairPlugin = {
         id: 'crosshair',
-        afterDraw: function(chart) {
+        afterDraw: function (chart) {
             const active = chart.tooltip?._active?.[0];
             if (!active) return;
             const ctx = chart.ctx;
@@ -157,15 +157,207 @@ async function initBusinessPanel() {
     const itemTemplate = document.getElementById('receipt-item-template');
     const addItemBtn = document.getElementById('add-item-row-btn');
     const totalPreviewEl = document.getElementById('receipt-total-preview-value');
+    const totalDetailEl = document.getElementById('receipt-total-detail');
+    const totalVatEl = document.getElementById('receipt-total-vat');
+    const guardEl = document.getElementById('receipt-draft-guard');
+    const emailInput = document.getElementById('customer-email');
+    const emailGroup = document.getElementById('customer-email-group');
+    const emailErrorEl = document.getElementById('customer-email-error');
+    const emailStatusBadge = document.getElementById('customer-status-badge');
+    const autocompleteEl = document.getElementById('customer-autocomplete');
+    const modalBody = document.getElementById('receipt-modal-body');
+    const successScreen = document.getElementById('receipt-success-screen');
+    const submitBtn = document.getElementById('issue-receipt-submit-btn');
+    const submitLabelEl = document.getElementById('issue-receipt-submit-label');
+
+    const DRAFT_KEY = 'biz-receipt-draft';
+    let issuingClose = false;
+    let guardVisible = false;
+    let baselineDate = '';
+    let lastIssuedReceipt = null;
+    let customerHistory = null;
+    let customerHistoryPromise = null;
+    const customerStatusCache = new Map();
+    let emailCheckTimer = null;
+    let emailCheckToken = 0;
+
+    function fmtMoney(v) {
+        return '$' + v.toFixed(2);
+    }
+
+    function pluralRu(n, one, few, many) {
+        const m10 = n % 10, m100 = n % 100;
+        if (m10 === 1 && m100 !== 11) return one;
+        if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+        return many;
+    }
+
+    function defaultDateString() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const h = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        return `${y}-${m}-${d}T${h}:${min}`;
+    }
+
+    function collectFormData() {
+        const fd = forms.receipt;
+        if (!fd) return null;
+        const items = readItemRows()
+            .filter((it) => it.itemName || it.unitPrice > 0)
+            .map((it) => ({
+                item_name: it.itemName,
+                qty: it.qty || 1,
+                price: it.unitPrice,
+                vat_rate: it.vatRate,
+                warranty_months: it.warrantyMonths,
+                discount: it.discount,
+                category: it.category
+            }));
+        return {
+            email: fd.querySelector('[name="customer_email"]').value.trim(),
+            payment: fd.querySelector('[name="payment_method"]').value || 'card',
+            purchase_date: fd.querySelector('[name="purchase_date"]').value || '',
+            items
+        };
+    }
+
+    function draftEquals(a, b) {
+        if ((a.email || '') !== (b.email || '')) return false;
+        if ((a.payment || 'card') !== (b.payment || 'card')) return false;
+        if ((a.purchase_date || '') && (a.purchase_date || '') !== (b.purchase_date || '')) return false;
+        const ai = a.items || [];
+        const bi = b.items || [];
+        if (ai.length !== bi.length) return false;
+        for (let i = 0; i < ai.length; i++) {
+            const x = ai[i];
+            const y = bi[i];
+            if ((x.item_name || '') !== (y.item_name || '')) return false;
+            if ((Number(x.qty) || 0) !== (Number(y.qty) || 0)) return false;
+            if ((Number(x.price) || 0) !== (Number(y.price) || 0)) return false;
+            if ((Number(x.vat_rate) || 0) !== (Number(y.vat_rate) || 0)) return false;
+            if ((Number(x.warranty_months) || 0) !== (Number(y.warranty_months) || 0)) return false;
+        }
+        return true;
+    }
+
+    function isFormDirty() {
+        const d = collectFormData();
+        if (!d) return false;
+        const saved = readDraft();
+        if (saved) return !draftEquals(saved, d);
+        return !!(
+            d.email ||
+            d.payment !== 'card' ||
+            (d.purchase_date && d.purchase_date !== baselineDate) ||
+            d.items.length > 0
+        );
+    }
+
+    function readDraft() {
+        try {
+            const raw = sessionStorage.getItem(DRAFT_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function clearDraft() {
+        try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) { }
+    }
+
+    function saveDraft() {
+        try {
+            const d = collectFormData();
+            if (!draftHasContent(d)) {
+                sessionStorage.removeItem(DRAFT_KEY);
+                return 'empty';
+            }
+            sessionStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+            return 'saved';
+        } catch (e) {
+            return 'error';
+        }
+    }
+
+    function draftHasContent(d) {
+        if (!d) return false;
+        if (d.email) return true;
+        if (d.payment && d.payment !== 'card') return true;
+        if (d.purchase_date && d.purchase_date !== defaultDateString()) return true;
+        if (Array.isArray(d.items)) {
+            return d.items.some((it) => (
+                (it.item_name && String(it.item_name).trim()) ||
+                Number(it.price) > 0
+            ));
+        }
+        return false;
+    }
+
+    function applyDraft(d) {
+        if (!forms.receipt || !d) return;
+        if (d.email) {
+            forms.receipt.querySelector('[name="customer_email"]').value = d.email;
+        }
+        if (d.payment) {
+            forms.receipt.querySelector('[name="payment_method"]').value = d.payment;
+        }
+        if (d.items && Array.isArray(d.items) && d.items.length) {
+            itemsList.innerHTML = '';
+            d.items.forEach((it) => {
+                addItemRow();
+                const row = itemsList.lastElementChild;
+                if (!row) return;
+                row.querySelector('[data-field="item_name"]').value = it.item_name || '';
+                row.querySelector('[data-field="qty"]').value = it.qty || 1;
+                row.querySelector('[data-field="price"]').value = it.price ?? '';
+                row.querySelector('[data-field="vat_rate"]').value = it.vat_rate ?? '';
+                row.querySelector('[data-field="warranty_months"]').value = it.warranty_months ?? '';
+                row.querySelector('[data-field="discount"]').value = it.discount ?? '';
+                row.querySelector('[data-field="category"]').value = it.category || '';
+            });
+            updateRemoveButtonsState();
+            renumberRows();
+        } else {
+            resetItemRows();
+        }
+    }
 
     // --- Динамические позиции чека ---------------------------------
 
-    function addItemRow() {
+    function addItemRow(focusName) {
         if (!itemsList || !itemTemplate) return;
         const node = itemTemplate.content.firstElementChild.cloneNode(true);
         itemsList.appendChild(node);
         updateRemoveButtonsState();
+        renumberRows();
         updateTotalPreview();
+        if (focusName) {
+            const nameInput = node.querySelector('[data-field="item_name"]');
+            if (nameInput) nameInput.focus();
+        }
+    }
+
+    function renumberRows() {
+        if (!itemsList) return;
+        const rows = itemsList.querySelectorAll('[data-item-row]');
+        rows.forEach((row, i) => {
+            const idx = row.querySelector('[data-item-index]');
+            if (idx) idx.textContent = String(i + 1);
+        });
+        const pill = document.getElementById('receipt-items-count');
+        if (pill) {
+            const count = String(rows.length);
+            if (pill.textContent !== count) {
+                pill.textContent = count;
+                pill.classList.remove('bump');
+                void pill.offsetWidth;
+                pill.classList.add('bump');
+            }
+        }
     }
 
     function updateRemoveButtonsState() {
@@ -181,6 +373,7 @@ async function initBusinessPanel() {
         if (!itemsList) return;
         itemsList.innerHTML = '';
         addItemRow();
+        renumberRows();
     }
 
     function readItemRows() {
@@ -193,12 +386,18 @@ async function initBusinessPanel() {
             if (isNaN(vatRate) || vatRate < 0) vatRate = 0;
             let warrantyMonths = parseInt(row.querySelector('[data-field="warranty_months"]').value, 10);
             if (isNaN(warrantyMonths) || warrantyMonths < 1) warrantyMonths = 0;
+            let discount = parseFloat(row.querySelector('[data-field="discount"]').value);
+            if (isNaN(discount) || discount < 0) discount = 0;
+            if (discount > 100) discount = 100;
+            const category = (row.querySelector('[data-field="category"]').value || '').trim();
 
-            const netTotal = qty * unitPrice;
+            const baseTotal = qty * unitPrice;
+            const discountAmount = baseTotal * (discount / 100);
+            const netTotal = baseTotal - discountAmount;
             const vatAmount = netTotal * (vatRate / 100);
             const grossTotal = netTotal + vatAmount;
 
-            return { itemName, qty, unitPrice, vatRate, warrantyMonths, netTotal, vatAmount, grossTotal, sortOrder: index };
+            return { itemName, qty, unitPrice, vatRate, warrantyMonths, discount, category, discountAmount, netTotal, vatAmount, grossTotal, sortOrder: index };
         });
     }
 
@@ -206,19 +405,451 @@ async function initBusinessPanel() {
         if (!totalPreviewEl) return;
         const items = readItemRows();
         const gross = items.reduce((sum, it) => sum + it.grossTotal, 0);
-        totalPreviewEl.textContent = `$${gross.toFixed(2)}`;
+        const totalStr = fmtMoney(gross);
+        if (totalPreviewEl.textContent !== totalStr) {
+            totalPreviewEl.textContent = totalStr;
+            totalPreviewEl.classList.remove('pop');
+            void totalPreviewEl.offsetWidth;
+            totalPreviewEl.classList.add('pop');
+        }
+
+        if (itemsList) {
+            itemsList.querySelectorAll('[data-item-row]').forEach((row) => {
+                const sub = row.querySelector('[data-row-subtotal]');
+                if (!sub) return;
+                const qty = parseFloat(row.querySelector('[data-field="qty"]').value) || 0;
+                const price = parseFloat(row.querySelector('[data-field="price"]').value) || 0;
+                const disc = parseFloat(row.querySelector('[data-field="discount"]').value) || 0;
+                const val = qty * price * (1 - (disc > 100 ? 100 : disc < 0 ? 0 : disc) / 100);
+                const str = fmtMoney(val);
+                if (sub.textContent !== str) {
+                    sub.textContent = str;
+                    sub.classList.remove('pop');
+                    void sub.offsetWidth;
+                    sub.classList.add('pop');
+                }
+            });
+        }
+
+        if (totalDetailEl) {
+            const filled = items.filter((it) => it.itemName || it.unitPrice > 0);
+            const positions = filled.length;
+            const totalQty = items.reduce((s, it) => s + it.qty, 0);
+            const vat = items.reduce((s, it) => s + it.vatAmount, 0);
+            const discTotal = items.reduce((s, it) => s + it.discountAmount, 0);
+            const gj = localStorage.getItem('valuon-lang') || 'ru';
+            const t = window.businessTranslations?.[gj] || {};
+            const word = t.units
+                ? pluralRu(positions, t.units.one, t.units.few, t.units.many)
+                : (gj === 'en'
+                    ? (positions === 1 ? 'item' : 'items')
+                    : pluralRu(positions, 'позиция', 'позиции', 'позиций'));
+            const qWord = t.qty_word || (gj === 'en' ? 'pcs' : 'шт.');
+            const vatWord = t.vat_word || (gj === 'en' ? 'VAT:' : 'НДС:');
+            const discWord = t.discount_word || (gj === 'en' ? 'discount' : 'скидка');
+            totalDetailEl.textContent = positions
+                ? `${positions} ${word} · ${totalQty} ${qWord}${discTotal > 0 ? ` · ${discWord} −${fmtMoney(discTotal)}` : ''}`
+                : '';
+            if (totalVatEl) {
+                const vatStr = vat > 0 ? `${vatWord} ${fmtMoney(vat)}` : '';
+                if (totalVatEl.textContent !== vatStr) {
+                    totalVatEl.textContent = vatStr;
+                    totalVatEl.classList.toggle('has-vat', vat > 0);
+                }
+            }
+        }
+
+        updateSubmitLabel();
     }
 
     itemsList?.addEventListener('input', updateTotalPreview);
-    addItemBtn?.addEventListener('click', addItemRow);
+    addItemBtn?.addEventListener('click', () => addItemRow(true));
+    itemsList?.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const row = e.target.closest('[data-item-row]');
+        if (!row) return;
+        e.preventDefault();
+        addItemRow();
+        const rows = itemsList.querySelectorAll('[data-item-row]');
+        const next = rows[rows.length - 1];
+        const nameInput = next?.querySelector('[data-field="item_name"]');
+        if (nameInput) nameInput.focus();
+    });
     itemsList?.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-remove-item');
         if (!btn) return;
         const row = btn.closest('[data-item-row]');
-        if (row && itemsList.querySelectorAll('[data-item-row]').length > 1) {
+        if (!row || row.classList.contains('is-removing')) return;
+        if (itemsList.querySelectorAll('[data-item-row]').length <= 1) return;
+
+        // Замеряем реальную высоту строки, чтобы плавно схлопнуть именно её,
+        // а не дёргать layout скачком — остальные позиции при этом сами
+        // плавно "подтягиваются" вверх благодаря transition на max-height.
+        const measuredHeight = row.getBoundingClientRect().height;
+        row.style.maxHeight = measuredHeight + 'px';
+        row.style.overflow = 'hidden';
+        // Форсируем reflow, чтобы браузер зафиксировал стартовую высоту
+        // перед тем как мы анимируем её в 0.
+        // eslint-disable-next-line no-unused-expressions
+        row.offsetHeight;
+
+        row.classList.add('is-removing');
+
+        let settled = false;
+        const finishRemoval = () => {
+            if (settled) return;
+            settled = true;
+            row.removeEventListener('transitionend', onTransitionEnd);
             row.remove();
             updateRemoveButtonsState();
+            renumberRows();
             updateTotalPreview();
+        };
+        const onTransitionEnd = (ev) => {
+            if (ev.target !== row || ev.propertyName !== 'max-height') return;
+            finishRemoval();
+        };
+        row.addEventListener('transitionend', onTransitionEnd);
+        // Фолбэк на случай если transitionend не сработает (например вкладка
+        // была в фоне и анимации были заморожены браузером).
+        setTimeout(finishRemoval, 360);
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                row.style.maxHeight = '0px';
+                row.classList.add('collapsed');
+            });
+        });
+    });
+
+    // --- Валидация в реальном времени -----------------------------
+
+    function bizLang() {
+        return localStorage.getItem('valuon-lang') || 'ru';
+    }
+    function bizT() {
+        return window.businessTranslations?.[bizLang()] || {};
+    }
+
+    function setFieldError(groupEl, errorEl, message) {
+        if (!groupEl || !errorEl) return;
+        if (message) {
+            groupEl.classList.add('is-invalid');
+            errorEl.textContent = message;
+        } else {
+            groupEl.classList.remove('is-invalid');
+            errorEl.textContent = '';
+        }
+    }
+
+    function validateEmailField(showError) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const value = emailInput?.value.trim() || '';
+        const t = bizT();
+        if (!value) {
+            if (showError) setFieldError(emailGroup, emailErrorEl, t.error_email_required || (bizLang() === 'en' ? 'Enter customer email' : 'Введите email покупателя'));
+            return false;
+        }
+        if (!emailRegex.test(value)) {
+            if (showError) setFieldError(emailGroup, emailErrorEl, t.error_email_invalid || (bizLang() === 'en' ? 'Invalid email format' : 'Некорректный формат email'));
+            return false;
+        }
+        setFieldError(emailGroup, emailErrorEl, '');
+        return true;
+    }
+
+    function validateItemRow(row, showError) {
+        if (!row) return true;
+        const errorEl = row.querySelector('[data-item-error]');
+        const nameInput = row.querySelector('[data-field="item_name"]');
+        const qtyInput = row.querySelector('[data-field="qty"]');
+        const t = bizT();
+        const name = nameInput?.value.trim() || '';
+        const qty = parseFloat(qtyInput?.value) || 0;
+        let message = '';
+        if (!name) {
+            message = t.error_item_name || (bizLang() === 'en' ? 'Enter a product name' : 'Укажите название товара');
+        } else if (qty <= 0) {
+            message = t.error_item_qty || (bizLang() === 'en' ? 'Quantity must be at least 1' : 'Количество должно быть не меньше 1');
+        }
+        if (message) {
+            if (showError) {
+                row.classList.add('is-invalid');
+                if (errorEl) errorEl.textContent = message;
+            }
+            return false;
+        }
+        row.classList.remove('is-invalid');
+        if (errorEl) errorEl.textContent = '';
+        return true;
+    }
+
+    function validateAllItemRows(showError) {
+        if (!itemsList) return true;
+        const rows = [...itemsList.querySelectorAll('[data-item-row]')];
+        let allValid = true;
+        rows.forEach((row) => {
+            if (!validateItemRow(row, showError)) allValid = false;
+        });
+        return allValid;
+    }
+
+    function clearAllValidationState() {
+        setFieldError(emailGroup, emailErrorEl, '');
+        itemsList?.querySelectorAll('[data-item-row]').forEach((row) => {
+            row.classList.remove('is-invalid');
+            const err = row.querySelector('[data-item-error]');
+            if (err) err.textContent = '';
+        });
+    }
+
+    emailInput?.addEventListener('blur', () => {
+        validateEmailField(true);
+        setTimeout(hideAutocomplete, 120);
+    });
+    emailInput?.addEventListener('input', () => {
+        if (emailGroup?.classList.contains('is-invalid')) validateEmailField(true);
+        scheduleCustomerLookup();
+        renderAutocomplete();
+    });
+    emailInput?.addEventListener('focus', () => {
+        // Классический приём против автозаполнения браузера: поле стартует как
+        // readonly, поэтому браузер не показывает свою подсказку по фокусу,
+        // а сразу после focus мы снимаем readonly — ввод остаётся обычным.
+        emailInput.removeAttribute('readonly');
+        renderAutocomplete();
+    });
+    emailInput?.addEventListener('mousedown', () => {
+        if (emailInput.hasAttribute('readonly')) emailInput.removeAttribute('readonly');
+    });
+
+    itemsList?.addEventListener('focusout', (e) => {
+        const row = e.target.closest?.('[data-item-row]');
+        if (row) validateItemRow(row, true);
+    });
+    itemsList?.addEventListener('input', (e) => {
+        const row = e.target.closest?.('[data-item-row]');
+        if (row && row.classList.contains('is-invalid')) validateItemRow(row, true);
+        updateSubmitLabel();
+    });
+
+    // --- Автокомплит клиента ---------------------------------------
+
+    async function loadCustomerHistory() {
+        if (!currentShop) return [];
+        if (customerHistory) return customerHistory;
+        if (customerHistoryPromise) return customerHistoryPromise;
+        customerHistoryPromise = client
+            .from('business_receipts')
+            .select('customer_email, status')
+            .eq('shop_id', currentShop.id)
+            .order('created_at', { ascending: false })
+            .limit(200)
+            .then(({ data, error }) => {
+                if (error || !data) {
+                    customerHistory = [];
+                    return customerHistory;
+                }
+                const seen = new Map();
+                data.forEach((r) => {
+                    if (r.customer_email && !seen.has(r.customer_email)) {
+                        seen.set(r.customer_email, r.status);
+                    }
+                });
+                customerHistory = [...seen.entries()].map(([email, status]) => ({ email, status }));
+                return customerHistory;
+            })
+            .catch(() => { customerHistory = []; return customerHistory; });
+        return customerHistoryPromise;
+    }
+
+    function hideAutocomplete() {
+        if (!autocompleteEl) return;
+        autocompleteEl.classList.add('is-hidden');
+        autocompleteEl.innerHTML = '';
+    }
+
+    async function renderAutocomplete() {
+        if (!autocompleteEl || !emailInput) return;
+        const query = emailInput.value.trim().toLowerCase();
+        if (!query) { hideAutocomplete(); return; }
+        const history = await loadCustomerHistory();
+        if (emailInput.value.trim().toLowerCase() !== query) return;
+        const matches = (history || [])
+            .filter((c) => c.email.toLowerCase().includes(query) && c.email.toLowerCase() !== query)
+            .slice(0, 5);
+        if (matches.length === 0) { hideAutocomplete(); return; }
+        autocompleteEl.innerHTML = matches.map((c) => (
+            `<li role="option" data-email="${escapeHtml(c.email)}">
+                <i class="fa-regular fa-user" aria-hidden="true"></i>
+                <span>${escapeHtml(c.email)}</span>
+                ${c.status === 'verified' ? '<i class="fa-solid fa-circle-check autocomplete-verified" aria-hidden="true"></i>' : ''}
+            </li>`
+        )).join('');
+        autocompleteEl.classList.remove('is-hidden');
+    }
+
+    autocompleteEl?.addEventListener('mousedown', (e) => {
+        const item = e.target.closest('[data-email]');
+        if (!item || !emailInput) return;
+        e.preventDefault();
+        emailInput.value = item.dataset.email;
+        hideAutocomplete();
+        validateEmailField(false);
+        scheduleCustomerLookup(0);
+        emailInput.focus();
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!autocompleteEl || autocompleteEl.classList.contains('is-hidden')) return;
+        if (e.target === emailInput || autocompleteEl.contains(e.target)) return;
+        hideAutocomplete();
+    });
+
+    function setCustomerStatusBadge(state) {
+        if (!emailStatusBadge) return;
+        const t = bizT();
+        if (state === 'checking') {
+            emailStatusBadge.className = 'customer-status-badge checking';
+            emailStatusBadge.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+        } else if (state === 'verified') {
+            emailStatusBadge.className = 'customer-status-badge verified';
+            emailStatusBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>${escapeHtml(t.status_verified_short || (bizLang() === 'en' ? 'Registered' : 'Зарегистрирован'))}</span>`;
+        } else if (state === 'new') {
+            emailStatusBadge.className = 'customer-status-badge new';
+            emailStatusBadge.innerHTML = `<i class="fa-solid fa-circle-info"></i> <span>${escapeHtml(t.status_new_short || (bizLang() === 'en' ? 'New client' : 'Новый клиент'))}</span>`;
+        } else {
+            emailStatusBadge.className = 'customer-status-badge is-hidden';
+            emailStatusBadge.innerHTML = '';
+            return;
+        }
+        emailStatusBadge.classList.remove('is-hidden');
+    }
+
+    function scheduleCustomerLookup(delay = 500) {
+        clearTimeout(emailCheckTimer);
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const value = emailInput?.value.trim().toLowerCase() || '';
+        if (!emailRegex.test(value)) {
+            setCustomerStatusBadge(null);
+            return;
+        }
+        if (customerStatusCache.has(value)) {
+            setCustomerStatusBadge(customerStatusCache.get(value) ? 'verified' : 'new');
+            return;
+        }
+        setCustomerStatusBadge('checking');
+        const token = ++emailCheckToken;
+        emailCheckTimer = setTimeout(async () => {
+            try {
+                const res = await client.rpc('check_profile_exists', { p_email: value });
+                if (token !== emailCheckToken) return;
+                if (res.error) { setCustomerStatusBadge(null); return; }
+                customerStatusCache.set(value, !!res.data);
+                setCustomerStatusBadge(res.data ? 'verified' : 'new');
+            } catch (e) {
+                if (token === emailCheckToken) setCustomerStatusBadge(null);
+            }
+        }, delay);
+    }
+
+    // --- Динамическая сумма на кнопке отправки ----------------------
+
+    function updateSubmitLabel() {
+        if (!submitLabelEl) return;
+        const t = bizT();
+        const base = t.issue_receipt_submit || (bizLang() === 'en' ? 'Issue Receipt' : 'Выписать чек');
+        const gross = readItemRows().reduce((sum, it) => sum + it.grossTotal, 0);
+        submitLabelEl.textContent = gross > 0 ? `${base} · ${fmtMoney(gross)}` : base;
+    }
+
+    // --- Экран успеха -------------------------------------------------
+
+    function showSuccessScreen(receiptData) {
+        lastIssuedReceipt = receiptData;
+        const t = bizT();
+        const numEl = document.getElementById('receipt-success-number');
+        const emailEl = document.getElementById('receipt-success-email');
+        const statusEl = document.getElementById('receipt-success-status');
+        const totalEl = document.getElementById('receipt-success-total');
+        if (numEl) numEl.textContent = receiptData.receipt_number ? `#RCP-${receiptData.receipt_number}` : `#${String(receiptData.id).slice(0, 8).toUpperCase()}`;
+        if (emailEl) emailEl.textContent = receiptData.customer_email || '';
+        if (statusEl) {
+            statusEl.textContent = receiptData.status === 'verified'
+                ? (t.status_verified || (bizLang() === 'en' ? 'Linked to Customer' : 'Привязан к клиенту'))
+                : (t.status_pending || (bizLang() === 'en' ? 'Awaiting Registration' : 'Ожидает регистрации'));
+            statusEl.className = 'receipt-success-status-value ' + (receiptData.status === 'verified' ? 'status-ok' : 'status-wait');
+        }
+        if (totalEl) totalEl.textContent = fmtMoney(receiptData.gross_total || 0);
+
+        if (modalBody) modalBody.classList.add('is-hidden');
+        successScreen?.classList.remove('is-hidden');
+        successScreen?.classList.remove('is-visible');
+        if (successScreen) {
+            // Форсируем reflow, чтобы анимация появления гарантированно
+            // проигрывалась заново при каждом показе экрана успеха.
+            void successScreen.offsetWidth;
+            successScreen.classList.add('is-visible');
+        }
+        successScreen?.querySelector('#success-download-btn')?.focus();
+    }
+
+    function hideSuccessScreen() {
+        successScreen?.classList.add('is-hidden');
+        successScreen?.classList.remove('is-visible');
+        modalBody?.classList.remove('is-hidden');
+    }
+
+    document.getElementById('success-download-btn')?.addEventListener('click', async () => {
+        if (!lastIssuedReceipt || !currentShop) return;
+        await downloadReceiptPDF(lastIssuedReceipt, currentShop);
+    });
+    document.getElementById('success-new-btn')?.addEventListener('click', () => {
+        // Сбрасываем подпись кнопки самым первым действием — до того, как
+        // что-либо ниже потенциально может выбросить исключение и оборвать
+        // остальной сброс формы, оставив старую сумму на экране.
+        const resetSubmitLabel = () => {
+            if (!submitLabelEl) return;
+            const t = bizT();
+            submitLabelEl.textContent = t.issue_receipt_submit || (bizLang() === 'en' ? 'Issue Receipt' : 'Выписать чек');
+        };
+        resetSubmitLabel();
+
+        try {
+            hideSuccessScreen();
+            clearDraft();
+            clearAllValidationState();
+            forms.receipt?.reset();
+            resetItemRows();
+            setCustomerStatusBadge(null);
+            emailInput?.setAttribute('readonly', '');
+            const dateInput = forms.receipt?.querySelector('[name="purchase_date"]');
+            if (dateInput) {
+                dateInput.value = defaultDateString();
+                if (dateInput._cdp) dateInput._cdp.syncDisplay();
+                baselineDate = dateInput.value;
+            }
+            updateTotalPreview();
+        } catch (err) {
+            console.error('Не удалось полностью сбросить форму для нового чека:', err);
+        }
+
+        resetSubmitLabel();
+        requestAnimationFrame(resetSubmitLabel);
+        emailInput?.focus();
+    });
+    document.getElementById('success-done-btn')?.addEventListener('click', () => {
+        hideSuccessScreen();
+        forceClose();
+    });
+
+    document.addEventListener('valuon:lang-applied', () => {
+        updateSubmitLabel();
+        if (modal.el && !modal.el.classList.contains('is-hidden')) {
+            const activeEmail = emailInput?.value.trim().toLowerCase();
+            if (activeEmail && customerStatusCache.has(activeEmail)) {
+                setCustomerStatusBadge(customerStatusCache.get(activeEmail) ? 'verified' : 'new');
+            }
         }
     });
 
@@ -237,10 +868,18 @@ async function initBusinessPanel() {
         const nameEl = document.getElementById('display-shop-name');
         const vatEl = document.getElementById('display-tax-id');
         const addrEl = document.getElementById('display-address');
+        const countryEl = document.getElementById('display-country');
+        const uiLang = localStorage.getItem('valuon-lang') || 'ru';
 
         if (nameEl) nameEl.textContent = shop.shop_name || 'Без названия';
         if (vatEl) vatEl.textContent = shop.tax_id || '—';
         if (addrEl) addrEl.textContent = shop.address || '—';
+        if (countryEl) {
+            const flag = window.countryFlag(shop.country);
+            countryEl.textContent = shop.country
+                ? (flag ? flag + ' ' + countryName(shop.country, uiLang) : countryName(shop.country, uiLang))
+                : '—';
+        }
 
         updateShopLogo(shop.logo_path);
     }
@@ -356,7 +995,7 @@ async function initBusinessPanel() {
     try {
         const { data: shop, error } = await client
             .from('shops')
-            .select('id, shop_name, tax_id, address, logo_path, public_key, owner_id')
+            .select('id, shop_name, tax_id, address, country, logo_path, public_key, owner_id')
             .eq('owner_id', user.id)
             .maybeSingle();
 
@@ -458,6 +1097,7 @@ async function initBusinessPanel() {
                     shop_name: fd.get('shop_name'),
                     tax_id: fd.get('tax_id'),
                     address: fd.get('address'),
+                    country: fd.get('country') || null,
                     public_key: publicKeyBase64,
                     private_key: privateKeyBase64
                 }]);
@@ -502,7 +1142,7 @@ async function initBusinessPanel() {
 
                 const { data: newShop } = await client
                     .from('shops')
-                    .select('id, shop_name, tax_id, address, logo_path, public_key, owner_id')
+                    .select('id, shop_name, tax_id, address, country, logo_path, public_key, owner_id')
                     .eq('owner_id', currentUser.id)
                     .maybeSingle();
 
@@ -524,6 +1164,72 @@ async function initBusinessPanel() {
         });
     }
 
+    function showGuard() {
+        if (!guardEl) return;
+        guardEl.classList.remove('closing');
+        guardVisible = true;
+        guardEl.classList.remove('is-hidden');
+        const firstBtn = guardEl.querySelector('#draft-save-btn');
+        if (firstBtn) firstBtn.focus();
+    }
+
+    function hideGuard() {
+        if (!guardEl || guardEl.classList.contains('is-hidden')) return;
+        guardVisible = false;
+        if (guardEl.classList.contains('closing')) return;
+        guardEl.classList.add('closing');
+        setTimeout(() => {
+            guardEl.classList.remove('closing');
+            guardEl.classList.add('is-hidden');
+        }, 180);
+    }
+
+    function forceClose() {
+        const el = modal.el;
+        if (!el || el.classList.contains('closing')) return;
+        hideGuard();
+        el.classList.add('closing');
+        setTimeout(() => {
+            el.classList.remove('closing');
+            el.classList.add('is-hidden');
+            document.body.classList.remove('modal-open');
+            baselineDate = '';
+            forms.receipt?.reset();
+            resetItemRows();
+            clearAllValidationState();
+            hideAutocomplete();
+            setCustomerStatusBadge(null);
+            hideSuccessScreen();
+            lastIssuedReceipt = null;
+            emailInput?.setAttribute('readonly', '');
+            if (submitLabelEl) {
+                const t = bizT();
+                submitLabelEl.textContent = t.issue_receipt_submit || (bizLang() === 'en' ? 'Issue Receipt' : 'Выписать чек');
+            }
+            if (typeof CustomSelect !== 'undefined') {
+                const pay = modal.el?.querySelector('[name="payment_method"]');
+                if (pay && pay._cs) pay._cs.refresh();
+            }
+        }, 250);
+    }
+
+    function requestClose() {
+        if (issuingClose) return;
+        if (successScreen && !successScreen.classList.contains('is-hidden')) {
+            forceClose();
+            return;
+        }
+        if (guardVisible) {
+            hideGuard();
+            return;
+        }
+        if (isFormDirty()) {
+            showGuard();
+            return;
+        }
+        forceClose();
+    }
+
     function toggleModal(show) {
         if (!modal.el) return;
 
@@ -534,40 +1240,78 @@ async function initBusinessPanel() {
                 return;
             }
 
-            resetItemRows();
+            hideGuard();
+            hideSuccessScreen();
+            clearAllValidationState();
+            hideAutocomplete();
+            setCustomerStatusBadge(null);
+            loadCustomerHistory();
+            const draft = readDraft();
+            if (draft) applyDraft(draft);
+            else resetItemRows();
+
+            const dateInput = forms.receipt?.querySelector('[name="purchase_date"]');
+            if (!draft?.purchase_date && dateInput) {
+                const now = defaultDateString();
+                dateInput.value = now;
+                if (dateInput._cdp) dateInput._cdp.syncDisplay();
+            } else if (draft?.purchase_date && dateInput) {
+                dateInput.value = draft.purchase_date;
+                if (dateInput._cdp) dateInput._cdp.syncDisplay();
+            }
+            if (dateInput) baselineDate = dateInput.value;
+
+            if (typeof CustomSelect !== 'undefined') {
+                const pay = modal.el.querySelector('[name="payment_method"]');
+                if (pay && pay._cs) pay._cs.refresh();
+            }
+
             modal.el.classList.remove('is-hidden');
             document.body.classList.add('modal-open');
-            const now = new Date();
-            if (forms.receipt?.purchase_date) {
-                const y = now.getFullYear();
-                const m = String(now.getMonth() + 1).padStart(2, '0');
-                const d = String(now.getDate()).padStart(2, '0');
-                const h = String(now.getHours()).padStart(2, '0');
-                const min = String(now.getMinutes()).padStart(2, '0');
-                forms.receipt.purchase_date.value = `${y}-${m}-${d}T${h}:${min}`;
-                if (forms.receipt.purchase_date._cdp) forms.receipt.purchase_date._cdp.syncDisplay();
+            updateTotalPreview();
+
+            const headIcon = modal.el.querySelector('.modal-heading-icon');
+            if (headIcon) {
+                headIcon.classList.remove('wave');
+                void headIcon.offsetWidth;
+                headIcon.classList.add('wave');
             }
         } else {
-            const el = modal.el;
-            if (el.classList.contains('closing')) return;
-            el.classList.add('closing');
-            setTimeout(() => {
-                el.classList.remove('closing');
-                el.classList.add('is-hidden');
-                document.body.classList.remove('modal-open');
-                forms.receipt?.reset();
-                resetItemRows();
-            }, 250);
+            requestClose();
         }
     }
 
-    attachModalA11y(modal.el, { mode: 'hidden', onClose: () => toggleModal(false) });
+    attachModalA11y(modal.el, { mode: 'hidden', onClose: () => requestClose() });
 
     modal.openBtn?.addEventListener('click', () => toggleModal(true));
-    modal.closeBtn?.addEventListener('click', () => toggleModal(false));
-    modal.cancelBtn?.addEventListener('click', () => toggleModal(false));
+    modal.closeBtn?.addEventListener('click', () => requestClose());
+    modal.cancelBtn?.addEventListener('click', () => requestClose());
     modal.el?.addEventListener('click', (e) => {
-        if (e.target === modal.el || e.target.classList.contains('modal-backdrop')) toggleModal(false);
+        if (e.target === modal.el || e.target.classList.contains('modal-backdrop')) requestClose();
+    });
+
+    document.getElementById('draft-save-btn')?.addEventListener('click', () => {
+        const res = saveDraft();
+        if (res === 'error') {
+            const dl = localStorage.getItem('valuon-lang') || 'ru';
+            window.showToast(dl === 'en' ? 'Could not save the draft' : 'Не удалось сохранить черновик', 'error');
+            return;
+        }
+        if (res === 'saved') {
+            const dl = localStorage.getItem('valuon-lang') || 'ru';
+            const t = window.businessTranslations?.[dl] || {};
+            window.showToast(t.draft_saved || 'Черновик сохранён', 'success');
+        }
+        hideGuard();
+        forceClose();
+    });
+    document.getElementById('draft-discard-btn')?.addEventListener('click', () => {
+        clearDraft();
+        hideGuard();
+        forceClose();
+    });
+    document.getElementById('draft-cancel-btn')?.addEventListener('click', () => {
+        hideGuard();
     });
 
     if (forms.receipt) {
@@ -576,10 +1320,23 @@ async function initBusinessPanel() {
             const btn = e.target.querySelector('button[type="submit"]');
 
             if (btn.disabled) return;
+
+            const emailValid = validateEmailField(true);
+            const itemsValid = validateAllItemRows(true);
+            if (!emailValid || !itemsValid) {
+                if (!emailValid) {
+                    emailInput?.focus();
+                } else {
+                    const firstInvalidRow = itemsList?.querySelector('[data-item-row].is-invalid');
+                    firstInvalidRow?.querySelector('[data-field="item_name"]')?.focus();
+                    firstInvalidRow?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                }
+                return;
+            }
+
             btn.disabled = true;
-            const originalHTML = btn.innerHTML;
-            const issueLang = localStorage.getItem('valuon-lang') || 'ru';
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> ' + (issueLang === 'en' ? 'Issuing...' : 'Выписка...');
+            issuingClose = true;
+            btn.classList.add('is-loading');
 
             try {
                 if (!currentShop) return;
@@ -672,7 +1429,8 @@ async function initBusinessPanel() {
                     shop_name: currentShop.shop_name,
                     tax_id: currentShop.tax_id,
                     address: currentShop.address,
-                    logo_path: currentShop.logo_path
+                    logo_path: currentShop.logo_path,
+                    country: currentShop.country || null
                 };
 
                 const { data: inserted, error } = await client
@@ -695,6 +1453,8 @@ async function initBusinessPanel() {
                     unit_price: it.unitPrice,
                     vat_rate: it.vatRate,
                     warranty_months: it.warrantyMonths,
+                    discount_rate: it.discount,
+                    category: it.category,
                     net_total: it.netTotal,
                     vat_amount: it.vatAmount,
                     gross_total: it.grossTotal,
@@ -702,29 +1462,82 @@ async function initBusinessPanel() {
                 }));
 
                 const { error: itemsError } = await client.from('receipt_items').insert(itemRows);
-                if (itemsError) {
+                if (itemsError && itemsError.code !== '42703') {
                     // Шапка уже создана и подписана по этим items — без строк в
-                    // receipt_items подпись потом невозможно будет перепроверить.
+                    // receipt_items подпись невозможно будет перепроверить.
                     // Откатываем шапку, чтобы не оставлять "чек без товаров".
                     logError('biz:saveItems', itemsError);
                     await client.from('business_receipts').delete().eq('id', inserted.id);
-                    const errLang = localStorage.getItem('valuon-lang') || 'ru';
-                    window.showToast(errLang === 'en' ? 'Receipt issue error' : 'Ошибка выписки чека', 'error');
                     return;
+                }
+                if (itemsError && itemsError.code === '42703') {
+                    const baseRows = items.map(it => ({
+                        receipt_id: inserted.id,
+                        item_name: it.itemName,
+                        qty: it.qty,
+                        unit_price: it.unitPrice,
+                        vat_rate: it.vatRate,
+                        warranty_months: it.warrantyMonths,
+                        net_total: it.netTotal,
+                        vat_amount: it.vatAmount,
+                        gross_total: it.grossTotal,
+                        sort_order: it.sortOrder,
+                    }));
+                    const { error: baseError } = await client.from('receipt_items').insert(baseRows);
+                    if (baseError) {
+                        logError('biz:saveItemsFallback', baseError);
+                        await client.from('business_receipts').delete().eq('id', inserted.id);
+                        const errLang = localStorage.getItem('valuon-lang') || 'ru';
+                        window.showToast(errLang === 'en' ? 'Receipt issue error' : 'Ошибка выписки чека', 'error');
+                        return;
+                    }
                 }
 
                 const succLang = localStorage.getItem('valuon-lang') || 'ru';
                 const receiptLabel = inserted?.receipt_number ? ` #RCP-${inserted.receipt_number}` : '';
                 window.showToast(succLang === 'en' ? `Receipt${receiptLabel} issued!` : `Чек${receiptLabel} выписан!`, 'success');
-                toggleModal(false);
+                clearDraft();
+
+                if (customerHistory) {
+                    customerHistory = customerHistory.filter((c) => c.email !== email);
+                    customerHistory.unshift({ email, status });
+                }
+                customerStatusCache.set(email, status === 'verified');
+
+                showSuccessScreen({
+                    id: inserted.id,
+                    receipt_number: inserted.receipt_number,
+                    customer_email: email,
+                    payment_method: fd.get('payment_method'),
+                    purchase_date: fd.get('purchase_date'),
+                    status,
+                    net_total: net,
+                    vat_amount: vat,
+                    gross_total: gross,
+                    fiscal_hash: fiscalSignature,
+                    shop_id: currentShop.id,
+                    shop_name: currentShop.shop_name,
+                    receipt_items: items.map((it) => ({
+                        item_name: it.itemName,
+                        qty: it.qty,
+                        unit_price: it.unitPrice,
+                        vat_rate: it.vatRate,
+                        warranty_months: it.warrantyMonths,
+                        net_total: it.netTotal,
+                        vat_amount: it.vatAmount,
+                        gross_total: it.grossTotal,
+                    })),
+                });
+
                 await refreshDashboard(client, currentShop.id, stats, list);
             } catch (err) {
                 logError('biz:issueReceiptCatch', err);
                 const errLang = localStorage.getItem('valuon-lang') || 'ru';
                 window.showToast(errLang === 'en' ? 'Error issuing receipt' : 'Ошибка выписки чека', 'error');
             } finally {
+                issuingClose = false;
                 btn.disabled = false;
-                btn.innerHTML = originalHTML;
+                btn.classList.remove('is-loading');
             }
         });
     }
@@ -1125,7 +1938,7 @@ async function initBusinessPanel() {
     function buildReceiptChartDef(aggregated, t, lang, colors, period) {
         const opts = buildCommonChartOptions(period, colors, t, lang);
         opts.plugins.tooltip.callbacks = {
-            label: function(context) {
+            label: function (context) {
                 const val = context.parsed.y;
                 const label = t.chart_label_receipts || (lang === 'en' ? 'Sales' : 'Продажи');
                 return label + ': ' + (Number.isFinite(val) ? val : '0');
@@ -1153,9 +1966,9 @@ async function initBusinessPanel() {
 
     function buildRevenueChartDef(aggregated, t, lang, colors, period, isDark) {
         const opts = buildCommonChartOptions(period, colors, t, lang);
-        opts.scales.y.ticks.callback = function(v) { return formatCompactCurrency(v); };
+        opts.scales.y.ticks.callback = function (v) { return formatCompactCurrency(v); };
         opts.plugins.tooltip.callbacks = {
-            label: function(context) {
+            label: function (context) {
                 const val = context.parsed.y;
                 if (!Number.isFinite(val)) return '$0.00';
                 return '$' + val.toFixed(2);
@@ -1183,7 +1996,7 @@ async function initBusinessPanel() {
             options: opts,
             plugins: [{
                 id: 'revenueFill',
-                beforeDraw: function(chart) {
+                beforeDraw: function (chart) {
                     const ctx = chart.ctx;
                     const chartArea = chart.chartArea;
                     if (!chartArea) return;
@@ -1333,5 +2146,20 @@ async function initBusinessPanel() {
         setTimeout(updateChart, 50);
     });
 }
+
+function renderShopCountrySelect() {
+    const select = document.getElementById('shop-country');
+    if (!select) return;
+    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    renderCountryOptions(select, lang);
+    if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+}
+
+renderShopCountrySelect();
+window.addEventListener('business-lang-changed', renderShopCountrySelect);
+document.addEventListener('DOMContentLoaded', () => {
+    renderShopCountrySelect();
+    if (typeof window.applyBusinessTranslations === 'function') window.applyBusinessTranslations();
+});
 
 initBusinessPanel().catch(e => logError('init:bizPanel', e));

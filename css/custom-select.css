@@ -183,3 +183,84 @@ select.custom-select {
         animation: none;
     }
 }
+
+.custom-select-search {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 4px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font-main);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: var(--text-main);
+    background: var(--light);
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.custom-select-search:focus {
+    border-color: var(--primary);
+}
+
+.custom-select-search::placeholder {
+    color: var(--text-muted);
+}
+
+.custom-select-search-empty {
+    padding: 10px 12px;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    text-align: center;
+    list-style: none;
+}
+
+[data-theme="dark"] .custom-select-search {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--text-main);
+}
+
+[data-theme="dark"] .custom-select-search:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.custom-select-option.cs-option-with-icon {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.cs-option-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cs-option-icon {
+    flex: none;
+    width: auto;
+    min-width: 22px;
+    text-align: center;
+    font-size: 1.05em;
+    color: var(--text-muted);
+    line-height: 1;
+}
+
+.cs-option-icon i {
+    font-size: 1em;
+}
+
+.custom-select-value .cs-value-icon {
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 1.05em;
+    vertical-align: -1px;
+}
+
+.custom-select-value .cs-value-icon i {
+    font-size: 1em;
+}

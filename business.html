@@ -98,6 +98,17 @@
                     </div>
 
                     <div class="input-group">
+                        <label data-i18n="country_label" for="shop-country">Страна</label>
+                        <select id="shop-country" name="country" class="custom-select" data-searchable required
+                            data-placeholder-i18n="country_placeholder"
+                            data-search-placeholder="country_search_placeholder"
+                            data-search-empty="country_search_empty">
+                        </select>
+                        <small class="field-hint" data-i18n="country_hint">Страна регистрации бизнеса — она будет
+                            указана в чеке</small>
+                    </div>
+
+                    <div class="input-group">
                         <label data-i18n="address_label" for="address">Юридический адрес</label>
                         <textarea id="address" name="address" rows="3" required
                             placeholder="ул. Примерная, д. 1, офис 101" autocomplete="street-address"
@@ -135,6 +146,7 @@
                 </div>
                 <div class="shop-meta">
                     <div class="meta-item"><i class="fa-solid fa-hashtag"></i> <span id="display-tax-id">—</span></div>
+                    <div class="meta-item"><i class="fa-solid fa-globe"></i> <span id="display-country">—</span></div>
                     <div class="meta-item"><i class="fa-solid fa-location-dot"></i> <span id="display-address">—</span>
                     </div>
                 </div>
@@ -173,7 +185,8 @@
 
             <div class="chart-section mb-6" data-animate>
                 <div class="chart-header">
-                    <h2 class="section-title"><span data-i18n="analytics_title">📊 Аналитика</span> <span class="chart-period-label" id="analytics-period"></span></h2>
+                    <h2 class="section-title"><span data-i18n="analytics_title">📊 Аналитика</span> <span
+                            class="chart-period-label" id="analytics-period"></span></h2>
                     <div class="chart-controls">
                         <button class="chart-period-btn active" data-period="week"
                             data-i18n="chart_week">Неделя</button>
@@ -224,92 +237,224 @@
             </div>
         </section>
 
-        <div id="create-receipt-modal" class="modal-overlay is-hidden">
+        <div id="create-receipt-modal" class="modal-overlay is-hidden" aria-hidden="true">
             <div class="modal-backdrop"></div>
-            <div class="modal-content max-w-lg">
+            <div class="modal-content max-w-2xl">
                 <div class="modal-header">
-                    <h2 data-i18n="issue_receipt_title">Выписать новый чек</h2>
-                    <button id="close-receipt-modal" class="btn-close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <form id="issue-receipt-form" class="modal-form" action="#">
-                    <div class="input-group">
-                        <label data-i18n="customer_email_label">Email покупателя</label>
-                        <input type="email" name="customer_email" data-i18n-placeholder="customer_email_placeholder"
-                            placeholder="client@example.com" required>
-                        <small data-i18n="customer_email_hint">Если клиент зарегистрирован, чек привяжется
-                            автоматически</small>
+                    <div class="modal-heading">
+                        <span class="modal-heading-icon"><i class="fa-solid fa-receipt"></i></span>
+                        <div class="modal-heading-text">
+                            <h2 id="receipt-modal-title" data-i18n="issue_receipt_title">Выписать новый чек</h2>
+                            <p id="receipt-modal-subtitle" data-i18n="issue_receipt_subtitle">Данные клиента и позиции
+                                чека</p>
+                        </div>
                     </div>
+                    <button id="close-receipt-modal" class="btn-close" aria-label="Закрыть"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
 
-                    <div id="receipt-items-list"></div>
-
-                    <template id="receipt-item-template">
-                        <div class="receipt-item-row" data-item-row>
-                            <div class="input-row">
-                                <div class="input-group">
-                                    <label data-i18n="item_name_label">Товар</label>
-                                    <input type="text" data-field="item_name"
-                                        data-i18n-placeholder="item_name_placeholder" placeholder="MacBook Air M2"
-                                        required>
+                <div class="modal-body" id="receipt-modal-body">
+                    <form id="issue-receipt-form" class="modal-form" action="#" novalidate>
+                        <div class="receipt-section">
+                            <span class="receipt-section-label" data-i18n="section_client">Клиент</span>
+                            <div class="receipt-layout">
+                                <div class="input-group" id="customer-email-group">
+                                    <label for="customer-email" data-i18n="customer_email_label">Email
+                                        покупателя</label>
+                                    <span class="input-affix autocomplete-anchor">
+                                        <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                                        <input type="email" id="customer-email" name="customer_email"
+                                            data-i18n-placeholder="customer_email_placeholder"
+                                            placeholder="client@example.com" autocomplete="off" autocorrect="off"
+                                            autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore
+                                            data-bwignore="true" data-form-type="other" readonly required>
+                                        <span class="customer-status-badge is-hidden" id="customer-status-badge"></span>
+                                        <ul class="customer-autocomplete is-hidden" id="customer-autocomplete"
+                                            role="listbox" aria-label="Клиенты"></ul>
+                                    </span>
+                                    <small class="field-hint" data-i18n="customer_email_hint">Если клиент
+                                        зарегистрирован, чек
+                                        привяжется автоматически</small>
+                                    <small class="field-error" id="customer-email-error" role="alert"></small>
                                 </div>
-                                <div class="input-group small">
-                                    <label data-i18n="qty_label">Кол-во</label>
-                                    <input type="number" data-field="qty" value="1" min="1" step="1" required>
+                                <div class="receipt-meta-col">
+                                    <div class="input-group">
+                                        <label data-i18n="payment_method_label">Оплата</label>
+                                        <select name="payment_method" class="custom-select">
+                                            <option value="card" data-i18n="payment_card">Карта</option>
+                                            <option value="cash" data-i18n="payment_cash">Наличные</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label data-i18n="purchase_date_label">Дата покупки</label>
+                                        <input type="datetime-local" name="purchase_date" class="custom-datepicker"
+                                            required>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="input-row">
-                                <div class="input-group">
-                                    <label data-i18n="price_label">Цена за ед.</label>
-                                    <input type="number" data-field="price" step="0.01" min="0"
-                                        data-i18n-placeholder="price_placeholder" placeholder="0.00" required>
+                        </div>
+
+                        <div class="receipt-items">
+                            <div class="receipt-items-bar">
+                                <span class="receipt-section-label" data-i18n="section_items">Позиции</span>
+                                <span class="items-count-pill" id="receipt-items-count" aria-hidden="true">1</span>
+                            </div>
+
+                            <div id="receipt-items-list"></div>
+
+                            <template id="receipt-item-template">
+                                <div class="receipt-item-row" data-item-row>
+                                    <div class="receipt-item-top">
+                                        <span class="item-index" data-item-index aria-hidden="true"></span>
+                                        <span class="item-top-hint" data-i18n="item_position_label">Позиция</span>
+                                        <button type="button" class="btn-action delete btn-remove-item"
+                                            data-i18n-title="remove_item_title" title="Удалить товар">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <div class="input-group item-name">
+                                        <label data-i18n="item_name_label">Товар</label>
+                                        <input type="text" data-field="item_name"
+                                            data-i18n-placeholder="item_name_placeholder" placeholder="MacBook Air M2"
+                                            required>
+                                    </div>
+                                    <div class="item-fields">
+                                        <div class="input-group item-qty">
+                                            <label data-i18n="qty_label">Кол-во</label>
+                                            <input type="number" data-field="qty" value="1" min="1" step="1" required>
+                                        </div>
+                                        <div class="input-group item-price">
+                                            <label data-i18n="price_label">Цена за ед.</label>
+                                            <span class="input-suffix">
+                                                <input type="number" data-field="price" step="0.01" min="0"
+                                                    data-i18n-placeholder="price_placeholder" placeholder="0.00"
+                                                    required>
+                                                <span class="suffix-hint">$</span>
+                                            </span>
+                                        </div>
+                                        <div class="input-group item-vat">
+                                            <label data-i18n="vat_rate_label">Налог</label>
+                                            <span class="input-suffix">
+                                                <input type="number" data-field="vat_rate" step="0.1" min="0" max="100"
+                                                    data-i18n-placeholder="vat_rate_placeholder" placeholder="0">
+                                                <span class="suffix-hint">%</span>
+                                            </span>
+                                        </div>
+                                        <div class="input-group item-warranty">
+                                            <label data-i18n="warranty_months_label">Гарантия</label>
+                                            <span class="input-suffix">
+                                                <input type="number" data-field="warranty_months" min="0" max="600"
+                                                    step="1" data-i18n-placeholder="warranty_months_placeholder"
+                                                    placeholder="12">
+                                                <span class="suffix-hint" data-i18n="months_suffix">мес.</span>
+                                            </span>
+                                        </div>
+                                        <div class="input-group item-discount">
+                                            <label data-i18n="discount_label">Скидка</label>
+                                            <span class="input-suffix">
+                                                <input type="number" data-field="discount" step="0.1" min="0" max="100"
+                                                    data-i18n-placeholder="discount_placeholder" placeholder="0">
+                                                <span class="suffix-hint">%</span>
+                                            </span>
+                                        </div>
+                                        <div class="input-group item-category">
+                                            <label data-i18n="category_label">Категория</label>
+                                            <input type="text" data-field="category"
+                                                data-i18n-placeholder="category_placeholder" placeholder="Электроника">
+                                        </div>
+                                    </div>
+                                    <div class="item-subtotal" data-item-subtotal>
+                                        <span class="item-subtotal-label" data-i18n="item_subtotal_label">Сумма</span>
+                                        <strong data-row-subtotal>$0.00</strong>
+                                    </div>
+                                    <small class="field-error" data-item-error role="alert"></small>
                                 </div>
-                                <div class="input-group">
-                                    <label data-i18n="vat_rate_label">Налог (%)</label>
-                                    <input type="number" data-field="vat_rate" step="0.1" min="0" max="100"
-                                        data-i18n-placeholder="vat_rate_placeholder" placeholder="0">
+                            </template>
+
+                            <button type="button" id="add-item-row-btn">
+                                <span class="btn-add-item-plus"><i class="fa-solid fa-plus"></i></span>
+                                <span data-i18n="add_item_btn">Добавить товар</span>
+                            </button>
+                        </div>
+
+                        <div class="receipt-footer">
+                            <span class="receipt-section-label" data-i18n="section_summary">Итог</span>
+                            <div class="receipt-total-preview">
+                                <div class="receipt-total-left">
+                                    <span class="receipt-total-label" data-i18n="total_label">Итого:</span>
+                                    <span class="receipt-total-detail" id="receipt-total-detail"
+                                        aria-live="polite"></span>
+                                    <span class="receipt-total-vat" id="receipt-total-vat" aria-live="polite"></span>
                                 </div>
-                                <div class="input-group small">
-                                    <label data-i18n="warranty_months_label">Гарантия, мес.</label>
-                                    <input type="number" data-field="warranty_months" min="0" max="600" step="1"
-                                        data-i18n-placeholder="warranty_months_placeholder" placeholder="12">
+                                <div class="receipt-total-right">
+                                    <strong id="receipt-total-preview-value">$0.00</strong>
                                 </div>
-                                <button type="button" class="btn-action delete btn-remove-item"
-                                    data-i18n-title="remove_item_title" title="Удалить товар">
-                                    <i class="fa-solid fa-trash"></i>
+                            </div>
+
+                            <div class="modal-actions">
+                                <button type="button" id="cancel-receipt-modal" class="btn btn-outline"
+                                    data-i18n="cancel_btn">Отмена</button>
+                                <button type="submit" class="btn btn-primary btn-issue" id="issue-receipt-submit-btn">
+                                    <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                                    <span data-i18n="issue_receipt_submit" id="issue-receipt-submit-label">Выписать
+                                        чек</span>
                                 </button>
                             </div>
                         </div>
-                    </template>
+                    </form>
+                </div>
 
-                    <button type="button" id="add-item-row-btn" class="btn btn-outline mt-2">
-                        <i class="fa-solid fa-plus"></i> <span data-i18n="add_item_btn">Добавить товар</span>
-                    </button>
+                <div class="receipt-success is-hidden" id="receipt-success-screen" role="status" aria-live="polite">
+                    <div class="receipt-success-icon"><i class="fa-solid fa-check"></i></div>
+                    <h3 data-i18n="success_title">Чек выписан!</h3>
+                    <p class="receipt-success-number" id="receipt-success-number"></p>
 
-                    <div class="input-row mt-4">
-                        <div class="input-group">
-                            <label data-i18n="payment_method_label">Оплата</label>
-                            <select name="payment_method" class="custom-select">
-                                <option value="card" data-i18n="payment_card">Карта</option>
-                                <option value="cash" data-i18n="payment_cash">Наличные</option>
-                            </select>
+                    <div class="receipt-success-card">
+                        <div class="receipt-success-row">
+                            <span data-i18n="success_client_label">Клиент</span>
+                            <strong id="receipt-success-email"></strong>
                         </div>
-                        <div class="input-group">
-                            <label data-i18n="purchase_date_label">Дата покупки</label>
-                            <input type="datetime-local" name="purchase_date" class="custom-datepicker" required>
+                        <div class="receipt-success-row">
+                            <span data-i18n="success_status_label">Статус</span>
+                            <strong id="receipt-success-status"></strong>
+                        </div>
+                        <div class="receipt-success-row receipt-success-total">
+                            <span data-i18n="total_label">Итого:</span>
+                            <strong id="receipt-success-total"></strong>
                         </div>
                     </div>
 
-                    <div class="receipt-total-preview">
-                        <span data-i18n="total_label">Итого:</span>
-                        <strong id="receipt-total-preview-value">$0.00</strong>
+                    <div class="receipt-success-actions">
+                        <button type="button" class="btn btn-outline w-full" id="success-download-btn">
+                            <i class="fa-solid fa-download" aria-hidden="true"></i>
+                            <span data-i18n="download_btn">Скачать</span>
+                        </button>
+                        <button type="button" class="btn btn-outline w-full" id="success-new-btn">
+                            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                            <span data-i18n="success_new_btn">Выписать ещё</span>
+                        </button>
+                        <button type="button" class="btn btn-primary w-full" id="success-done-btn"
+                            data-i18n="success_done_btn">Готово</button>
                     </div>
+                </div>
 
-                    <div class="modal-actions">
-                        <button type="button" id="cancel-receipt-modal" class="btn btn-outline"
-                            data-i18n="cancel_btn">Отмена</button>
-                        <button type="submit" class="btn btn-primary" data-i18n="issue_receipt_submit">Выписать
-                            чек</button>
+                <div class="modal-guard is-hidden" id="receipt-draft-guard" role="dialog" aria-modal="true"
+                    aria-labelledby="receipt-guard-title">
+                    <div class="modal-guard-card">
+                        <div class="modal-guard-icon"><i class="fa-solid fa-file-pen"></i></div>
+                        <h3 id="receipt-guard-title" data-i18n="draft_title">Черновик не сохранён</h3>
+                        <p data-i18n="draft_desc">Вы изменили данные чека. Сохранить черновик, чтобы продолжить
+                            позже?</p>
+                        <div class="modal-guard-actions">
+                            <button type="button" id="draft-save-btn" class="btn btn-primary w-full"
+                                data-i18n="draft_save">Сохранить черновик</button>
+                            <button type="button" id="draft-discard-btn" class="btn btn-outline w-full"
+                                data-i18n="draft_discard">Не сохранять</button>
+                            <button type="button" id="draft-cancel-btn" class="btn-ghost w-full"
+                                data-i18n="cancel_btn">Отмена</button>
+                        </div>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -369,6 +514,7 @@
     <script src="js/rotating-loader.js"></script>
     <script src="js/toast.js"></script>
     <script src="js/custom-select.js"></script>
+    <script src="js/countries.js"></script>
     <script src="js/custom-datepicker.js"></script>
     <script src="js/business-lang.js"></script>
     <script type="module" src="js/business-panel.js"></script>
@@ -441,9 +587,9 @@
             onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
     </div>
     <script src="js/cookie-banner.js"></script>
-<script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-</script>
-<script defer src="/_vercel/insights/script.js"></script>
+    <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
 </body>
 
 </html>

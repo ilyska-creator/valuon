@@ -475,6 +475,7 @@ function restoreListeners(client, userId) {
                 const mockShop = {
                     shop_name: receipt.shop_name || 'Partner Store',
                     address: receipt.address || '',
+                    country: receipt.country || null,
                     tax_id: receipt.tax_id || '',
                     logo_path: receipt.logo_path || null
                 };
@@ -509,7 +510,7 @@ async function populateItemSelect(userId, client) {
 
     const { data } = await client
         .from('items')
-        .select('id, name, price, purchase_date, store_name')
+        .select('id, name, price, purchase_date, store_name, type')
         .eq('user_id', userId)
         .order('name');
 
@@ -522,8 +523,16 @@ async function populateItemSelect(userId, client) {
             opt.dataset.date = item.purchase_date || '';
             opt.dataset.store = item.store_name || '';
             opt.dataset.name = item.name || '';
+            const icon = deviceIconMarkup(item.type);
+            if (icon) {
+                opt.setAttribute('data-icon', icon);
+            }
             select.appendChild(opt);
         });
+    }
+
+    if (typeof CustomSelect !== 'undefined') {
+        CustomSelect.refreshAll();
     }
 }
 

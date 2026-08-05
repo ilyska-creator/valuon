@@ -26,6 +26,12 @@ const businessTranslations = {
         address_placeholder: 'ул. Примерная, д. 1, офис 101',
         address_hint: 'Адрес регистрации компании',
 
+        country_label: 'Страна',
+        country_placeholder: 'Выберите страну',
+        country_search_placeholder: 'Поиск страны...',
+        country_hint: 'Страна регистрации бизнеса — она будет указана в чеке',
+        country_search_empty: 'Ничего не найдено',
+
         register_shop_btn: 'Зарегистрировать магазин',
 
 
@@ -45,13 +51,34 @@ const businessTranslations = {
 
 
         issue_receipt_title: 'Выписать новый чек',
+        issue_receipt_subtitle: 'Данные клиента и позиции чека',
+
+        section_client: 'Клиент',
+        section_items: 'Позиции',
+        section_summary: 'Итог',
 
         customer_email_label: 'Email покупателя',
         customer_email_placeholder: 'client@example.com',
         customer_email_hint: 'Если клиент зарегистрирован, чек привяжется автоматически',
 
+        error_email_required: 'Введите email покупателя',
+        error_email_invalid: 'Некорректный формат email',
+        error_item_name: 'Укажите название товара',
+        error_item_qty: 'Количество должно быть не меньше 1',
+        status_verified_short: 'Зарегистрирован',
+        status_new_short: 'Новый клиент',
+
+        success_title: 'Чек выписан!',
+        success_client_label: 'Клиент',
+        success_status_label: 'Статус',
+        success_new_btn: 'Выписать ещё',
+        success_done_btn: 'Готово',
+
         item_name_label: 'Товар',
         item_name_placeholder: 'MacBook Air M2',
+
+        items_section_title: 'Позиции товара',
+        item_position_label: 'Позиция',
 
         qty_label: 'Кол-во',
         qty_default: '1',
@@ -59,14 +86,20 @@ const businessTranslations = {
         price_label: 'Цена за ед.',
         price_placeholder: '0.00',
 
-        vat_rate_label: 'Налог (%)',
+        vat_rate_label: 'Налог',
         vat_rate_placeholder: '0',
         vat_rate_hint: 'Укажите ставку налога в вашем регионе',
 
         warranty_months_label: 'Гарантия, мес.',
         warranty_months_placeholder: '12',
+        months_suffix: 'мес.',
         warranty_hint: '0 = нет гарантии',
         warranty_suffix: 'мес.',
+        discount_label: 'Скидка',
+        discount_placeholder: '0',
+        category_label: 'Категория',
+        category_placeholder: 'Электроника',
+        discount_word: 'скидка',
         add_item_btn: 'Добавить товар',
         remove_item_title: 'Удалить товар',
         total_label: 'Итого:',
@@ -79,6 +112,18 @@ const businessTranslations = {
 
         cancel_btn: 'Отмена',
         issue_receipt_submit: 'Выписать чек',
+        issuing_label: 'Выписка...',
+
+        item_subtotal_label: 'Сумма',
+        units: { one: 'позиция', few: 'позиции', many: 'позиций' },
+        qty_word: 'шт.',
+        vat_word: 'НДС:',
+
+        draft_title: 'Черновик не сохранён',
+        draft_desc: 'Вы изменили данные чека. Сохранить черновик, чтобы продолжить позже?',
+        draft_save: 'Сохранить черновик',
+        draft_discard: 'Не сохранять',
+        draft_saved: 'Черновик сохранён',
 
 
         delete_receipt_title: 'Удалить чек?',
@@ -152,6 +197,12 @@ const businessTranslations = {
         address_placeholder: 'Example Street, Building 1, Suite 101',
         address_hint: 'Company registration address',
 
+        country_label: 'Country',
+        country_placeholder: 'Select a country',
+        country_search_placeholder: 'Search country...',
+        country_hint: 'Country of business registration — shown on the receipt',
+        country_search_empty: 'Nothing found',
+
         register_shop_btn: 'Register Shop',
 
 
@@ -170,13 +221,34 @@ const businessTranslations = {
         create_first_receipt_btn: 'Create First Receipt',
 
         issue_receipt_title: 'Issue New Receipt',
+        issue_receipt_subtitle: 'Customer details and line items',
+
+        section_client: 'Client',
+        section_items: 'Line items',
+        section_summary: 'Summary',
 
         customer_email_label: 'Customer Email',
         customer_email_placeholder: 'client@example.com',
         customer_email_hint: 'If customer is registered, receipt will be linked automatically',
 
+        error_email_required: 'Enter customer email',
+        error_email_invalid: 'Invalid email format',
+        error_item_name: 'Enter a product name',
+        error_item_qty: 'Quantity must be at least 1',
+        status_verified_short: 'Registered',
+        status_new_short: 'New client',
+
+        success_title: 'Receipt issued!',
+        success_client_label: 'Client',
+        success_status_label: 'Status',
+        success_new_btn: 'Issue another',
+        success_done_btn: 'Done',
+
         item_name_label: 'Product',
         item_name_placeholder: 'MacBook Air M2',
+
+        items_section_title: 'Line items',
+        item_position_label: 'Item',
 
         qty_label: 'Quantity',
         qty_default: '1',
@@ -184,14 +256,20 @@ const businessTranslations = {
         price_label: 'Price per Unit',
         price_placeholder: '0.00',
 
-        vat_rate_label: 'Tax Rate (%)',
+        vat_rate_label: 'Tax Rate',
         vat_rate_placeholder: '0',
         vat_rate_hint: 'Specify the tax rate in your region',
 
         warranty_months_label: 'Warranty, months',
         warranty_months_placeholder: '12',
+        months_suffix: 'mo.',
         warranty_hint: '0 = no warranty',
         warranty_suffix: 'mo.',
+        discount_label: 'Discount',
+        discount_placeholder: '0',
+        category_label: 'Category',
+        category_placeholder: 'Electronics',
+        discount_word: 'discount',
         add_item_btn: 'Add item',
         remove_item_title: 'Remove item',
         total_label: 'Total:',
@@ -204,6 +282,17 @@ const businessTranslations = {
 
         cancel_btn: 'Cancel',
         issue_receipt_submit: 'Issue Receipt',
+
+        item_subtotal_label: 'Total',
+        units: { one: 'item', few: 'items', many: 'items' },
+        qty_word: 'pcs',
+        vat_word: 'VAT:',
+
+        draft_title: 'Unsaved Draft',
+        draft_desc: 'You have made changes to the receipt. Save a draft to continue later?',
+        draft_save: 'Save Draft',
+        draft_discard: 'Discard',
+        draft_saved: 'Draft saved',
 
         delete_receipt_title: 'Delete Receipt?',
         delete_receipt_desc: 'This action is irreversible. The receipt will be permanently deleted from the system.',
@@ -250,7 +339,7 @@ const businessTranslations = {
     }
 };
 
-window.animateCount = function(el, target, duration) {
+window.animateCount = function (el, target, duration) {
     if (!el) return;
     const start = parseInt(el.textContent) || 0;
     if (start === target) { el.textContent = String(target); return; }
@@ -296,7 +385,7 @@ function formatMoney(value) {
     return sign + '$' + formattedInt + '.' + String(decPart).padStart(2, '0');
 }
 
-window.animateAmount = function(el, target, duration) {
+window.animateAmount = function (el, target, duration) {
     if (!el) return;
     const raw = el.textContent.replace(/[^0-9.\-]/g, '');
     const start = raw ? parseFloat(raw) : 0;
@@ -375,6 +464,11 @@ function applyBusinessTranslations() {
     if (itemTemplate) applyDataI18n(itemTemplate.content, t);
     if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
     if (typeof CustomDatePicker !== 'undefined') CustomDatePicker.refreshAll();
+
+    // Даёт business-panel.js шанс пересчитать динамические подписи
+    // (например сумму на кнопке «Выписать чек»), которые applyDataI18n
+    // выше только что сбросил на статичный текст перевода.
+    document.dispatchEvent(new CustomEvent('valuon:lang-applied'));
 }
 
 

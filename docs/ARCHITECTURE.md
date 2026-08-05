@@ -98,6 +98,7 @@ Valuon — статический фронтенд-проект без сбор�
 | `theme.js` | Тёмная/светлая тема, событие `themeChange`, синхронизация вкладок | — |
 | `custom-select.js` | Кастомный селект поверх скрытого `<select>` | `window.CustomSelect` (init/refreshAll) |
 | `custom-datepicker.js` | Кастомный календарь поверх скрытого `<input type="date">` | `window.CustomDatePicker` (init/refreshAll) |
+| `devices.js` | Маппинг типов устройств → FontAwesome-иконки | `window.DEVICE_ICONS`, `deviceIconMarkup(type)` |
 
 ### 3.2. Домены
 
@@ -154,6 +155,7 @@ receipts                       (личные загрузки покупател
 shops
   id uuid PK, owner_id FK → auth.users
   shop_name, tax_id, address
+  country text (ISO 3166-1 alpha-2, напр. 'RU')
   logo_path text (Storage shop-logos)
   public_key text, private_key text (PKCS8 base64)
   created_at
@@ -161,13 +163,13 @@ shops
 shop_keys
   id uuid PK, shop_id FK → shops, public_key text, created_at
 
-business_receipts              (чеки, выписанные продавцом)
+business_receipts              (чеки, выданные продавцом)
   id uuid PK, shop_id FK → shops
   receipt_number, customer_email
   purchase_date date, payment_method
   net_total, vat_amount, gross_total numeric
   fiscal_hash text (Ed25519 подпись)
-  shop_name, tax_id, address, logo_path (денормализовано)
+  shop_name, tax_id, address, country, logo_path (денормализовано)
   status ('verified' | 'pending'), created_at
 
 receipt_items

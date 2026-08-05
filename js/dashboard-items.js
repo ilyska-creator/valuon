@@ -11,18 +11,6 @@ let verifiedStats = { total: 0, active: 0, expiring: 0, expired: 0 };
 let lastMineItems = [];
 let lastVerifiedItems = [];
 
-const DEVICE_ICONS = {
-    laptop: 'fa-laptop',
-    phone: 'fa-mobile-screen-button',
-    tablet: 'fa-tablet-screen-button',
-    watch: 'fa-stopwatch',
-    headphones: 'fa-headphones-simple',
-    camera: 'fa-camera',
-    console: 'fa-gamepad',
-    appliance: 'fa-blender',
-    other: 'fa-box-open'
-};
-
 function applySavedItemsTab() {
     const saved = sessionStorage.getItem('valuon-items-tab') || 'verified';
     if (saved === 'verified') return;
@@ -149,7 +137,7 @@ function renderItems(items) {
     }
 
     grid.innerHTML = items.map(item => {
-        const iconClass = DEVICE_ICONS[item.type] || DEVICE_ICONS.other;
+        const iconClass = window.DEVICE_ICONS[item.type] || window.DEVICE_ICONS.other;
         const noWarranty = !item.warranty_months;
         const daysLeft = noWarranty ? null : calculateDaysLeft(item.warranty_end_date);
         const status = noWarranty ? null : getStatusInfo(daysLeft);

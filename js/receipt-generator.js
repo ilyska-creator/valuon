@@ -56,6 +56,10 @@ export async function downloadReceiptPDF(receipt, shop) {
 
         const sellerName = shop?.shop_name || 'Valuon Seller';
         const sellerAddress = shop?.address || '';
+        const genLang = (typeof localStorage !== 'undefined' && localStorage.getItem('valuon-lang')) || 'ru';
+        const sellerCountry = shop?.country
+            ? (typeof window.countryName === 'function' ? window.countryName(shop.country, genLang) : shop.country)
+            : '';
         const taxId = shop?.tax_id || '';
         const registerSerial = `CR-${new Date().getFullYear()}-001`;
 
@@ -126,6 +130,10 @@ export async function downloadReceiptPDF(receipt, shop) {
         doc.setFontSize(9);
         doc.setFont(undefined, 'normal');
         doc.setTextColor(60, 60, 60);
+        if (sellerCountry) {
+            doc.text(sellerCountry, nameLeft, y);
+            y += 4;
+        }
         const addressLines = doc.splitTextToSize(sellerAddress, 170);
         doc.text(addressLines, nameLeft, y);
         y += addressLines.length * 4 + 2;
