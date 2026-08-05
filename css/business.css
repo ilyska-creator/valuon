@@ -634,7 +634,7 @@
 }
 
 .shop-info-card {
-    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(59, 130, 246, 0.03) 100%);
+    background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-2xl);
     padding: 1.5rem;

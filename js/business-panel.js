@@ -1412,7 +1412,8 @@ async function initBusinessPanel() {
             if (btn.disabled) return;
             btn.disabled = true;
             const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Создание...';
+            const createLang = localStorage.getItem('valuon-lang') || 'ru';
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> ' + (window.businessTranslations?.[createLang]?.registering_shop || (createLang === 'en' ? 'Creating...' : 'Создание...'));
 
             try {
                 const createLang = localStorage.getItem('valuon-lang') || 'ru';

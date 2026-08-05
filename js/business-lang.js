@@ -33,6 +33,7 @@ const businessTranslations = {
         country_search_empty: 'Ничего не найдено',
 
         register_shop_btn: 'Зарегистрировать магазин',
+        registering_shop: 'Создание...',
 
 
         my_shop: 'Мой магазин',
@@ -243,6 +244,7 @@ const businessTranslations = {
         country_search_empty: 'Nothing found',
 
         register_shop_btn: 'Register Shop',
+        registering_shop: 'Creating...',
 
 
         my_shop: 'My Shop',
