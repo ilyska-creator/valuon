@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valuon — Receipt Concept</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --paper: #FAFAF9;
+            --paper-alt: #F2F1ED;
+            --ink: #15171A;
+            --ink-soft: #63666C;
+            --ink-faint: #9A9C9F;
+            --hair: #E2E1DC;
+            --em: #0E6B4C;
+            --em-tint: #E8F2ED;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #DEDCD5;
+            display: flex;
+            justify-content: center;
+            padding: 48px 20px;
+            font-family: 'Inter', sans-serif;
+            color: var(--ink);
+        }
+
+        .page {
+            background: var(--paper);
+            width: 210mm;
+            min-height: 297mm;
+            padding: 64px 60px 48px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 24px 60px -20px rgba(20, 20, 20, 0.25);
+        }
+
+        /* registration ticks — quiet nod to a printed/certified document */
+        .tick {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            z-index: 2;
+        }
+
+        .tick::before,
+        .tick::after {
+            content: "";
+            position: absolute;
+            background: var(--ink-faint);
+            opacity: 0.55;
+        }
+
+        .tick::before {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            left: 0;
+        }
+
+        .tick::after {
+            width: 1px;
+            height: 100%;
+            left: 50%;
+            top: 0;
+        }
+
+        .tick.tl {
+            top: 22px;
+            left: 22px;
+        }
+
+        .tick.tr {
+            top: 22px;
+            right: 22px;
+        }
+
+        .tick.bl {
+            bottom: 22px;
+            left: 22px;
+        }
+
+        .tick.br {
+            bottom: 22px;
+            right: 22px;
+        }
+
+        /* faint diagonal ledger watermark — reinforces "signed document" without a badge */
+        .watermark {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .watermark span {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            letter-spacing: 0.5em;
+            color: var(--ink);
+            opacity: 0.028;
+            white-space: nowrap;
+            transform: rotate(-32deg);
+        }
+
+        .page>*:not(.watermark) {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* eyebrow */
+        .eyebrow {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            color: var(--ink-faint);
+            text-transform: uppercase;
+            margin-bottom: 34px;
+        }
+
+        .eyebrow .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--em);
+            flex: none;
+        }
+
+        .eyebrow::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--hair);
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .store {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .store-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 1px solid var(--hair);
+            background: var(--em-tint);
+            color: var(--em);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Fraunces', serif;
+            font-weight: 500;
+            font-size: 18px;
+            flex: none;
+            overflow: hidden;
+        }
+
+        .store-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .store h1 {
+            font-family: 'Fraunces', serif;
+            font-weight: 500;
+            font-size: 29px;
+            letter-spacing: -0.01em;
+            margin: 0 0 10px;
+        }
+
+        .store p {
+            margin: 2px 0;
+            font-size: 13px;
+            color: var(--ink-soft);
+            line-height: 1.5;
+        }
+
+        .store .ids {
+            margin-top: 8px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--ink-faint);
+            letter-spacing: 0.02em;
+        }
+
+        .receipt-id {
+            text-align: right;
+        }
+
+        .receipt-id .label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            color: var(--ink-faint);
+            text-transform: uppercase;
+        }
+
+        .receipt-id .num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 20px;
+            font-weight: 500;
+            margin-top: 6px;
+            color: var(--ink);
+        }
+
+        .hair {
+            height: 1px;
+            background: var(--hair);
+            margin: 0;
+        }
+
+        /* meta row */
+        .meta {
+            display: grid;
+            grid-template-columns: 0.85fr 1.3fr 0.85fr;
+            padding: 24px 0;
+        }
+
+        .meta>div {
+            padding: 0 20px;
+            border-left: 1px solid var(--hair);
+        }
+
+        .meta>div:first-child {
+            padding-left: 0;
+            border-left: none;
+        }
+
+        .meta .k {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin-bottom: 6px;
+        }
+
+        .meta .v {
+            font-size: 14px;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        /* table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        thead th {
+            text-align: left;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            font-weight: 500;
+            padding: 0 0 12px;
+            border-bottom: 1px solid var(--ink);
+        }
+
+        thead th.num {
+            text-align: right;
+        }
+
+        tbody td {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--hair);
+            vertical-align: top;
+            font-size: 14px;
+        }
+
+        tbody td.num {
+            text-align: right;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: 1px solid var(--ink);
+        }
+
+        .item-name {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .item-warranty {
+            font-size: 12px;
+            color: var(--ink-soft);
+        }
+
+        .item-warranty::before {
+            content: "Warranty · ";
+            color: var(--ink-faint);
+        }
+
+        .item-total {
+            font-weight: 600;
+        }
+
+        /* totals */
+        .totals {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 26px;
+        }
+
+        .totals-inner {
+            width: 280px;
+        }
+
+        .trow {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--ink-soft);
+            padding: 6px 0;
+        }
+
+        .trow.gross {
+            margin-top: 12px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ink);
+            align-items: baseline;
+        }
+
+        .trow.gross .k {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink);
+        }
+
+        .trow.gross .v {
+            font-family: 'Fraunces', serif;
+            font-weight: 600;
+            font-size: 26px;
+            color: var(--ink);
+        }
+
+        /* verification strip */
+        .verify {
+            margin-top: 48px;
+            padding-top: 28px;
+            border-top: 1px solid var(--hair);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .qr-row {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .qr {
+            width: 116px;
+            height: 116px;
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg');
+            background-size: cover;
+            border: 1px solid var(--hair);
+            border-radius: 4px;
+            padding: 4px;
+            flex: none;
+        }
+
+        .qr-copy h4 {
+            margin: 0 0 4px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .qr-copy p {
+            margin: 0;
+            font-size: 11.5px;
+            color: var(--ink-soft);
+            line-height: 1.5;
+            max-width: 230px;
+        }
+
+        .hash {
+            margin-top: 7px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10.5px;
+            color: var(--ink-faint);
+            letter-spacing: 0.06em;
+        }
+
+        /* seal */
+        .seal {
+            position: relative;
+            width: 104px;
+            height: 104px;
+            flex: none;
+        }
+
+        .seal svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .seal-ring-text {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 6.6px;
+            letter-spacing: 0.15em;
+            fill: var(--em);
+            text-transform: uppercase;
+        }
+
+        .seal-check {
+            stroke: var(--em);
+            fill: none;
+            stroke-width: 2.4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .seal-ring {
+            fill: none;
+            stroke: var(--em);
+            stroke-width: 1;
+            opacity: 0.35;
+        }
+
+        .seal-fill {
+            fill: var(--em-tint);
+        }
+
+        /* footer */
+        .footer {
+            margin-top: 40px;
+            padding-top: 18px;
+            border-top: 1px solid var(--hair);
+            text-align: center;
+            font-size: 10.5px;
+            color: var(--ink-faint);
+            line-height: 1.6;
+        }
+
+        .footer strong {
+            color: var(--ink-soft);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.1em;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+
+            .page {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page">
+
+        <div class="tick tl"></div>
+        <div class="tick tr"></div>
+        <div class="tick bl"></div>
+        <div class="tick br"></div>
+
+        <div class="watermark"><span>VALUON · SIGNED &amp; VERIFIED &nbsp; VALUON · SIGNED &amp; VERIFIED &nbsp; VALUON
+                · SIGNED &amp; VERIFIED</span></div>
+
+        <div class="eyebrow"><span class="dot"></span>VALUON · DIGITAL RECEIPT</div>
+
+        <div class="header">
+            <div class="store">
+                <div class="store-avatar">TS</div>
+                <div class="store-text">
+                    <h1>Test Store Name</h1>
+                    <p>Test Address</p>
+                    <p class="ids">TAX ID Test Tax ID &nbsp;·&nbsp; REG S/N CR-2026-001</p>
+                </div>
+            </div>
+            <div class="receipt-id">
+                <div class="label">Receipt</div>
+                <div class="num">RCP-100029</div>
+            </div>
+        </div>
+
+        <div class="hair"></div>
+
+        <div class="meta">
+            <div>
+                <div class="k">Date</div>
+                <div class="v">Jul 21, 2026 · 11:26</div>
+            </div>
+            <div>
+                <div class="k">Customer</div>
+                <div class="v">test@test.com</div>
+            </div>
+            <div>
+                <div class="k">Payment</div>
+                <div class="v">Cash</div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:46%;">Item</th>
+                    <th class="num">Qty</th>
+                    <th class="num">Price</th>
+                    <th class="num">Tax</th>
+                    <th class="num">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div class="item-name">Apple MacBook Air M4</div>
+                        <div class="item-warranty">12 months</div>
+                    </td>
+                    <td class="num">1</td>
+                    <td class="num">$999.00</td>
+                    <td class="num">14%</td>
+                    <td class="num item-total">$999.00</td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="item-name">Apple AirPods Pro 3</div>
+                        <div class="item-warranty">6 months</div>
+                    </td>
+                    <td class="num">2</td>
+                    <td class="num">$299.00</td>
+                    <td class="num">12%</td>
+                    <td class="num item-total">$598.00</td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="item-name">Apple iPhone 17 Pro Max</div>
+                        <div class="item-warranty">18 months</div>
+                    </td>
+                    <td class="num">1</td>
+                    <td class="num">$1,299.00</td>
+                    <td class="num">9%</td>
+                    <td class="num item-total">$1,299.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <div class="totals-inner">
+                <div class="trow">
+                    <span>Net amount</span>
+                    <span>$2,896.00</span>
+                </div>
+                <div class="trow">
+                    <span>Tax (9/12/14%)</span>
+                    <span>$328.53</span>
+                </div>
+                <div class="trow gross">
+                    <span class="k">Gross total</span>
+                    <span class="v">$3,224.53</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="verify">
+            <div class="qr-row">
+                <div class="qr"></div>
+                <div class="qr-copy">
+                    <h4>Scan to verify</h4>
+                    <p>Cryptographic proof of the total, tax, seller identity and timestamp on this receipt.</p>
+                    <div class="hash">3F9A 7C2D 91E4 B02E</div>
+                </div>
+            </div>
+
+            <div class="seal">
+                <svg viewBox="0 0 120 120">
+                    <defs>
+                        <path id="ringPath" d="M 60,60 m -46,0 a 46,46 0 1,1 92,0 a 46,46 0 1,1 -92,0" />
+                    </defs>
+                    <circle class="seal-fill" cx="60" cy="60" r="34" />
+                    <circle class="seal-ring" cx="60" cy="60" r="46" />
+                    <circle class="seal-ring" cx="60" cy="60" r="40" />
+                    <text class="seal-ring-text">
+                        <textPath href="#ringPath" startOffset="0%">
+                            ED25519 SIGNED · VERIFIED · ED25519 SIGNED · VERIFIED ·
+                        </textPath>
+                    </text>
+                    <path class="seal-check" d="M46 61 L56 71 L76 49" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="footer">
+            <strong>VALUON DIGITAL RECEIPT SYSTEM</strong><br>
+            This document complies with international fiscal standards, signed by the Valuon digital infrastructure.<br>
+            Verification questions — valuonguard@proton.me
+        </div>
+
+    </div>
+
+</body>
+
+</html>
