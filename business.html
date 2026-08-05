@@ -263,7 +263,7 @@
                                         покупателя</label>
                                     <span class="input-affix autocomplete-anchor">
                                         <i class="fa-regular fa-envelope" aria-hidden="true"></i>
-                                        <input type="email" id="customer-email" name="customer_email"
+                                        <input type="text" id="customer-email" name="customer_email" inputmode="email"
                                             data-i18n-placeholder="customer_email_placeholder"
                                             placeholder="client@example.com" autocomplete="off" autocorrect="off"
                                             autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore
@@ -395,9 +395,16 @@
                                 <button type="button" id="cancel-receipt-modal" class="btn btn-outline"
                                     data-i18n="cancel_btn">Отмена</button>
                                 <button type="submit" class="btn btn-primary btn-issue" id="issue-receipt-submit-btn">
-                                    <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-                                    <span data-i18n="issue_receipt_submit" id="issue-receipt-submit-label">Выписать
-                                        чек</span>
+                                    <span class="btn-issue-content">
+                                        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                                        <span data-i18n="issue_receipt_submit" id="issue-receipt-submit-label">Выписать
+                                            чек</span>
+                                    </span>
+                                    <span class="btn-issue-spinner" aria-hidden="true">
+                                        <i class="fa-solid fa-circle-notch fa-spin"></i>
+                                        <span id="issue-receipt-spinner-label"
+                                            data-i18n="issuing_label">Выписка...</span>
+                                    </span>
                                 </button>
                             </div>
                         </div>

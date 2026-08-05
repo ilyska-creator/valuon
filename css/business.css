@@ -1894,11 +1894,36 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    position: relative;
 }
 
 .btn-issue span {
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.btn-issue-content,
+.btn-issue-spinner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.btn-issue-spinner {
+    display: none;
+}
+
+.btn-issue.is-loading .btn-issue-content {
+    visibility: hidden;
+}
+
+.btn-issue.is-loading .btn-issue-spinner {
+    display: inline-flex;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
 }
 
 /* --- Заголовки смысловых секций формы --- */

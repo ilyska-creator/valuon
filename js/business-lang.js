@@ -282,6 +282,7 @@ const businessTranslations = {
 
         cancel_btn: 'Cancel',
         issue_receipt_submit: 'Issue Receipt',
+        issuing_label: 'Issuing...',
 
         item_subtotal_label: 'Total',
         units: { one: 'item', few: 'items', many: 'items' },
