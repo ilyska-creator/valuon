@@ -1405,6 +1405,17 @@ async function initBusinessPanel() {
     }
 
     if (forms.shop) {
+        forms.shop.querySelectorAll('input[required], select[required], textarea[required]').forEach((field) => {
+            field.addEventListener('invalid', () => {
+                const lang = localStorage.getItem('valuon-lang') || 'ru';
+                const msg = window.businessTranslations?.[lang]?.field_required
+                    || (lang === 'en' ? 'Please fill out this field' : 'Заполните это поле');
+                field.setCustomValidity(msg);
+            });
+            field.addEventListener('input', () => field.setCustomValidity(''));
+            field.addEventListener('change', () => field.setCustomValidity(''));
+        });
+
         forms.shop.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');

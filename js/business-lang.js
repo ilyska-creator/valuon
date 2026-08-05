@@ -64,6 +64,7 @@ const businessTranslations = {
 
         error_email_required: 'Введите email покупателя',
         error_email_invalid: 'Некорректный формат email',
+        field_required: 'Заполните это поле',
         error_item_name: 'Укажите название товара',
         error_item_qty: 'Количество должно быть не меньше 1',
         status_verified_short: 'Зарегистрирован',
@@ -274,6 +275,7 @@ const businessTranslations = {
 
         error_email_required: 'Enter customer email',
         error_email_invalid: 'Invalid email format',
+        field_required: 'Please fill out this field',
         error_item_name: 'Enter a product name',
         error_item_qty: 'Quantity must be at least 1',
         status_verified_short: 'Registered',

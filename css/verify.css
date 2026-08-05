@@ -480,6 +480,7 @@
 
 .upload-preview {
     display: none;
+    position: relative;
     margin-bottom: var(--space-4);
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -492,6 +493,30 @@
     object-fit: contain;
     border-radius: var(--radius-md);
     background: var(--light);
+}
+
+.preview-remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+    z-index: 2;
+}
+
+.preview-remove-btn:hover {
+    background: rgba(0, 0, 0, 0.75);
+    transform: scale(1.08);
 }
 
 .upload-preview.active {

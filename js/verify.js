@@ -30,6 +30,7 @@ const uploadZone = document.getElementById('upload-zone');
 const fileInput = document.getElementById('receipt-file');
 const uploadPreview = document.getElementById('upload-preview');
 const previewImg = document.getElementById('preview-img');
+const previewRemoveBtn = document.getElementById('preview-remove-btn');
 const scanArea = document.getElementById('scan-area');
 const scanFileInput = document.getElementById('scan-file-input');
 const scanHint = document.getElementById('scan-hint');
@@ -582,6 +583,21 @@ if (uploadZone && !('ontouchstart' in window)) {
     });
 }
 
+previewRemoveBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileInput.value = '';
+    uploadPreview?.classList.remove('active');
+    previewImg.removeAttribute('src');
+    uploadZone?.classList.remove('has-file');
+});
+
+function updatePreviewRemoveLabel() {
+    if (!previewRemoveBtn) return;
+    previewRemoveBtn.setAttribute('aria-label', t('preview_remove'));
+    previewRemoveBtn.setAttribute('title', t('preview_remove'));
+}
+updatePreviewRemoveLabel();
+
 scanBtn?.addEventListener('click', () => {
     if (mediaStream) {
         stopCamera();
@@ -737,6 +753,7 @@ initVerifyLang();
 
 window.addEventListener('verify-lang-changed', () => {
     applyVerifyTranslations();
+    updatePreviewRemoveLabel();
     if (scanBtn) {
         scanBtn.innerHTML = mediaStream
             ? '<i class="fa-solid fa-stop"></i> ' + t('scan_btn_stop')

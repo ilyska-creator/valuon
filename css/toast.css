@@ -32,8 +32,48 @@
     animation: toastSlideOut 0.3s ease forwards;
 }
 
+.toast.error {
+    border-color: rgba(239, 68, 68, 0.35);
+    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.28), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.toast.success {
+    border-color: rgba(16, 185, 129, 0.35);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.26), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.toast.warning {
+    border-color: rgba(245, 158, 11, 0.35);
+    box-shadow: 0 8px 32px rgba(245, 158, 11, 0.28), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.toast.info {
+    border-color: rgba(59, 130, 246, 0.35);
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.28), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
 [data-theme="dark"] .toast {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .toast.error {
+    border-color: rgba(239, 68, 68, 0.5);
+    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.15), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .toast.success {
+    border-color: rgba(16, 185, 129, 0.5);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.14), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .toast.warning {
+    border-color: rgba(245, 158, 11, 0.5);
+    box-shadow: 0 8px 32px rgba(245, 158, 11, 0.15), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .toast.info {
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .toast-icon {

@@ -59,6 +59,7 @@ const verifyTranslations = {
         copy_btn: 'Копировать результат',
         copied: 'Скопировано',
         drop_hint: 'Отпустите файл для загрузки',
+        preview_remove: 'Удалить превью',
         back: 'Назад',
     },
     en: {
@@ -121,6 +122,7 @@ const verifyTranslations = {
         copy_btn: 'Copy result',
         copied: 'Copied',
         drop_hint: 'Drop file to upload',
+        preview_remove: 'Remove preview',
         back: 'Back',
     }
 };
