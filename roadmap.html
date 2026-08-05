@@ -97,22 +97,32 @@
                             название, тип, бренд, цена, серийный номер, дата покупки, срок гарантии</span></li>
                     <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_5">Автоматический расчёт даты
                             окончания гарантии</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_6">Календарь гарантий с
-                            переключением месяцев</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_7">Раздел уведомлений: гарантия
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_6">Раздел уведомлений: гарантия
                             ≤30 дней или истекла</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_8">Загрузка фото/PDF чека,
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_7">Загрузка фото/PDF чека,
                             drag&drop, привязка к вещи</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_9">Бизнес: создание магазина,
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_8">Бизнес: создание магазина,
                             генерация Ed25519 ключей</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_10">Бизнес: выписка чека с
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_9">Бизнес: выписка чека с
                             несколькими позициями и цифровой подписью</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_11">Бизнес: PDF с QR-кодом, график
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_10">Бизнес: PDF с QR-кодом, график
                             продаж</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_12">Верификация: сканирование QR
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_11">Верификация: сканирование QR
                             камерой, загрузка PDF, проверка Ed25519</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_13">Тёмная/светлая тема,
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_12">Тёмная/светлая тема,
                             мультиязычность RU/EN</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_13">Серверная верификация подписи:
+                            Edge Function с rate-лимитом по IP, анонимная страница проверки</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_14">Бизнес: выручка,
+                            средний чек, графики с периодами, фильтры, удаление чеков</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_15">Черновик чека:
+                            автосохранение формы и восстановление</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_16">Автоподстановка покупателя по
+                            email с историей клиентов</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_17">Бизнес: загрузка логотипов
+                            магазинов и отображение в PDF чеках</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_18">Экспорт календаря
+                            гарантий на устройство пользователя</span></li>
                 </ul>
             </div>
 
@@ -140,6 +150,16 @@
                             PDF</span></li>
                     <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_11">Ограничения CHECK на
                             значения позиций чека в БД</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_12">Выбор валюты магазина и
+                            чека (мультивалютность, EUR по умолчанию)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_13">Эстонский язык
+                            интерфейса (ET)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_14">Подпись чека на сервере:
+                            приватный ключ хранится только в Edge Function (Vault), на устройство не передаётся</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_15">Импорт исторических чеков
+                            через CSV</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_16">Экспорт чеков для
+                            бухгалтерии (CSV/XML под 1С, DATEV)</span></li>
                 </ul>
                 <div class="decision-gate">
                     <i class="fa-solid fa-signs-post"></i>
@@ -197,16 +217,14 @@
                             аккаунты магазина (роли сотрудников)</span></li>
                     <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_5">Кастомный брендинг чека и
                             страницы верификации</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_6">Массовый импорт исторических
-                            чеков через CSV</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_7">Workflow
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_6">Workflow
                             возврата/обмена/аннулирования чека</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_8">Ротация и отзыв криптоключей
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_7">Ротация и отзыв криптоключей
                             магазина</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_9">Экспорт чеков для
-                            бухгалтерии (CSV/XML под 1С, DATEV)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_10">Расширенная аналитика: LTV,
-                            средний чек, доля гарантийных обращений</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_8">Расширенная аналитика: LTV,
+                            средний чек, доля гарантийных обращений, % вернувшихся покупателей</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_9">Продажа расширенной гарантии
+                            в момент выписки чека (комиссия)</span></li>
                 </ul>
             </div>
 
@@ -224,9 +242,7 @@
                             by Valuon» для сайта магазина</span></li>
                     <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_3">Платный API верификации для
                             страховых и площадок перепродажи</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_4">Продажа расширенной гарантии
-                            в момент выписки чека (комиссия)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_5">Онбординг-чеклист для нового
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_4">Онбординг-чеклист для нового
                             магазина в дашборде</span></li>
                 </ul>
                 <div class="decision-gate">
