@@ -61,7 +61,7 @@ export async function downloadReceiptPDF(receipt, shop) {
             ? (typeof window.countryName === 'function' ? window.countryName(shop.country, genLang) : shop.country)
             : '';
         const taxId = shop?.tax_id || '';
-        const registerSerial = `CR-${new Date().getFullYear()}-001`;
+        const registerSerial = receipt.pos_serial || '—';
 
         // Fetch logo if exists
         let logoDataUrl = null;

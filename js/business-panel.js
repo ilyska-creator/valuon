@@ -103,6 +103,7 @@ async function initBusinessPanel() {
                     <span class="tag"><i class="fa-solid fa-tag"></i> €${Number.isFinite(parseFloat(r.gross_total)) ? parseFloat(r.gross_total).toFixed(2) : '0.00'}</span>
                     <span class="tag"><i class="fa-solid fa-calendar-days"></i> <span class="receipt-date">${escapeHtml(dateStr)}</span></span>
                     <span class="tag"><i class="fa-solid fa-credit-card"></i> ${escapeHtml(payMethod)}</span>
+                    ${r.pos_serial ? `<span class="tag" title="${escapeHtml(bt[currentLang]?.pos_serial_label || 'Register S/N')}"><i class="fa-solid fa-cash-register"></i> ${escapeHtml(r.pos_serial)}</span>` : ''}
                     ${itemsCount > 1 ? `<span class="tag"><i class="fa-solid fa-boxes-stacked"></i> ${itemsCount}</span>` : ''}
                 </div>
 
@@ -180,6 +181,7 @@ async function initBusinessPanel() {
     const customerStatusCache = new Map();
     let emailCheckTimer = null;
     let emailCheckToken = 0;
+    let currentTerminals = [];
 
     function fmtMoney(v) {
         return '€' + v.toFixed(2);
@@ -845,6 +847,8 @@ async function initBusinessPanel() {
 
     document.addEventListener('valuon:lang-applied', () => {
         updateSubmitLabel();
+        renderTerminalsWidget();
+        renderPosSelect();
         if (modal.el && !modal.el.classList.contains('is-hidden')) {
             const activeEmail = emailInput?.value.trim().toLowerCase();
             if (activeEmail && customerStatusCache.has(activeEmail)) {
@@ -903,6 +907,357 @@ async function initBusinessPanel() {
             placeholder.style.display = 'flex';
         }
     }
+
+    // --- Кассовые аппараты (POS-терминалы) -------------------------
+
+    const terminalsModal = document.getElementById('terminals-modal');
+    const terminalsListEl = document.getElementById('terminals-list');
+    const noTerminalsMsg = document.getElementById('no-terminals-msg');
+    const terminalsCountLabel = document.getElementById('terminals-count-label');
+    const terminalFormModal = document.getElementById('terminal-form-modal');
+    const terminalForm = document.getElementById('terminal-form');
+    const posSelect = document.getElementById('receipt-pos-select');
+    const posSelectHint = document.getElementById('pos-select-hint');
+    const deleteTerminalModal = document.getElementById('delete-terminal-modal');
+    let terminalsDeleteCleanup = null;
+
+    function terminalCountText(n) {
+        const t = bizT();
+        if (n === 0) return t.terminals_count_zero || (bizLang() === 'en' ? 'No cash registers added' : 'Кассовые аппараты не добавлены');
+        if (n === 1) return t.terminals_count_one || '1 кассовый аппарат';
+        const form = pluralRu(n, 'one', 'few', 'many');
+        return (t['terminals_count_' + form] || '{n} cash registers').replace('{n}', String(n));
+    }
+
+    async function loadTerminals(shopId) {
+        if (!shopId) return;
+        try {
+            const { data, error } = await client
+                .from('pos_terminals')
+                .select('id, name, serial_number, model, location, is_active, created_at')
+                .eq('shop_id', shopId)
+                .order('created_at', { ascending: true });
+            if (error) throw error;
+            currentTerminals = data || [];
+        } catch (e) {
+            logError('biz:loadTerminals', e);
+            currentTerminals = [];
+        }
+        renderTerminalsWidget();
+        renderPosSelect();
+    }
+
+    function renderTerminalsWidget() {
+        if (!terminalsCountLabel) return;
+        terminalsCountLabel.textContent = terminalCountText(currentTerminals.length);
+    }
+
+    function renderTerminalsList() {
+        if (!terminalsListEl) return;
+        const t = bizT();
+        if (currentTerminals.length === 0) {
+            terminalsListEl.innerHTML = '';
+            if (noTerminalsMsg) noTerminalsMsg.style.display = 'block';
+            return;
+        }
+        if (noTerminalsMsg) noTerminalsMsg.style.display = 'none';
+
+        terminalsListEl.innerHTML = currentTerminals.map((term) => {
+            const metaParts = [];
+            if (term.model) metaParts.push(term.model);
+            if (term.location) metaParts.push(term.location);
+            const statusText = term.is_active
+                ? (t.terminal_active || 'Активна')
+                : (t.terminal_inactive || 'Деактивирована');
+            return `
+                <div class="terminal-card${term.is_active ? '' : ' is-inactive'}">
+                    <div class="terminal-card-icon"><i class="fa-solid fa-cash-register"></i></div>
+                    <div class="terminal-card-info">
+                        <div class="terminal-card-top">
+                            <strong class="terminal-card-name">${escapeHtml(term.name)}</strong>
+                            <span class="terminal-badge ${term.is_active ? 'is-active' : 'is-inactive'}">${escapeHtml(statusText)}</span>
+                        </div>
+                        <span class="terminal-card-serial">S/N: ${escapeHtml(term.serial_number)}</span>
+                        ${metaParts.length ? `<span class="terminal-card-meta">${escapeHtml(metaParts.join(' · '))}</span>` : ''}
+                    </div>
+                    <button type="button" class="btn-action delete btn-delete-terminal" data-id="${term.id}"
+                        data-i18n-title="delete_terminal_title" title="${t.delete_terminal_title || 'Удалить аппарат'}">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>`;
+        }).join('');
+
+        terminalsListEl.querySelectorAll('.btn-delete-terminal').forEach((btn) => {
+            btn.addEventListener('click', () => openDeleteTerminalModal(btn.dataset.id));
+        });
+    }
+
+    function renderPosSelect() {
+        if (!posSelect) return;
+        const t = bizT();
+        const active = currentTerminals.filter((term) => term.is_active);
+        const prevValue = posSelect.value || '';
+        posSelect.innerHTML = '';
+
+        if (active.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = t.pos_no_terminal || 'Без кассы';
+            posSelect.appendChild(opt);
+            if (posSelectHint) posSelectHint.style.display = 'block';
+        } else {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = t.pos_no_terminal || 'Без кассы';
+            posSelect.appendChild(opt);
+            active.forEach((term) => {
+                const o = document.createElement('option');
+                o.value = term.id;
+                o.textContent = term.name + (term.serial_number ? ` (${term.serial_number})` : '');
+                posSelect.appendChild(o);
+            });
+            if (posSelectHint) posSelectHint.style.display = 'none';
+            if (active.some((term) => term.id === prevValue)) posSelect.value = prevValue;
+        }
+
+        if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+    }
+
+    function openTerminalsModal() {
+        if (!terminalsModal || !currentShop) return;
+        renderTerminalsList();
+        terminalsModal.classList.remove('is-hidden');
+        document.body.classList.add('modal-open');
+    }
+
+    function closeTerminalsModal() {
+        if (!terminalsModal || terminalsModal.classList.contains('closing')) return;
+        terminalsModal.classList.add('closing');
+        setTimeout(() => {
+            terminalsModal.classList.remove('closing');
+            terminalsModal.classList.add('is-hidden');
+            if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
+                document.body.classList.remove('modal-open');
+            }
+        }, 250);
+    }
+
+    function openTerminalForm() {
+        if (!terminalFormModal) return;
+        terminalForm?.reset();
+        terminalFormModal.querySelectorAll('.input-group').forEach((grp) => grp.classList.remove('is-invalid'));
+        terminalFormModal.querySelectorAll('[data-terminal-error]').forEach((el) => { el.textContent = ''; });
+        terminalFormModal.classList.remove('is-hidden');
+        document.body.classList.add('modal-open');
+        const nameField = terminalForm?.querySelector('#terminal-name');
+        requestAnimationFrame(() => requestAnimationFrame(() => nameField?.focus()));
+    }
+
+    function closeTerminalForm() {
+        if (!terminalFormModal || terminalFormModal.classList.contains('closing')) return;
+        terminalFormModal.classList.add('closing');
+        setTimeout(() => {
+            terminalFormModal.classList.remove('closing');
+            terminalFormModal.classList.add('is-hidden');
+            if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
+                document.body.classList.remove('modal-open');
+            }
+        }, 180);
+    }
+
+    function closeDeleteTerminalModal() {
+        if (deleteTerminalModal?.classList.contains('is-hidden')) return;
+        document.getElementById('cancel-delete-terminal-btn')?.click();
+    }
+
+    function validateTerminalForm() {
+        const t = bizT();
+        const nameEl = terminalForm?.querySelector('[name="name"]');
+        const serialEl = terminalForm?.querySelector('[name="serial_number"]');
+        const errName = terminalForm?.querySelector('[data-terminal-error="name"]');
+        const errSerial = terminalForm?.querySelector('[data-terminal-error="serial"]');
+        let ok = true;
+
+        if (!nameEl?.value.trim()) {
+            setFieldError(nameEl?.closest('.input-group'), errName,
+                t.terminal_required_name || (bizLang() === 'en' ? 'Enter a register name' : 'Укажите название аппарата'));
+            ok = false;
+        } else {
+            setFieldError(nameEl?.closest('.input-group'), errName, '');
+        }
+
+        if (!serialEl?.value.trim()) {
+            setFieldError(serialEl?.closest('.input-group'), errSerial,
+                t.terminal_required_serial || (bizLang() === 'en' ? 'Enter a serial number' : 'Укажите серийный номер'));
+            ok = false;
+        } else {
+            setFieldError(serialEl?.closest('.input-group'), errSerial, '');
+        }
+
+        return ok;
+    }
+
+    terminalForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!currentShop) return;
+        if (!validateTerminalForm()) return;
+        const btn = terminalForm.querySelector('button[type="submit"]');
+        if (btn.disabled) return;
+        const t = bizT();
+        btn.disabled = true;
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> ' + (t.terminal_saving || (bizLang() === 'en' ? 'Saving...' : 'Сохранение...'));
+
+        try {
+            const fd = new FormData(terminalForm);
+            const { data, error } = await client
+                .from('pos_terminals')
+                .insert([{
+                    shop_id: currentShop.id,
+                    name: String(fd.get('name') || '').trim(),
+                    serial_number: String(fd.get('serial_number') || '').trim(),
+                    model: String(fd.get('model') || '').trim() || null,
+                    location: String(fd.get('location') || '').trim() || null
+                }])
+                .select('id, name, serial_number, model, location, is_active, created_at')
+                .single();
+
+            if (error) {
+                if (error.code === '23505') {
+                    const serialEl = terminalForm.querySelector('[name="serial_number"]');
+                    const grp = serialEl?.closest('.input-group');
+                    const errEl = terminalForm.querySelector('[data-terminal-error="serial"]');
+                    setFieldError(grp, errEl,
+                        t.terminal_duplicate_serial || 'Аппарат с таким серийным номером уже существует');
+                } else {
+                    logError('biz:createTerminal', error);
+                    window.showToast(error.message || 'Ошибка добавления', 'error');
+                }
+                return;
+            }
+
+            currentTerminals.push(data);
+            renderTerminalsWidget();
+            renderTerminalsList();
+            renderPosSelect();
+            closeTerminalForm();
+            window.showToast(t.terminal_saved || 'Кассовый аппарат добавлен', 'success');
+        } catch (err) {
+            logError('biz:createTerminalCatch', err);
+            window.showToast(err.message || 'Ошибка добавления', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    });
+
+    function openDeleteTerminalModal(terminalId) {
+        if (!deleteTerminalModal || !currentShop) return;
+        if (terminalsDeleteCleanup) terminalsDeleteCleanup();
+        const t = bizT();
+        const confirmBtn = document.getElementById('confirm-delete-terminal-btn');
+        const cancelBtn = document.getElementById('cancel-delete-terminal-btn');
+        deleteTerminalModal.classList.remove('is-hidden');
+        document.body.classList.add('modal-open');
+
+        const handleConfirm = async () => {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+            try {
+                const { error } = await client
+                    .from('pos_terminals')
+                    .delete()
+                    .eq('id', terminalId)
+                    .eq('shop_id', currentShop.id);
+
+                if (error) {
+                    if (error.code === '23503') {
+                        await client
+                            .from('pos_terminals')
+                            .update({ is_active: false })
+                            .eq('id', terminalId)
+                            .eq('shop_id', currentShop.id);
+                        const term = currentTerminals.find((x) => x.id === terminalId);
+                        if (term) term.is_active = false;
+                        window.showToast(
+                            t.terminal_in_use_deactivated || 'Касса используется в чеках — она деактивирована',
+                            'warning'
+                        );
+                    } else {
+                        throw error;
+                    }
+                } else {
+                    currentTerminals = currentTerminals.filter((x) => x.id !== terminalId);
+                    window.showToast(t.terminal_deleted || 'Кассовый аппарат удалён', 'success');
+                }
+
+                renderTerminalsWidget();
+                renderTerminalsList();
+                renderPosSelect();
+                handleCancel();
+            } catch (e) {
+                logError('biz:deleteTerminal', e);
+                window.showToast(
+                    t.terminal_delete_error || (bizLang() === 'en' ? 'Error deleting register' : 'Ошибка при удалении аппарата'),
+                    'error'
+                );
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = `<i class="fa-solid fa-trash"></i> ${t.delete_btn || 'Удалить'}`;
+            }
+        };
+
+        const handleCancel = () => {
+            if (deleteTerminalModal.classList.contains('closing')) return;
+            deleteTerminalModal.classList.add('closing');
+            setTimeout(() => {
+                deleteTerminalModal.classList.add('is-hidden');
+                deleteTerminalModal.classList.remove('closing');
+                if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
+                    document.body.classList.remove('modal-open');
+                }
+                cleanup();
+            }, 200);
+        };
+
+        const handleOutside = (e) => {
+            if (e.target === deleteTerminalModal || e.target.classList.contains('modal-backdrop')) handleCancel();
+        };
+
+        const cleanup = () => {
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+            deleteTerminalModal.removeEventListener('click', handleOutside);
+            terminalsDeleteCleanup = null;
+        };
+
+        confirmBtn.addEventListener('click', handleConfirm);
+        cancelBtn.addEventListener('click', handleCancel);
+        deleteTerminalModal.addEventListener('click', handleOutside);
+        terminalsDeleteCleanup = cleanup;
+    }
+
+    document.getElementById('open-terminals-btn')?.addEventListener('click', openTerminalsModal);
+    document.getElementById('close-terminals-modal')?.addEventListener('click', closeTerminalsModal);
+    document.getElementById('add-terminal-btn')?.addEventListener('click', openTerminalForm);
+    document.getElementById('close-terminal-form')?.addEventListener('click', closeTerminalForm);
+    document.getElementById('cancel-terminal-form')?.addEventListener('click', closeTerminalForm);
+    terminalsModal?.addEventListener('click', (e) => {
+        if (e.target === terminalsModal || e.target.classList.contains('modal-backdrop')) closeTerminalsModal();
+    });
+    terminalFormModal?.addEventListener('click', (e) => {
+        if (e.target === terminalFormModal || e.target.classList.contains('modal-backdrop')) closeTerminalForm();
+    });
+
+    attachModalA11y(terminalsModal, {
+        mode: 'hidden',
+        onClose: () => {
+            if (terminalFormModal?.classList.contains('is-hidden') && deleteTerminalModal?.classList.contains('is-hidden')) {
+                closeTerminalsModal();
+            }
+        }
+    });
+    attachModalA11y(terminalFormModal, { mode: 'hidden', onClose: () => closeTerminalForm() });
+    attachModalA11y(deleteTerminalModal, { mode: 'hidden', onClose: () => closeDeleteTerminalModal() });
 
     // Registration form logo preview
     const regLogoInput = document.getElementById('reg-logo-input');
@@ -1025,6 +1380,7 @@ async function initBusinessPanel() {
             renderView(views.shop);
         } else if (shop) {
             updateShopInfo(shop);
+            await loadTerminals(shop.id);
             renderView(views.dashboard);
             await refreshDashboard(client, shop.id, stats, list);
         } else {
@@ -1034,6 +1390,7 @@ async function initBusinessPanel() {
         logError('biz:loadShop', e);
         if (currentShop) {
             updateShopInfo(currentShop);
+            await loadTerminals(currentShop.id);
             renderView(views.dashboard);
             await refreshDashboard(client, currentShop.id, stats, list);
         } else if (views.shop) {
@@ -1150,6 +1507,7 @@ async function initBusinessPanel() {
                     currentShop = newShop;
                     sessionStorage.setItem('current_shop', JSON.stringify(newShop));
                     updateShopInfo(newShop);
+                    await loadTerminals(newShop.id);
                     renderView(views.dashboard);
                     await refreshDashboard(client, newShop.id, stats, list);
                 }
@@ -1265,6 +1623,8 @@ async function initBusinessPanel() {
                 const pay = modal.el.querySelector('[name="payment_method"]');
                 if (pay && pay._cs) pay._cs.refresh();
             }
+
+            renderPosSelect();
 
             modal.el.classList.remove('is-hidden');
             document.body.classList.add('modal-open');
@@ -1418,7 +1778,10 @@ async function initBusinessPanel() {
 
                 const status = emailIsRegistered ? 'verified' : 'pending';
 
-                const payload = {
+                const fdPosId = fd.get('pos_terminal_id');
+                const posTerm = currentTerminals.find((x) => x.id === fdPosId && x.is_active) || null;
+
+                const basePayload = {
                     shop_id: currentShop.id,
                     customer_email: email,
                     net_total: net, vat_amount: vat, gross_total: gross,
@@ -1432,12 +1795,32 @@ async function initBusinessPanel() {
                     logo_path: currentShop.logo_path,
                     country: currentShop.country || null
                 };
+                const payload = {
+                    ...basePayload,
+                    pos_terminal_id: posTerm ? posTerm.id : null,
+                    pos_serial: posTerm ? posTerm.serial_number : null
+                };
 
-                const { data: inserted, error } = await client
+                let inserted = null;
+                let error = null;
+                const insertRes = await client
                     .from('business_receipts')
                     .insert([payload])
                     .select('id, receipt_number')
                     .single();
+                if (insertRes.error && insertRes.error.code === '42703') {
+                    // Колонки pos_* ещё не в БД (миграция не применена) — вставляем без них
+                    const fallbackRes = await client
+                        .from('business_receipts')
+                        .insert([basePayload])
+                        .select('id, receipt_number')
+                        .single();
+                    inserted = fallbackRes.data;
+                    error = fallbackRes.error;
+                } else {
+                    inserted = insertRes.data;
+                    error = insertRes.error;
+                }
 
                 if (error) {
                     const errLang = localStorage.getItem('valuon-lang') || 'ru';
@@ -1515,6 +1898,7 @@ async function initBusinessPanel() {
                     vat_amount: vat,
                     gross_total: gross,
                     fiscal_hash: fiscalSignature,
+                    pos_serial: posTerm ? posTerm.serial_number : null,
                     shop_id: currentShop.id,
                     shop_name: currentShop.shop_name,
                     receipt_items: items.map((it) => ({
@@ -1553,10 +1937,27 @@ async function initBusinessPanel() {
         if (emptyMsg) emptyMsg.style.display = 'none';
 
         try {
+            const receiptsSel = async () => {
+                const res = await client.from('business_receipts')
+                    .select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)')
+                    .eq('shop_id', shopId)
+                    .order('created_at', { ascending: false })
+                    .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
+                if (res.error && res.error.code === '42703') {
+                    // Колонки pos_* ещё не в БД (миграция не применена) — повторяем без них
+                    return client.from('business_receipts')
+                        .select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, fiscal_hash, shop_id, created_at, shop_name, payment_method, receipt_items(item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)')
+                        .eq('shop_id', shopId)
+                        .order('created_at', { ascending: false })
+                        .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
+                }
+                return res;
+            };
+
             const [totalRes, pendingRes, receiptsRes] = await Promise.all([
                 client.from('business_receipts').select('*', { count: 'exact', head: true }).eq('shop_id', shopId),
                 client.from('business_receipts').select('*', { count: 'exact', head: true }).eq('shop_id', shopId).eq('status', 'pending'),
-                client.from('business_receipts').select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, fiscal_hash, shop_id, created_at, shop_name, payment_method, receipt_items(item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)').eq('shop_id', shopId).order('created_at', { ascending: false }).order('sort_order', { referencedTable: 'receipt_items', ascending: true })
+                receiptsSel()
             ]);
 
             if (statsEl.total) { statsEl.total.textContent = '0'; window.animateCount(statsEl.total, totalRes.count || 0); }

@@ -108,7 +108,7 @@ Valuon — статический фронтенд-проект без сбор�
 | **Чеки** | `receipts.js` | `receipts` CRUD + Storage `receipts`, `business_receipts` |
 | **Уведомления** | `dashboard-notifications.js` | `items`, `profiles` (expiry_alerts) |
 | **Настройки** | `dashboard-settings.js` | `profiles`, `auth.updateUser` |
-| **Магазин** | `business-panel.js` | `shops`, `business_receipts`, `receipt_items`, Storage `shop-logos`, RPC `check_profile_exists` |
+| **Магазин** | `business-panel.js` | `shops`, `pos_terminals`, `business_receipts`, `receipt_items`, Storage `shop-logos`, RPC `check_profile_exists` |
 | **Верификация** | `verify.js` | Edge Function `verify-receipt` |
 
 ### 3.3. i18n (RU/EN)
@@ -163,6 +163,13 @@ shops
 shop_keys
   id uuid PK, shop_id FK → shops, public_key text, created_at
 
+pos_terminals                (кассовые аппараты)
+  id uuid PK, shop_id FK → shops
+  name text, serial_number text (UNIQUE по магазину)
+  model text, location text
+  is_active boolean (false = деактивирован, если используется в чеках)
+  created_at
+
 business_receipts              (чеки, выданные продавцом)
   id uuid PK, shop_id FK → shops
   receipt_number, customer_email
@@ -170,6 +177,7 @@ business_receipts              (чеки, выданные продавцом)
   net_total, vat_amount, gross_total numeric
   fiscal_hash text (Ed25519 подпись)
   shop_name, tax_id, address, country, logo_path (денормализовано)
+  pos_terminal_id uuid, pos_serial text (касса, с которой выписан чек)
   status ('verified' | 'pending'), created_at
 
 receipt_items
@@ -236,6 +244,7 @@ RECEIPT:<serial>|DATE:<ISO>|TAX:<vat>|TOTAL:<gross>|SELLER:<taxId>|SHOP_ID:<id>|
 2. `parseQRData` → извлекается только `SIG` (fiscal_hash)
 3. POST → Edge Function `verify-receipt` — серверно проверяет Ed25519-подпись и чек по реестру
 4. Ответ формирует UI: номер, дата, сумма, товары, логотип магазина, статус продавца
+5. Серийник кассы (номер КСО) приходит в `receipt.posSerial` от Edge Function `verify-receipt` (функция добирает `pos_serial` из `business_receipts` через service_role, если RPC `verify_get_receipt` его не вернул; код — `supabase/functions/verify-receipt/index.ts`)
 
 ### 5.4. Загрузка личного чека (receipts)
 1. Drag&drop / клик → валидация (jpg/png/gif/webp/pdf, ≤10 МБ)

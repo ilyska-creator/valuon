@@ -19,6 +19,7 @@ const resultBadge = document.getElementById('result-badge');
 const resultDetails = document.getElementById('result-details');
 const resultReceiptNumber = document.getElementById('result-receipt-number');
 const resultReceiptDate = document.getElementById('result-receipt-date');
+const resultRegisterSerial = document.getElementById('result-register-serial');
 const resultReceiptAmount = document.getElementById('result-receipt-amount');
 const resultReceiptStore = document.getElementById('result-receipt-store');
 const resultSellerStatus = document.getElementById('result-seller-status');
@@ -226,6 +227,7 @@ function showResult(status, data) {
             if (resultDetails) resultDetails.style.display = 'block';
             resultReceiptNumber.textContent = data.receiptNumber || '—';
             resultReceiptDate.textContent = data.date || '—';
+            if (resultRegisterSerial) resultRegisterSerial.textContent = data.registerSerial || '—';
             resultReceiptAmount.textContent = data.amount || '—';
             const storeSpan = resultReceiptStore.querySelector('span');
             if (storeSpan) storeSpan.textContent = data.store || '—';
@@ -359,6 +361,8 @@ async function verifyReceiptFromQRData(qrRaw) {
         const items = Array.isArray(receipt.items) ? receipt.items : [];
         const receiptNum = receipt.receiptNumber ? `#RCP-${receipt.receiptNumber}` : null;
 
+        let registerSerial = receipt.posSerial || receipt.pos_serial || null;
+
         let shopLogoUrl = null;
         if (shop.logoPath) {
             shopLogoUrl = `${SUPABASE_URL}/storage/v1/object/public/shop-logos/${shop.logoPath}`;
@@ -372,6 +376,7 @@ async function verifyReceiptFromQRData(qrRaw) {
             store: shop.shopName || '—',
             sellerStatus,
             shopLogo: shopLogoUrl,
+            registerSerial,
         });
     } catch (err) {
         logError('verify:unexpected', err);
@@ -587,13 +592,17 @@ scanBtn?.addEventListener('click', () => {
 
 copyBtn?.addEventListener('click', async () => {
     if (!lastResultData) return;
-    const text = [
+    const lines = [
         t('detail_receipt_number') + ': ' + lastResultData.receiptNumber,
         t('detail_date') + ': ' + lastResultData.date,
         t('detail_amount') + ': ' + lastResultData.amount,
         t('detail_store') + ': ' + lastResultData.store,
         t('detail_status') + ': ' + lastResultData.sellerStatus,
-    ].join('\n');
+    ];
+    if (lastResultData.registerSerial) {
+        lines.splice(1, 0, t('detail_register') + ': ' + lastResultData.registerSerial);
+    }
+    const text = lines.join('\n');
     try {
         await navigator.clipboard.writeText(text);
         const span = copyBtn.querySelector('span') || copyBtn;

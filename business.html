@@ -152,6 +152,15 @@
                 </div>
             </div>
 
+            <button type="button" class="terminals-widget mb-6" id="open-terminals-btn" data-animate>
+                <span class="terminals-widget-icon"><i class="fa-solid fa-cash-register"></i></span>
+                <span class="terminals-widget-info">
+                    <span class="terminals-widget-title" data-i18n="terminals_widget_title">Кассовые аппараты</span>
+                    <span class="terminals-widget-count" id="terminals-count-label">—</span>
+                </span>
+                <span class="terminals-widget-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+            </button>
+
             <div class="stats-grid mb-6" data-animate-group data-animate-step="110">
                 <div class="stat-card" data-animate="zoom">
                     <div class="stat-icon blue"><i class="fa-solid fa-file-invoice"></i></div>
@@ -278,6 +287,15 @@
                                     <small class="field-error" id="customer-email-error" role="alert"></small>
                                 </div>
                                 <div class="receipt-meta-col">
+                                    <div class="input-group" id="receipt-pos-group">
+                                        <label data-i18n="pos_select_label">Касса</label>
+                                        <select name="pos_terminal_id" class="custom-select"
+                                            id="receipt-pos-select">
+                                            <option value="" data-i18n="pos_no_terminal">Без кассы</option>
+                                        </select>
+                                        <small class="field-hint" id="pos-select-hint" data-i18n="pos_select_empty"
+                                            style="display:none;">Добавьте кассу в разделе «Кассовые аппараты»</small>
+                                    </div>
                                     <div class="input-group">
                                         <label data-i18n="payment_method_label">Оплата</label>
                                         <select name="payment_method" class="custom-select">
@@ -480,6 +498,109 @@
                         data-i18n="cancel_btn">Отмена</button>
                     <button type="button" id="confirm-delete-btn" class="btn btn-danger w-full" data-i18n="delete_btn">
                         <i class="fa-solid fa-trash"></i> Удалить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="terminals-modal" class="modal-overlay is-hidden" aria-hidden="true">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content max-w-lg">
+                <div class="modal-header">
+                    <div class="modal-heading">
+                        <span class="modal-heading-icon"><i class="fa-solid fa-cash-register"></i></span>
+                        <div class="modal-heading-text">
+                            <h2 data-i18n="terminals_modal_title">Кассовые аппараты</h2>
+                            <p data-i18n="terminals_modal_subtitle">Устройства, с которых выписываются чеки</p>
+                        </div>
+                    </div>
+                    <button type="button" id="close-terminals-modal" class="btn-close" aria-label="Закрыть"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="terminals-list" id="terminals-list"></div>
+
+                <div id="no-terminals-msg" class="empty-state" style="display: none;">
+                    <div class="empty-icon"><i class="fa-solid fa-cash-register"></i></div>
+                    <h3 data-i18n="no_terminals_title">Пока нет кассовых аппаратов</h3>
+                    <p data-i18n="no_terminals_desc">Добавьте первый аппарат, чтобы указывать его в чеках.</p>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="add-terminal-btn" class="btn btn-primary w-full">
+                        <i class="fa-solid fa-plus"></i> <span data-i18n="add_terminal_btn">Добавить кассовый
+                            аппарат</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="terminal-form-modal" class="modal-overlay is-hidden z-overlay" aria-hidden="true">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content max-w-md">
+                <div class="modal-header">
+                    <div class="modal-heading">
+                        <span class="modal-heading-icon"><i class="fa-solid fa-plus"></i></span>
+                        <div class="modal-heading-text">
+                            <h2 data-i18n="terminal_form_title">Новый кассовый аппарат</h2>
+                            <p data-i18n="terminal_form_subtitle">Серийный номер будет печататься на каждом чеке</p>
+                        </div>
+                    </div>
+                    <button type="button" id="close-terminal-form" class="btn-close" aria-label="Закрыть"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <form id="terminal-form" class="modal-form" action="#" novalidate>
+                    <div class="input-group">
+                        <label for="terminal-name" data-i18n="terminal_name_label">Название</label>
+                        <input type="text" id="terminal-name" name="name" required autocomplete="off"
+                            data-i18n-placeholder="terminal_name_placeholder" placeholder="Касса №1">
+                        <small class="field-error" data-terminal-error="name" role="alert"></small>
+                    </div>
+                    <div class="input-group">
+                        <label for="terminal-serial" data-i18n="terminal_serial_label">Серийный номер</label>
+                        <input type="text" id="terminal-serial" name="serial_number" required autocomplete="off"
+                            data-i18n-placeholder="terminal_serial_placeholder" placeholder="CR-2026-001">
+                        <small class="field-hint" data-i18n="terminal_serial_hint">Печатается в каждом чеке (Reg.
+                            S/N)</small>
+                        <small class="field-error" data-terminal-error="serial" role="alert"></small>
+                    </div>
+                    <div class="input-group">
+                        <label for="terminal-model" data-i18n="terminal_model_label">Модель (опционально)</label>
+                        <input type="text" id="terminal-model" name="model" autocomplete="off"
+                            data-i18n-placeholder="terminal_model_placeholder" placeholder="Valuon POS Pro">
+                    </div>
+                    <div class="input-group">
+                        <label for="terminal-location" data-i18n="terminal_location_label">Расположение
+                            (опционально)</label>
+                        <input type="text" id="terminal-location" name="location" autocomplete="off"
+                            data-i18n-placeholder="terminal_location_placeholder" placeholder="Зал, касса №1">
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" id="cancel-terminal-form" class="btn btn-outline"
+                            data-i18n="cancel_btn">Отмена</button>
+                        <button type="submit" class="btn btn-primary" data-i18n="save_terminal_btn">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="delete-terminal-modal" class="modal-overlay is-hidden z-overlay">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content max-w-md delete-confirm-card">
+                <div class="delete-icon-wrapper">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h2 data-i18n="delete_terminal_title">Удалить кассовый аппарат?</h2>
+                <p data-i18n="delete_terminal_desc">Чеки, уже выписанные с этого аппарата, сохранятся. Само устройство
+                    будет удалено из системы.</p>
+
+                <div class="modal-actions confirm-actions">
+                    <button type="button" id="cancel-delete-terminal-btn" class="btn btn-outline w-full"
+                        data-i18n="cancel_btn">Отмена</button>
+                    <button type="button" id="confirm-delete-terminal-btn" class="btn btn-danger w-full">
+                        <i class="fa-solid fa-trash"></i> <span data-i18n="delete_btn">Удалить</span>
                     </button>
                 </div>
             </div>

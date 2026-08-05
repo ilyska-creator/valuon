@@ -1447,6 +1447,10 @@
     margin-bottom: 0;
 }
 
+#receipt-pos-group {
+    grid-column: 1 / -1;
+}
+
 #create-receipt-modal .custom-datepicker-wrapper {
     max-width: none;
 }
@@ -2583,7 +2587,7 @@
         overflow-y: auto;
         overscroll-behavior: contain;
         min-height: 0;
-        max-height: 42dvh;
+        max-height: 55dvh;
         scrollbar-gutter: stable;
     }
 
@@ -2627,6 +2631,15 @@
 @media (max-width: 560px) {
     #create-receipt-modal .receipt-meta-col {
         grid-template-columns: 1fr;
+    }
+
+    #create-receipt-modal .item-fields {
+        grid-template-columns: 1fr;
+    }
+
+    #create-receipt-modal .receipt-item-row .input-group input {
+        font-size: 1rem;
+        padding: 0.6rem 0.7rem;
     }
 
     #create-receipt-modal .customer-status-badge span {
@@ -2701,4 +2714,180 @@
     #create-receipt-modal .item-category {
         grid-column: 1 / -1;
     }
+}
+
+/* --- Виджет «Кассовые аппараты» --- */
+
+.terminals-widget {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    padding: 1.25rem 1.5rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2xl);
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.terminals-widget:hover {
+    border-color: rgba(59, 130, 246, 0.45);
+    box-shadow: 0 6px 24px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+}
+
+.terminals-widget:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.terminals-widget-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+}
+
+[data-theme="dark"] .terminals-widget-icon {
+    background: rgba(59, 130, 246, 0.18);
+}
+
+.terminals-widget-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.terminals-widget-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-main);
+}
+
+.terminals-widget-count {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.terminals-widget-arrow {
+    margin-left: auto;
+    color: var(--text-muted);
+    opacity: 0.6;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.terminals-widget:hover .terminals-widget-arrow {
+    opacity: 1;
+    transform: translateX(2px);
+    transition: transform 0.2s ease;
+}
+
+/* --- Модалка списка кассовых аппаратов --- */
+
+.modal-overlay.z-overlay {
+    z-index: calc(var(--z-modal-overlay) + 1);
+}
+
+.terminals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.terminal-card {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1rem 1.1rem;
+    background: var(--bg-body);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    transition: border-color 0.2s ease;
+}
+
+.terminal-card.is-inactive {
+    opacity: 0.65;
+}
+
+.terminal-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.terminal-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.terminal-card-top {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.terminal-card-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.terminal-card-serial {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+}
+
+.terminal-card-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.terminal-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.terminal-badge.is-active {
+    background: rgba(22, 163, 74, 0.12);
+    color: #16a34a;
+}
+
+.terminal-badge.is-inactive {
+    background: rgba(100, 116, 139, 0.12);
+    color: var(--text-muted);
+}
+
+.terminal-card .btn-action.delete {
+    flex-shrink: 0;
 }
