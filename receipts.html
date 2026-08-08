@@ -84,8 +84,24 @@
         </div>
 
         <section class="items-section" data-animate data-delay="120">
-            <h2 data-i18n="section_documents">Ваши документы</h2>
-            <div class="receipts-grid"></div>
+            <div class="items-section-header">
+                <h2 data-i18n="section_documents">Ваши документы</h2>
+                <div class="items-tabs" id="receipts-tabs" role="tablist">
+                    <span class="items-tab-indicator" id="receipts-tab-indicator" aria-hidden="true"></span>
+                    <button class="items-tab active" data-receipts-tab="personal" role="tab" aria-selected="true">
+                        <i class="fa-solid fa-receipt"></i>
+                        <span data-i18n="receipts_tab_personal">Ваши чеки</span>
+                        <span class="items-tab-count" id="receipts-count-personal">0</span>
+                    </button>
+                    <button class="items-tab" data-receipts-tab="business" role="tab" aria-selected="false">
+                        <i class="fa-solid fa-store"></i>
+                        <span data-i18n="receipts_tab_business">Чеки от партнеров</span>
+                        <span class="items-tab-count" id="receipts-count-business">0</span>
+                    </button>
+                </div>
+            </div>
+            <div class="receipts-grid" id="receipts-grid-personal"></div>
+            <div class="receipts-grid hidden" id="receipts-grid-business"></div>
         </section>
     </main>
 

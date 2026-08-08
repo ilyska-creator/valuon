@@ -1036,7 +1036,7 @@ async function initBusinessPanel() {
         if (!terminalsModal || !currentShop) return;
         renderTerminalsList();
         terminalsModal.classList.remove('is-hidden');
-        document.body.classList.add('modal-open');
+        document.documentElement.classList.add('modal-open');
     }
 
     function closeTerminalsModal() {
@@ -1046,7 +1046,7 @@ async function initBusinessPanel() {
             terminalsModal.classList.remove('closing');
             terminalsModal.classList.add('is-hidden');
             if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
-                document.body.classList.remove('modal-open');
+                document.documentElement.classList.remove('modal-open');
             }
         }, 250);
     }
@@ -1057,7 +1057,7 @@ async function initBusinessPanel() {
         terminalFormModal.querySelectorAll('.input-group').forEach((grp) => grp.classList.remove('is-invalid'));
         terminalFormModal.querySelectorAll('[data-terminal-error]').forEach((el) => { el.textContent = ''; });
         terminalFormModal.classList.remove('is-hidden');
-        document.body.classList.add('modal-open');
+        document.documentElement.classList.add('modal-open');
         const nameField = terminalForm?.querySelector('#terminal-name');
         requestAnimationFrame(() => requestAnimationFrame(() => nameField?.focus()));
     }
@@ -1069,7 +1069,7 @@ async function initBusinessPanel() {
             terminalFormModal.classList.remove('closing');
             terminalFormModal.classList.add('is-hidden');
             if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
-                document.body.classList.remove('modal-open');
+                document.documentElement.classList.remove('modal-open');
             }
         }, 180);
     }
@@ -1167,7 +1167,7 @@ async function initBusinessPanel() {
         const confirmBtn = document.getElementById('confirm-delete-terminal-btn');
         const cancelBtn = document.getElementById('cancel-delete-terminal-btn');
         deleteTerminalModal.classList.remove('is-hidden');
-        document.body.classList.add('modal-open');
+        document.documentElement.classList.add('modal-open');
 
         confirmBtn.disabled = false;
         confirmBtn.innerHTML = `<i class="fa-solid fa-trash"></i> ${t.delete_btn || 'Удалить'}`;
@@ -1228,7 +1228,7 @@ async function initBusinessPanel() {
                 deleteTerminalModal.classList.add('is-hidden');
                 deleteTerminalModal.classList.remove('closing');
                 if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
-                    document.body.classList.remove('modal-open');
+                    document.documentElement.classList.remove('modal-open');
                 }
                 cleanup();
             }, 200);
@@ -1578,7 +1578,7 @@ async function initBusinessPanel() {
         setTimeout(() => {
             el.classList.remove('closing');
             el.classList.add('is-hidden');
-            document.body.classList.remove('modal-open');
+            document.documentElement.classList.remove('modal-open');
             baselineDate = '';
             forms.receipt?.reset();
             resetItemRows();
@@ -1655,7 +1655,7 @@ async function initBusinessPanel() {
             renderPosSelect();
 
             modal.el.classList.remove('is-hidden');
-            document.body.classList.add('modal-open');
+            document.documentElement.classList.add('modal-open');
             updateTotalPreview();
 
             const headIcon = modal.el.querySelector('.modal-heading-icon');
@@ -2043,7 +2043,7 @@ async function initBusinessPanel() {
                     attachModalA11y(deleteModal, { mode: 'hidden', onClose: () => handleCancel() });
 
                     deleteModal.classList.remove('is-hidden');
-                    document.body.classList.add('modal-open');
+                    document.documentElement.classList.add('modal-open');
 
                     confirmBtn.disabled = false;
                     const lang = localStorage.getItem('valuon-lang') || 'ru';
@@ -2090,7 +2090,7 @@ async function initBusinessPanel() {
                         setTimeout(() => {
                             deleteModal.classList.add('is-hidden');
                             deleteModal.classList.remove('closing');
-                            document.body.classList.remove('modal-open');
+                            document.documentElement.classList.remove('modal-open');
                             cleanup();
                         }, 250);
                     };

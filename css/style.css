@@ -2624,8 +2624,9 @@ select:-webkit-autofill:focus {
     }
 }
 
-body.modal-open {
+html.modal-open {
     overflow: hidden;
+    height: 100%;
 }
 
 .cookie-banner {

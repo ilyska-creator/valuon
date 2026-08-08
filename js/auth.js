@@ -179,6 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         stepSuccess?.classList.add('hidden');
 
         forgotModal.classList.add('active');
+        document.documentElement.classList.add('modal-open');
 
         // Рендерим виджет только сейчас, когда контейнер уже видим —
         // Turnstile не умеет авто-рендериться в display:none элементах.
@@ -194,6 +195,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (forgotModal?.classList.contains('closing')) return;
         forgotModal?.classList.add('closing');
         forgotModal?.classList.remove('active');
+        document.documentElement.classList.remove('modal-open');
         setTimeout(() => {
             forgotModal?.classList.remove('closing');
         }, 350);

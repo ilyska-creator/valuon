@@ -444,7 +444,8 @@ html {
     gap: var(--space-6);
 }
 
-.items-grid .rotating-loader {
+.items-grid .rotating-loader,
+.receipts-grid .rotating-loader {
     grid-column: 1 / -1;
     justify-self: center;
     padding: 60px 20px;
@@ -2466,13 +2467,15 @@ html {
     }
 }
 
-.items-grid.fade-out {
+.items-grid.fade-out,
+.receipts-grid.fade-out {
     opacity: 0;
     transform: translateY(4px);
     transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-.items-grid.fade-in {
+.items-grid.fade-in,
+.receipts-grid.fade-in {
     animation: gridFadeIn 0.3s ease;
 }
 

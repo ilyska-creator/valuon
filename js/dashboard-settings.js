@@ -165,6 +165,7 @@ async function initSettings() {
                 originalFirstName = firstName;
                 originalLastName = lastName;
                 originalCurrency = currency;
+                window.dispatchEvent(new CustomEvent('currency-changed', { detail: { currency } }));
 
                 saveBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
                 const tSuccess = getSettingsT();

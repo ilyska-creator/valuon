@@ -22,6 +22,14 @@ function renderItemCurrencySelects() {
 
 window.addEventListener('lang-changed', renderItemCurrencySelects);
 
+// Настройки — отдельная вкладка того же SPA (dashboard.html), которая
+// подгружается один раз при заходе на страницу. Без этого слушателя смена
+// валюты по умолчанию в настройках не долетала бы до модалки добавления
+// вещи до перезагрузки страницы.
+window.addEventListener('currency-changed', (e) => {
+    if (e.detail?.currency) userDefaultCurrency = e.detail.currency;
+});
+
 function applySavedItemsTab() {
     const saved = sessionStorage.getItem('valuon-items-tab') || 'verified';
     if (saved === 'verified') return;
@@ -285,7 +293,7 @@ function renderItems(items) {
         btn.addEventListener('click', () => {
             pendingDeleteItemId = btn.dataset.id;
             document.getElementById('delete-item-modal')?.classList.add('active');
-            document.body.classList.add('modal-open');
+            document.documentElement.classList.add('modal-open');
         });
     });
 
@@ -601,16 +609,24 @@ async function openEditModal(itemId, client, userId) {
     const lang = localStorage.getItem('valuon-lang') || 'ru';
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
-    const { data: item, error } = await client
-        .from('items')
-        .select('*')
-        .eq('id', itemId)
-        .eq('user_id', userId)
-        .single();
+    // Данные вещи уже есть в памяти после последней загрузки списка (loadItems),
+    // так что открываем модалку сразу без похода в сеть. Сетевой запрос —
+    // только запасной вариант, если по какой-то причине кэш пуст/устарел.
+    let item = lastMineItems.find(it => String(it.id) === String(itemId));
 
-    if (error || !item) {
-        showToast(t.msg_item_update_failed || 'Failed to load item', 'error');
-        return;
+    if (!item) {
+        const { data, error } = await client
+            .from('items')
+            .select('*')
+            .eq('id', itemId)
+            .eq('user_id', userId)
+            .single();
+
+        if (error || !data) {
+            showToast(t.msg_item_update_failed || 'Failed to load item', 'error');
+            return;
+        }
+        item = data;
     }
 
     form.querySelector('[name="item_id"]').value = item.id;
@@ -641,7 +657,7 @@ async function openEditModal(itemId, client, userId) {
     }
 
     modal.classList.add('active');
-    document.body.classList.add('modal-open');
+    document.documentElement.classList.add('modal-open');
 }
 
 function setupEditModal(client, userId) {
@@ -658,7 +674,7 @@ function setupEditModal(client, userId) {
         setTimeout(() => {
             modal.classList.remove('active', 'closing');
             form.reset();
-            document.body.classList.remove('modal-open');
+            document.documentElement.classList.remove('modal-open');
         }, 250);
     }
 
@@ -737,7 +753,7 @@ function setupDeleteItemModal(client, userId) {
         modal?.classList.add('closing');
         setTimeout(() => {
             modal?.classList.remove('active', 'closing');
-            document.body.classList.remove('modal-open');
+            document.documentElement.classList.remove('modal-open');
             pendingDeleteItemId = null;
         }, 250);
     }
@@ -794,7 +810,7 @@ function setupModal(client) {
         setTimeout(() => {
             modal.classList.remove('active', 'closing');
             form.reset();
-            document.body.classList.remove('modal-open');
+            document.documentElement.classList.remove('modal-open');
         }, 250);
     }
 
@@ -813,7 +829,7 @@ function setupModal(client) {
 
     addBtn.addEventListener('click', () => {
         modal.classList.add('active');
-        document.body.classList.add('modal-open');
+        document.documentElement.classList.add('modal-open');
         const dateInput = form?.querySelector('[name="purchase_date"]');
         if (dateInput) {
             const now = new Date();

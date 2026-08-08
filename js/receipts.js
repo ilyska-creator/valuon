@@ -25,6 +25,22 @@ function getLang() {
     return localStorage.getItem('valuon-lang') || 'ru';
 }
 
+// Вкладки и заголовок секции теперь статичны в HTML (как на странице
+// "Мои вещи"), поэтому просто восстанавливаем сохранённую вкладку —
+// без пересборки разметки и, соответственно, без мигания текста.
+function applySavedReceiptsTab() {
+    const saved = sessionStorage.getItem('valuon-receipts-tab') || 'personal';
+    if (saved === 'personal') return;
+
+    document.querySelector('#receipts-tabs .items-tab[data-receipts-tab="personal"]')?.classList.remove('active');
+    document.querySelector('#receipts-tabs .items-tab[data-receipts-tab="personal"]')?.setAttribute('aria-selected', 'false');
+    document.querySelector('#receipts-tabs .items-tab[data-receipts-tab="business"]')?.classList.add('active');
+    document.querySelector('#receipts-tabs .items-tab[data-receipts-tab="business"]')?.setAttribute('aria-selected', 'true');
+
+    document.getElementById('receipts-grid-personal')?.classList.add('hidden');
+    document.getElementById('receipts-grid-business')?.classList.remove('hidden');
+}
+
 function validateFileSize(file) {
     if (file.size > MAX_FILE_SIZE) {
         const lang = getLang();
@@ -65,6 +81,9 @@ async function initReceipts() {
     setupUploadListeners(uploadModal);
     setupDeleteModal(client, currentUserId);
 
+    applySavedReceiptsTab();
+    setupReceiptsTabs();
+
     await loadAllReceipts(currentUserEmail, currentUserId, client);
     await populateItemSelect(currentUserId, client);
 
@@ -96,20 +115,29 @@ async function attachFreshSignedUrls(receipts, client) {
 }
 
 async function loadAllReceipts(userEmail, userId, client) {
-    const mainContent = document.querySelector('.main-content');
-    if (!mainContent) return;
+    // Шапка и вкладки статичны (как на "Мои вещи") и никогда не пересобираются,
+    // а значит вкладки кликабельны и во время загрузки. Поэтому лоадер ставим
+    // в обе сетки сразу — иначе клик по неактивной вкладке во время загрузки
+    // на миг показал бы пустую сетку вместо индикатора загрузки.
+    const personalGrid = document.getElementById('receipts-grid-personal');
+    const businessGrid = document.getElementById('receipts-grid-business');
+    if (!personalGrid || !businessGrid) return;
 
-    mainContent.innerHTML = '<div class="rotating-loader"></div>';
-    const loaderEl = mainContent.querySelector('.rotating-loader');
-    if (loaderEl && typeof RotatingTextLoader !== 'undefined') {
-        const lang = getLang();
-        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
-        new RotatingTextLoader(loaderEl, [
-            t.loading_receipts || 'Загружаем чеки…',
-            t.loading_signatures || 'Проверяем подписи…',
-            t.loading_items_update || 'Обновляем статусы…'
-        ], { interval: 800 });
-    }
+    const lang = getLang();
+    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+    const phrases = [
+        t.loading_receipts || 'Загружаем чеки…',
+        t.loading_signatures || 'Проверяем подписи…',
+        t.loading_items_update || 'Обновляем статусы…'
+    ];
+
+    [personalGrid, businessGrid].forEach(grid => {
+        grid.innerHTML = '<div class="rotating-loader"></div>';
+        const loaderEl = grid.querySelector('.rotating-loader');
+        if (loaderEl && typeof RotatingTextLoader !== 'undefined') {
+            new RotatingTextLoader(loaderEl, phrases, { interval: 800 });
+        }
+    });
 
     try {
         const { data: businessData, error: bizError } = await client
@@ -134,67 +162,30 @@ async function loadAllReceipts(userEmail, userId, client) {
         renderSplitReceipts(businessData || [], personalWithFreshUrls, client, userId);
     } catch (e) {
         logError('receipts:load', e);
-        mainContent.innerHTML = '<p class="empty-state error">Ошибка загрузки данных.</p>';
+        const errorHtml = '<p class="empty-state error">Ошибка загрузки данных.</p>';
+        personalGrid.innerHTML = errorHtml;
+        businessGrid.innerHTML = errorHtml;
     }
 }
 
 function renderSplitReceipts(businessReceipts, personalReceipts, client, userId) {
-    const mainContent = document.querySelector('.main-content');
+    // Шапка, заголовок секции и вкладки статичны в HTML и сюда больше не
+    // попадают — обновляем только содержимое сеток и счётчики на вкладках.
     const lang = getLang();
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
-    const savedTab = sessionStorage.getItem('valuon-receipts-tab') || 'personal';
-    const isPersonal = savedTab === 'personal';
+    const personalGrid = document.getElementById('receipts-grid-personal');
+    const businessGrid = document.getElementById('receipts-grid-business');
+    if (!personalGrid || !businessGrid) return;
 
-    const personalGridHTML = buildPersonalGridHTML(personalReceipts, t, lang);
-    const businessGridHTML = buildBusinessGridHTML(businessReceipts, t, lang);
+    personalGrid.innerHTML = buildPersonalGridHTML(personalReceipts, t, lang);
+    businessGrid.innerHTML = buildBusinessGridHTML(businessReceipts, t, lang);
 
-    const html = `
-        <header class="content-header">
-            <h1 data-i18n="nav_receipts">Чеки и документы</h1>
-            <button class="btn btn-primary" id="upload-receipt-btn">
-                <i class="fa-solid fa-upload"></i> <span data-i18n="btn_upload">Загрузить чек</span>
-            </button>
-        </header>
-        <div class="upload-zone" id="drop-zone">
-            <i class="fa-solid fa-cloud-arrow-up"></i>
-            <p data-i18n="upload_title">Перетащите фото чека сюда</p>
-            <span data-i18n="upload_hint">или нажмите для выбора файла • JPG, PNG, PDF • Макс. 10 МБ</span>
-        </div>
-        <section class="items-section" data-animate>
-            <div class="items-section-header">
-                <h2 data-i18n="section_documents">Чеки и документы</h2>
-                <div class="items-tabs" id="receipts-tabs" role="tablist">
-                    <span class="items-tab-indicator" id="receipts-tab-indicator" aria-hidden="true"></span>
-                    <button class="items-tab ${isPersonal ? 'active' : ''}" data-receipts-tab="personal" role="tab" aria-selected="${isPersonal}">
-                        <i class="fa-solid fa-receipt"></i>
-                        <span data-i18n="receipts_tab_personal">${t.receipts_tab_personal || 'Ваши чеки'}</span>
-                        <span class="items-tab-count" id="receipts-count-personal">0</span>
-                    </button>
-                    <button class="items-tab ${isPersonal ? '' : 'active'}" data-receipts-tab="business" role="tab" aria-selected="${!isPersonal}">
-                        <i class="fa-solid fa-store"></i>
-                        <span data-i18n="receipts_tab_business">${t.receipts_tab_business || 'Чеки от партнеров'}</span>
-                        <span class="items-tab-count" id="receipts-count-business">0</span>
-                    </button>
-                </div>
-            </div>
-            <div class="receipts-grid ${isPersonal ? '' : 'hidden'}" id="receipts-grid-personal">
-                ${personalGridHTML}
-            </div>
-            <div class="receipts-grid ${isPersonal ? 'hidden' : ''}" id="receipts-grid-business">
-                ${businessGridHTML}
-            </div>
-        </section>
-    `;
-
-    mainContent.innerHTML = html;
     requestAnimationFrame(() => {
         window.animateCount(document.getElementById('receipts-count-personal'), personalReceipts.length);
         window.animateCount(document.getElementById('receipts-count-business'), businessReceipts.length);
     });
-    setupReceiptsTabs();
     restoreListeners(client, userId);
-    setupUploadListeners(uploadModal);
 
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(lang);
@@ -241,6 +232,33 @@ function buildBusinessGridHTML(receipts, t, lang) {
     return receipts.map(r => renderBusinessCard(r, t)).join('');
 }
 
+let _switchingReceiptsTab = false;
+
+function switchReceiptsGridTab(oldGrid, newGrid) {
+    if (_switchingReceiptsTab || !newGrid) return;
+    _switchingReceiptsTab = true;
+    if (oldGrid) {
+        oldGrid.classList.add('fade-out');
+        setTimeout(() => {
+            oldGrid.classList.add('hidden');
+            oldGrid.classList.remove('fade-out');
+            showNewGrid();
+        }, 180);
+    } else {
+        showNewGrid();
+    }
+    function showNewGrid() {
+        newGrid.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            newGrid.classList.add('fade-in');
+            setTimeout(() => {
+                newGrid.classList.remove('fade-in');
+                _switchingReceiptsTab = false;
+            }, 300);
+        });
+    }
+}
+
 function setupReceiptsTabs() {
     const tabs = document.querySelectorAll('#receipts-tabs .items-tab');
     const indicator = document.getElementById('receipts-tab-indicator');
@@ -268,8 +286,9 @@ function setupReceiptsTabs() {
             sessionStorage.setItem('valuon-receipts-tab', target);
             const personalGrid = document.getElementById('receipts-grid-personal');
             const businessGrid = document.getElementById('receipts-grid-business');
-            personalGrid?.classList.toggle('hidden', target !== 'personal');
-            businessGrid?.classList.toggle('hidden', target !== 'business');
+            const oldGrid = target === 'personal' ? businessGrid : personalGrid;
+            const newGrid = target === 'personal' ? personalGrid : businessGrid;
+            switchReceiptsGridTab(oldGrid, newGrid);
         });
     });
 
@@ -410,6 +429,11 @@ function setupUploadListeners(modal) {
 function restoreListeners(client, userId) {
     const lang = getLang();
 
+    // Кнопка в пустом состоянии сетки — сам элемент каждый раз создаётся
+    // заново при обновлении содержимого, поэтому биндим её здесь, а не
+    // один раз при инициализации (в отличие от статичных upload-zone/шапки).
+    document.getElementById('empty-upload-receipt-btn')?.addEventListener('click', () => uploadModal?.open());
+
     document.querySelectorAll('.btn-view-receipt').forEach(btn => {
         btn.addEventListener('click', () => {
             if (btn.dataset.url) window.open(btn.dataset.url, '_blank');
@@ -520,7 +544,7 @@ function restoreListeners(client, userId) {
         btn.addEventListener('click', () => {
             pendingDeleteId = btn.dataset.id;
             document.getElementById('delete-receipt-modal')?.classList.add('active');
-            document.body.classList.add('modal-open');
+            document.documentElement.classList.add('modal-open');
         });
     });
 }
@@ -568,7 +592,7 @@ function setupDeleteModal(client, userId) {
         modal?.classList.add('closing');
         setTimeout(() => {
             modal?.classList.remove('active', 'closing');
-            document.body.classList.remove('modal-open');
+            document.documentElement.classList.remove('modal-open');
             pendingDeleteId = null;
         }, 250);
     }
@@ -713,7 +737,7 @@ function createUploadModal(client, userId) {
 
     function open() {
         modal.classList.add('active');
-        document.body.classList.add('modal-open');
+        document.documentElement.classList.add('modal-open');
         if (dateInput) {
             const now = new Date();
             const y = now.getFullYear();
@@ -734,7 +758,7 @@ function createUploadModal(client, userId) {
         modal.classList.add('closing');
         setTimeout(() => {
             modal.classList.remove('active', 'closing');
-            document.body.classList.remove('modal-open');
+            document.documentElement.classList.remove('modal-open');
             form.reset();
             miniDropZone?.classList.remove('has-file');
             setFieldsLocked(false);
