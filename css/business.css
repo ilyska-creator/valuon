@@ -1697,6 +1697,24 @@
     white-space: nowrap;
 }
 
+.item-subtotal-amounts {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.item-subtotal-vat {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.item-subtotal-vat:empty {
+    display: none;
+}
+
 .item-subtotal strong {
     display: inline-block;
     font-size: 1rem;

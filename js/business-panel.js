@@ -418,20 +418,37 @@ async function initBusinessPanel() {
             totalPreviewEl.classList.add('pop');
         }
 
+        const gj = localStorage.getItem('valuon-lang') || 'ru';
+        const t = window.businessTranslations?.[gj] || {};
+        const vatWord = t.vat_word || (gj === 'en' ? 'VAT:' : 'НДС:');
+
         if (itemsList) {
-            itemsList.querySelectorAll('[data-item-row]').forEach((row) => {
+            // "Сумма" по позиции — это то, что реально заплатит покупатель за эту
+            // строку, то есть С учётом налога (gross), а не только qty*price со
+            // скидкой без налога. Раньше здесь пересчитывали заново без НДС —
+            // из-за этого показанная сумма по строке не совпадала с тем, что в
+            // итоге попадает в чек (netTotal+vatAmount). Берём готовые значения
+            // из readItemRows(), чтобы расчёт был ровно один и тот же везде.
+            const rows = itemsList.querySelectorAll('[data-item-row]');
+            rows.forEach((row, i) => {
                 const sub = row.querySelector('[data-row-subtotal]');
-                if (!sub) return;
-                const qty = parseFloat(row.querySelector('[data-field="qty"]').value) || 0;
-                const price = parseFloat(row.querySelector('[data-field="price"]').value) || 0;
-                const disc = parseFloat(row.querySelector('[data-field="discount"]').value) || 0;
-                const val = qty * price * (1 - (disc > 100 ? 100 : disc < 0 ? 0 : disc) / 100);
-                const str = fmtMoney(val);
-                if (sub.textContent !== str) {
-                    sub.textContent = str;
-                    sub.classList.remove('pop');
-                    void sub.offsetWidth;
-                    sub.classList.add('pop');
+                const vatEl = row.querySelector('[data-row-vat]');
+                const it = items[i];
+                if (!it) return;
+
+                if (sub) {
+                    const str = fmtMoney(it.grossTotal);
+                    if (sub.textContent !== str) {
+                        sub.textContent = str;
+                        sub.classList.remove('pop');
+                        void sub.offsetWidth;
+                        sub.classList.add('pop');
+                    }
+                }
+
+                if (vatEl) {
+                    const vatStr = it.vatAmount > 0 ? `${vatWord} ${fmtMoney(it.vatAmount)}` : '';
+                    if (vatEl.textContent !== vatStr) vatEl.textContent = vatStr;
                 }
             });
         }
@@ -442,15 +459,12 @@ async function initBusinessPanel() {
             const totalQty = items.reduce((s, it) => s + it.qty, 0);
             const vat = items.reduce((s, it) => s + it.vatAmount, 0);
             const discTotal = items.reduce((s, it) => s + it.discountAmount, 0);
-            const gj = localStorage.getItem('valuon-lang') || 'ru';
-            const t = window.businessTranslations?.[gj] || {};
             const word = t.units
                 ? pluralRu(positions, t.units.one, t.units.few, t.units.many)
                 : (gj === 'en'
                     ? (positions === 1 ? 'item' : 'items')
                     : pluralRu(positions, 'позиция', 'позиции', 'позиций'));
             const qWord = t.qty_word || (gj === 'en' ? 'pcs' : 'шт.');
-            const vatWord = t.vat_word || (gj === 'en' ? 'VAT:' : 'НДС:');
             const discWord = t.discount_word || (gj === 'en' ? 'discount' : 'скидка');
             totalDetailEl.textContent = positions
                 ? `${positions} ${word} · ${totalQty} ${qWord}${discTotal > 0 ? ` · ${discWord} −${fmtMoney(discTotal)}` : ''}`
@@ -844,7 +858,14 @@ async function initBusinessPanel() {
         emailInput?.focus();
     });
     document.getElementById('success-done-btn')?.addEventListener('click', () => {
-        hideSuccessScreen();
+        // Раньше здесь сразу вызывался hideSuccessScreen() — экран успеха
+        // мгновенно (без анимации) сменялся пустой формой чека, и уже ПОСЛЕ
+        // этого стартовала анимация закрытия самой модалки — визуально
+        // получалось, будто закрывается что-то одно, а потом ещё и вся
+        // модалка поверх. forceClose() сам скрывает экран успеха внутри
+        // своего таймаута — уже ПОСЛЕ того, как модалка спрячется — так что
+        // пользователь видит один плавный уход модалки с текстом
+        // "Чек выписан!", а не подмену контента перед закрытием.
         forceClose();
     });
 
