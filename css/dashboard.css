@@ -12,10 +12,6 @@ html {
     background-color: var(--bg-body);
 }
 
-/* =============================================
-   Bottom nav — mobile
-   ============================================= */
-
 .bottom-nav {
     display: none;
     position: fixed;
@@ -33,6 +29,8 @@ html {
         0 2px 4px rgba(0, 0, 0, 0.02),
         0 8px 24px rgba(0, 0, 0, 0.06),
         0 0 0 1px rgba(0, 0, 0, 0.03) inset;
+    will-change: transform;
+    clip-path: inset(0 round 28px);
 }
 
 [data-theme="light"] .bottom-nav,
@@ -138,10 +136,6 @@ html {
     display: none;
 }
 
-/* =============================================
-   Sidebar
-   ============================================= */
-
 .sidebar {
     width: 280px;
     background: var(--card-bg);
@@ -155,6 +149,17 @@ html {
     height: 100vh;
     z-index: 100;
     transition: transform var(--transition-base);
+    will-change: transform;
+}
+
+@supports not (backdrop-filter: blur(16px)) {
+    .sidebar {
+        background: var(--light, #ffffff);
+    }
+
+    [data-theme="dark"] .sidebar {
+        background: #14161a;
+    }
 }
 
 [data-theme="dark"] .sidebar {
@@ -249,6 +254,7 @@ html {
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     border-bottom: 1px solid transparent;
+    will-change: transform;
 }
 
 [data-theme="dark"] .content-header {
@@ -570,12 +576,22 @@ html {
     transition: stroke-dashoffset 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.progress-ring-fill.active  { stroke: var(--success); }
-.progress-ring-fill.warning { stroke: var(--warning); }
-.progress-ring-fill.expired { stroke: var(--error); }
+.progress-ring-fill.active {
+    stroke: var(--success);
+}
+
+.progress-ring-fill.warning {
+    stroke: var(--warning);
+}
+
+.progress-ring-fill.expired {
+    stroke: var(--error);
+}
 
 @media (prefers-reduced-motion: reduce) {
-    .progress-ring-fill { transition: none; }
+    .progress-ring-fill {
+        transition: none;
+    }
 }
 
 .item-status-badge.none {
@@ -738,6 +754,7 @@ html {
     overflow-y: auto;
     overscroll-behavior: contain;
     border-radius: var(--radius-2xl);
+    will-change: transform;
     padding: var(--space-8);
     transform: translateY(20px);
     transition: all var(--transition-base);
@@ -1153,6 +1170,7 @@ html {
 
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
+    will-change: transform;
     border-bottom: 1px solid transparent;
 }
 
@@ -1374,6 +1392,7 @@ html {
         background: var(--light);
         backdrop-filter: blur(12px) saturate(180%);
         -webkit-backdrop-filter: blur(12px) saturate(180%);
+        will-change: transform;
 
         width: 100%;
         left: auto;
@@ -2006,7 +2025,7 @@ html {
     padding-right: 2.7rem;
 }
 
-.input-with-lock .lock-icon:not(.hidden) ~ .suffix-hint {
+.input-with-lock .lock-icon:not(.hidden)~.suffix-hint {
     display: none;
 }
 
@@ -2402,7 +2421,6 @@ html {
     background: rgba(255, 255, 255, 0.08);
 }
 
-/* Confirmed (verified) item cards — top ribbon + lock note. */
 .verified-item-card:hover {
     border-color: rgba(16, 185, 129, 0.35);
 }
@@ -2460,7 +2478,6 @@ html {
     color: var(--success);
 }
 
-/* Grid switch transition */
 @keyframes gridFadeIn {
     from {
         opacity: 0;
@@ -2481,39 +2498,6 @@ html {
 
 .items-grid.fade-in {
     animation: gridFadeIn 0.3s ease;
-}
-
-/* Skeleton loading cards */
-.item-card-skeleton {
-    height: 224px;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-2xl);
-    position: relative;
-    overflow: hidden;
-}
-
-[data-theme="dark"] .item-card-skeleton {
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
-.item-card-skeleton::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
-    transform: translateX(-100%);
-    animation: skeletonShimmer 1.4s ease-in-out infinite;
-}
-
-[data-theme="dark"] .item-card-skeleton::after {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
-}
-
-@keyframes skeletonShimmer {
-    to {
-        transform: translateX(100%);
-    }
 }
 
 @media (max-width: 450px) {

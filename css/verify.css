@@ -178,9 +178,12 @@
 }
 
 @keyframes scanPulse {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.35);
     }
+
     50% {
         box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
     }
@@ -388,6 +391,7 @@
     transition: all 0.2s ease;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    will-change: transform;
 }
 
 .scanner-action:hover {
@@ -879,7 +883,7 @@
         font-size: 1.25rem;
     }
 
-.verify-top-bar .lang-toggle {
+    .verify-top-bar .lang-toggle {
         width: 32px;
         height: 32px;
         font-size: 0.75rem;
@@ -963,4 +967,3 @@
     object-fit: cover;
     flex-shrink: 0;
 }
-

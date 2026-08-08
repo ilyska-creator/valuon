@@ -9,10 +9,6 @@
     overflow: hidden;
 }
 
-/* Light theme: same three acid-wave hues (lime / teal / cyan). First pass
-   at low alpha was invisible against white — pushed opacity up and pulled
-   the fade-out stop in so the color patches actually read, while still
-   staying well clear of the centered card. */
 :not([data-theme="dark"]) .auth-body {
     background-image:
         radial-gradient(640px circle at 6% 4%, rgba(200, 244, 0, 0.32), transparent 55%),
@@ -28,11 +24,6 @@
     }
 }
 
-/* Dark-mode only: onyx-black base with soft acid-wave glows tucked into the
-   corners (lime / teal / cyan from the "Кислотная волна" reference), faded
-   out well before the center so the card always sits on flat near-black —
-   color lives at the edges, not behind the content. Pure CSS, no extra DOM
-   elements, so it can't interfere with the translucent card/inputs on top. */
 [data-theme="dark"] .auth-body {
     background-color: #0a0a0a;
     background-image:
@@ -87,6 +78,16 @@
     transition: var(--transition-base);
 }
 
+@supports not (backdrop-filter: blur(16px)) {
+    .auth-card {
+        background: var(--light, #ffffff);
+    }
+
+    [data-theme="dark"] .auth-card {
+        background: #14161a;
+    }
+}
+
 .auth-card--leaving {
     opacity: 0;
     transform: scale(0.97) translateY(-6px);
@@ -116,9 +117,6 @@
     color: var(--text-main);
 }
 
-/* ----- Logo animations ----- */
-
-/* Login: wordmark settles into place */
 .auth-logo--settle .auth-wordmark {
     opacity: 0;
     transform: translateY(-30px);
@@ -153,7 +151,6 @@
     }
 }
 
-/* Register: wordmark fades and scales in */
 .auth-logo--draw .auth-wordmark {
     opacity: 0;
     transform: scale(0.9);
@@ -176,7 +173,6 @@
     }
 }
 
-/* Reset: lock shackle opens */
 .auth-logo--unlock svg {
     opacity: 0;
 }
@@ -196,7 +192,6 @@
     transform: rotate(-105deg);
 }
 
-/* Login success: checkmark pop on button + card fade */
 @keyframes checkPop {
     0% {
         transform: scale(0);
@@ -226,10 +221,6 @@
     gap: var(--space-4);
 }
 
-/* Single source of truth for vertical rhythm on auth pages: the flex `gap`
-   above. The global `.input-group { margin-bottom: ... }` from style.css
-   would double up with that gap, so it's neutralized here for the three
-   auth forms specifically (login, register, reset password). */
 #login-form .input-group,
 #register-form .input-group,
 #reset-form .input-group {
@@ -597,10 +588,6 @@
     min-width: 0;
 }
 
-/* Birthdate needs more horizontal room than a native date input can get
-   when squeezed into a 3-up row (the mm/dd/yyyy segments + calendar icon
-   get clipped below ~140px), so it spans the full row underneath the
-   name fields instead of sharing a third column with them. */
 .auth-form .input-row .input-group:nth-child(3) {
     grid-column: 1 / -1;
 }

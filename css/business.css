@@ -23,6 +23,7 @@
     isolation: isolate;
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
+    will-change: transform;
     border-bottom: 1px solid transparent;
 }
 
@@ -670,7 +671,6 @@
     border-radius: 16px;
 }
 
-/* ---- Registration form logo drop zone ---- */
 .logo-drop-zone {
     position: relative;
     border: 2px dashed var(--border);
@@ -832,6 +832,7 @@
 
         backdrop-filter: blur(16px) saturate(180%);
         -webkit-backdrop-filter: blur(16px) saturate(180%);
+        will-change: transform;
         border-bottom: 1px solid transparent;
     }
 
@@ -1315,8 +1316,6 @@
     }
 }
 
-/* --- Модалка выписки чека ------------------------------- */
-
 .max-w-2xl {
     max-width: 720px;
 }
@@ -1427,8 +1426,6 @@
     border-radius: 3px;
 }
 
-/* --- Клиентская зона --- */
-
 .receipt-layout {
     display: grid;
     grid-template-columns: 1fr;
@@ -1501,8 +1498,6 @@
     padding-right: 2.9rem;
 }
 
-/* --- Зона позиций --- */
-
 .receipt-items {
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -1548,8 +1543,6 @@
     flex-direction: column;
     gap: 0.5rem;
 }
-
-/* --- Карточка позиции --- */
 
 .receipt-item-row {
     display: flex;
@@ -1821,8 +1814,6 @@
     transform: scale(0.99);
 }
 
-/* --- Футер --- */
-
 .receipt-footer {
     flex: none;
     margin-top: auto;
@@ -1930,8 +1921,6 @@
     transform: translate(-50%, -50%);
 }
 
-/* --- Заголовки смысловых секций формы --- */
-
 .receipt-section {
     margin-bottom: 0.15rem;
 }
@@ -1954,8 +1943,6 @@
 .receipt-footer .receipt-section-label {
     margin-bottom: 0.55rem;
 }
-
-/* --- Инлайн-валидация полей --- */
 
 .field-error {
     display: block;
@@ -1993,8 +1980,6 @@
 .receipt-item-row.is-invalid [data-item-error] {
     margin-top: 0.15rem;
 }
-
-/* --- Статус клиента + автокомплит --- */
 
 .autocomplete-anchor {
     position: relative;
@@ -2096,8 +2081,6 @@
     font-size: 0.8rem;
     flex-shrink: 0;
 }
-
-/* --- Экран-защита от потери черновика --- */
 
 .modal-guard {
     position: absolute;
@@ -2214,8 +2197,6 @@
 .modal-guard-actions .btn-ghost:hover {
     color: var(--text-main);
 }
-
-/* --- Экран успеха после выписки чека --- */
 
 .receipt-success {
     padding: 0.5rem 0.25rem 0.1rem;
@@ -2395,7 +2376,6 @@
     margin-left: auto;
 }
 
-/* Bottom nav — mobile */
 .bottom-nav {
     display: none;
     position: fixed;
@@ -2409,6 +2389,8 @@
     -webkit-backdrop-filter: blur(16px) saturate(180%);
     border-radius: 28px;
     border: 1px solid transparent;
+    will-change: transform;
+    clip-path: inset(0 round 28px);
     box-shadow:
         0px 2px 4px rgba(0, 0, 0, 0.02),
         0px 8px 24px rgba(0, 0, 0, 0.06),
@@ -2534,7 +2516,6 @@
         gap: 1rem;
     }
 
-    /* Bottom-sheet для модалки выписки чека */
     #create-receipt-modal.modal-overlay {
         padding: 0;
         align-items: flex-end;
@@ -2664,7 +2645,6 @@
     }
 }
 
-/* ---- Loader ---- */
 .app-loader {
     display: flex;
     flex-direction: column;
@@ -2715,8 +2695,6 @@
         grid-column: 1 / -1;
     }
 }
-
-/* --- Виджет «Кассовые аппараты» --- */
 
 .terminals-widget {
     display: flex;
@@ -2794,8 +2772,6 @@
     transform: translateX(2px);
     transition: transform 0.2s ease;
 }
-
-/* --- Модалка списка кассовых аппаратов --- */
 
 .modal-overlay.z-overlay {
     z-index: calc(var(--z-modal-overlay) + 1);

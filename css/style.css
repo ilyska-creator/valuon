@@ -225,6 +225,7 @@ ul {
     border-bottom: 1px solid transparent;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    will-change: transform;
 }
 
 .navbar.scrolled {
@@ -473,6 +474,7 @@ html.scroll-locked {
     pointer-events: none;
     opacity: 0.35;
     animation: heroBlobDrift 16s ease-in-out infinite;
+    will-change: transform;
 }
 
 .hero-blob-1 {
@@ -1322,6 +1324,7 @@ select:-webkit-autofill:focus {
         border-bottom: 1px solid var(--border);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
+        will-change: transform;
 
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
 
@@ -2107,9 +2110,6 @@ select:-webkit-autofill:focus {
     color: var(--primary);
 }
 
-
-/* ── Rotating Text Loader ── */
-
 .rotating-loader {
     display: flex;
     flex-direction: column;
@@ -2163,7 +2163,6 @@ select:-webkit-autofill:focus {
     background: var(--primary-light);
 }
 
-/* Inline variant for tight spaces (QR demo, verify hints) */
 .rotating-loader--inline {
     flex-direction: row;
     gap: 6px;
@@ -2648,6 +2647,7 @@ body.modal-open {
     border-radius: 12px;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    will-change: transform;
 }
 
 .cookie-banner.show {
@@ -2692,5 +2692,20 @@ body.modal-open {
 
     .cookie-banner .btn {
         width: 100%;
+    }
+}
+
+@supports not (backdrop-filter: blur(4px)) {
+
+    .navbar,
+    .modal-overlay,
+    .cookie-banner {
+        background: rgba(255, 255, 255, 0.92);
+    }
+
+    [data-theme="dark"] .navbar,
+    [data-theme="dark"] .modal-overlay,
+    [data-theme="dark"] .cookie-banner {
+        background: rgba(20, 20, 20, 0.92);
     }
 }
