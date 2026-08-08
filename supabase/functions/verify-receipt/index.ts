@@ -286,6 +286,7 @@ Deno.serve(async (req: Request) => {
         netTotal: receipt.net_total,
         vatAmount: receipt.vat_amount,
         grossTotal: receipt.gross_total,
+        currency: receipt.currency,
         items: receipt.items.map((it: Record<string, unknown>) => ({
           item_name: it.item_name,
           qty: it.qty,

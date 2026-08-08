@@ -354,7 +354,7 @@ async function verifyReceiptFromQRData(qrRaw) {
             })
             : '—';
         const gross = parseFloat(receipt.grossTotal);
-        const amount = Number.isFinite(gross) ? '€' + gross.toFixed(2) : '—';
+        const amount = Number.isFinite(gross) ? window.formatCurrency(gross, receipt.currency || 'EUR', getVerifyLocale()) : '—';
         const sellerStatus = receipt.status === 'verified'
             ? t('seller_verified')
             : t('seller_pending');

@@ -292,7 +292,7 @@ function renderBusinessCard(r, t) {
                 <p>${escapeHtml(r.customer_email)}</p>
             </div>
             <div class="receipt-meta">
-                <span class="tag"><i class="fa-solid fa-tag"></i> €${parseFloat(r.gross_total || 0).toFixed(2)}</span>
+                <span class="tag"><i class="fa-solid fa-tag"></i> ${window.formatCurrency(parseFloat(r.gross_total) || 0, r.currency || 'EUR', getLang())}</span>
                 <span class="tag"><i class="fa-regular fa-calendar"></i> ${dateStr}</span>
                 ${maxWarranty > 0 ? `<span class="tag"><i class="fa-solid fa-shield-halved"></i> ${maxWarranty} ${t.months_short || 'mo'}.</span>` : ''}
                 ${itemsCount > 1 ? `<span class="tag"><i class="fa-solid fa-boxes-stacked"></i> ${itemsCount}</span>` : ''}
@@ -476,6 +476,7 @@ function restoreListeners(client, userId) {
                     shop_name: receipt.shop_name || 'Partner Store',
                     address: receipt.address || '',
                     country: receipt.country || null,
+                    currency: receipt.currency || 'EUR',
                     tax_id: receipt.tax_id || '',
                     logo_path: receipt.logo_path || null
                 };

@@ -100,7 +100,7 @@ async function initBusinessPanel() {
                     <i class="fa-regular fa-envelope"></i> ${escapeHtml(r.customer_email)}
                 </div>
                 <div class="item-tags">
-                    <span class="tag"><i class="fa-solid fa-tag"></i> €${Number.isFinite(parseFloat(r.gross_total)) ? parseFloat(r.gross_total).toFixed(2) : '0.00'}</span>
+                    <span class="tag"><i class="fa-solid fa-tag"></i> ${window.formatCurrency(parseFloat(r.gross_total) || 0, r.currency || 'EUR', currentLang)}</span>
                     <span class="tag"><i class="fa-solid fa-calendar-days"></i> <span class="receipt-date">${escapeHtml(dateStr)}</span></span>
                     <span class="tag"><i class="fa-solid fa-credit-card"></i> ${escapeHtml(payMethod)}</span>
                     ${r.pos_serial ? `<span class="tag" title="${escapeHtml(bt[currentLang]?.pos_serial_label || 'Register S/N')}"><i class="fa-solid fa-cash-register"></i> ${escapeHtml(r.pos_serial)}</span>` : ''}
@@ -184,7 +184,8 @@ async function initBusinessPanel() {
     let currentTerminals = [];
 
     function fmtMoney(v) {
-        return '€' + v.toFixed(2);
+        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        return window.formatCurrency(v, currentShop?.currency || 'EUR', lang);
     }
 
     function pluralRu(n, one, few, many) {
@@ -333,6 +334,8 @@ async function initBusinessPanel() {
     function addItemRow(focusName) {
         if (!itemsList || !itemTemplate) return;
         const node = itemTemplate.content.firstElementChild.cloneNode(true);
+        const priceSuffix = node.querySelector('.item-price .suffix-hint');
+        if (priceSuffix) priceSuffix.textContent = window.currencySymbol(currentShop?.currency || 'EUR');
         itemsList.appendChild(node);
         updateRemoveButtonsState();
         renumberRows();
@@ -884,6 +887,12 @@ async function initBusinessPanel() {
                 ? (flag ? flag + ' ' + countryName(shop.country, uiLang) : countryName(shop.country, uiLang))
                 : '—';
         }
+        const currencyEl = document.getElementById('display-currency');
+        if (currencyEl) {
+            currencyEl.textContent = shop.currency
+                ? `${window.currencySymbol(shop.currency)} ${shop.currency}`
+                : '—';
+        }
 
         updateShopLogo(shop.logo_path);
     }
@@ -1350,7 +1359,7 @@ async function initBusinessPanel() {
     try {
         const { data: shop, error } = await client
             .from('shops')
-            .select('id, shop_name, tax_id, address, country, logo_path, public_key, owner_id')
+            .select('id, shop_name, tax_id, address, country, currency, logo_path, public_key, owner_id')
             .eq('owner_id', user.id)
             .maybeSingle();
 
@@ -1467,6 +1476,7 @@ async function initBusinessPanel() {
                     tax_id: fd.get('tax_id'),
                     address: fd.get('address'),
                     country: fd.get('country') || null,
+                    currency: fd.get('currency') || 'EUR',
                     public_key: publicKeyBase64,
                     private_key: privateKeyBase64
                 }]);
@@ -1511,7 +1521,7 @@ async function initBusinessPanel() {
 
                 const { data: newShop } = await client
                     .from('shops')
-                    .select('id, shop_name, tax_id, address, country, logo_path, public_key, owner_id')
+                    .select('id, shop_name, tax_id, address, country, currency, logo_path, public_key, owner_id')
                     .eq('owner_id', currentUser.id)
                     .maybeSingle();
 
@@ -1805,7 +1815,8 @@ async function initBusinessPanel() {
                     tax_id: currentShop.tax_id,
                     address: currentShop.address,
                     logo_path: currentShop.logo_path,
-                    country: currentShop.country || null
+                    country: currentShop.country || null,
+                    currency: currentShop.currency || 'EUR'
                 };
                 const payload = {
                     ...basePayload,
@@ -1854,6 +1865,7 @@ async function initBusinessPanel() {
                     vat_amount: it.vatAmount,
                     gross_total: it.grossTotal,
                     sort_order: it.sortOrder,
+                    currency: currentShop.currency || 'EUR',
                 }));
 
                 const { error: itemsError } = await client.from('receipt_items').insert(itemRows);
@@ -1877,6 +1889,7 @@ async function initBusinessPanel() {
                         vat_amount: it.vatAmount,
                         gross_total: it.grossTotal,
                         sort_order: it.sortOrder,
+                        currency: currentShop.currency || 'EUR',
                     }));
                     const { error: baseError } = await client.from('receipt_items').insert(baseRows);
                     if (baseError) {
@@ -1951,14 +1964,14 @@ async function initBusinessPanel() {
         try {
             const receiptsSel = async () => {
                 const res = await client.from('business_receipts')
-                    .select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)')
+                    .select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)')
                     .eq('shop_id', shopId)
                     .order('created_at', { ascending: false })
                     .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
                 if (res.error && res.error.code === '42703') {
                     // Колонки pos_* ещё не в БД (миграция не применена) — повторяем без них
                     return client.from('business_receipts')
-                        .select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, fiscal_hash, shop_id, created_at, shop_name, payment_method, receipt_items(item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)')
+                        .select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, receipt_items(item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)')
                         .eq('shop_id', shopId)
                         .order('created_at', { ascending: false })
                         .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
@@ -1980,13 +1993,15 @@ async function initBusinessPanel() {
             const totalRevenue = grossTotals.reduce((s, v) => s + v, 0);
             const avgReceipt = grossTotals.length > 0 ? totalRevenue / grossTotals.length : 0;
 
+            const statsLang = localStorage.getItem('valuon-lang') || 'ru';
+            const statsCurrency = currentShop?.currency || 'EUR';
             if (statsEl.revenue) {
-                statsEl.revenue.textContent = '€0.00';
-                window.animateAmount(statsEl.revenue, totalRevenue);
+                statsEl.revenue.textContent = window.formatCurrency(0, statsCurrency, statsLang);
+                window.animateAmount(statsEl.revenue, totalRevenue, null, statsCurrency);
             }
             if (statsEl.avgReceipt) {
-                statsEl.avgReceipt.textContent = '€0.00';
-                window.animateAmount(statsEl.avgReceipt, avgReceipt);
+                statsEl.avgReceipt.textContent = window.formatCurrency(0, statsCurrency, statsLang);
+                window.animateAmount(statsEl.avgReceipt, avgReceipt, null, statsCurrency);
             }
 
             currentReceiptsList = receipts;
@@ -2235,12 +2250,16 @@ async function initBusinessPanel() {
     }
 
     function formatCompactCurrency(value) {
-        if (!Number.isFinite(value)) return '€0';
-        const abs = Math.abs(value);
-        const sign = value < 0 ? '-' : '';
-        if (abs >= 1e6) return sign + '€' + (abs / 1e6).toFixed(1) + 'M';
-        if (abs >= 1e3) return sign + '€' + (abs / 1e3).toFixed(1) + 'K';
-        return sign + '€' + Math.round(abs);
+        const amount = Number.isFinite(value) ? value : 0;
+        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const code = currentShop?.currency || 'EUR';
+        try {
+            return new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'ru-RU', {
+                style: 'currency', currency: code, notation: 'compact', maximumFractionDigits: 1
+            }).format(amount);
+        } catch (e) {
+            return window.formatCurrency(amount, code, lang);
+        }
     }
 
     function computeChange(currentData, previousData) {
@@ -2383,8 +2402,7 @@ async function initBusinessPanel() {
         opts.plugins.tooltip.callbacks = {
             label: function (context) {
                 const val = context.parsed.y;
-                if (!Number.isFinite(val)) return '€0.00';
-                return '€' + val.toFixed(2);
+                return window.formatCurrency(Number.isFinite(val) ? val : 0, currentShop?.currency || 'EUR', lang);
             }
         };
 
@@ -2568,10 +2586,21 @@ function renderShopCountrySelect() {
     if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
 }
 
+function renderShopCurrencySelect() {
+    const select = document.getElementById('shop-currency');
+    if (!select) return;
+    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    window.renderCurrencyOptions(select, lang);
+    if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+}
+
 renderShopCountrySelect();
+renderShopCurrencySelect();
 window.addEventListener('business-lang-changed', renderShopCountrySelect);
+window.addEventListener('business-lang-changed', renderShopCurrencySelect);
 document.addEventListener('DOMContentLoaded', () => {
     renderShopCountrySelect();
+    renderShopCurrencySelect();
     if (typeof window.applyBusinessTranslations === 'function') window.applyBusinessTranslations();
 });
 

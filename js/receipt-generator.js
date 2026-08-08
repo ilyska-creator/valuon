@@ -62,6 +62,8 @@ export async function downloadReceiptPDF(receipt, shop) {
             : '';
         const taxId = shop?.tax_id || '';
         const registerSerial = receipt.pos_serial || '—';
+        const pdfCurrency = shop?.currency || 'EUR';
+        const money = (v) => window.formatCurrency(Number(v) || 0, pdfCurrency, genLang);
 
         // Fetch logo if exists
         let logoDataUrl = null;
@@ -207,9 +209,9 @@ export async function downloadReceiptPDF(receipt, shop) {
 
             doc.setFont("courier", "normal");
             doc.text(String(item.qty ?? ''), 95, y);
-            doc.text(`€${Number(item.unit_price ?? 0).toFixed(2)}`, 125, y);
+            doc.text(money(item.unit_price), 125, y);
             doc.text(rate !== undefined && rate !== null ? `${Number(rate)}%` : '—', 150, y);
-            doc.text(`€${Number(item.net_total ?? 0).toFixed(2)}`, 170, y);
+            doc.text(money(item.net_total), 170, y);
             doc.setFont("helvetica", "normal");
             y += 6;
         });
@@ -224,7 +226,7 @@ export async function downloadReceiptPDF(receipt, shop) {
         doc.setFont(undefined, 'normal');
         doc.text(`Net Amount:`, rightCol, y);
         doc.setFont("courier", "normal");
-        doc.text(`€${netTotal.toFixed(2)}`, 165, y);
+        doc.text(money(netTotal), 165, y);
         y += 6;
 
         doc.setFont("helvetica", "normal");
@@ -234,7 +236,7 @@ export async function downloadReceiptPDF(receipt, shop) {
             : `Tax (${vatRatesList.join('/')}%):`;
         doc.text(vatLabel, rightCol, y);
         doc.setFont("courier", "normal");
-        doc.text(`€${vatAmount.toFixed(2)}`, 165, y);
+        doc.text(money(vatAmount), 165, y);
         y += 8;
 
         doc.setFillColor(243, 244, 246);
@@ -243,7 +245,7 @@ export async function downloadReceiptPDF(receipt, shop) {
         doc.setFontSize(12);
         doc.text(`GROSS TOTAL:`, rightCol, y);
         doc.setFont("courier", "bold");
-        doc.text(`€${grossTotal.toFixed(2)}`, 165, y);
+        doc.text(money(grossTotal), 165, y);
         y += 12;
 
         doc.setDrawColor(59, 130, 246);

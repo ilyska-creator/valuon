@@ -109,6 +109,17 @@
                     </div>
 
                     <div class="input-group">
+                        <label data-i18n="currency_label" for="shop-currency">Валюта</label>
+                        <select id="shop-currency" name="currency" class="custom-select" data-searchable required
+                            data-placeholder-i18n="currency_placeholder"
+                            data-search-placeholder="currency_search_placeholder"
+                            data-search-empty="currency_search_empty">
+                        </select>
+                        <small class="field-hint" data-i18n="currency_hint">Валюта, в которой будут выписываться
+                            чеки — изменить её позже будет нельзя</small>
+                    </div>
+
+                    <div class="input-group">
                         <label data-i18n="address_label" for="address">Юридический адрес</label>
                         <textarea id="address" name="address" rows="3" required
                             placeholder="ул. Примерная, д. 1, офис 101" autocomplete="street-address"
@@ -147,6 +158,7 @@
                 <div class="shop-meta">
                     <div class="meta-item"><i class="fa-solid fa-hashtag"></i> <span id="display-tax-id">—</span></div>
                     <div class="meta-item"><i class="fa-solid fa-globe"></i> <span id="display-country">—</span></div>
+                    <div class="meta-item"><i class="fa-solid fa-coins"></i> <span id="display-currency">—</span></div>
                     <div class="meta-item"><i class="fa-solid fa-location-dot"></i> <span id="display-address">—</span>
                     </div>
                 </div>
@@ -177,7 +189,7 @@
                     </div>
                 </div>
                 <div class="stat-card" data-animate="zoom">
-                    <div class="stat-icon green"><i class="fa-solid fa-euro-sign"></i></div>
+                    <div class="stat-icon green"><i class="fa-solid fa-coins"></i></div>
                     <div class="stat-info">
                         <span class="stat-label" data-i18n="total_revenue_label">Общая выручка</span>
                         <span class="stat-value" id="total-revenue">€0.00</span>
@@ -643,6 +655,7 @@
     <script src="js/toast.js"></script>
     <script src="js/custom-select.js"></script>
     <script src="js/countries.js"></script>
+    <script src="js/currencies.js"></script>
     <script src="js/custom-datepicker.js"></script>
     <script src="js/business-lang.js"></script>
     <script type="module" src="js/business-panel.js"></script>

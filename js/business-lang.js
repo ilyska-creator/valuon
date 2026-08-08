@@ -32,6 +32,12 @@ const businessTranslations = {
         country_hint: 'Страна регистрации бизнеса — она будет указана в чеке',
         country_search_empty: 'Ничего не найдено',
 
+        currency_label: 'Валюта',
+        currency_placeholder: 'Выберите валюту',
+        currency_search_placeholder: 'Поиск валюты...',
+        currency_hint: 'Валюта, в которой будут выписываться чеки — изменить её позже будет нельзя',
+        currency_search_empty: 'Ничего не найдено',
+
         register_shop_btn: 'Зарегистрировать магазин',
         registering_shop: 'Создание...',
 
@@ -243,6 +249,12 @@ const businessTranslations = {
         country_search_placeholder: 'Search country...',
         country_hint: 'Country of business registration — shown on the receipt',
         country_search_empty: 'Nothing found',
+
+        currency_label: 'Currency',
+        currency_placeholder: 'Select a currency',
+        currency_search_placeholder: 'Search currency...',
+        currency_hint: 'Currency used for issuing receipts — cannot be changed later',
+        currency_search_empty: 'Nothing found',
 
         register_shop_btn: 'Register Shop',
         registering_shop: 'Creating...',
@@ -458,8 +470,12 @@ window.animateCount = function (el, target, duration) {
     el._countRaf = requestAnimationFrame(step);
 };
 
-function formatMoney(value) {
-    if (!Number.isFinite(value)) return '€0.00';
+function formatMoney(value, currencyCode) {
+    if (!Number.isFinite(value)) value = 0;
+    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    if (typeof window.formatCurrency === 'function') {
+        return window.formatCurrency(value, currencyCode || 'EUR', lang);
+    }
     const sign = value < 0 ? '-' : '';
     const rounded = Math.round(Math.abs(value) * 100) / 100;
     const intPart = Math.floor(rounded);
@@ -468,11 +484,11 @@ function formatMoney(value) {
     return sign + '€' + formattedInt + '.' + String(decPart).padStart(2, '0');
 }
 
-window.animateAmount = function (el, target, duration) {
+window.animateAmount = function (el, target, duration, currencyCode) {
     if (!el) return;
     const raw = el.textContent.replace(/[^0-9.\-]/g, '');
     const start = raw ? parseFloat(raw) : 0;
-    if (start === target) { el.textContent = formatMoney(target); return; }
+    if (start === target) { el.textContent = formatMoney(target, currencyCode); return; }
 
     if (duration == null) {
         const diff = Math.abs(target - start);
@@ -491,12 +507,12 @@ window.animateAmount = function (el, target, duration) {
         const progress = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
         const current = start + (target - start) * eased;
-        el.textContent = formatMoney(current);
+        el.textContent = formatMoney(current, currencyCode);
 
         if (progress < 1) {
             el._countRaf = requestAnimationFrame(step);
         } else {
-            el.textContent = formatMoney(target);
+            el.textContent = formatMoney(target, currencyCode);
             el._countRaf = null;
         }
     }

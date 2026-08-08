@@ -392,7 +392,7 @@ function renderVerifiedItems(receipts, t) {
 
                     <div class="item-tags">
                         ${qty > 1 ? `<span class="tag"><i class="fa-solid fa-layer-group"></i> ×${escapeHtml(String(qty))}</span>` : ''}
-                        <span class="tag"><i class="fa-solid fa-tag"></i> €${escapeHtml(parseFloat(item.gross_total || 0).toFixed(2))}</span>
+                        <span class="tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(window.formatCurrency(parseFloat(item.gross_total) || 0, item.currency || 'EUR', lang))}</span>
                         ${!noWarranty ? `<span class="tag"><i class="fa-solid fa-shield-halved"></i> ${escapeHtml(String(item.warranty_months || 0))} ${escapeHtml(t.months_short || 'mo')}.</span>` : ''}
                         <span class="tag"><i class="fa-regular fa-calendar"></i> ${escapeHtml(dateStr)}</span>
                     </div>
@@ -449,7 +449,7 @@ async function loadVerifiedItems(userEmail, client) {
 
     const { data, error } = await client
         .from('business_receipts')
-        .select('purchase_date, shop_name, receipt_items(id, item_name, qty, gross_total, warranty_months, warranty_end_date)')
+        .select('purchase_date, shop_name, receipt_items(id, item_name, qty, gross_total, currency, warranty_months, warranty_end_date)')
         .eq('customer_email', userEmail)
         .order('purchase_date', { ascending: false });
 
