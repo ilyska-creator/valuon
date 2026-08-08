@@ -418,30 +418,6 @@ html {
     color: var(--text-main);
 }
 
-.stat-skeleton-pulse {
-    display: inline-block;
-    width: 52px;
-    height: 28px;
-    background: var(--border);
-    border-radius: 6px;
-    position: relative;
-    overflow: hidden;
-    vertical-align: middle;
-}
-
-.stat-skeleton-pulse::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    transform: translateX(-100%);
-    animation: skeletonShimmer 1.4s ease-in-out infinite;
-}
-
-[data-theme="dark"] .stat-skeleton-pulse::after {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
-}
-
 .items-section {
     background: var(--light);
 }
