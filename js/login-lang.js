@@ -134,7 +134,16 @@ const translations = {
 
 window.authTranslations = translations;
 
-document.addEventListener('DOMContentLoaded', () => {
+// Раньше весь блок ниже выполнялся только по событию DOMContentLoaded.
+// Скрипт и так подключён обычным (не module, не defer) тегом в самом
+// конце body — то есть к моменту его выполнения вся разметка уже
+// распарсена и доступна. А DOMContentLoaded на этой странице ещё и
+// откладывается до тех пор, пока не выполнится auth.js/register.js
+// (type="module", тянут Supabase SDK с CDN) — то есть перевод текста
+// применялся только после сетевого запроса к CDN, и пользователь на
+// мгновение видел русский текст из HTML, который потом подменялся на
+// английский. Убрали ожидание DOMContentLoaded — текст переводится сразу.
+(() => {
     const currentLang = localStorage.getItem('valuon-lang') || 'ru';
     document.documentElement.lang = currentLang === 'en' ? 'en' : 'ru';
     const path = window.location.pathname;
@@ -210,4 +219,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-});
+})();
