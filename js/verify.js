@@ -1,7 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
 import { logError } from './security.js';
-import { t, getVerifyLocale, applyVerifyTranslations, initVerifyLang } from './verify-lang.js';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const tabs = document.querySelectorAll('.verify-tab');
@@ -82,7 +81,7 @@ function resetAll() {
         copyBtn.style.display = 'none';
         copyBtn.classList.remove('copied');
         const span = copyBtn.querySelector('span');
-        if (span) span.textContent = t('copy_btn');
+        if (span) span.textContent = window.t('copy_btn');
     }
     const lastTab = sessionStorage.getItem('verify-active-tab') || 'scan';
     tabs.forEach(t => t.classList.remove('active'));
@@ -99,7 +98,7 @@ function resetAll() {
     if (icon) icon.className = 'fa-solid fa-qrcode';
     if (scanHint) {
         clearScanLoader();
-        scanHint.textContent = t('scan_hint');
+        scanHint.textContent = window.t('scan_hint');
     }
 }
 
@@ -110,7 +109,7 @@ function showLoading(btn, loading) {
     if (loading) {
         if (!btn.dataset.original) btn.dataset.original = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> ' + t('verifying');
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> ' + window.t('verifying');
     } else {
         btn.disabled = false;
         btn.innerHTML = btn.dataset.original || btn.innerHTML;
@@ -219,10 +218,10 @@ function showResult(status, data) {
         resultBlock.classList.add('success');
         resultBlock.classList.remove('failure');
         resultIcon.className = 'fa-solid fa-circle-check';
-        resultTitle.textContent = t('result_success_title');
-        resultDesc.textContent = t('result_success_desc');
+        resultTitle.textContent = window.t('result_success_title');
+        resultDesc.textContent = window.t('result_success_desc');
         resultBadge.className = 'verify-badge verified';
-        resultBadge.textContent = t('result_success_badge');
+        resultBadge.textContent = window.t('result_success_badge');
 
         if (data) {
             if (resultDetails) resultDetails.style.display = 'block';
@@ -253,7 +252,7 @@ function showResult(status, data) {
                         const qty = it.qty ?? 1;
                         let text = `${it.item_name} × ${qty}`;
                         if (it.warranty_months) {
-                            text += ` — ${it.warranty_months} ${t('items_warranty_suffix')}`;
+                            text += ` — ${it.warranty_months} ${window.t('items_warranty_suffix')}`;
                         }
                         li.textContent = text;
                         resultItemsList.appendChild(li);
@@ -274,25 +273,25 @@ function showResult(status, data) {
         resultBadge.className = 'verify-badge invalid';
 
         if (status === 'not-found') {
-            resultTitle.textContent = t('result_not_found_title');
-            resultDesc.textContent = t('result_not_found_desc');
-            resultBadge.textContent = t('result_not_found_badge');
+            resultTitle.textContent = window.t('result_not_found_title');
+            resultDesc.textContent = window.t('result_not_found_desc');
+            resultBadge.textContent = window.t('result_not_found_badge');
         } else if (status === 'invalid') {
-            resultTitle.textContent = t('result_invalid_title');
-            resultDesc.textContent = t('result_invalid_desc');
-            resultBadge.textContent = t('result_invalid_badge');
+            resultTitle.textContent = window.t('result_invalid_title');
+            resultDesc.textContent = window.t('result_invalid_desc');
+            resultBadge.textContent = window.t('result_invalid_badge');
         } else if (status === 'no-qr') {
-            resultTitle.textContent = t('result_no_qr_title');
-            resultDesc.textContent = data || t('result_no_qr_desc');
-            resultBadge.textContent = t('result_error_badge');
+            resultTitle.textContent = window.t('result_no_qr_title');
+            resultDesc.textContent = data || window.t('result_no_qr_desc');
+            resultBadge.textContent = window.t('result_error_badge');
         } else if (status === 'error') {
-            resultTitle.textContent = t('result_error_title');
-            resultDesc.textContent = data || t('result_error_desc');
-            resultBadge.textContent = t('result_error_badge');
+            resultTitle.textContent = window.t('result_error_title');
+            resultDesc.textContent = data || window.t('result_error_desc');
+            resultBadge.textContent = window.t('result_error_badge');
         } else {
-            resultTitle.textContent = t('result_error_title');
-            resultDesc.textContent = data || t('result_error_desc');
-            resultBadge.textContent = t('result_error_badge');
+            resultTitle.textContent = window.t('result_error_title');
+            resultDesc.textContent = data || window.t('result_error_desc');
+            resultBadge.textContent = window.t('result_error_badge');
         }
         if (resultDetails) resultDetails.style.display = 'none';
     }
@@ -320,7 +319,7 @@ async function verifyReceiptFromQRData(qrRaw) {
         const error = resp.ok ? null : { message: `HTTP ${resp.status}` };
 
         if (error) {
-            showResult('error', t('rpc_error') + ': ' + error.message);
+            showResult('error', window.t('rpc_error') + ': ' + error.message);
             return;
         }
 
@@ -330,12 +329,12 @@ async function verifyReceiptFromQRData(qrRaw) {
         }
 
         if (data?.error === 'rate_limited') {
-            showResult('error', t('rate_limited'));
+            showResult('error', window.t('rate_limited'));
             return;
         }
 
         if (data?.error === 'shop_key_missing') {
-            showResult('error', t('shop_not_found'));
+            showResult('error', window.t('shop_not_found'));
             return;
         }
 
@@ -349,15 +348,15 @@ async function verifyReceiptFromQRData(qrRaw) {
         const shop = data.shop;
 
         const dateStr = receipt.purchaseDate
-            ? new Date(receipt.purchaseDate).toLocaleDateString(getVerifyLocale(), {
+            ? new Date(receipt.purchaseDate).toLocaleDateString(window.getVerifyLocale(), {
                 day: 'numeric', month: 'numeric', year: 'numeric'
             })
             : '—';
         const gross = parseFloat(receipt.grossTotal);
-        const amount = Number.isFinite(gross) ? window.formatCurrency(gross, receipt.currency || 'EUR', getVerifyLocale()) : '—';
+        const amount = Number.isFinite(gross) ? window.formatCurrency(gross, receipt.currency || 'EUR', window.getVerifyLocale()) : '—';
         const sellerStatus = receipt.status === 'verified'
-            ? t('seller_verified')
-            : t('seller_pending');
+            ? window.t('seller_verified')
+            : window.t('seller_pending');
 
         const items = Array.isArray(receipt.items) ? receipt.items : [];
         const receiptNum = receipt.receiptNumber ? `#RCP-${receipt.receiptNumber}` : null;
@@ -381,7 +380,7 @@ async function verifyReceiptFromQRData(qrRaw) {
         });
     } catch (err) {
         logError('verify:unexpected', err);
-        showResult('error', t('internal_error'));
+        showResult('error', window.t('internal_error'));
     } finally {
         verifying = false;
     }
@@ -406,7 +405,7 @@ async function startCamera() {
         video.srcObject = mediaStream;
         await video.play();
         scanArea?.classList.add('active');
-        scanBtn.innerHTML = '<i class="fa-solid fa-stop"></i> ' + t('scan_btn_stop');
+        scanBtn.innerHTML = '<i class="fa-solid fa-stop"></i> ' + window.t('scan_btn_stop');
         scanBtn.classList.remove('btn-primary');
         scanBtn.classList.add('btn-outline');
         resultBlockWrapper?.classList.remove('active');
@@ -430,7 +429,7 @@ function stopCamera() {
     }
     video.srcObject = null;
     scanArea?.classList.remove('active');
-    scanBtn.innerHTML = '<i class="fa-solid fa-camera"></i> ' + t('scan_btn_open');
+    scanBtn.innerHTML = '<i class="fa-solid fa-camera"></i> ' + window.t('scan_btn_open');
     scanBtn.classList.remove('btn-outline');
     scanBtn.classList.add('btn-primary');
 }
@@ -507,9 +506,9 @@ function startScanLoop() {
             navigator.vibrate?.(100);
 
             if (scanHint) setScanLoader([
-                t('scanning'),
-                t('checking_sig'),
-                t('forming_result')
+                window.t('scanning'),
+                window.t('checking_sig'),
+                window.t('forming_result')
             ]);
 
             setTimeout(() => {
@@ -568,11 +567,11 @@ if (uploadZone && !('ontouchstart' in window)) {
         const file = files[0];
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
         if (!allowedTypes.includes(file.type)) {
-            window.showToast(t('file_type_not_supported') || 'Unsupported file type. Please upload an image or PDF.', 'error');
+            window.showToast(window.t('file_type_not_supported') || 'Unsupported file type. Please upload an image or PDF.', 'error');
             return;
         }
         if (file.size > 10 * 1024 * 1024) {
-            window.showToast(t('file_too_big'), 'error');
+            window.showToast(window.t('file_too_big'), 'error');
             return;
         }
 
@@ -593,8 +592,8 @@ previewRemoveBtn?.addEventListener('click', (e) => {
 
 function updatePreviewRemoveLabel() {
     if (!previewRemoveBtn) return;
-    previewRemoveBtn.setAttribute('aria-label', t('preview_remove'));
-    previewRemoveBtn.setAttribute('title', t('preview_remove'));
+    previewRemoveBtn.setAttribute('aria-label', window.t('preview_remove'));
+    previewRemoveBtn.setAttribute('title', window.t('preview_remove'));
 }
 updatePreviewRemoveLabel();
 
@@ -609,21 +608,21 @@ scanBtn?.addEventListener('click', () => {
 copyBtn?.addEventListener('click', async () => {
     if (!lastResultData) return;
     const lines = [
-        t('detail_receipt_number') + ': ' + lastResultData.receiptNumber,
-        t('detail_date') + ': ' + lastResultData.date,
-        t('detail_amount') + ': ' + lastResultData.amount,
-        t('detail_store') + ': ' + lastResultData.store,
-        t('detail_status') + ': ' + lastResultData.sellerStatus,
+        window.t('detail_receipt_number') + ': ' + lastResultData.receiptNumber,
+        window.t('detail_date') + ': ' + lastResultData.date,
+        window.t('detail_amount') + ': ' + lastResultData.amount,
+        window.t('detail_store') + ': ' + lastResultData.store,
+        window.t('detail_status') + ': ' + lastResultData.sellerStatus,
     ];
     if (lastResultData.registerSerial) {
-        lines.splice(1, 0, t('detail_register') + ': ' + lastResultData.registerSerial);
+        lines.splice(1, 0, window.t('detail_register') + ': ' + lastResultData.registerSerial);
     }
     const text = lines.join('\n');
     try {
         await navigator.clipboard.writeText(text);
         const span = copyBtn.querySelector('span') || copyBtn;
         const original = span.textContent;
-        span.textContent = t('copied');
+        span.textContent = window.t('copied');
         copyBtn.classList.add('copied');
         setTimeout(() => {
             span.textContent = original;
@@ -639,7 +638,7 @@ scanFileInput?.addEventListener('change', async () => {
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-        window.showToast(t('file_too_big'), 'error');
+        window.showToast(window.t('file_too_big'), 'error');
         scanFileInput.value = '';
         return;
     }
@@ -648,10 +647,10 @@ scanFileInput?.addEventListener('change', async () => {
     const icon = scanArea?.querySelector('.scanner-content i');
     if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
     if (scanHint) setScanLoader([
-        t('decoding'),
-        t('scanning'),
-        t('checking_sig'),
-        t('forming_result')
+        window.t('decoding'),
+        window.t('scanning'),
+        window.t('checking_sig'),
+        window.t('forming_result')
     ]);
 
     try {
@@ -661,7 +660,7 @@ scanFileInput?.addEventListener('change', async () => {
             if (icon) icon.className = 'fa-solid fa-circle-xmark';
             if (scanHint) {
                 clearScanLoader();
-                scanHint.textContent = t('qr_not_found_text');
+                scanHint.textContent = window.t('qr_not_found_text');
             }
             showResult('no-qr');
             return;
@@ -669,15 +668,15 @@ scanFileInput?.addEventListener('change', async () => {
 
         if (icon) icon.className = 'fa-solid fa-check-circle';
         if (scanHint) setScanLoader([
-            t('scanning'),
-            t('checking_sig'),
-            t('forming_result')
+            window.t('scanning'),
+            window.t('checking_sig'),
+            window.t('forming_result')
         ]);
         navigator.vibrate?.(100);
         await verifyReceiptFromQRData(qrData);
     } catch (err) {
         logError('verify:scan', err);
-        showResult('error', t('scan_error'));
+        showResult('error', window.t('scan_error'));
     } finally {
         if (scanFileInput) scanFileInput.value = '';
     }
@@ -688,7 +687,7 @@ fileInput?.addEventListener('change', async () => {
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-        window.showToast(t('file_too_big'), 'error');
+        window.showToast(window.t('file_too_big'), 'error');
         fileInput.value = '';
         return;
     }
@@ -743,26 +742,24 @@ document.getElementById('verify-upload-btn')?.addEventListener('click', async ()
         await verifyReceiptFromQRData(qrData);
     } catch (err) {
         logError('verify:upload', err);
-        showResult('error', t('file_error'));
+        showResult('error', window.t('file_error'));
     } finally {
         showLoading(btn, false);
     }
 });
 
-initVerifyLang();
-
 window.addEventListener('verify-lang-changed', () => {
-    applyVerifyTranslations();
+    window.applyVerifyTranslations();
     updatePreviewRemoveLabel();
     if (scanBtn) {
         scanBtn.innerHTML = mediaStream
-            ? '<i class="fa-solid fa-stop"></i> ' + t('scan_btn_stop')
-            : '<i class="fa-solid fa-camera"></i> ' + t('scan_btn_open');
+            ? '<i class="fa-solid fa-stop"></i> ' + window.t('scan_btn_stop')
+            : '<i class="fa-solid fa-camera"></i> ' + window.t('scan_btn_open');
     }
     if (copyBtn && lastResultData) {
         copyBtn.style.display = '';
         const span = copyBtn.querySelector('span');
-        if (span) span.textContent = t('copy_btn');
+        if (span) span.textContent = window.t('copy_btn');
     }
 });
 

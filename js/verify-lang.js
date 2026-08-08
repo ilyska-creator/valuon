@@ -129,11 +129,11 @@ const verifyTranslations = {
 
 let verifyLang = localStorage.getItem('valuon-lang') || 'ru';
 
-export function t(key) {
+function t(key) {
     return verifyTranslations[verifyLang]?.[key] ?? verifyTranslations.ru[key] ?? key;
 }
 
-export function getVerifyLocale() {
+function getVerifyLocale() {
     return verifyLang === 'ru' ? 'ru-RU' : 'en-US';
 }
 
@@ -156,12 +156,12 @@ function updateLangToggle() {
     }
 }
 
-export function applyVerifyTranslations() {
+function applyVerifyTranslations() {
     applyStaticTranslations();
     updateLangToggle();
 }
 
-export function initVerifyLang() {
+function initVerifyLang() {
     applyVerifyTranslations();
     const toggle = document.getElementById('lang-toggle');
     if (toggle) {
@@ -175,3 +175,10 @@ export function initVerifyLang() {
         });
     }
 }
+
+window.t = t;
+window.getVerifyLocale = getVerifyLocale;
+window.applyVerifyTranslations = applyVerifyTranslations;
+window.initVerifyLang = initVerifyLang;
+
+initVerifyLang();
