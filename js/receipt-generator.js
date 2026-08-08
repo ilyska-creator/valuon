@@ -92,12 +92,19 @@ export async function downloadReceiptPDF(receipt, shop) {
             ? `RCP-${receipt.receipt_number}`
             : `RCP-${String(receipt.id).slice(0, 8).toUpperCase()}`;
 
-        const netTotal = receipt.net_total;
-        const vatAmount = receipt.vat_amount;
-        const grossTotal = receipt.gross_total;
+        // Supabase/PostgREST сериализует колонки типа numeric как СТРОКИ
+        // (чтобы не терять точность), а не как JS number — поэтому здесь
+        // обязательно приводим к Number. Раньше vatAmount/grossTotal ниже
+        // передавались как есть, и .toFixed() на строке падал с
+        // TypeError, из-за чего генерация PDF для чеков бизнеса была
+        // сломана целиком (всегда попадала в catch и показывала
+        // "Ошибка при создании PDF").
+        const netTotal = Number(receipt.net_total) || 0;
+        const vatAmount = Number(receipt.vat_amount) || 0;
+        const grossTotal = Number(receipt.gross_total) || 0;
         const items = Array.isArray(receipt.receipt_items) && receipt.receipt_items.length > 0
             ? receipt.receipt_items
-            : [{ item_name: receipt.receipt_items?.[0]?.item_name || receipt.shop_name || 'Digital Receipt', qty: 1, unit_price: receipt.gross_total || 0, vat_rate: 0, net_total: receipt.net_total || 0 }];
+            : [{ item_name: receipt.receipt_items?.[0]?.item_name || receipt.shop_name || 'Digital Receipt', qty: 1, unit_price: grossTotal, vat_rate: 0, net_total: netTotal, gross_total: grossTotal }];
 
 
         function qrEscape(v) { return encodeURIComponent(String(v)); }
@@ -211,7 +218,11 @@ export async function downloadReceiptPDF(receipt, shop) {
             doc.text(String(item.qty ?? ''), 95, y);
             doc.text(money(item.unit_price), 125, y);
             doc.text(rate !== undefined && rate !== null ? `${Number(rate)}%` : '—', 150, y);
-            doc.text(money(item.net_total), 170, y);
+            // Колонка называется "TOTAL" и стоит сразу после "TAX" — по
+            // смыслу это сумма по строке С учётом налога (как gross_total),
+            // а не net_total (сумма без налога), который тут раньше
+            // ошибочно выводился и совпадал с ценой без НДС.
+            doc.text(money(item.gross_total), 170, y);
             doc.setFont("helvetica", "normal");
             y += 6;
         });

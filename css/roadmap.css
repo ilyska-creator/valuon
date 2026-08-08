@@ -208,10 +208,6 @@
     }
 }
 
-.navbar {
-    height: 88px;
-}
-
 .nav-wrapper {
     display: flex;
     justify-content: space-between;

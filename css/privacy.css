@@ -211,10 +211,6 @@
     }
 }
 
-.navbar {
-    height: 88px;
-}
-
 .nav-actions {
     display: flex;
     align-items: center;
