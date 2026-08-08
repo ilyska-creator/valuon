@@ -180,8 +180,10 @@ function currencyList(lang) {
 
 function resolveCurrencyLabel(key, lang) {
     try {
-        const dict = window.businessTranslations && window.businessTranslations[lang];
-        if (dict && dict[key]) return dict[key];
+        const dicts = [window.businessTranslations, window.dashboardTranslations, window.authTranslations];
+        for (const dict of dicts) {
+            if (dict && dict[lang] && dict[lang][key]) return dict[lang][key];
+        }
     } catch (e) {}
     return key;
 }

@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="css/custom-datepicker.css">
     <link rel="stylesheet" href="css/toast.css">
     <script>(function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); })();</script>
-    <script>if (location.hash) { window.__targetView = location.hash.replace('#', ''); history.replaceState(null, '', location.pathname); }</script>
+    <script>if (location.hash) { window.__targetView = location.hash.replace('#', ''); history.replaceState(null, '', location.pathname); };</script>
 </head>
 
 <body class="dashboard-body">
@@ -209,6 +209,14 @@
                                 <input type="text" id="settings-last-name" placeholder="Smith">
                             </div>
                         </div>
+                        <div class="profile-field">
+                            <label data-i18n="currency_label">Валюта по умолчанию</label>
+                            <select id="settings-currency" name="currency" class="custom-select" data-searchable
+                                data-search-placeholder="currency_search_placeholder"
+                                data-search-empty="currency_search_empty"></select>
+                            <p class="setting-desc" data-i18n="currency_settings_hint">Применяется к новым вещам и
+                                чекам — старые записи не меняются</p>
+                        </div>
                     </div>
 
                     <div class="save-bar">
@@ -336,7 +344,8 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 data-i18n="modal_title">Добавить новую вещь</h2>
-                <button id="close-modal" class="btn-close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+                <button id="close-modal" class="btn-close" aria-label="Закрыть"><i
+                        class="fa-solid fa-xmark"></i></button>
             </div>
             <form class="modal-form" action="#">
                 <div class="input-group">
@@ -401,6 +410,12 @@
                         <input type="date" name="purchase_date" class="custom-datepicker" required>
                     </div>
                 </div>
+                <div class="input-group">
+                    <label data-i18n="label_item_currency">Валюта</label>
+                    <select name="currency" class="custom-select" data-searchable
+                        data-search-placeholder="currency_search_placeholder"
+                        data-search-empty="currency_search_empty"></select>
+                </div>
                 <div class="modal-actions">
                     <button type="button" id="cancel-modal" class="btn btn-outline"
                         data-i18n="btn_cancel">Отмена</button>
@@ -413,7 +428,8 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 data-i18n="modal_edit_title">Изменить товар</h2>
-                <button id="close-edit-modal" class="btn-close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+                <button id="close-edit-modal" class="btn-close" aria-label="Закрыть"><i
+                        class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="edit-item-form" class="modal-form" action="#">
                 <input type="hidden" name="item_id" id="edit-item-id">
@@ -477,6 +493,12 @@
                         <input type="date" name="purchase_date" class="custom-datepicker" required>
                     </div>
                 </div>
+                <div class="input-group">
+                    <label data-i18n="label_item_currency">Валюта</label>
+                    <select name="currency" class="custom-select" data-searchable
+                        data-search-placeholder="currency_search_placeholder"
+                        data-search-empty="currency_search_empty"></select>
+                </div>
                 <div class="modal-actions">
                     <button type="button" id="cancel-edit-modal" class="btn btn-outline"
                         data-i18n="btn_cancel">Отмена</button>
@@ -526,9 +548,9 @@
             onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
     </div>
     <script src="js/cookie-banner.js"></script>
-<script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-</script>
-<script defer src="/_vercel/insights/script.js"></script>
+    <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
 </body>
 
 </html>

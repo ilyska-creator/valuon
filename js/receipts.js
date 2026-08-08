@@ -9,9 +9,17 @@ const SIGNED_URL_TTL = 60 * 60;
 
 let currentUserId = null;
 let currentUserEmail = null;
+let userDefaultCurrency = 'EUR';
 
 
 let uploadModal = null;
+
+window.addEventListener('lang-changed', (e) => {
+    const select = document.getElementById('upload-receipt-currency');
+    if (!select || typeof window.renderCurrencyOptions !== 'function') return;
+    window.renderCurrencyOptions(select, e.detail?.lang || getLang());
+    if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+});
 
 function getLang() {
     return localStorage.getItem('valuon-lang') || 'ru';
@@ -40,6 +48,18 @@ async function initReceipts() {
 
     currentUserId = user.id;
     currentUserEmail = user.email;
+
+    const { data: profile } = await client
+        .from('profiles')
+        .select('currency')
+        .eq('id', user.id)
+        .single();
+    userDefaultCurrency = profile?.currency || 'EUR';
+
+    const uploadCurrencySelect = document.getElementById('upload-receipt-currency');
+    if (uploadCurrencySelect && typeof window.renderCurrencyOptions === 'function') {
+        window.renderCurrencyOptions(uploadCurrencySelect, getLang());
+    }
 
     uploadModal = createUploadModal(client, currentUserId);
     setupUploadListeners(uploadModal);
@@ -103,7 +123,7 @@ async function loadAllReceipts(userEmail, userId, client) {
 
         const { data: personalData, error: personalError } = await client
             .from('receipts')
-            .select('*, items(name, price, purchase_date, store_name)')
+            .select('*, items(name, price, purchase_date, store_name, currency)')
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
 
@@ -199,6 +219,7 @@ function buildPersonalGridHTML(receipts, t, lang) {
         item_name: r.items?.name || null,
         display_name: r.items?.name || r.receipt_name || r.store_name || 'Untitled Receipt',
         display_amount: r.items?.price ?? r.amount,
+        display_currency: r.items?.currency ?? r.currency,
         display_date: r.items?.purchase_date || r.purchase_date,
         display_store: r.items?.store_name || r.store_name,
         is_linked: !!r.items
@@ -313,7 +334,7 @@ function renderPersonalCard(r, t) {
     const iconClass = isPdf ? 'fa-file-pdf' : isImage ? 'fa-file-image' : 'fa-file-invoice';
     const tags = [];
 
-    if (r.display_amount) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> €${parseFloat(r.display_amount).toFixed(2)}</span>`);
+    if (r.display_amount) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> ${window.formatCurrency(parseFloat(r.display_amount), r.display_currency || 'EUR', getLang())}</span>`);
     if (r.display_date) {
         const date = new Date(r.display_date).toLocaleDateString(getLang() === 'ru' ? 'ru-RU' : 'en-US');
         tags.push(`<span class="tag"><i class="fa-regular fa-calendar"></i> ${date}</span>`);
@@ -325,7 +346,6 @@ function renderPersonalCard(r, t) {
         <div class="receipt-card">
             <div class="receipt-header">
                 <div class="receipt-icon"><i class="fa-solid ${iconClass}"></i></div>
-                <div class="item-status-badge ${r.status === 'verified' ? 'active' : 'warning'}">${r.status === 'verified' ? (t.status_verified || 'Проверен') : (t.status_pending || 'Обработка')}</div>
             </div>
             <div class="receipt-info">
                 <h3>${escapeHtml(r.display_name)}</h3>
@@ -511,7 +531,7 @@ async function populateItemSelect(userId, client) {
 
     const { data } = await client
         .from('items')
-        .select('id, name, price, purchase_date, store_name, type')
+        .select('id, name, price, purchase_date, store_name, type, currency')
         .eq('user_id', userId)
         .order('name');
 
@@ -524,6 +544,7 @@ async function populateItemSelect(userId, client) {
             opt.dataset.date = item.purchase_date || '';
             opt.dataset.store = item.store_name || '';
             opt.dataset.name = item.name || '';
+            opt.dataset.currency = item.currency || 'EUR';
             const icon = deviceIconMarkup(item.type);
             if (icon) {
                 opt.setAttribute('data-icon', icon);
@@ -628,9 +649,18 @@ function createUploadModal(client, userId) {
     const amountInput = form.querySelector('[name="amount"]');
     const dateInput = form.querySelector('[name="purchase_date"]');
     const storeInput = form.querySelector('[name="store_name"]');
+    const currencySelect = form.querySelector('[name="currency"]');
     const lockIcons = form.querySelectorAll('.lock-icon');
     const linkHint = document.getElementById('link-hint');
     const lockedFields = [receiptNameInput, amountInput, dateInput, storeInput];
+
+    function updateAmountSuffix() {
+        const suffix = form.querySelector('.input-with-lock .suffix-hint');
+        if (suffix && typeof window.currencySymbol === 'function') {
+            suffix.textContent = window.currencySymbol(currencySelect?.value || userDefaultCurrency);
+        }
+    }
+    currencySelect?.addEventListener('change', updateAmountSuffix);
 
     function updateHintText(locked) {
         if (!linkHint) return;
@@ -652,6 +682,7 @@ function createUploadModal(client, userId) {
             input.readOnly = locked;
             if (input._cdp) input._cdp.setLocked(locked);
         });
+        if (currencySelect) currencySelect.disabled = locked;
         lockIcons.forEach(icon => icon.classList.toggle('hidden', !locked));
         updateHintText(locked);
     }
@@ -664,10 +695,20 @@ function createUploadModal(client, userId) {
             if (dateInput._cdp) dateInput._cdp.syncDisplay();
         }
         if (selected.dataset.store) storeInput.value = selected.dataset.store;
+        if (selected.dataset.currency && currencySelect) {
+            currencySelect.value = selected.dataset.currency;
+            if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+            updateAmountSuffix();
+        }
     }
 
     function clearLockedFields() {
         lockedFields.forEach(input => { if (input && input.readOnly) input.value = ''; });
+        if (currencySelect && currencySelect.disabled) {
+            currencySelect.value = userDefaultCurrency;
+            if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+            updateAmountSuffix();
+        }
     }
 
     function open() {
@@ -681,6 +722,11 @@ function createUploadModal(client, userId) {
             dateInput.value = `${y}-${m}-${d}`;
             if (dateInput._cdp) dateInput._cdp.syncDisplay();
         }
+        if (currencySelect) {
+            currencySelect.value = userDefaultCurrency;
+            if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+        }
+        updateAmountSuffix();
     }
 
     function close() {
@@ -796,7 +842,7 @@ function createUploadModal(client, userId) {
                 amount: parsedAmount,
                 purchase_date: purchaseDate,
                 store_name: storeName,
-                status: 'pending'
+                currency: currencySelect?.value || userDefaultCurrency
             });
 
             if (dbError) {

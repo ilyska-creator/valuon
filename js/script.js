@@ -22,6 +22,9 @@ const translations = {
         demo_item2: "Magic Cover",
         demo_item3: "AppleCare+",
         demo_total_label: "Итого:",
+        demo_loader_scan: "Сканируем QR…",
+        demo_loader_check: "Проверяем подпись…",
+        demo_loader_result: "Формируем результат…",
 
         float_receipt: "Чек сохранен", float_instant: "За секунду",
         feat_title: "Всё, что нужно <br>для ваших электронных чеков",
@@ -82,6 +85,9 @@ const translations = {
         demo_item2: "Magic Cover",
         demo_item3: "AppleCare+",
         demo_total_label: "Total:",
+        demo_loader_scan: "Scanning QR…",
+        demo_loader_check: "Checking signature…",
+        demo_loader_result: "Generating result…",
         float_receipt: "Receipt saved", float_instant: "In one second",
         feat_title: "Everything you need <br>for your digital receipts",
         feat_desc: "We removed the chaos from receipt storage and verification, keeping only what truly matters.",
@@ -125,6 +131,12 @@ const translations = {
 };
 
 let currentLang = localStorage.getItem('valuon-lang') || 'ru';
+let qrDemoLoader = null;
+
+function getDemoLoaderPhrases() {
+    const t = translations[currentLang];
+    return [t.demo_loader_scan, t.demo_loader_check, t.demo_loader_result];
+}
 
 function applyTranslations() {
     document.documentElement.lang = currentLang === 'en' ? 'en' : 'ru';
@@ -149,9 +161,16 @@ function applyTranslations() {
 
     const langToggle = document.getElementById('lang-toggle');
     if (langToggle) langToggle.textContent = currentLang.toUpperCase();
+
+    if (qrDemoLoader) qrDemoLoader.setPhrases(getDemoLoaderPhrases());
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const qrDemoEl = document.getElementById('qr-demo-loader');
+    if (qrDemoEl && typeof RotatingTextLoader !== 'undefined') {
+        qrDemoLoader = new RotatingTextLoader(qrDemoEl, getDemoLoaderPhrases(), { interval: 800 });
+    }
+
     applyTranslations();
 
     let scrollPos = 0;

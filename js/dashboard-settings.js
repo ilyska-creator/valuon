@@ -22,10 +22,15 @@ async function initSettings() {
         const firstNameInput = document.getElementById('settings-first-name');
         const lastNameInput = document.getElementById('settings-last-name');
         const birthdateInput = document.getElementById('settings-birthdate');
+        const currencySelect = document.getElementById('settings-currency');
         const toggleExpiry = document.getElementById('toggle-expiry');
         const toggleDigest = document.getElementById('toggle-digest');
 
         if (emailInput) emailInput.value = user.email || '';
+
+        if (currencySelect && typeof window.renderCurrencyOptions === 'function') {
+            window.renderCurrencyOptions(currencySelect, getSettingsLang());
+        }
 
         const { data, error } = await client
             .from('profiles')
@@ -45,6 +50,7 @@ async function initSettings() {
                 birthdateInput.value = data.birthdate;
                 if (birthdateInput._cdp) birthdateInput._cdp.syncDisplay();
             }
+            if (currencySelect) currencySelect.value = data.currency || 'EUR';
             if (toggleExpiry) toggleExpiry.checked = data.expiry_alerts ?? true;
             if (toggleDigest) toggleDigest.checked = data.weekly_digest ?? false;
         } else {
@@ -82,6 +88,8 @@ async function initSettings() {
 
     await loadProfile();
 
+    if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(getSettingsLang());
     }
@@ -89,20 +97,31 @@ async function initSettings() {
     const saveBtn = document.getElementById('save-profile-btn');
     const firstNameInput = document.getElementById('settings-first-name');
     const lastNameInput = document.getElementById('settings-last-name');
+    const currencySelect = document.getElementById('settings-currency');
     let originalFirstName = firstNameInput?.value?.trim() || '';
     let originalLastName = lastNameInput?.value?.trim() || '';
+    let originalCurrency = currencySelect?.value || '';
 
     function updateSaveButtonState() {
         if (!saveBtn || !firstNameInput || !lastNameInput) return;
         const currentFirst = firstNameInput.value.trim();
         const currentLast = lastNameInput.value.trim();
-        const hasChanges = currentFirst !== originalFirstName || currentLast !== originalLastName;
+        const currentCurrency = currencySelect?.value || '';
+        const hasChanges = currentFirst !== originalFirstName || currentLast !== originalLastName
+            || currentCurrency !== originalCurrency;
         const isValid = currentFirst.length > 0 && currentLast.length > 0;
         saveBtn.disabled = !hasChanges || !isValid;
     }
 
     if (firstNameInput) firstNameInput.addEventListener('input', updateSaveButtonState);
     if (lastNameInput) lastNameInput.addEventListener('input', updateSaveButtonState);
+    if (currencySelect) currencySelect.addEventListener('change', updateSaveButtonState);
+
+    window.addEventListener('lang-changed', (e) => {
+        if (!currencySelect || typeof window.renderCurrencyOptions !== 'function') return;
+        window.renderCurrencyOptions(currencySelect, e.detail?.lang || getSettingsLang());
+        if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+    });
 
     updateSaveButtonState();
 
@@ -121,12 +140,15 @@ async function initSettings() {
             const originalHTML = saveBtn.innerHTML;
             saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
+            const currency = currencySelect?.value || 'EUR';
+
             try {
                 const { error: dbError } = await client
                     .from('profiles')
                     .update({
                         first_name: firstName,
                         last_name: lastName,
+                        currency: currency,
                         updated_at: new Date().toISOString()
                     })
                     .eq('id', user.id);
@@ -142,6 +164,7 @@ async function initSettings() {
 
                 originalFirstName = firstName;
                 originalLastName = lastName;
+                originalCurrency = currency;
 
                 saveBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
                 const tSuccess = getSettingsT();

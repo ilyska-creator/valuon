@@ -6,6 +6,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const getLang = () => localStorage.getItem('valuon-lang') || 'ru';
 
+if (typeof window.renderCurrencyOptions === 'function') {
+    window.renderCurrencyOptions(document.getElementById('currency'), getLang());
+}
+
 function waitForTurnstile(timeoutMs = 5000) {
     return new Promise((resolve) => {
         if (typeof turnstile !== 'undefined') return resolve(true);
@@ -95,6 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             var firstNameEl = document.getElementById('first-name');
             var lastNameEl = document.getElementById('last-name');
             var birthdateEl = document.getElementById('birthdate');
+            var currencyEl = document.getElementById('currency');
             var termsEl = document.getElementById('terms');
 
             var email = emailEl.value.trim().toLowerCase();
@@ -103,11 +108,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             var firstName = firstNameEl.value.trim();
             var lastName = lastNameEl.value.trim();
             var birthdate = birthdateEl?.value || '';
+            var currency = currencyEl?.value || '';
 
             if (check(!email, lang === 'ru' ? 'Введите email' : 'Enter your email', emailEl)) { }
             else if (check(!firstName, lang === 'ru' ? 'Введите ваше имя' : 'Please enter your first name', firstNameEl)) { }
             else if (check(!lastName, lang === 'ru' ? 'Введите вашу фамилию' : 'Please enter your last name', lastNameEl)) { }
             else if (check(!birthdate, lang === 'ru' ? 'Укажите дату рождения' : 'Please enter your date of birth', birthdateEl)) { }
+            else if (check(!currency, lang === 'ru' ? 'Выберите валюту' : 'Please select a currency', currencyEl)) { }
             else if (check(!password, lang === 'ru' ? 'Введите пароль' : 'Enter a password', passwordEl)) { }
             else if (check(!confirmPassword, lang === 'ru' ? 'Подтвердите пароль' : 'Confirm your password', confirmEl)) { }
             else if (check(password !== confirmPassword, lang === 'ru' ? 'Пароли не совпадают' : 'Passwords do not match', confirmEl)) { }
@@ -184,6 +191,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             first_name: firstName,
                             last_name: lastName,
                             birthdate: birthdate,
+                            currency: currency,
                             created_at: new Date().toISOString()
                         }
                     }
@@ -198,7 +206,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         email: email.toLowerCase().trim(),
                         first_name: firstName,
                         last_name: lastName,
-                        birthdate: birthdate
+                        birthdate: birthdate,
+                        currency: currency
                     }, { onConflict: 'id' });
 
                     if (profileError) {

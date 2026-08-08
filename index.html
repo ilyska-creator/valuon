@@ -449,26 +449,6 @@
     <script src="js/rotating-loader.js"></script>
     <script src="js/animations.js"></script>
     <script type="module" src="js/script.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const el = document.getElementById('qr-demo-loader');
-            if (el) {
-                const lang = localStorage.getItem('valuon-lang') || 'ru';
-                const phrases = lang === 'en'
-                    ? ['Scanning QR…', 'Checking signature…', 'Generating result…']
-                    : ['Сканируем QR…', 'Проверяем подпись…', 'Формируем результат…'];
-                const loader = new RotatingTextLoader(el, phrases, { interval: 800 });
-
-                document.getElementById('lang-toggle')?.addEventListener('click', () => {
-                    const newLang = localStorage.getItem('valuon-lang') || 'ru';
-                    const newPhrases = newLang === 'en'
-                        ? ['Scanning QR…', 'Checking signature…', 'Generating result…']
-                        : ['Сканируем QR…', 'Проверяем подпись…', 'Формируем результат…'];
-                    loader.setPhrases(newPhrases);
-                }, { once: false });
-            }
-        });
-    </script>
     <div id="cookie-banner" class="cookie-banner">
         <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
                 href="privacy.html">Политикой конфиденциальности</a>.</p>

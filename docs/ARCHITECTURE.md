@@ -149,7 +149,7 @@ receipts                       (личные загрузки покупател
   receipt_name, item_id FK → items (nullable)
   amount numeric, purchase_date date, store_name text
   file_path text, file_url text (signed URL, TTL 1 час)
-  file_type text, status ('pending' | 'verified')
+  file_type text
   created_at
 
 shops

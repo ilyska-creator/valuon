@@ -56,6 +56,12 @@ const translations = {
         ph_first_name: "Иван",
         ph_last_name: "Иванов",
 
+        currency_label: "Валюта",
+        currency_placeholder: "Выберите валюту",
+        currency_search_placeholder: "Поиск валюты...",
+        currency_search_empty: "Ничего не найдено",
+        currency_hint: "Валюта по умолчанию для ваших вещей и чеков — можно сменить позже в настройках",
+
         turnstile_checking: "Проверка...",
 
     },
@@ -115,9 +121,18 @@ const translations = {
         label_last_name: "Last Name",
         ph_first_name: "James",
         ph_last_name: "Smith",
+
+        currency_label: "Currency",
+        currency_placeholder: "Select a currency",
+        currency_search_placeholder: "Search currency...",
+        currency_search_empty: "Nothing found",
+        currency_hint: "Default currency for your items and receipts — can be changed later in settings",
+
         turnstile_checking: "Verifying...",
     }
 };
+
+window.authTranslations = translations;
 
 document.addEventListener('DOMContentLoaded', () => {
     const currentLang = localStorage.getItem('valuon-lang') || 'ru';

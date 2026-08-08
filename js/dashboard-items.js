@@ -10,6 +10,17 @@ let pendingDeleteItemId = null;
 let verifiedStats = { total: 0, active: 0, expiring: 0, expired: 0 };
 let lastMineItems = [];
 let lastVerifiedItems = [];
+let userDefaultCurrency = 'EUR';
+
+function renderItemCurrencySelects() {
+    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    document.querySelectorAll('#add-modal select[name="currency"], #edit-modal select[name="currency"]').forEach((select) => {
+        if (typeof window.renderCurrencyOptions === 'function') window.renderCurrencyOptions(select, lang);
+    });
+    if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+}
+
+window.addEventListener('lang-changed', renderItemCurrencySelects);
 
 function applySavedItemsTab() {
     const saved = sessionStorage.getItem('valuon-items-tab') || 'verified';
@@ -30,6 +41,14 @@ async function initDashboardItems() {
 
     currentClient = auth.client;
     currentUserId = auth.user.id;
+
+    const { data: profile } = await auth.client
+        .from('profiles')
+        .select('currency')
+        .eq('id', auth.user.id)
+        .single();
+    userDefaultCurrency = profile?.currency || 'EUR';
+    renderItemCurrencySelects();
 
     applySavedItemsTab();
     setupItemsTabs(auth.user.id, auth.user.email, auth.client);
@@ -153,7 +172,7 @@ function renderItems(items) {
             tags.push(`<span class="tag"><i class="fa-solid fa-barcode"></i> ${escapeHtml(shortSerial)}</span>`);
         }
         if (item.store_name) tags.push(`<span class="tag"><i class="fa-solid fa-store"></i> ${escapeHtml(item.store_name)}</span>`);
-        if (item.price && item.price > 0) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(String(item.price))} €</span>`);
+        if (item.price && item.price > 0) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(window.formatCurrency(item.price, item.currency || 'EUR', lang))}</span>`);
         if (item.purchase_date) {
             const d = item.purchase_date.slice(0, 10).split('-');
             const dateStr = lang === 'ru' ? `${d[2]}.${d[1]}.${d[0]}` : `${d[1]}/${d[2]}/${d[0]}`;
@@ -607,6 +626,16 @@ async function openEditModal(itemId, client, userId) {
     form.querySelector('[name="warranty_months"]').value = item.warranty_months ?? 12;
     form.querySelector('[name="location"]').value = item.location || '';
 
+    const currencySelect = form.querySelector('[name="currency"]');
+    if (currencySelect) {
+        currencySelect.value = item.currency || 'EUR';
+        if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+    }
+    const priceSuffix = form.querySelector('.input-suffix .suffix-hint');
+    if (priceSuffix && typeof window.currencySymbol === 'function') {
+        priceSuffix.textContent = window.currencySymbol(item.currency || 'EUR');
+    }
+
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(lang);
     }
@@ -639,6 +668,14 @@ function setupEditModal(client, userId) {
     cancelBtn?.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
+    const currencySelect = form.querySelector('[name="currency"]');
+    currencySelect?.addEventListener('change', () => {
+        const priceSuffix = form.querySelector('.input-suffix .suffix-hint');
+        if (priceSuffix && typeof window.currencySymbol === 'function') {
+            priceSuffix.textContent = window.currencySymbol(currencySelect.value);
+        }
+    });
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -663,6 +700,7 @@ function setupEditModal(client, userId) {
                 purchase_date: form.querySelector('[name="purchase_date"]').value,
                 warranty_months: (m => isNaN(m) ? 12 : m)(parseInt(form.querySelector('[name="warranty_months"]').value)),
                 location: form.querySelector('[name="location"]').value.trim(),
+                currency: form.querySelector('[name="currency"]')?.value || 'EUR',
                 updated_at: new Date().toISOString()
             }).eq('id', itemId)
                 .eq('user_id', userId);
@@ -762,6 +800,17 @@ function setupModal(client) {
 
     attachModalA11y(modal, { mode: 'active', onClose: closeAddModal });
 
+    const currencySelect = form?.querySelector('[name="currency"]');
+    const priceSuffix = form?.querySelector('.input-suffix .suffix-hint');
+
+    function updatePriceSuffix() {
+        if (priceSuffix && typeof window.currencySymbol === 'function') {
+            priceSuffix.textContent = window.currencySymbol(currencySelect?.value || userDefaultCurrency);
+        }
+    }
+
+    currencySelect?.addEventListener('change', updatePriceSuffix);
+
     addBtn.addEventListener('click', () => {
         modal.classList.add('active');
         document.body.classList.add('modal-open');
@@ -774,6 +823,11 @@ function setupModal(client) {
             dateInput.value = `${y}-${m}-${d}`;
             if (dateInput._cdp) dateInput._cdp.syncDisplay();
         }
+        if (currencySelect) {
+            currencySelect.value = userDefaultCurrency;
+            if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+        }
+        updatePriceSuffix();
     });
     closeBtn?.addEventListener('click', closeAddModal);
     cancelBtn?.addEventListener('click', closeAddModal);
@@ -817,7 +871,8 @@ function setupModal(client) {
                 warranty_months: (m => isNaN(m) ? 12 : m)(parseInt(monthsInput.value)),
                 location: locationInput ? locationInput.value.trim() : '',
                 price: Math.max(0, parseFloat(priceInput?.value) || 0),
-                store_name: storeInput ? storeInput.value.trim() : ''
+                store_name: storeInput ? storeInput.value.trim() : '',
+                currency: currencySelect?.value || userDefaultCurrency
             }]);
 
             if (error) throw error;

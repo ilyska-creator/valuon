@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
     <link rel="stylesheet" href="css/custom-datepicker.css">
+    <link rel="stylesheet" href="css/custom-select.css">
     <link rel="stylesheet" href="css/toast.css">
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script>
@@ -61,6 +62,17 @@
                             autocomplete="bday">
                         <span class="field-hint" data-i18n="birthdate_warning">Нельзя изменить после регистрации</span>
                     </div>
+                </div>
+
+                <div class="input-group" data-animate>
+                    <label for="currency" data-i18n="currency_label">Валюта</label>
+                    <select id="currency" name="currency" class="custom-select" data-searchable required
+                        data-placeholder-i18n="currency_placeholder"
+                        data-search-placeholder="currency_search_placeholder"
+                        data-search-empty="currency_search_empty">
+                    </select>
+                    <span class="field-hint" data-i18n="currency_hint">Валюта по умолчанию для ваших вещей и
+                        чеков — можно сменить позже в настройках</span>
                 </div>
 
                 <div class="input-group" data-animate>
@@ -143,6 +155,8 @@
         })();
     </script>
     <script src="js/toast.js"></script>
+    <script src="js/custom-select.js"></script>
+    <script src="js/currencies.js"></script>
     <script src="js/login-lang.js"></script>
     <script src="js/custom-datepicker.js"></script>
     <script type="module" src="js/register.js"></script>
