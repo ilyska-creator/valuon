@@ -1169,6 +1169,9 @@ async function initBusinessPanel() {
         deleteTerminalModal.classList.remove('is-hidden');
         document.body.classList.add('modal-open');
 
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = `<i class="fa-solid fa-trash"></i> ${t.delete_btn || 'Удалить'}`;
+
         const handleConfirm = async () => {
             confirmBtn.disabled = true;
             confirmBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
@@ -1199,6 +1202,9 @@ async function initBusinessPanel() {
                     currentTerminals = currentTerminals.filter((x) => x.id !== terminalId);
                     window.showToast(t.terminal_deleted || 'Кассовый аппарат удалён', 'success');
                 }
+
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = `<i class="fa-solid fa-trash"></i> ${t.delete_btn || 'Удалить'}`;
 
                 renderTerminalsWidget();
                 renderTerminalsList();
