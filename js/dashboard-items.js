@@ -20,7 +20,16 @@ function renderItemCurrencySelects() {
     if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
 }
 
+function renderItemTypeSelects() {
+    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    document.querySelectorAll('#add-modal select[name="type"], #edit-modal select[name="type"]').forEach((select) => {
+        if (typeof window.renderDeviceTypeOptions === 'function') window.renderDeviceTypeOptions(select, lang);
+    });
+    if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+}
+
 window.addEventListener('lang-changed', renderItemCurrencySelects);
+window.addEventListener('lang-changed', renderItemTypeSelects);
 
 // Настройки — отдельная вкладка того же SPA (dashboard.html), которая
 // подгружается один раз при заходе на страницу. Без этого слушателя смена
@@ -57,6 +66,7 @@ async function initDashboardItems() {
         .single();
     userDefaultCurrency = profile?.currency || 'EUR';
     renderItemCurrencySelects();
+    renderItemTypeSelects();
 
     applySavedItemsTab();
     setupItemsTabs(auth.user.id, auth.user.email, auth.client);
@@ -136,6 +146,18 @@ function getStatusInfo(daysLeft) {
     return { class: 'expired' };
 }
 
+// В БД «нет гарантии» кодируется двумя способами: warranty_months = 0
+// либо (для старых/импортированных записей) дата окончания гарантии
+// совпадает с датой покупки — оба случая нужно отличать от «гарантия истекла».
+function isNoWarranty(item) {
+    if (!item.warranty_months) return true;
+    if (item.purchase_date && item.warranty_end_date
+        && item.purchase_date.slice(0, 10) === item.warranty_end_date.slice(0, 10)) {
+        return true;
+    }
+    return false;
+}
+
 function renderItems(items) {
     const grid = document.querySelector('#items-grid-mine');
     if (!grid) return;
@@ -165,7 +187,7 @@ function renderItems(items) {
 
     grid.innerHTML = items.map(item => {
         const iconClass = window.DEVICE_ICONS[item.type] || window.DEVICE_ICONS.other;
-        const noWarranty = !item.warranty_months;
+        const noWarranty = isNoWarranty(item);
         const daysLeft = noWarranty ? null : calculateDaysLeft(item.warranty_end_date);
         const status = noWarranty ? null : getStatusInfo(daysLeft);
         const totalDays = (item.warranty_months || 12) * 30;
@@ -184,7 +206,7 @@ function renderItems(items) {
             stats.push({ icon: 'fa-store', labelKey: 'stat_store', fallback: 'Store', value: escapeHtml(item.store_name) });
         }
         if (item.price && item.price > 0) {
-            stats.push({ icon: 'fa-tag', labelKey: 'stat_price', fallback: 'Price', value: escapeHtml(window.formatCurrency(item.price, item.currency || 'EUR', lang)), accent: true });
+            stats.push({ icon: 'fa-tag', labelKey: 'stat_price', fallback: 'Price', value: escapeHtml(window.formatCurrency(item.price, item.currency || 'EUR', lang)) });
         }
         let dateStr = '';
         if (item.purchase_date) {
@@ -214,28 +236,29 @@ function renderItems(items) {
         if (noWarranty) {
             progressSectionHtml = `
                         <div class="mine-progress">
+                            <div class="mine-progress-top">
+                                <span class="days-left-text none" data-i18n="no_warranty">${escapeHtml(t.no_warranty || 'No warranty')}</span>
+                            </div>
                             <div class="no-warranty-track"><i class="fa-solid fa-shield-slash"></i></div>
                         </div>`;
         } else {
             const progressTextKey = daysLeft > 0 ? 'days_left' : 'warranty_expired_text';
             const untilLabel = escapeHtml(t.progress_until || 'until');
+            const endD = item.warranty_end_date ? item.warranty_end_date.slice(0, 10).split('-') : null;
+            const endDateStr = endD ? (lang === 'ru' ? `${endD[2]}.${endD[1]}.${endD[0]}` : `${endD[1]}/${endD[2]}/${endD[0]}`) : '';
             progressSectionHtml = `
                         <div class="mine-progress">
                             <div class="mine-progress-top">
                                 <span class="days-left-text ${status.class}"
                                       data-i18n="${progressTextKey}"
                                       data-i18n-count="${daysLeft > 0 ? daysLeft : ''}"></span>
-                                <span class="mine-progress-until">${dateStr ? `${untilLabel} ${escapeHtml(dateStr)}` : ''}</span>
+                                <span class="mine-progress-until">${endDateStr ? `<span data-i18n="progress_until">${untilLabel}</span> ${escapeHtml(endDateStr)}` : ''}</span>
                             </div>
                             <div class="mine-progress-track">
                                 <div class="mine-progress-fill ${status.class}" data-progress="${progress}"></div>
                             </div>
                         </div>`;
         }
-
-        const badgeHtml = noWarranty
-            ? `<div class="mine-item-badge" data-i18n="no_warranty">${escapeHtml(t.no_warranty || 'No warranty')}</div>`
-            : '';
 
         return `
             <div class="mine-item-card is-${statusClass}" data-item-id="${escapeHtml(item.id)}">
@@ -245,7 +268,6 @@ function renderItems(items) {
                         <h3 class="mine-item-title" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</h3>
                         <div class="mine-item-brand">${escapeHtml(item.brand) || escapeHtml(t.brand_not_specified || 'Brand not specified')}</div>
                     </div>
-                    ${badgeHtml}
                 </div>
 
                 <div class="mine-item-body">
@@ -255,11 +277,11 @@ function renderItems(items) {
 
                     <div class="mine-item-actions">
                         ${calendarButtonHtml}
-                        <button class="btn-action primary btn-edit-item" data-id="${escapeHtml(item.id)}" title="${btnEditText}">
+                        <button class="btn-action btn-edit-item" data-id="${escapeHtml(item.id)}" title="${btnEditText}">
                             <i class="fa-solid fa-pen"></i>
                             <span data-i18n="btn_edit">${btnEditText}</span>
                         </button>
-                        <button class="btn-action danger btn-delete-item" data-id="${escapeHtml(item.id)}" title="${btnDeleteText}">
+                        <button class="btn-action btn-delete-item" data-id="${escapeHtml(item.id)}" title="${btnDeleteText}">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
@@ -339,100 +361,106 @@ function renderVerifiedItems(receipts, t) {
     lastVerifiedItems = allItems;
 
     grid.innerHTML = allItems.map(item => {
-        const dateStr = item.purchase_date
-            ? new Date(item.purchase_date).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US')
-            : '—';
+        const iconClass = window.DEVICE_ICONS[item.type] || window.DEVICE_ICONS.other;
+        const d = item.purchase_date ? item.purchase_date.slice(0, 10).split('-') : null;
+        const dateStr = d ? (lang === 'ru' ? `${d[2]}.${d[1]}.${d[0]}` : `${d[1]}/${d[2]}/${d[0]}`) : '';
         const qty = parseInt(item.qty, 10) || 1;
-        const noWarranty = !item.warranty_months;
+        const noWarranty = isNoWarranty(item);
         const daysLeft = noWarranty ? null : calculateDaysLeft(item.warranty_end_date);
         const status = noWarranty ? null : getStatusInfo(daysLeft);
         const totalDays = (item.warranty_months || 12) * 30;
         const progress = noWarranty ? 0
             : totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
+        const statusClass = noWarranty ? 'none' : status.class;
+
+        const stats = [];
+        if (qty > 1) {
+            stats.push({ icon: 'fa-layer-group', labelKey: 'stat_qty', fallback: 'Qty', value: '×' + escapeHtml(String(qty)) });
+        }
+        stats.push({ icon: 'fa-tag', labelKey: 'stat_price', fallback: 'Price', value: escapeHtml(window.formatCurrency(parseFloat(item.gross_total) || 0, item.currency || 'EUR', lang)) });
+        if (!noWarranty) {
+            stats.push({ icon: 'fa-shield-halved', labelKey: 'stat_warranty', fallback: 'Warranty', value: `${escapeHtml(String(item.warranty_months || 0))} ${escapeHtml(t.months_short || 'mo')}.` });
+        }
+        if (dateStr) {
+            stats.push({ icon: 'fa-regular fa-calendar', labelKey: 'stat_date', fallback: 'Date', value: escapeHtml(dateStr) });
+        }
+        const statsHtml = stats.map(s => `
+                        <div class="mine-stat">
+                            <span class="mine-stat-icon"><i class="fa-solid ${s.icon}"></i></span>
+                            <div class="mine-stat-text">
+                                <div class="mine-stat-label" data-i18n="${s.labelKey}">${escapeHtml(t[s.labelKey] || s.fallback)}</div>
+                                <div class="mine-stat-value" title="${s.value}">${s.value}</div>
+                            </div>
+                        </div>`).join('');
 
         const btnCalendarText = escapeHtml(t.add_to_calendar || 'В календарь');
         const calendarButtonHtml = item.warranty_end_date && daysLeft > 0 ? `
                         <button type="button" class="btn-action btn-add-calendar" data-id="${escapeHtml(item.id)}"
                                 title="${btnCalendarText}" aria-label="${btnCalendarText}">
                             <i class="fa-solid fa-calendar-plus"></i>
+                            <span data-i18n="add_to_calendar">${btnCalendarText}</span>
                         </button>` : '';
 
-        let statusBadgeHtml = '';
-        let footerHtml;
-
+        let progressSectionHtml;
         if (noWarranty) {
-            statusBadgeHtml = `<div class="item-status-badge none" data-i18n="no_warranty">${escapeHtml(t.no_warranty || 'No warranty')}</div>`;
-            footerHtml = `
-                <div class="item-footer">
-                    <div class="no-warranty-track"><i class="fa-solid fa-shield-slash"></i></div>
-                    <div class="verified-lock-note"><i class="fa-solid fa-lock"></i> <span data-i18n="verified_locked">${escapeHtml(t.verified_locked || 'Подтверждено продавцом — нельзя изменить')}</span></div>
-                </div>`;
+            progressSectionHtml = `
+                        <div class="mine-progress">
+                            <div class="mine-progress-top">
+                                <span class="days-left-text none" data-i18n="no_warranty">${escapeHtml(t.no_warranty || 'No warranty')}</span>
+                            </div>
+                            <div class="no-warranty-track"><i class="fa-solid fa-shield-slash"></i></div>
+                        </div>`;
         } else {
             const progressTextKey = daysLeft > 0 ? 'days_left' : 'warranty_expired_text';
-            footerHtml = `
-                <div class="item-footer">
-                    <div class="days-left-text ${status.class}" 
-                         data-i18n="${progressTextKey}" 
-                         data-i18n-count="${daysLeft > 0 ? daysLeft : ''}">
-                    </div>
-                    <div class="verified-lock-note"><i class="fa-solid fa-lock"></i> <span data-i18n="verified_locked">${escapeHtml(t.verified_locked || 'Подтверждено продавцом — нельзя изменить')}</span></div>
-                    <div class="item-actions verified-actions">
-                        ${calendarButtonHtml}
-                    </div>
-                </div>`;
+            const untilLabel = escapeHtml(t.progress_until || 'until');
+            const endD = item.warranty_end_date ? item.warranty_end_date.slice(0, 10).split('-') : null;
+            const endDateStr = endD ? (lang === 'ru' ? `${endD[2]}.${endD[1]}.${endD[0]}` : `${endD[1]}/${endD[2]}/${endD[0]}`) : '';
+            progressSectionHtml = `
+                        <div class="mine-progress">
+                            <div class="mine-progress-top">
+                                <span class="days-left-text ${status.class}"
+                                      data-i18n="${progressTextKey}"
+                                      data-i18n-count="${daysLeft > 0 ? daysLeft : ''}"></span>
+                                <span class="mine-progress-until">${endDateStr ? `<span data-i18n="progress_until">${untilLabel}</span> ${escapeHtml(endDateStr)}` : ''}</span>
+                            </div>
+                            <div class="mine-progress-track">
+                                <div class="mine-progress-fill ${status.class}" data-progress="${progress}"></div>
+                            </div>
+                        </div>`;
         }
 
-        const itemIconHtml = noWarranty
-            ? `
-                <div class="item-icon-ring">
-                    <svg class="progress-ring" width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
-                        <circle class="progress-ring-track none" cx="26" cy="26" r="23"></circle>
-                    </svg>
-                    <div class="item-icon verified"><i class="fa-solid fa-box-open"></i></div>
-                </div>`
-            : `
-                <div class="item-icon-ring">
-                    <svg class="progress-ring" width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
-                        <circle class="progress-ring-track" cx="26" cy="26" r="23"></circle>
-                        <circle class="progress-ring-fill ${status.class}" cx="26" cy="26" r="23"
-                                data-progress="${progress}" style="stroke-dashoffset: 144.5"></circle>
-                    </svg>
-                    <div class="item-icon verified"><i class="fa-solid fa-box-open"></i></div>
-                </div>`;
+        const itemName = escapeHtml(item.item_name || (t.item_name_unknown || 'Товар'));
+
+        const verifiedLabel = escapeHtml(t.verified_badge || 'Confirmed');
 
         return `
-            <div class="item-card verified-item-card">
-                <div class="verified-ribbon"><i class="fa-solid fa-check"></i> <span data-i18n="verified_badge">${escapeHtml(t.verified_badge || 'Confirmed')}</span></div>
-                <div class="item-header">
-                    ${itemIconHtml}
-                    <div class="item-header-badges">
-                        ${noWarranty ? statusBadgeHtml : ''}
+            <div class="mine-item-card verified is-${statusClass}" data-item-id="${escapeHtml(item.id)}">
+                <div class="mine-item-header">
+                    <div class="mine-item-icon">
+                        <i class="fa-solid ${iconClass}"></i>
+                        <span class="verified-check" title="${verifiedLabel}" aria-label="${verifiedLabel}"><i class="fa-solid fa-check"></i></span>
+                    </div>
+                    <div class="mine-item-heading">
+                        <h3 class="mine-item-title" title="${itemName}">${itemName}</h3>
+                        <div class="mine-item-brand">${escapeHtml(item.shop_name || '—')}</div>
                     </div>
                 </div>
 
-                <div class="item-body">
-                    <h3 class="item-title">${escapeHtml(item.item_name || (t.item_name_unknown || 'Товар'))}</h3>
-                    <div class="item-brand"><i class="fa-solid fa-store"></i> ${escapeHtml(item.shop_name || '—')}</div>
+                <div class="mine-item-body">
+                    ${stats.length ? `<div class="mine-stats-grid">${statsHtml}</div>` : ''}
 
-                    <div class="item-tags">
-                        ${qty > 1 ? `<span class="tag"><i class="fa-solid fa-layer-group"></i> ×${escapeHtml(String(qty))}</span>` : ''}
-                        <span class="tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(window.formatCurrency(parseFloat(item.gross_total) || 0, item.currency || 'EUR', lang))}</span>
-                        ${!noWarranty ? `<span class="tag"><i class="fa-solid fa-shield-halved"></i> ${escapeHtml(String(item.warranty_months || 0))} ${escapeHtml(t.months_short || 'mo')}.</span>` : ''}
-                        <span class="tag"><i class="fa-regular fa-calendar"></i> ${escapeHtml(dateStr)}</span>
-                    </div>
+                    ${progressSectionHtml}
+
+                    ${calendarButtonHtml ? `<div class="mine-item-actions calendar-only">${calendarButtonHtml}</div>` : ''}
                 </div>
-
-                ${footerHtml}
             </div>`;
     }).join('');
 
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            const RING_CIRCUMFERENCE = 144.5; // 2 * Math.PI * 23, r=23 из SVG выше
-            grid.querySelectorAll('.progress-ring-fill[data-progress]').forEach(el => {
+            grid.querySelectorAll('.mine-progress-fill[data-progress]').forEach(el => {
                 const progress = parseFloat(el.dataset.progress);
-                const offset = RING_CIRCUMFERENCE - (RING_CIRCUMFERENCE * progress / 100);
-                el.style.strokeDashoffset = String(offset);
+                el.style.width = `${progress}%`;
                 el.removeAttribute('data-progress');
             });
         });
@@ -491,7 +519,7 @@ async function loadVerifiedItems(userEmail, client) {
     (data || []).forEach(r => {
         (r.receipt_items || []).forEach(it => {
             verifiedTotal++;
-            if (!it.warranty_months) return;
+            if (isNoWarranty({ warranty_months: it.warranty_months, purchase_date: r.purchase_date, warranty_end_date: it.warranty_end_date })) return;
             const days = calculateDaysLeft(it.warranty_end_date);
             if (days > 30) verifiedActive++;
             else if (days > 0 && days <= 30) verifiedExpiring++;
@@ -585,7 +613,7 @@ function updateStats(items) {
     let expiredCount = 0;
 
     items.forEach(item => {
-        if (!item.warranty_months) return;
+        if (isNoWarranty(item)) return;
         const days = calculateDaysLeft(item.warranty_end_date);
         if (days > 30) activeCount++;
         else if (days > 0 && days <= 30) expiringCount++;
@@ -838,8 +866,12 @@ function setupModal(client) {
         }
         if (currencySelect) {
             currencySelect.value = userDefaultCurrency;
-            if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
         }
+        const typeSelect = form?.querySelector('[name="type"]');
+        if (typeSelect) {
+            typeSelect.value = 'other';
+        }
+        if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
         updatePriceSuffix();
     });
     closeBtn?.addEventListener('click', closeAddModal);

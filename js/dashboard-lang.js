@@ -49,6 +49,9 @@ const dashboardTranslations = {
         stat_store: 'Магазин',
         stat_price: 'Цена',
         stat_date: 'Дата',
+        stat_qty: 'Кол-во',
+        stat_warranty: 'Гарантия',
+        stat_linked_item: 'Привязано к',
         progress_until: 'до',
         modal_title: "Добавить новую вещь",
         modal_title_subtitle: "Данные о покупке и гарантии",
@@ -84,6 +87,8 @@ const dashboardTranslations = {
         currency_label: "Валюта по умолчанию",
         currency_search_placeholder: "Поиск валюты...",
         currency_search_empty: "Ничего не найдено",
+        type_search_placeholder: "Поиск типа...",
+        type_search_empty: "Ничего не найдено",
         currency_settings_hint: "Применяется к новым вещам и чекам — старые записи не меняются",
         label_item_currency: "Валюта",
         label_receipt_currency: "Валюта",
@@ -167,7 +172,6 @@ const dashboardTranslations = {
         receipts_tab_business: "Чеки от партнеров",
         verified_empty_title: "Пока нет подтвержденных товаров",
         verified_empty_text: "Товары из чеков от партнёров появятся здесь автоматически.",
-        verified_locked: "Подтверждено продавцом — нельзя изменить",
         verified_badge: "Подтверждено",
         item_name_unknown: "Товар",
         loading_receipts: "Загружаем чеки…",
@@ -226,6 +230,9 @@ const dashboardTranslations = {
         stat_store: 'Store',
         stat_price: 'Price',
         stat_date: 'Date',
+        stat_qty: 'Qty',
+        stat_warranty: 'Warranty',
+        stat_linked_item: 'Linked to',
         progress_until: 'until',
         modal_title: "Add New Item",
         modal_title_subtitle: "Purchase and warranty details",
@@ -261,6 +268,8 @@ const dashboardTranslations = {
         currency_label: "Default Currency",
         currency_search_placeholder: "Search currency...",
         currency_search_empty: "Nothing found",
+        type_search_placeholder: "Search type...",
+        type_search_empty: "Nothing found",
         currency_settings_hint: "Applies to new items and receipts — existing records are not changed",
         label_item_currency: "Currency",
         label_receipt_currency: "Currency",
@@ -345,7 +354,6 @@ const dashboardTranslations = {
         receipts_tab_business: "Partner Receipts",
         verified_empty_title: "No confirmed items yet",
         verified_empty_text: "Items from partner receipts will appear here automatically.",
-        verified_locked: "Confirmed by seller — cannot be edited",
         verified_badge: "Confirmed",
         item_name_unknown: "Item",
         loading_receipts: "Loading receipts…",
@@ -450,15 +458,6 @@ function applyDashboardLang(lang) {
     localStorage.setItem('valuon-lang', lang);
     document.documentElement.lang = lang === 'en' ? 'en' : 'ru';
     window.dispatchEvent(new CustomEvent('lang-changed', { detail: { lang } }));
-    const typeLabels = {
-        ru: { laptop: '💻 Ноутбук', phone: '📱 Смартфон', tablet: '📟 Планшет', watch: '⌚ Часы', headphones: '🎧 Наушники', camera: '📷 Камера', console: '🎮 Консоль', appliance: '🏠 Бытовая техника', other: '📦 Другое' },
-        en: { laptop: '💻 Laptop', phone: '📱 Phone', tablet: '📟 Tablet', watch: '⌚ Watch', headphones: '🎧 Headphones', camera: '📷 Camera', console: '🎮 Console', appliance: '🏠 Appliance', other: '📦 Other' }
-    };
-
-    document.querySelectorAll('select[name="type"] option').forEach(opt => {
-        const val = opt.value;
-        if (typeLabels[lang]?.[val]) opt.textContent = typeLabels[lang][val];
-    });
     if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
     if (typeof CustomDatePicker !== 'undefined') CustomDatePicker.refreshAll();
 }

@@ -686,9 +686,14 @@ html {
     color: var(--error);
 }
 
+.days-left-text.none {
+    color: var(--secondary);
+}
+
 /* ==== "Мои вещи" — карточка товара, добавленного пользователем ==== */
 
-#items-grid-mine {
+#items-grid-mine,
+#items-grid-verified {
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 }
 
@@ -696,6 +701,7 @@ html {
     --accent: var(--secondary);
     --accent-soft: rgba(100, 116, 139, 0.14);
     --accent-strong: var(--secondary);
+    --accent-text: #fff;
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-2xl);
@@ -708,6 +714,8 @@ html {
 
 [data-theme="dark"] .mine-item-card {
     border-color: rgba(255, 255, 255, 0.08);
+    --accent-strong: color-mix(in srgb, var(--secondary) 55%, white);
+    --accent-text: color-mix(in srgb, var(--secondary) 25%, black);
 }
 
 .mine-item-card:hover {
@@ -719,18 +727,36 @@ html {
     --accent: var(--success);
     --accent-soft: rgba(16, 185, 129, 0.16);
     --accent-strong: color-mix(in srgb, var(--success) 82%, black);
+    --accent-text: #fff;
 }
 
 .mine-item-card.is-warning {
     --accent: var(--warning);
     --accent-soft: rgba(245, 158, 11, 0.18);
     --accent-strong: color-mix(in srgb, var(--warning) 78%, black);
+    --accent-text: #fff;
 }
 
 .mine-item-card.is-expired {
     --accent: var(--error);
     --accent-soft: rgba(239, 68, 68, 0.16);
     --accent-strong: color-mix(in srgb, var(--error) 80%, black);
+    --accent-text: #fff;
+}
+
+[data-theme="dark"] .mine-item-card.is-active {
+    --accent-strong: color-mix(in srgb, var(--success) 55%, white);
+    --accent-text: color-mix(in srgb, var(--success) 25%, black);
+}
+
+[data-theme="dark"] .mine-item-card.is-warning {
+    --accent-strong: color-mix(in srgb, var(--warning) 55%, white);
+    --accent-text: color-mix(in srgb, var(--warning) 25%, black);
+}
+
+[data-theme="dark"] .mine-item-card.is-expired {
+    --accent-strong: color-mix(in srgb, var(--error) 55%, white);
+    --accent-text: color-mix(in srgb, var(--error) 25%, black);
 }
 
 .mine-item-header {
@@ -744,6 +770,7 @@ html {
 }
 
 .mine-item-icon {
+    position: relative;
     width: 50px;
     height: 50px;
     border-radius: 14px;
@@ -781,21 +808,6 @@ html {
     color: var(--secondary);
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.mine-item-badge {
-    position: absolute;
-    top: -10px;
-    right: 20px;
-    font-size: 0.66rem;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: var(--radius-full);
-    background: var(--secondary);
-    color: #fff;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
     white-space: nowrap;
 }
 
@@ -962,10 +974,16 @@ html {
     padding: 0;
 }
 
+.mine-item-actions.calendar-only .btn-add-calendar {
+    flex: 1;
+    width: auto;
+    padding: 0 14px;
+}
+
 .mine-item-actions .btn-edit-item {
     flex: 1;
     background: var(--accent-strong);
-    color: #fff;
+    color: var(--accent-text);
 }
 
 .mine-item-actions .btn-edit-item:hover {
@@ -974,32 +992,32 @@ html {
 }
 
 .mine-item-actions .btn-add-calendar {
-    background: rgba(16, 185, 129, 0.12);
-    color: var(--success);
+    background: rgba(16, 185, 129, 0.22);
+    color: color-mix(in srgb, var(--success) 85%, black);
 }
 
 .mine-item-actions .btn-add-calendar:hover {
-    background: rgba(16, 185, 129, 0.2);
+    background: rgba(16, 185, 129, 0.32);
     transform: translateY(-1px);
 }
 
 [data-theme="dark"] .mine-item-actions .btn-add-calendar {
-    background: rgba(16, 185, 129, 0.18);
-    color: #34d399;
+    background: rgba(16, 185, 129, 0.3);
+    color: #4ade80;
 }
 
 .mine-item-actions .btn-delete-item {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--error);
+    background: rgba(239, 68, 68, 0.18);
+    color: color-mix(in srgb, var(--error) 85%, black);
 }
 
 .mine-item-actions .btn-delete-item:hover {
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.28);
     transform: translateY(-1px);
 }
 
 [data-theme="dark"] .mine-item-actions .btn-delete-item {
-    background: rgba(239, 68, 68, 0.16);
+    background: rgba(239, 68, 68, 0.3);
     color: #f87171;
 }
 
@@ -1007,6 +1025,125 @@ html {
     .mine-stats-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* ==== Карточка загруженного пользователем чека ==== */
+
+.mine-item-actions.receipt-actions .btn-view-receipt,
+.mine-item-actions.receipt-actions .btn-download-receipt {
+    flex: 1;
+}
+
+.mine-item-actions.receipt-actions .btn-delete-receipt {
+    flex: 0 0 auto;
+    width: 44px;
+    padding: 0;
+}
+
+.mine-item-actions.receipt-actions .btn-view-receipt {
+    background: rgba(59, 130, 246, 0.14);
+    color: color-mix(in srgb, var(--primary) 85%, black);
+}
+
+.mine-item-actions.receipt-actions .btn-view-receipt:hover {
+    background: rgba(59, 130, 246, 0.22);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .mine-item-actions.receipt-actions .btn-view-receipt {
+    background: rgba(59, 130, 246, 0.25);
+    color: #93c5fd;
+}
+
+[data-theme="dark"] .mine-item-actions.receipt-actions .btn-view-receipt:hover {
+    background: rgba(59, 130, 246, 0.35);
+}
+
+.mine-item-actions.receipt-actions .btn-download-receipt {
+    background: var(--light);
+    color: var(--text-main);
+}
+
+.mine-item-actions.receipt-actions .btn-download-receipt:hover {
+    background: rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .mine-item-actions.receipt-actions .btn-download-receipt {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .mine-item-actions.receipt-actions .btn-download-receipt:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.mine-item-actions.receipt-actions .btn-delete-receipt {
+    background: rgba(239, 68, 68, 0.18);
+    color: color-mix(in srgb, var(--error) 85%, black);
+}
+
+.mine-item-actions.receipt-actions .btn-delete-receipt:hover {
+    background: rgba(239, 68, 68, 0.28);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .mine-item-actions.receipt-actions .btn-delete-receipt {
+    background: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+/* ==== Карточка чека от бизнес-партнёра ==== */
+
+.mine-item-card.business .mine-item-icon {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+
+[data-theme="dark"] .mine-item-card.business .mine-item-icon {
+    background: rgba(16, 185, 129, 0.2);
+}
+
+.shop-pill {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: var(--radius-full);
+    background: rgba(59, 130, 246, 0.12);
+    color: color-mix(in srgb, var(--primary) 80%, black);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+[data-theme="dark"] .shop-pill {
+    background: rgba(59, 130, 246, 0.22);
+    color: #93c5fd;
+}
+
+.mine-item-actions.download-only .btn-download-biz {
+    flex: 1;
+    width: auto;
+    padding: 0 14px;
+}
+
+.mine-item-actions .btn-download-biz {
+    background: rgba(59, 130, 246, 0.14);
+    color: color-mix(in srgb, var(--primary) 85%, black);
+}
+
+.mine-item-actions .btn-download-biz:hover {
+    background: rgba(59, 130, 246, 0.22);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .mine-item-actions .btn-download-biz {
+    background: rgba(59, 130, 246, 0.25);
+    color: #93c5fd;
+}
+
+[data-theme="dark"] .mine-item-actions .btn-download-biz:hover {
+    background: rgba(59, 130, 246, 0.35);
 }
 
 .modal-overlay {
@@ -1921,7 +2058,7 @@ html {
 
 .receipts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 24px;
 }
 
@@ -2685,13 +2822,6 @@ html {
     background: rgba(16, 185, 129, 0.25);
 }
 
-.item-actions.verified-actions {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
-}
-
-
 .section-divider {
     height: 1px;
     background: var(--border);
@@ -2934,61 +3064,29 @@ html {
     background: rgba(255, 255, 255, 0.08);
 }
 
-.verified-item-card:hover {
+.mine-item-card.verified:hover {
     border-color: rgba(16, 185, 129, 0.35);
 }
 
-.verified-ribbon {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) 0;
-    padding: 8px var(--space-6);
+.verified-check {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
     background: var(--success);
     color: #fff;
-    font-size: 0.73rem;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-}
-
-[data-theme="dark"] .verified-ribbon {
-    background: #059669;
-}
-
-.item-header-badges {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    font-size: 0.6rem;
+    box-shadow: 0 0 0 2px var(--card-bg);
 }
 
-.item-icon.verified {
-    background: rgba(16, 185, 129, 0.12);
-    color: var(--success);
-}
-
-[data-theme="dark"] .item-icon.verified {
-    background: rgba(16, 185, 129, 0.18);
-}
-
-.verified-lock-note {
-    display: inline-flex;
-    align-self: flex-start;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    border-radius: var(--radius-full);
-    background: rgba(100, 116, 139, 0.08);
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--text-muted);
-}
-
-[data-theme="dark"] .verified-lock-note {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.verified-lock-note i {
-    color: var(--success);
+[data-theme="dark"] .verified-check {
+    background: #10b981;
+    box-shadow: 0 0 0 2px var(--card-bg);
 }
 
 @keyframes gridFadeIn {

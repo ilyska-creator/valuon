@@ -299,7 +299,7 @@ function setupReceiptsTabs() {
 
 function renderBusinessCard(r, t) {
     const dateStr = new Date(r.purchase_date).toLocaleDateString(getLang() === 'ru' ? 'ru-RU' : 'en-US');
-    const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
+    const receiptNum = escapeHtml(r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`);
 
     const lineItems = Array.isArray(r.receipt_items) ? r.receipt_items : [];
     const itemsCount = lineItems.length;
@@ -318,30 +318,49 @@ function renderBusinessCard(r, t) {
         }
         </div>` : '';
 
-    const maxWarranty = lineItems.reduce((max, it) => Math.max(max, it.warranty_months || 0), 0);
+    const stats = [
+        { icon: 'fa-tag', labelKey: 'stat_price', fallback: 'Price', value: escapeHtml(window.formatCurrency(parseFloat(r.gross_total) || 0, r.currency || 'EUR', getLang())) },
+        { icon: 'fa-regular fa-calendar', labelKey: 'stat_date', fallback: 'Date', value: escapeHtml(dateStr) }
+    ];
+    const statsHtml = stats.map(s => `
+                        <div class="mine-stat">
+                            <span class="mine-stat-icon"><i class="fa-solid ${s.icon}"></i></span>
+                            <div class="mine-stat-text">
+                                <div class="mine-stat-label" data-i18n="${s.labelKey}">${escapeHtml(t[s.labelKey] || s.fallback)}</div>
+                                <div class="mine-stat-value" title="${s.value}">${s.value}</div>
+                            </div>
+                        </div>`).join('');
+
+    const verifiedLabel = escapeHtml(t.status_business_verified || 'Verified');
+    const btnDownloadText = escapeHtml(t.btn_download || 'Скачать');
+    const shopName = escapeHtml(r.shop_name || '');
+    const email = escapeHtml(r.customer_email || '');
 
     return `
-        <div class="receipt-card business-card">
-            <div class="receipt-header">
-                <div class="receipt-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
-                <div class="item-status-badge active" data-i18n="status_business_verified">${t.status_business_verified || 'Verified'}</div>
+        <div class="mine-item-card business" data-id="${escapeHtml(r.id)}">
+            <div class="mine-item-header">
+                <div class="mine-item-icon">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span class="verified-check" title="${verifiedLabel}" aria-label="${verifiedLabel}"><i class="fa-solid fa-check"></i></span>
+                </div>
+                <div class="mine-item-heading">
+                    <h3 class="mine-item-title" title="${receiptNum}">${receiptNum}</h3>
+                    <div class="mine-item-brand">${email}</div>
+                </div>
             </div>
-            <div class="shop-badge"><i class="fa-solid fa-store"></i> ${escapeHtml(r.shop_name || '')}</div>
-            <div class="receipt-info">
-                <h3>${escapeHtml(receiptNum)}</h3>
-                <p>${escapeHtml(r.customer_email)}</p>
-            </div>
-            <div class="receipt-meta">
-                <span class="tag"><i class="fa-solid fa-tag"></i> ${window.formatCurrency(parseFloat(r.gross_total) || 0, r.currency || 'EUR', getLang())}</span>
-                <span class="tag"><i class="fa-regular fa-calendar"></i> ${dateStr}</span>
-                ${maxWarranty > 0 ? `<span class="tag"><i class="fa-solid fa-shield-halved"></i> ${maxWarranty} ${t.months_short || 'mo'}.</span>` : ''}
-                ${itemsCount > 1 ? `<span class="tag"><i class="fa-solid fa-boxes-stacked"></i> ${itemsCount}</span>` : ''}
-            </div>
-            ${itemsListHtml}
-            <div class="receipt-actions">
-                <button class="btn-action primary btn-download-biz" data-receipt-id="${escapeHtml(r.id)}" title="${t.btn_download || 'Скачать'}">
-                    <i class="fa-solid fa-download"></i> <span>${t.btn_download || 'Скачать'}</span>
-                </button>
+
+            <div class="mine-item-body">
+                <div class="shop-pill"><i class="fa-solid fa-store"></i> ${shopName}</div>
+
+                <div class="mine-stats-grid">${statsHtml}</div>
+
+                ${itemsListHtml}
+
+                <div class="mine-item-actions download-only">
+                    <button class="btn-action btn-download-biz" data-receipt-id="${escapeHtml(r.id)}" title="${btnDownloadText}">
+                        <i class="fa-solid fa-download"></i> <span data-i18n="btn_download">${btnDownloadText}</span>
+                    </button>
+                </div>
             </div>
         </div>
     `;
@@ -351,37 +370,61 @@ function renderPersonalCard(r, t) {
     const isPdf = r.file_type === 'application/pdf';
     const isImage = r.file_type && r.file_type.startsWith('image/');
     const iconClass = isPdf ? 'fa-file-pdf' : isImage ? 'fa-file-image' : 'fa-file-invoice';
-    const tags = [];
 
-    if (r.display_amount) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> ${window.formatCurrency(parseFloat(r.display_amount), r.display_currency || 'EUR', getLang())}</span>`);
+    const stats = [];
+    if (r.display_amount) {
+        stats.push({ icon: 'fa-tag', labelKey: 'stat_price', fallback: 'Price', value: escapeHtml(window.formatCurrency(parseFloat(r.display_amount), r.display_currency || 'EUR', getLang())) });
+    }
     if (r.display_date) {
         const date = new Date(r.display_date).toLocaleDateString(getLang() === 'ru' ? 'ru-RU' : 'en-US');
-        tags.push(`<span class="tag"><i class="fa-regular fa-calendar"></i> ${date}</span>`);
+        stats.push({ icon: 'fa-regular fa-calendar', labelKey: 'stat_date', fallback: 'Date', value: escapeHtml(date) });
     }
-    if (r.display_store) tags.push(`<span class="tag"><i class="fa-solid fa-store"></i> ${escapeHtml(r.display_store)}</span>`);
-    if (r.is_linked) tags.push(`<span class="tag"><i class="fa-solid fa-link"></i> ${escapeHtml(r.item_name)}</span>`);
+    if (r.display_store) {
+        stats.push({ icon: 'fa-store', labelKey: 'stat_store', fallback: 'Store', value: escapeHtml(r.display_store) });
+    }
+    if (r.is_linked) {
+        stats.push({ icon: 'fa-link', labelKey: 'stat_linked_item', fallback: 'Linked item', value: escapeHtml(r.item_name) });
+    }
+
+    const statsHtml = stats.map(s => `
+                        <div class="mine-stat">
+                            <span class="mine-stat-icon"><i class="fa-solid ${s.icon}"></i></span>
+                            <div class="mine-stat-text">
+                                <div class="mine-stat-label" data-i18n="${s.labelKey}">${escapeHtml(t[s.labelKey] || s.fallback)}</div>
+                                <div class="mine-stat-value" title="${s.value}">${s.value}</div>
+                            </div>
+                        </div>`).join('');
+
+    const displayName = escapeHtml(r.display_name);
+    const btnViewText = escapeHtml(t.btn_view || 'Просмотр');
+    const btnDownloadText = escapeHtml(t.btn_download || 'Скачать');
+    const btnDeleteText = escapeHtml(t.btn_delete || 'Удалить');
 
     return `
-        <div class="receipt-card">
-            <div class="receipt-header">
-                <div class="receipt-icon"><i class="fa-solid ${iconClass}"></i></div>
+        <div class="mine-item-card" data-id="${escapeHtml(r.id)}">
+            <div class="mine-item-header">
+                <div class="mine-item-icon"><i class="fa-solid ${iconClass}"></i></div>
+                <div class="mine-item-heading">
+                    <h3 class="mine-item-title" title="${displayName}">${displayName}</h3>
+                </div>
             </div>
-            <div class="receipt-info">
-                <h3>${escapeHtml(r.display_name)}</h3>
-            </div>
-            <div class="receipt-meta">${tags.join('')}</div>
-            <div class="receipt-actions">
-                <button class="btn-action primary btn-view-receipt"
-                        data-url="${escapeHtml(r.file_url)}"
-                        title="${t.btn_view || 'Просмотр'}">
-                    <i class="fa-solid fa-eye"></i> <span>${t.btn_view || 'Просмотр'}</span>
-                </button>
-                <button class="btn-action secondary btn-download-receipt" data-url="${escapeHtml(r.file_url)}" data-name="${escapeHtml(r.display_name)}" title="${t.btn_download || 'Скачать'}">
-                    <i class="fa-solid fa-download"></i> <span>${t.btn_download || 'Скачать'}</span>
-                </button>
-                <button class="btn-action danger btn-delete-receipt" data-id="${escapeHtml(r.id)}" title="${t.btn_delete || 'Удалить'}">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
+
+            <div class="mine-item-body">
+                ${stats.length ? `<div class="mine-stats-grid">${statsHtml}</div>` : ''}
+
+                <div class="mine-item-actions receipt-actions">
+                    <button class="btn-action btn-view-receipt"
+                            data-url="${escapeHtml(r.file_url)}"
+                            title="${btnViewText}">
+                        <i class="fa-solid fa-eye"></i> <span data-i18n="btn_view">${btnViewText}</span>
+                    </button>
+                    <button class="btn-action btn-download-receipt" data-url="${escapeHtml(r.file_url)}" data-name="${displayName}" title="${btnDownloadText}">
+                        <i class="fa-solid fa-download"></i> <span data-i18n="btn_download">${btnDownloadText}</span>
+                    </button>
+                    <button class="btn-action btn-delete-receipt" data-id="${escapeHtml(r.id)}" title="${btnDeleteText}">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
             </div>
         </div>
     `;
