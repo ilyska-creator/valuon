@@ -171,21 +171,35 @@ function renderItems(items) {
         const totalDays = (item.warranty_months || 12) * 30;
         const progress = noWarranty ? 0
             : totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
+        const statusClass = noWarranty ? 'none' : status.class;
 
-        const tags = [];
+        const stats = [];
         if (item.serial_number) {
-            const shortSerial = item.serial_number.length > 6
-                ? escapeHtml(item.serial_number.substring(0, 6)) + '...'
+            const shortSerial = item.serial_number.length > 10
+                ? escapeHtml(item.serial_number.substring(0, 10)) + '…'
                 : escapeHtml(item.serial_number);
-            tags.push(`<span class="tag"><i class="fa-solid fa-barcode"></i> ${escapeHtml(shortSerial)}</span>`);
+            stats.push({ icon: 'fa-barcode', labelKey: 'stat_serial', fallback: 'Serial #', value: shortSerial });
         }
-        if (item.store_name) tags.push(`<span class="tag"><i class="fa-solid fa-store"></i> ${escapeHtml(item.store_name)}</span>`);
-        if (item.price && item.price > 0) tags.push(`<span class="tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(window.formatCurrency(item.price, item.currency || 'EUR', lang))}</span>`);
+        if (item.store_name) {
+            stats.push({ icon: 'fa-store', labelKey: 'stat_store', fallback: 'Store', value: escapeHtml(item.store_name) });
+        }
+        if (item.price && item.price > 0) {
+            stats.push({ icon: 'fa-tag', labelKey: 'stat_price', fallback: 'Price', value: escapeHtml(window.formatCurrency(item.price, item.currency || 'EUR', lang)), accent: true });
+        }
+        let dateStr = '';
         if (item.purchase_date) {
             const d = item.purchase_date.slice(0, 10).split('-');
-            const dateStr = lang === 'ru' ? `${d[2]}.${d[1]}.${d[0]}` : `${d[1]}/${d[2]}/${d[0]}`;
-            tags.push(`<span class="tag"><i class="fa-regular fa-calendar"></i> ${escapeHtml(dateStr)}</span>`);
+            dateStr = lang === 'ru' ? `${d[2]}.${d[1]}.${d[0]}` : `${d[1]}/${d[2]}/${d[0]}`;
+            stats.push({ icon: 'fa-regular fa-calendar', labelKey: 'stat_date', fallback: 'Date', value: escapeHtml(dateStr) });
         }
+        const statsHtml = stats.map(s => `
+                        <div class="mine-stat${s.accent ? ' accent' : ''}">
+                            <span class="mine-stat-icon"><i class="fa-solid ${s.icon}"></i></span>
+                            <div class="mine-stat-text">
+                                <div class="mine-stat-label" data-i18n="${s.labelKey}">${escapeHtml(t[s.labelKey] || s.fallback)}</div>
+                                <div class="mine-stat-value" title="${s.value}">${s.value}</div>
+                            </div>
+                        </div>`).join('');
 
         const btnEditText = escapeHtml(t.btn_edit || 'Изменить');
         const btnDeleteText = escapeHtml(t.btn_delete || 'Удалить');
@@ -196,34 +210,50 @@ function renderItems(items) {
                             <i class="fa-solid fa-calendar-plus"></i>
                         </button>` : '';
 
-        let statusBadgeHtml = '';
-        let footerHtml;
-
+        let progressSectionHtml;
         if (noWarranty) {
-            statusBadgeHtml = `<div class="item-status-badge none" data-i18n="no_warranty">${escapeHtml(t.no_warranty || 'No warranty')}</div>`;
-            footerHtml = `
-                <div class="item-footer">
-                    <div class="no-warranty-track"><i class="fa-solid fa-shield-slash"></i></div>
-                    <div class="item-actions">
-                        ${calendarButtonHtml}
-                        <button class="btn-action primary btn-edit-item" data-id="${escapeHtml(item.id)}" title="${btnEditText}">
-                            <i class="fa-solid fa-pen"></i>
-                            <span data-i18n="btn_edit">${btnEditText}</span>
-                        </button>
-                        <button class="btn-action danger btn-delete-item" data-id="${escapeHtml(item.id)}" title="${btnDeleteText}">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                </div>`;
+            progressSectionHtml = `
+                        <div class="mine-progress">
+                            <div class="no-warranty-track"><i class="fa-solid fa-shield-slash"></i></div>
+                        </div>`;
         } else {
             const progressTextKey = daysLeft > 0 ? 'days_left' : 'warranty_expired_text';
-            footerHtml = `
-                <div class="item-footer">
-                    <div class="days-left-text ${status.class}" 
-                         data-i18n="${progressTextKey}" 
-                         data-i18n-count="${daysLeft > 0 ? daysLeft : ''}">
+            const untilLabel = escapeHtml(t.progress_until || 'until');
+            progressSectionHtml = `
+                        <div class="mine-progress">
+                            <div class="mine-progress-top">
+                                <span class="days-left-text ${status.class}"
+                                      data-i18n="${progressTextKey}"
+                                      data-i18n-count="${daysLeft > 0 ? daysLeft : ''}"></span>
+                                <span class="mine-progress-until">${dateStr ? `${untilLabel} ${escapeHtml(dateStr)}` : ''}</span>
+                            </div>
+                            <div class="mine-progress-track">
+                                <div class="mine-progress-fill ${status.class}" data-progress="${progress}"></div>
+                            </div>
+                        </div>`;
+        }
+
+        const badgeHtml = noWarranty
+            ? `<div class="mine-item-badge" data-i18n="no_warranty">${escapeHtml(t.no_warranty || 'No warranty')}</div>`
+            : '';
+
+        return `
+            <div class="mine-item-card is-${statusClass}" data-item-id="${escapeHtml(item.id)}">
+                <div class="mine-item-header">
+                    <div class="mine-item-icon"><i class="fa-solid ${iconClass}"></i></div>
+                    <div class="mine-item-heading">
+                        <h3 class="mine-item-title" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</h3>
+                        <div class="mine-item-brand">${escapeHtml(item.brand) || escapeHtml(t.brand_not_specified || 'Brand not specified')}</div>
                     </div>
-                    <div class="item-actions">
+                    ${badgeHtml}
+                </div>
+
+                <div class="mine-item-body">
+                    ${stats.length ? `<div class="mine-stats-grid">${statsHtml}</div>` : ''}
+
+                    ${progressSectionHtml}
+
+                    <div class="mine-item-actions">
                         ${calendarButtonHtml}
                         <button class="btn-action primary btn-edit-item" data-id="${escapeHtml(item.id)}" title="${btnEditText}">
                             <i class="fa-solid fa-pen"></i>
@@ -233,49 +263,16 @@ function renderItems(items) {
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
-                </div>`;
-        }
-
-        const itemIconHtml = noWarranty
-            ? `<div class="item-icon"><i class="fa-solid ${iconClass}"></i></div>`
-            : `
-                <div class="item-icon-ring">
-                    <svg class="progress-ring" width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
-                        <circle class="progress-ring-track" cx="26" cy="26" r="23"></circle>
-                        <circle class="progress-ring-fill ${status.class}" cx="26" cy="26" r="23"
-                                data-progress="${progress}" style="stroke-dashoffset: 144.5"></circle>
-                    </svg>
-                    <div class="item-icon"><i class="fa-solid ${iconClass}"></i></div>
-                </div>`;
-
-        return `
-            <div class="item-card" data-item-id="${escapeHtml(item.id)}">
-                <div class="item-header">
-                    ${itemIconHtml}
-                    ${noWarranty ? statusBadgeHtml : ''}
                 </div>
-                
-                <div class="item-body">
-                    <h3 class="item-title">${escapeHtml(item.name)}</h3>
-                    <div class="item-brand">${escapeHtml(item.brand) || escapeHtml(t.brand_not_specified || 'Brand not specified')}</div>
-                    
-                    <div class="item-tags">
-                        ${tags.join('')}
-                    </div>
-                </div>
-
-                ${footerHtml}
             </div>
         `;
     }).join('');
 
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            const RING_CIRCUMFERENCE = 144.5; // 2 * Math.PI * 23, r=23 из SVG выше
-            grid.querySelectorAll('.progress-ring-fill[data-progress]').forEach(el => {
+            grid.querySelectorAll('.mine-progress-fill[data-progress]').forEach(el => {
                 const progress = parseFloat(el.dataset.progress);
-                const offset = RING_CIRCUMFERENCE - (RING_CIRCUMFERENCE * progress / 100);
-                el.style.strokeDashoffset = String(offset);
+                el.style.width = `${progress}%`;
                 el.removeAttribute('data-progress');
             });
         });
