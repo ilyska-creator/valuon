@@ -343,7 +343,13 @@
     <div id="add-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 data-i18n="modal_title">Добавить новую вещь</h2>
+                <div class="modal-heading">
+                    <span class="modal-heading-icon"><i class="fa-solid fa-box-open"></i></span>
+                    <div class="modal-heading-text">
+                        <h2 data-i18n="modal_title">Добавить новую вещь</h2>
+                        <p data-i18n="modal_title_subtitle">Данные о покупке и гарантии</p>
+                    </div>
+                </div>
                 <button id="close-modal" class="btn-close" aria-label="Закрыть"><i
                         class="fa-solid fa-xmark"></i></button>
             </div>
@@ -427,7 +433,13 @@
     <div id="edit-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 data-i18n="modal_edit_title">Изменить товар</h2>
+                <div class="modal-heading">
+                    <span class="modal-heading-icon"><i class="fa-solid fa-pen"></i></span>
+                    <div class="modal-heading-text">
+                        <h2 data-i18n="modal_edit_title">Изменить товар</h2>
+                        <p data-i18n="modal_edit_title_subtitle">Обновите данные о вещи</p>
+                    </div>
+                </div>
                 <button id="close-edit-modal" class="btn-close" aria-label="Закрыть"><i
                         class="fa-solid fa-xmark"></i></button>
             </div>
@@ -508,13 +520,13 @@
         </div>
     </div>
     <div id="delete-item-modal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 400px; text-align: center;">
-            <div class="forgot-icon" style="background: rgba(239,68,68,0.1); color: #ef4444; margin-bottom: 16px;">
+        <div class="modal-content delete-confirm-card">
+            <div class="delete-icon-wrapper">
                 <i class="fa-solid fa-trash"></i>
             </div>
-            <h3 data-i18n="delete_item_title">Удалить товар?</h3>
-            <p class="forgot-desc" data-i18n="delete_item_desc">Товар и связанные данные будут удалены безвозвратно.</p>
-            <div class="modal-actions">
+            <h2 data-i18n="delete_item_title">Удалить товар?</h2>
+            <p data-i18n="delete_item_desc">Товар и связанные данные будут удалены безвозвратно.</p>
+            <div class="modal-actions confirm-actions">
                 <button type="button" id="cancel-delete-item" class="btn btn-outline"
                     data-i18n="btn_cancel">Отмена</button>
                 <button type="button" id="confirm-delete-item" class="btn btn-danger"

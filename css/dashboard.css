@@ -728,8 +728,9 @@ html {
     width: 100%;
     max-width: 500px;
     max-height: 90vh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     border-radius: var(--radius-2xl);
     will-change: transform;
     padding: var(--space-8);
@@ -744,11 +745,42 @@ html {
     border: 1px solid var(--border);
 }
 
+/* Заголовок вынесен из области прокрутки (не наложен поверх неё), как
+   #create-receipt-modal на странице "Для бизнеса" — так у него ровно тот же
+   цвет фона, что и у остальной модалки, без наложения полупрозрачных слоёв
+   друг на друга. */
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex: none;
     margin-bottom: var(--space-6);
+}
+
+/* Форма — единственная прокручиваемая часть модалки; шапка остаётся
+   неподвижной сверху, а не наезжает своим фоном на общий фон модалки. */
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0 calc(-1 * var(--space-8));
+    padding: 0 var(--space-8);
+}
+
+.modal-form::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-form::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-form::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
 }
 
 .modal-header h2 {
@@ -761,12 +793,128 @@ html {
     color: var(--text-main);
 }
 
+/* Заголовок модалки с иконкой и подзаголовком — тот же паттерн, что и на
+   странице "Для бизнеса" (.modal-heading / .modal-heading-icon /
+   .modal-heading-text), чтобы модалки "Мои вещи" и "Чеки" выглядели
+   единообразно с business.html. */
+.modal-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+}
+
+.modal-heading-icon {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    color: var(--primary);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0.04));
+    border: 1px solid rgba(59, 130, 246, 0.18);
+    border-radius: 13px;
+}
+
+.modal-heading-text {
+    min-width: 0;
+}
+
+.modal-heading-text h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--dark);
+}
+
+[data-theme="dark"] .modal-heading-text h2 {
+    color: var(--text-main);
+}
+
+.modal-heading-text p {
+    margin: 2px 0 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
 .btn-close {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    color: var(--secondary);
+    background: var(--light);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 1rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
     cursor: pointer;
+    transition: all 0.3s;
+}
+
+[data-theme="dark"] .btn-close {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.btn-close:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+    border-color: var(--error);
+}
+
+/* Единый вид блока подтверждения удаления (иконка + заголовок + текст),
+   как на странице "Для бизнеса" (.delete-confirm-card). */
+.delete-confirm-card {
+    text-align: center;
+    padding: 2.5rem 2rem !important;
+}
+
+.delete-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.5rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+}
+
+.delete-confirm-card h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+    color: var(--dark);
+}
+
+[data-theme="dark"] .delete-confirm-card h2 {
+    color: var(--text-main);
+}
+
+.delete-confirm-card p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 0;
+}
+
+.modal-actions.confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 1.5rem !important;
+}
+
+.modal-actions.confirm-actions button {
+    flex: none;
 }
 
 .input-group {
@@ -812,10 +960,17 @@ html {
     display: flex;
     gap: var(--space-3);
     margin-top: var(--space-8);
+    justify-content: flex-end;
 }
 
 .modal-actions button {
-    flex: 1;
+    flex: none;
+}
+
+/* Кнопки формы растягиваются поровну на всю ширину футера (50/50). */
+.modal-actions:not(.confirm-actions) button {
+    flex: 1 1 0;
+    padding: var(--space-4) var(--space-6);
 }
 
 @media (max-width: 900px) {
@@ -906,9 +1061,67 @@ html {
         transform: scale(0.95);
         transition: opacity 0.25s ease, transform 0.25s ease;
     }
+
+    /* Отступы формы под мобильный padding модалки (var(--space-6)). */
+    .modal-form {
+        margin: 0 calc(-1 * var(--space-6));
+        padding: 0 var(--space-6);
+    }
+
+    /* На мобильном кнопки формы складываются в столбец на всю ширину,
+       основное действие (submit) — сверху, как на странице "Для бизнеса". */
+    .modal-actions {
+        flex-direction: column-reverse;
+        gap: 0.75rem;
+    }
+
+    .modal-actions button {
+        width: 100%;
+    }
+
+    /* Крупные модалки с формой (добавление/редактирование вещи, загрузка
+       чека) раскрываются на весь экран снизу и закрываются тем же слайдом,
+       как #create-receipt-modal на странице "Для бизнеса". */
+    #add-modal.modal-overlay,
+    #edit-modal.modal-overlay,
+    #upload-modal.modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    #add-modal .modal-content,
+    #edit-modal .modal-content,
+    #upload-modal .modal-content {
+        width: 100%;
+        max-width: 100%;
+        max-height: calc(100dvh - env(safe-area-inset-bottom, 0));
+        margin: 0;
+        padding: var(--space-6) var(--space-6) calc(var(--space-6) + env(safe-area-inset-bottom, 0));
+        border-radius: 22px 22px 0 0;
+        transform: translateY(100%);
+        opacity: 1;
+    }
+
+    #add-modal.modal-overlay.active .modal-content,
+    #edit-modal.modal-overlay.active .modal-content,
+    #upload-modal.modal-overlay.active .modal-content {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    #add-modal.modal-overlay.closing .modal-content,
+    #edit-modal.modal-overlay.closing .modal-content,
+    #upload-modal.modal-overlay.closing .modal-content {
+        transform: translateY(100%);
+        opacity: 1;
+    }
 }
 
 @media (max-width: 480px) {
+    .modal-actions.confirm-actions {
+        grid-template-columns: 1fr;
+    }
+
     .content-header {
         flex-direction: column;
         align-items: flex-start;

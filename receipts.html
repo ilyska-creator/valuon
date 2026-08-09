@@ -138,7 +138,13 @@
     <div id="upload-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 data-i18n="modal_upload_receipt">Загрузить чек</h2>
+                <div class="modal-heading">
+                    <span class="modal-heading-icon"><i class="fa-solid fa-receipt"></i></span>
+                    <div class="modal-heading-text">
+                        <h2 data-i18n="modal_upload_receipt">Загрузить чек</h2>
+                        <p data-i18n="modal_upload_receipt_subtitle">Файл чека и основные данные</p>
+                    </div>
+                </div>
                 <button id="close-upload-modal" class="btn-close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="upload-receipt-form" class="modal-form" action="#">
@@ -209,13 +215,13 @@
         </div>
     </div>
     <div id="delete-receipt-modal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 400px; text-align: center;">
-            <div class="forgot-icon" style="background: rgba(239,68,68,0.1); color: #ef4444; margin-bottom: 16px;">
+        <div class="modal-content delete-confirm-card">
+            <div class="delete-icon-wrapper">
                 <i class="fa-solid fa-trash"></i>
             </div>
-            <h3 data-i18n="delete_receipt_title">Удалить чек?</h3>
-            <p class="forgot-desc" data-i18n="delete_receipt_desc">Файл и запись будут удалены безвозвратно.</p>
-            <div class="modal-actions">
+            <h2 data-i18n="delete_receipt_title">Удалить чек?</h2>
+            <p data-i18n="delete_receipt_desc">Файл и запись будут удалены безвозвратно.</p>
+            <div class="modal-actions confirm-actions">
                 <button type="button" id="cancel-delete-receipt" class="btn btn-outline"
                     data-i18n="btn_cancel">Отмена</button>
                 <button type="button" id="confirm-delete-receipt" class="btn btn-danger"

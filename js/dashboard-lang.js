@@ -46,6 +46,7 @@ const dashboardTranslations = {
         timeline_end: 'Конец',
         brand_not_specified: 'Бренд не указан',
         modal_title: "Добавить новую вещь",
+        modal_title_subtitle: "Данные о покупке и гарантии",
         label_name: "Название товара",
         label_type: "Тип устройства",
         label_brand: "Бренд",
@@ -62,6 +63,7 @@ const dashboardTranslations = {
         ph_location: "Дом, Офис, Дача...",
 
         modal_upload_receipt: "Загрузить чек",
+        modal_upload_receipt_subtitle: "Файл чека и основные данные",
         btn_upload: "Загрузить чек",
         btn_submit_upload: "Загрузить",
         label_receipt_name: "Название чека",
@@ -146,6 +148,7 @@ const dashboardTranslations = {
         msg_item_deleted: "Товар удалён",
         msg_item_delete_failed: "Ошибка удаления товара",
         modal_edit_title: "Изменить товар",
+        modal_edit_title_subtitle: "Обновите данные о вещи",
         msg_item_updated: "Товар обновлён",
         msg_item_update_failed: "Ошибка обновления товара",
         msg_item_added: "Товар добавлен",
@@ -215,6 +218,7 @@ const dashboardTranslations = {
         timeline_end: 'End',
         brand_not_specified: 'Brand not specified',
         modal_title: "Add New Item",
+        modal_title_subtitle: "Purchase and warranty details",
         label_name: "Item Name",
         label_type: "Device Type",
         label_brand: "Brand",
@@ -232,6 +236,7 @@ const dashboardTranslations = {
 
 
         modal_upload_receipt: "Upload Receipt",
+        modal_upload_receipt_subtitle: "Receipt file and basic details",
         btn_upload: "Upload Receipt",
         label_receipt_name: "Receipt Name",
         label_receipt_file: "Receipt File",
@@ -316,6 +321,7 @@ const dashboardTranslations = {
         msg_item_deleted: "Item deleted",
         msg_item_delete_failed: "Failed to delete item",
         modal_edit_title: "Edit Item",
+        modal_edit_title_subtitle: "Update the item's details",
         msg_item_updated: "Item updated",
         msg_item_update_failed: "Failed to update item",
         msg_item_added: "Item added",
