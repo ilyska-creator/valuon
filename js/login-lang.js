@@ -202,7 +202,7 @@ window.authTranslations = translations;
                 container.classList.remove('shake');
                 void container.offsetWidth;
                 container.classList.add('shake');
-                setTimeout(() => container.classList.remove('shake'), 500);
+                setTimeout(() => container.classList.remove('shake'), 400);
                 e.preventDefault();
             }
         }, true);

@@ -167,12 +167,6 @@
     }
 }
 
-@keyframes fadeIn {
-    to {
-        opacity: 1;
-    }
-}
-
 .auth-logo--unlock svg {
     opacity: 0;
 }

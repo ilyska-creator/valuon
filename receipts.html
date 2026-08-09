@@ -25,19 +25,14 @@
 
 <body class="dashboard-body">
     <header class="mobile-top-bar">
-        <button id="mobile-menu-btn" class="menu-trigger" aria-label="Меню"><i class="fa-solid fa-bars"></i></button>
         <a href="index.html" class="brand-mobile">
             <span>VALUON</span>
         </a>
-        <div class="top-bar-spacer"></div>
     </header>
-
-    <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="index.html" class="brand">VALUON</a>
-            <button id="close-sidebar-btn" class="close-sidebar-btn" aria-label="Закрыть меню"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <nav class="sidebar-nav">
             <a href="dashboard.html#view-items" class="nav-item"><i class="fa-solid fa-box-open"></i> <span
@@ -245,61 +240,6 @@
     <script type="module" src="js/dashboard-notifications.js"></script>
     <script src="js/animations.js"></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const menuBtn = document.getElementById('mobile-menu-btn');
-            const closeBtn = document.getElementById('close-sidebar-btn');
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            let scrollPosition = 0;
-
-            function lockScroll() {
-                scrollPosition = window.scrollY;
-                document.body.classList.add('scroll-locked');
-                document.body.style.top = `-${scrollPosition}px`;
-            }
-
-            function unlockScroll() {
-                document.body.classList.remove('scroll-locked');
-                document.body.style.top = '';
-                window.scrollTo(0, scrollPosition);
-            }
-
-            function toggleMenu() {
-                if (!sidebar || !overlay) return;
-                const isActive = sidebar.classList.contains('active');
-                if (isActive) {
-                    sidebar.classList.remove('active');
-                    overlay.classList.remove('active');
-                    setTimeout(unlockScroll, 450);
-                } else {
-                    sidebar.classList.add('active');
-                    overlay.classList.add('active');
-                    lockScroll();
-                }
-            }
-
-            if (menuBtn) menuBtn.addEventListener('click', toggleMenu);
-            if (closeBtn) closeBtn.addEventListener('click', toggleMenu);
-            if (overlay) overlay.addEventListener('click', toggleMenu);
-
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && sidebar?.classList.contains('active')) {
-                    toggleMenu();
-                }
-            });
-
-            document.querySelectorAll('.sidebar-nav .nav-item').forEach(link => {
-                link.addEventListener('click', () => {
-                    if (window.innerWidth <= 900 && sidebar?.classList.contains('active')) {
-                        toggleMenu();
-                    }
-                });
-            });
-
-            unlockScroll();
-        });
-    </script>
     <div id="cookie-banner" class="cookie-banner">
         <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
                 href="privacy.html">Политикой конфиденциальности</a>.</p>

@@ -59,6 +59,7 @@ const verifyTranslations = {
         copy_btn: 'Копировать результат',
         copied: 'Скопировано',
         drop_hint: 'Отпустите файл для загрузки',
+        preview_img_alt: 'Превью чека',
         preview_remove: 'Удалить превью',
         back: 'Назад',
     },
@@ -122,6 +123,7 @@ const verifyTranslations = {
         copy_btn: 'Copy result',
         copied: 'Copied',
         drop_hint: 'Drop file to upload',
+        preview_img_alt: 'Receipt preview',
         preview_remove: 'Remove preview',
         back: 'Back',
     }
@@ -146,6 +148,18 @@ function applyStaticTranslations() {
         if (verifyTranslations.ru[key]) {
             el.textContent = t(key);
         }
+    });
+    document.querySelectorAll('[data-i18n-alt]').forEach(el => {
+        const key = el.getAttribute('data-i18n-alt');
+        if (verifyTranslations.ru[key]) el.setAttribute('alt', t(key));
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (verifyTranslations.ru[key]) el.setAttribute('title', t(key));
+    });
+    document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+        const key = el.getAttribute('data-i18n-aria-label');
+        if (verifyTranslations.ru[key]) el.setAttribute('aria-label', t(key));
     });
 }
 

@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const icon = toggleBtn.querySelector('i');
             icon.className = type === 'password' ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
             icon.classList.add('anim-pop');
-            setTimeout(() => icon.classList.remove('anim-pop'), 350);
+            setTimeout(() => icon.classList.remove('anim-pop'), 300);
         });
     }
 

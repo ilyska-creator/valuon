@@ -197,19 +197,6 @@
     transform: none !important;
 }
 
-@keyframes slideUpFade {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-
 .business-main {
     flex: 1;
     max-width: 1240px;
@@ -247,10 +234,6 @@
 
 .max-w-lg {
     max-width: 600px;
-}
-
-.max-w-xl {
-    max-width: 640px;
 }
 
 .w-full {
@@ -937,10 +920,6 @@
     .shop-setup-header h1 {
         font-size: 1.5rem;
     }
-}
-
-.mt-2 {
-    margin-top: var(--space-2);
 }
 
 .btn {

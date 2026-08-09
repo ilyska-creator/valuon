@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const icon = toggleBtn.querySelector('i');
                 icon.className = type === 'password' ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
                 icon.classList.add('anim-pop');
-                setTimeout(() => icon.classList.remove('anim-pop'), 350);
+                setTimeout(() => icon.classList.remove('anim-pop'), 300);
             });
         }
     };
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             wrap.classList.remove('shake');
             void wrap.offsetWidth;
             wrap.classList.add('shake');
-            setTimeout(function () { wrap.classList.remove('shake'); }, 500);
+            setTimeout(function () { wrap.classList.remove('shake'); }, 400);
         }
         // preventScroll stops the browser from immediately jumping to the
         // focused field, which was cancelling the smooth scroll-to-top above.
