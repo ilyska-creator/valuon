@@ -87,7 +87,7 @@ async function initBusinessPanel() {
                 </div>` : '';
 
             return `
-        <div class="item-card status-${r.status}" data-receipt-id="${r.id}" data-receipt-status="${r.status}" data-receipt-date="${r.purchase_date}">
+        <div class="item-card status-${escapeHtml(r.status)}" data-receipt-id="${escapeHtml(r.id)}" data-receipt-status="${escapeHtml(r.status)}" data-receipt-date="${escapeHtml(r.purchase_date)}">
             <div class="item-header">
                 <div class="item-icon"><i class="fa-solid fa-receipt"></i></div>
                 <span class="item-status-badge ${statusClass}" data-i18n="${statusKey}">${bt[currentLang]?.[statusKey] || ''}</span>
@@ -1941,6 +1941,7 @@ async function initBusinessPanel() {
                             setTimeout(async () => {
                                 deleteModal.classList.add('is-hidden');
                                 deleteModal.classList.remove('closing');
+                                document.documentElement.classList.remove('modal-open');
                                 cleanup();
                                 await refreshDashboard(client, shopId, statsEl, listEl);
                                 if (typeof window.applyBusinessTranslations === 'function') {

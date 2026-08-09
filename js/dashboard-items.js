@@ -905,6 +905,7 @@ function setupModal(client) {
                 setTimeout(() => {
                     modal.classList.remove('active', 'closing');
                     form.reset();
+                    document.documentElement.classList.remove('modal-open');
                     btn.innerHTML = originalText;
                     btn.disabled = false;
                     isSubmitting = false;
