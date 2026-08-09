@@ -1,11 +1,9 @@
 import { requireAuth } from './dashboard-auth.js';
 import { downloadReceiptPDF } from './receipt-generator.js';
-import Ed25519Signer, { buildSignaturePayload } from './crypto-signature.js';
 import { escapeHtml, logError } from './security.js';
 import { attachModalA11y } from './modal-a11y.js';
 
 let currentClient = null;
-let currentUser = null;
 let currentShop = null;
 
 async function initBusinessPanel() {
@@ -126,7 +124,6 @@ async function initBusinessPanel() {
     if (!auth) return;
 
     const { user, client } = auth;
-    currentUser = user;
     currentClient = client;
 
     const cachedShop = sessionStorage.getItem('current_shop');
@@ -1464,18 +1461,10 @@ async function initBusinessPanel() {
 
             try {
                 const createLang = localStorage.getItem('valuon-lang') || 'ru';
-
-                if (!Ed25519Signer.isSupported()) {
-                    window.showToast(createLang === 'en' ? 'Your browser does not support Ed25519. Please use Chrome 137+, Firefox 129+, or Safari 17+.' : 'Ваш браузер не поддерживает Ed25519. Пожалуйста, используйте Chrome 137+, Firefox 129+ или Safari 17+.', 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = originalHTML;
-                    return;
-                }
-
                 const fd = new FormData(e.target);
 
-                // Upload logo if selected (before keygen, so user waits once)
-                let logoPath = null;
+                // Validate logo up front (uploaded after the shop exists, since
+                // the storage path is keyed by shop id)
                 const logoFile = fd.get('logo');
                 if (logoFile && logoFile.size && logoFile.size > 0) {
                     if (logoFile.size > 2 * 1024 * 1024) {
@@ -1492,53 +1481,45 @@ async function initBusinessPanel() {
                     }
                 }
 
-                const signer = new Ed25519Signer();
-                const keyPair = await signer.generateKeyPair();
-                const publicKeyBase64 = await signer.exportPublicKey();
-                const privateKeyBase64 = await signer.exportPrivateKey();
+                // Key generation + insert happen server-side (Edge Function
+                // create-shop): the private signing key is never generated in,
+                // or sent to, the browser — not even once.
+                const { data: created, error: createError } = await client.functions.invoke('create-shop', {
+                    body: {
+                        shop_name: fd.get('shop_name'),
+                        tax_id: fd.get('tax_id'),
+                        address: fd.get('address'),
+                        country: fd.get('country') || null,
+                        currency: fd.get('currency') || 'EUR',
+                    },
+                });
 
-                const { error } = await client.from('shops').insert([{
-                    owner_id: currentUser.id,
-                    shop_name: fd.get('shop_name'),
-                    tax_id: fd.get('tax_id'),
-                    address: fd.get('address'),
-                    country: fd.get('country') || null,
-                    currency: fd.get('currency') || 'EUR',
-                    public_key: publicKeyBase64,
-                    private_key: privateKeyBase64
-                }]);
-
-                if (error) {
-                    const createLang = localStorage.getItem('valuon-lang') || 'ru';
-                    const createMsg = error.code === '23505'
-                        ? (createLang === 'en' ? 'Shop already exists' : 'Магазин уже существует')
+                if (createError || !created?.shop) {
+                    let code = null;
+                    try { code = (await createError.context.json())?.error; } catch (_) { /* no body */ }
+                    const createMsg = code === 'validation_failed'
+                        ? (createLang === 'en' ? 'Fill in all required fields' : 'Заполните все обязательные поля')
                         : (createLang === 'en' ? 'Creation error' : 'Ошибка создания');
                     window.showToast(createMsg, 'error');
+                    logError('biz:createShop', createError || code);
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
                     return;
                 }
 
-                // Upload logo now that shop exists
+                let newShop = created.shop;
+
+                // Upload logo now that the shop exists
                 if (logoFile && logoFile.size && logoFile.size > 0) {
                     try {
                         const ext = logoFile.name.split('.').pop().toLowerCase();
-                        const { data: justCreated } = await client
-                            .from('shops')
-                            .select('id')
-                            .eq('owner_id', currentUser.id)
-                            .maybeSingle();
-                        if (justCreated) {
-                            const filePath = `${justCreated.id}/logo.${ext}`;
-                            const { error: upErr } = await client.storage
-                                .from('shop-logos')
-                                .upload(filePath, logoFile, { upsert: false });
-                            if (!upErr) {
-                                logoPath = filePath;
-                                await client.from('shops')
-                                    .update({ logo_path: filePath })
-                                    .eq('id', justCreated.id);
-                            }
+                        const filePath = `${newShop.id}/logo.${ext}`;
+                        const { error: upErr } = await client.storage
+                            .from('shop-logos')
+                            .upload(filePath, logoFile, { upsert: false });
+                        if (!upErr) {
+                            await client.from('shops').update({ logo_path: filePath }).eq('id', newShop.id);
+                            newShop = { ...newShop, logo_path: filePath };
                         }
                     } catch (_) { /* logo is optional */ }
                 }
@@ -1546,20 +1527,12 @@ async function initBusinessPanel() {
                 const createdLang = localStorage.getItem('valuon-lang') || 'ru';
                 window.showToast(createdLang === 'en' ? 'Store created with cryptographic signature!' : 'Магазин создан с криптографической подписью!', 'success');
 
-                const { data: newShop } = await client
-                    .from('shops')
-                    .select('id, shop_name, tax_id, address, country, currency, logo_path, public_key, owner_id')
-                    .eq('owner_id', currentUser.id)
-                    .maybeSingle();
-
-                if (newShop) {
-                    currentShop = newShop;
-                    sessionStorage.setItem('current_shop', JSON.stringify(newShop));
-                    updateShopInfo(newShop);
-                    await loadTerminals(newShop.id);
-                    renderView(views.dashboard);
-                    await refreshDashboard(client, newShop.id, stats, list);
-                }
+                currentShop = newShop;
+                sessionStorage.setItem('current_shop', JSON.stringify(newShop));
+                updateShopInfo(newShop);
+                await loadTerminals(newShop.id);
+                renderView(views.dashboard);
+                await refreshDashboard(client, newShop.id, stats, list);
             } catch (err) {
                 logError('biz:createShop', err);
                 const catchLang = localStorage.getItem('valuon-lang') || 'ru';
@@ -1771,186 +1744,64 @@ async function initBusinessPanel() {
                     return;
                 }
 
-                const net = items.reduce((sum, it) => sum + it.netTotal, 0);
-                const vat = items.reduce((sum, it) => sum + it.vatAmount, 0);
-                const gross = net + vat;
-
-                const { data: keyData } = await client
-                    .from('shops')
-                    .select('private_key')
-                    .eq('id', currentShop.id)
-                    .eq('owner_id', currentUser.id)
-                    .single();
-
-                if (!keyData?.private_key) {
-                    const keyLang = localStorage.getItem('valuon-lang') || 'ru';
-                    window.showToast(keyLang === 'en' ? 'Crypto key not found. Recreate the shop.' : 'Криптографический ключ магазина не найден. Пересоздайте магазин.', 'error');
-                    return;
-                }
-
-                const signer = new Ed25519Signer();
-                const privateKey = await signer.importPrivateKey(keyData.private_key);
-
-                const signData = buildSignaturePayload({
-                    taxId: currentShop.tax_id,
-                    purchaseDate: fd.get('purchase_date'),
-                    items,
-                    netTotal: net,
-                    vatAmount: vat,
-                    grossTotal: gross,
-                });
-                const fiscalSignature = await signer.sign(signData, privateKey);
-
-                let emailIsRegistered = null;
-                let checkError = null;
-                for (let attempt = 1; attempt <= 3; attempt++) {
-                    const res = await client.rpc('check_profile_exists', { p_email: email });
-                    if (!res.error) {
-                        emailIsRegistered = res.data;
-                        checkError = null;
-                        break;
-                    }
-                    checkError = res.error;
-                    if (attempt < 3) {
-                        await new Promise(r => setTimeout(r, attempt * 800));
-                    }
-                }
-
-                if (checkError) {
-                    const warnLang = localStorage.getItem('valuon-lang') || 'ru';
-                    const warnMsg = warnLang === 'en'
-                        ? 'Could not verify customer email. Receipt will be issued as pending.'
-                        : 'Не удалось проверить email покупателя. Чек будет выписан как неподтверждённый.';
-                    window.showToast(warnMsg, 'warning');
-                    logError('biz:emailCheckRetry', checkError);
-                }
-
-                const status = emailIsRegistered ? 'verified' : 'pending';
-
                 const fdPosId = fd.get('pos_terminal_id');
                 const posTerm = currentTerminals.find((x) => x.id === fdPosId && x.is_active) || null;
 
-                const basePayload = {
-                    shop_id: currentShop.id,
-                    customer_email: email,
-                    net_total: net, vat_amount: vat, gross_total: gross,
-                    purchase_date: fd.get('purchase_date'),
-                    payment_method: fd.get('payment_method'),
-                    status: status,
-                    fiscal_hash: fiscalSignature,
-                    shop_name: currentShop.shop_name,
-                    tax_id: currentShop.tax_id,
-                    address: currentShop.address,
-                    logo_path: currentShop.logo_path,
-                    country: currentShop.country || null,
-                    currency: currentShop.currency || 'EUR'
-                };
-                const payload = {
-                    ...basePayload,
-                    pos_terminal_id: posTerm ? posTerm.id : null,
-                    pos_serial: posTerm ? posTerm.serial_number : null
-                };
+                // Signing, totals, email-registered check and the receipt/items
+                // write all happen server-side (Edge Function issue-receipt):
+                // the shop's private key is read only inside that function, by
+                // a service_role client, and never touches the browser.
+                const { data: issued, error: issueError } = await client.functions.invoke('issue-receipt', {
+                    body: {
+                        shop_id: currentShop.id,
+                        customer_email: email,
+                        purchase_date: fd.get('purchase_date'),
+                        payment_method: fd.get('payment_method'),
+                        pos_terminal_id: posTerm ? posTerm.id : null,
+                        items: items.map((it) => ({
+                            item_name: it.itemName,
+                            qty: it.qty,
+                            unit_price: it.unitPrice,
+                            vat_rate: it.vatRate,
+                            warranty_months: it.warrantyMonths,
+                            discount: it.discount,
+                            category: it.category,
+                        })),
+                    },
+                });
 
-                let inserted = null;
-                let error = null;
-                const insertRes = await client
-                    .from('business_receipts')
-                    .insert([payload])
-                    .select('id, receipt_number')
-                    .single();
-                if (insertRes.error && insertRes.error.code === '42703') {
-                    // Колонки pos_* ещё не в БД (миграция не применена) — вставляем без них
-                    const fallbackRes = await client
-                        .from('business_receipts')
-                        .insert([basePayload])
-                        .select('id, receipt_number')
-                        .single();
-                    inserted = fallbackRes.data;
-                    error = fallbackRes.error;
-                } else {
-                    inserted = insertRes.data;
-                    error = insertRes.error;
-                }
-
-                if (error) {
+                if (issueError || !issued?.id) {
+                    let code = null;
+                    try { code = (await issueError.context.json())?.error; } catch (_) { /* no body */ }
                     const errLang = localStorage.getItem('valuon-lang') || 'ru';
                     window.showToast(errLang === 'en' ? 'Receipt issue error' : 'Ошибка выписки чека', 'error');
-                    logError('biz:issueReceipt', error);
+                    logError('biz:issueReceipt', issueError || code);
                     return;
-                }
-
-                const itemRows = items.map(it => ({
-                    receipt_id: inserted.id,
-                    item_name: it.itemName,
-                    qty: it.qty,
-                    unit_price: it.unitPrice,
-                    vat_rate: it.vatRate,
-                    warranty_months: it.warrantyMonths,
-                    discount_rate: it.discount,
-                    category: it.category,
-                    net_total: it.netTotal,
-                    vat_amount: it.vatAmount,
-                    gross_total: it.grossTotal,
-                    sort_order: it.sortOrder,
-                    currency: currentShop.currency || 'EUR',
-                }));
-
-                const { error: itemsError } = await client.from('receipt_items').insert(itemRows);
-                if (itemsError && itemsError.code !== '42703') {
-                    // Шапка уже создана и подписана по этим items — без строк в
-                    // receipt_items подпись невозможно будет перепроверить.
-                    // Откатываем шапку, чтобы не оставлять "чек без товаров".
-                    logError('biz:saveItems', itemsError);
-                    await client.from('business_receipts').delete().eq('id', inserted.id);
-                    return;
-                }
-                if (itemsError && itemsError.code === '42703') {
-                    const baseRows = items.map(it => ({
-                        receipt_id: inserted.id,
-                        item_name: it.itemName,
-                        qty: it.qty,
-                        unit_price: it.unitPrice,
-                        vat_rate: it.vatRate,
-                        warranty_months: it.warrantyMonths,
-                        net_total: it.netTotal,
-                        vat_amount: it.vatAmount,
-                        gross_total: it.grossTotal,
-                        sort_order: it.sortOrder,
-                        currency: currentShop.currency || 'EUR',
-                    }));
-                    const { error: baseError } = await client.from('receipt_items').insert(baseRows);
-                    if (baseError) {
-                        logError('biz:saveItemsFallback', baseError);
-                        await client.from('business_receipts').delete().eq('id', inserted.id);
-                        const errLang = localStorage.getItem('valuon-lang') || 'ru';
-                        window.showToast(errLang === 'en' ? 'Receipt issue error' : 'Ошибка выписки чека', 'error');
-                        return;
-                    }
                 }
 
                 const succLang = localStorage.getItem('valuon-lang') || 'ru';
-                const receiptLabel = inserted?.receipt_number ? ` #RCP-${inserted.receipt_number}` : '';
+                const receiptLabel = issued.receipt_number ? ` #RCP-${issued.receipt_number}` : '';
                 window.showToast(succLang === 'en' ? `Receipt${receiptLabel} issued!` : `Чек${receiptLabel} выписан!`, 'success');
                 clearDraft();
 
                 if (customerHistory) {
                     customerHistory = customerHistory.filter((c) => c.email !== email);
-                    customerHistory.unshift({ email, status });
+                    customerHistory.unshift({ email, status: issued.status });
                 }
-                customerStatusCache.set(email, status === 'verified');
+                customerStatusCache.set(email, issued.status === 'verified');
 
                 showSuccessScreen({
-                    id: inserted.id,
-                    receipt_number: inserted.receipt_number,
+                    id: issued.id,
+                    receipt_number: issued.receipt_number,
                     customer_email: email,
                     payment_method: fd.get('payment_method'),
                     purchase_date: fd.get('purchase_date'),
-                    status,
-                    net_total: net,
-                    vat_amount: vat,
-                    gross_total: gross,
-                    fiscal_hash: fiscalSignature,
-                    pos_serial: posTerm ? posTerm.serial_number : null,
+                    status: issued.status,
+                    net_total: issued.net_total,
+                    vat_amount: issued.vat_amount,
+                    gross_total: issued.gross_total,
+                    fiscal_hash: issued.fiscal_hash,
+                    pos_serial: issued.pos_serial,
                     shop_id: currentShop.id,
                     shop_name: currentShop.shop_name,
                     receipt_items: items.map((it) => ({
