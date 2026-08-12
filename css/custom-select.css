@@ -81,11 +81,24 @@ select.custom-select {
     border-radius: var(--radius-md);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     max-height: 240px;
-    overflow-y: auto;
+    overflow: hidden;
     display: none;
-    padding: 4px;
+    flex-direction: column;
+    padding: 0;
     margin: 0;
     box-sizing: border-box;
+}
+
+/* Отдельный скроллящийся контейнер под опции — шапка с поиском вынесена
+   из зоны скролла, а не "прилипает" внутри неё. Так у неё сплошной фон
+   от края до края: скроллбар и списочные элементы больше не могут
+   выглянуть из-под неё сбоку, как было бы при sticky-позиционировании
+   внутри общего скролл-контейнера. */
+.custom-select-options {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px;
 }
 
 .custom-select-dropdown.visible {
@@ -128,9 +141,14 @@ select.custom-select {
     list-style: none;
 }
 
-.custom-select-option:hover,
 .custom-select-option.highlighted {
     background: rgba(0, 0, 0, 0.04);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .custom-select-option:hover {
+        background: rgba(0, 0, 0, 0.04);
+    }
 }
 
 .custom-select-option.selected {
@@ -138,15 +156,15 @@ select.custom-select {
     font-weight: 600;
 }
 
-.custom-select-dropdown::-webkit-scrollbar {
+.custom-select-options::-webkit-scrollbar {
     width: 6px;
 }
 
-.custom-select-dropdown::-webkit-scrollbar-track {
+.custom-select-options::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.custom-select-dropdown::-webkit-scrollbar-thumb {
+.custom-select-options::-webkit-scrollbar-thumb {
     background: var(--border);
     border-radius: 3px;
 }
@@ -167,9 +185,14 @@ select.custom-select {
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
 
-[data-theme="dark"] .custom-select-option:hover,
 [data-theme="dark"] .custom-select-option.highlighted {
     background: rgba(255, 255, 255, 0.06);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    [data-theme="dark"] .custom-select-option:hover {
+        background: rgba(255, 255, 255, 0.06);
+    }
 }
 
 [data-theme="dark"] .custom-select-option.selected {
@@ -187,7 +210,6 @@ select.custom-select {
 .custom-select-search {
     width: 100%;
     box-sizing: border-box;
-    margin-bottom: 4px;
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -217,7 +239,7 @@ select.custom-select {
 }
 
 [data-theme="dark"] .custom-select-search {
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--card-bg), white 6%);
     border-color: rgba(255, 255, 255, 0.12);
     color: var(--text-main);
 }
@@ -263,4 +285,132 @@ select.custom-select {
 
 .custom-select-value .cs-value-icon i {
     font-size: 1em;
+}
+
+/* Полноэкранная шторка на мобильных для полей с поиском (валюта, страна,
+   тип устройства). Небольшой заякоренный дропдаун на телефоне не годится:
+   его позиция зависит от положения триггера, а появление клавиатуры это
+   положение постоянно меняет. Шторка не привязана к триггеру, поэтому
+   клавиатура на неё не влияет. */
+html.cs-sheet-lock {
+    overflow: hidden;
+    height: 100%;
+}
+
+.custom-select-sheet-header {
+    flex: none;
+    padding: 6px 4px 4px;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.cs-sheet-close {
+    display: none;
+}
+
+.custom-select-dropdown.cs-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+    max-height: none;
+    width: auto;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.custom-select-dropdown.cs-sheet.visible {
+    animation: csSheetIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.custom-select-dropdown.cs-sheet.closing {
+    animation: csSheetOut 0.18s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes csSheetIn {
+    0% {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes csSheetOut {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+}
+
+.custom-select-dropdown.cs-sheet .custom-select-sheet-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: max(env(safe-area-inset-top, 0px), 14px) 16px 12px;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.custom-select-dropdown.cs-sheet .custom-select-options {
+    padding: 0;
+}
+
+.custom-select-dropdown.cs-sheet .custom-select-search {
+    margin: 0;
+    font-size: 16px;
+    padding: 12px 14px;
+}
+
+.custom-select-dropdown.cs-sheet .cs-sheet-close {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: var(--light);
+    color: var(--text-main);
+    cursor: pointer;
+}
+
+.custom-select-dropdown.cs-sheet .cs-sheet-close svg {
+    width: 18px;
+    height: 18px;
+}
+
+[data-theme="dark"] .custom-select-dropdown.cs-sheet .cs-sheet-close {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.custom-select-dropdown.cs-sheet .custom-select-option {
+    margin: 2px 8px;
+    padding: 14px 12px;
+    font-size: 1rem;
+}
+
+.custom-select-dropdown.cs-sheet .custom-select-search-empty {
+    padding: 32px 16px;
+    font-size: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .custom-select-dropdown.cs-sheet.visible,
+    .custom-select-dropdown.cs-sheet.closing {
+        animation: none;
+    }
 }

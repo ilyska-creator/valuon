@@ -10,6 +10,26 @@ class CustomSelect {
         this.bind();
     }
 
+    getTranslation(key) {
+        if (!key) return '';
+        const lang = localStorage.getItem('valuon-lang') || document.documentElement.lang || 'ru';
+        const dict = window.dashboardTranslations || window.businessTranslations || window.authTranslations;
+        const table = dict && (dict[lang] || dict.ru);
+        return (table && table[key]) || '';
+    }
+
+    findScrollParent(el) {
+        let node = el.parentElement;
+        while (node && node !== document.body && node !== document.documentElement) {
+            const style = getComputedStyle(node);
+            if (/(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1) {
+                return node;
+            }
+            node = node.parentElement;
+        }
+        return null;
+    }
+
     get visibleOptions() {
         return Array.from(this.dropdown.querySelectorAll('.custom-select-option'))
             .filter((li) => li.style.display !== 'none');
@@ -53,6 +73,9 @@ class CustomSelect {
         this._allOptions = [];
 
         if (this.searchable) {
+            const header = document.createElement('div');
+            header.className = 'custom-select-sheet-header';
+
             this.search = document.createElement('input');
             this.search.type = 'text';
             this.search.className = 'custom-select-search';
@@ -64,13 +87,33 @@ class CustomSelect {
             const phKey = this.select.getAttribute('data-search-placeholder');
             if (phKey) {
                 this.search.setAttribute('data-i18n-placeholder', phKey);
+                const phText = this.getTranslation(phKey);
+                if (phText) this.search.placeholder = phText;
             }
-            this.dropdown.appendChild(this.search);
+            header.appendChild(this.search);
+
+            this.sheetCloseBtn = document.createElement('button');
+            this.sheetCloseBtn.type = 'button';
+            this.sheetCloseBtn.className = 'cs-sheet-close';
+            this.sheetCloseBtn.setAttribute('aria-label', 'Close');
+            this.sheetCloseBtn.innerHTML =
+                '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+            header.appendChild(this.sheetCloseBtn);
+
+            this.dropdown.appendChild(header);
 
             this.search.addEventListener('input', () => this.applyFilter());
             this.search.addEventListener('keydown', (e) => this.onSearchKeydown(e));
             this.search.addEventListener('click', (e) => e.stopPropagation());
+            this.sheetCloseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.close();
+            });
         }
+
+        this.list = document.createElement('div');
+        this.list.className = 'custom-select-options';
+        this.dropdown.appendChild(this.list);
 
         const val = this.select.value;
         this.select.querySelectorAll('option').forEach((opt) => {
@@ -93,7 +136,7 @@ class CustomSelect {
             const selected = opt.value === val;
             li.classList.toggle('selected', selected);
             li.setAttribute('aria-selected', String(selected));
-            this.dropdown.appendChild(li);
+            this.list.appendChild(li);
             this._allOptions.push({
                 li,
                 value: opt.value,
@@ -108,9 +151,11 @@ class CustomSelect {
             const emptyKey = this.select.getAttribute('data-search-empty');
             if (emptyKey) {
                 this.emptyRow.setAttribute('data-i18n', emptyKey);
+                const emptyText = this.getTranslation(emptyKey);
+                if (emptyText) this.emptyRow.textContent = emptyText;
             }
             this.emptyRow.style.display = 'none';
-            this.dropdown.appendChild(this.emptyRow);
+            this.list.appendChild(this.emptyRow);
             this.applyFilter();
         }
     }
@@ -184,23 +229,21 @@ class CustomSelect {
         });
     }
 
-    scrollTriggerToTop() {
-        const offset = 12;
-        let scroller = this.trigger.parentElement;
-        while (scroller && scroller !== document.body && scroller !== document.documentElement) {
-            const style = getComputedStyle(scroller);
-            if (/(auto|scroll)/.test(style.overflowY) && scroller.scrollHeight > scroller.clientHeight + 1) {
-                break;
-            }
-            scroller = scroller.parentElement;
-        }
+    get isSheetMode() {
+        return this.searchable && window.matchMedia('(max-width: 900px)').matches;
+    }
 
-        if (scroller && scroller !== document.body && scroller !== document.documentElement) {
-            const delta = this.trigger.getBoundingClientRect().top - scroller.getBoundingClientRect().top - offset;
-            scroller.scrollBy({ top: delta, behavior: 'auto' });
-        } else {
-            const delta = this.trigger.getBoundingClientRect().top - offset;
-            window.scrollBy({ top: delta, behavior: 'auto' });
+    lockPageScroll() {
+        if (!document.documentElement.classList.contains('cs-sheet-lock')) {
+            document.documentElement.classList.add('cs-sheet-lock');
+            this._lockedScroll = true;
+        }
+    }
+
+    unlockPageScroll() {
+        if (this._lockedScroll) {
+            document.documentElement.classList.remove('cs-sheet-lock');
+            this._lockedScroll = false;
         }
     }
 
@@ -210,18 +253,31 @@ class CustomSelect {
             clearTimeout(this._closeTimer);
             this._closeTimer = null;
         }
+        if (window.__valuonActivePicker && window.__valuonActivePicker !== this) {
+            window.__valuonActivePicker.close();
+        }
+        window.__valuonActivePicker = this;
         this.isOpen = true;
         this.dropdown.classList.remove('closing');
 
-        if (this.searchable && window.matchMedia('(max-width: 900px)').matches) {
-            this.scrollTriggerToTop();
-        }
+        const sheetMode = this.isSheetMode;
+        this._sheetMode = sheetMode;
+        this.dropdown.classList.toggle('cs-sheet', sheetMode);
 
         document.body.appendChild(this.dropdown);
-        this.dropdown.style.display = 'block';
+        this.dropdown.style.display = 'flex';
         void this.dropdown.offsetHeight;
         this.dropdown.classList.add('visible');
-        this.position();
+
+        if (sheetMode) {
+            this.dropdown.style.top = '';
+            this.dropdown.style.left = '';
+            this.dropdown.style.width = '';
+            this.dropdown.style.transformOrigin = '';
+            this.lockPageScroll();
+        } else {
+            this.position();
+        }
 
         this.wrapper.classList.add('open');
         this.trigger.setAttribute('aria-expanded', 'true');
@@ -237,32 +293,43 @@ class CustomSelect {
         }
 
         this._closeHandler = (e) => {
+            if (sheetMode) return;
             if (!this.wrapper.contains(e.target) && !this.dropdown.contains(e.target)) {
                 this.close();
             }
         };
-        const reposition = () => {
-            if (this._positionRaf) return;
-            this._positionRaf = requestAnimationFrame(() => {
-                this._positionRaf = null;
-                if (this.isOpen) this.position();
-            });
-        };
-        this._scrollHandler = reposition;
-        this._resizeHandler = reposition;
         this._keyHandler = (e) => {
             if (e.key === 'Escape') this.close();
         };
-
         document.addEventListener('click', this._closeHandler);
-        window.addEventListener('scroll', this._scrollHandler, { passive: true });
-        window.addEventListener('resize', this._resizeHandler, { passive: true });
         document.addEventListener('keydown', this._keyHandler);
+
+        if (!sheetMode) {
+            this._scrollHandler = () => this.close();
+            this._resizeHandler = () => {
+                if (this._positionRaf) return;
+                this._positionRaf = requestAnimationFrame(() => {
+                    this._positionRaf = null;
+                    if (this.isOpen) this.position();
+                });
+            };
+            window.addEventListener('scroll', this._scrollHandler, { passive: true });
+            window.addEventListener('resize', this._resizeHandler, { passive: true });
+
+            this._scrollParent = this.findScrollParent(this.trigger);
+            if (this._scrollParent) {
+                this._scrollParent.addEventListener('scroll', this._scrollHandler, { passive: true });
+            }
+        }
     }
 
     close() {
         if (!this.isOpen) return;
         this.isOpen = false;
+
+        if (window.__valuonActivePicker === this) {
+            window.__valuonActivePicker = null;
+        }
 
         if (this._positionRaf) {
             cancelAnimationFrame(this._positionRaf);
@@ -279,18 +346,25 @@ class CustomSelect {
         this.dropdown.classList.add('closing');
 
         document.removeEventListener('click', this._closeHandler);
-        window.removeEventListener('scroll', this._scrollHandler);
-        window.removeEventListener('resize', this._resizeHandler);
         document.removeEventListener('keydown', this._keyHandler);
+        if (this._scrollHandler) {
+            window.removeEventListener('scroll', this._scrollHandler);
+            if (this._scrollParent) this._scrollParent.removeEventListener('scroll', this._scrollHandler);
+        }
+        if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
+        this._scrollHandler = null;
+        this._resizeHandler = null;
+        this._scrollParent = null;
 
         this._closeTimer = setTimeout(() => {
             this._closeTimer = null;
             this.wrapper.classList.remove('open');
             this.trigger.setAttribute('aria-expanded', 'false');
-            this.dropdown.classList.remove('closing');
+            this.dropdown.classList.remove('closing', 'cs-sheet');
             this.dropdown.style.display = 'none';
             this.wrapper.appendChild(this.dropdown);
-        }, 130);
+            this.unlockPageScroll();
+        }, this._sheetMode ? 180 : 130);
     }
 
     position() {

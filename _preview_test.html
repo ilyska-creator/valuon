@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valuon — Dashboard</title>
+    <meta name="description"
+        content="Valuon — Личный кабинет. Управляйте гарантиями, отслеживайте чеки и получайте напоминания об окончании срока.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/custom-select.css">
+    <link rel="stylesheet" href="css/custom-datepicker.css">
+    <link rel="stylesheet" href="css/toast.css">
+    <script>(function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); })();</script>
+    <script>if (location.hash) { window.__targetView = location.hash.replace('#', ''); history.replaceState(null, '', location.pathname); };</script>
+</head>
+
+<body class="dashboard-body">
+
+    <header class="mobile-top-bar">
+        <a href="index.html" class="brand-mobile">
+            <span>VALUON</span>
+        </a>
+    </header>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="brand">VALUON</a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#view-items" class="nav-item active" data-view="items">
+                <i class="fa-solid fa-box-open"></i> <span data-i18n="nav_items">Мои вещи</span>
+            </a>
+            <a href="receipts.html" class="nav-item">
+                <i class="fa-solid fa-receipt"></i> <span data-i18n="nav_receipts">Чеки и документы</span>
+            </a>
+            <a href="business.html" class="nav-item">
+                <i class="fa-solid fa-store"></i> <span data-i18n="nav_business">Для бизнеса</span>
+            </a>
+            <a href="verify.html?from=dashboard.html" class="nav-item">
+                <i class="fa-solid fa-qrcode"></i> <span data-i18n="nav_verify">Проверить чек</span>
+            </a>
+            <a href="#view-notifications" class="nav-item" data-view="notifications">
+                <span class="icon-badge-wrap">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="nav-badge hidden" data-notif-badge></span>
+                </span>
+                <span data-i18n="nav_notifications">Уведомления</span>
+            </a>
+            <a href="#view-settings" class="nav-item" data-view="settings">
+                <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Настройки</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="controls-row">
+                <button type="button" id="theme-toggle" class="circle-btn" aria-label="Toggle Theme">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+                <button type="button" id="lang-toggle" class="circle-btn" aria-label="Toggle Language">
+                    <span>RU</span>
+                </button>
+            </div>
+            <button type="button" id="logout-btn" class="nav-item full-width">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span data-i18n="ui_logout">Выйти</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <section id="view-items" class="dashboard-view active">
+            <header class="content-header" data-animate>
+                <h1 data-i18n="dashboard_title">Мои вещи</h1>
+                <button id="add-item-btn" class="btn btn-primary"><span data-i18n="btn_add">Добавить
+                        вещь</span></button>
+            </header>
+            <div class="stats-grid" data-animate-group data-animate-step="100">
+                <div class="stat-card" data-animate="zoom">
+                    <div class="stat-icon blue"><i class="fa-solid fa-laptop"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label" data-i18n="stat_total">Всего вещей</span>
+                        <span class="stat-value" id="stat-total">0</span>
+                    </div>
+                </div>
+
+                <div class="stat-card" data-animate="zoom">
+                    <div class="stat-icon green"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label" data-i18n="stat_active">Активных гарантий</span>
+                        <span class="stat-value" id="stat-active">0</span>
+                    </div>
+                </div>
+
+                <div class="stat-card" data-animate="zoom">
+                    <div class="stat-icon orange"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label" data-i18n="stat_expiring">Истекают скоро</span>
+                        <span class="stat-value" id="stat-expiring">0</span>
+                    </div>
+                </div>
+
+                <div class="stat-card" data-animate="zoom">
+                    <div class="stat-icon red"><i class="fa-solid fa-circle-xmark"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label" data-i18n="stat_expired">Истекла гарантия</span>
+                        <span class="stat-value" id="stat-expired">0</span>
+                    </div>
+                </div>
+            </div>
+            <section class="items-section" data-animate>
+                <div class="items-section-header">
+                    <h2 data-i18n="section_recent">Недавние покупки</h2>
+                    <div class="items-tabs" id="items-tabs" role="tablist">
+                        <span class="items-tab-indicator" id="items-tab-indicator" aria-hidden="true"></span>
+                        <button class="items-tab active" data-items-tab="verified" role="tab" aria-selected="true">
+                            <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                            <span data-i18n="items_tab_verified">Подтвержденные товары</span>
+                            <span class="items-tab-count" id="items-count-verified">0</span>
+                        </button>
+                        <button class="items-tab" data-items-tab="mine" role="tab" aria-selected="false">
+                            <i class="fa-solid fa-house" aria-hidden="true"></i>
+                            <span data-i18n="items_tab_mine">Мои вещи</span>
+                            <span class="items-tab-count" id="items-count-mine">0</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="items-grid hidden" id="items-grid-mine"></div>
+                <div class="items-grid" id="items-grid-verified"></div>
+            </section>
+        </section>
+
+        <section id="view-notifications" class="dashboard-view hidden">
+            <header class="content-header">
+                <h1 data-i18n="nav_notifications">Уведомления</h1>
+            </header>
+
+            <div class="notifications-list" id="notifications-container">
+                <div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> <span
+                        data-i18n="notif_checking">Проверка статусов...</span></div>
+            </div>
+        </section>
+
+
+        <section id="view-settings" class="dashboard-view hidden">
+            <header class="content-header">
+                <h1 data-i18n="nav_settings">Настройки</h1>
+            </header>
+
+            <div class="settings-container" data-animate-group data-animate-step="120">
+
+                <div class="settings-section" data-animate>
+                    <h2><i class="fa-solid fa-user"></i> <span data-i18n="settings_profile">Профиль</span></h2>
+
+                    <div class="profile-fields">
+                        <div class="profile-field">
+                            <label data-i18n="label_email">Email</label>
+                            <div class="email-row" id="email-display-row">
+                                <input type="email" id="settings-email" readonly>
+                                <button class="btn btn-outline btn-sm" id="change-email-btn"
+                                    data-i18n="btn_change_email">Изменить</button>
+                            </div>
+                        </div>
+
+                        <div class="profile-field hidden" id="change-email-form">
+                            <label data-i18n="label_new_email">Новый Email</label>
+                            <div class="email-change-form">
+                                <input type="email" id="new-email-input" placeholder="new@email.com">
+                                <div class="email-change-actions">
+                                    <button class="btn btn-primary btn-sm" id="confirm-email-change">
+                                        <i class="fa-solid fa-paper-plane"></i>
+                                    </button>
+                                    <button class="btn btn-outline btn-sm" id="cancel-email-change" aria-label="Отмена">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="setting-desc email-hint" data-i18n="email_change_hint">
+                                На новый адрес придёт ссылка для подтверждения
+                            </p>
+                        </div>
+
+                        <div class="profile-field">
+                            <label data-i18n="label_birthdate">Дата рождения</label>
+                            <input type="date" id="settings-birthdate" class="custom-datepicker" readonly disabled>
+                            <p class="setting-desc" data-i18n="birthdate_readonly_hint">Указывается при регистрации и не
+                                может быть изменена</p>
+                        </div>
+                        <div class="input-row">
+                            <div class="profile-field">
+                                <label data-i18n="label_first_name">Имя</label>
+                                <input type="text" id="settings-first-name" placeholder="James">
+                            </div>
+                            <div class="profile-field">
+                                <label data-i18n="label_last_name">Фамилия</label>
+                                <input type="text" id="settings-last-name" placeholder="Smith">
+                            </div>
+                        </div>
+                        <div class="profile-field">
+                            <label data-i18n="currency_label">Валюта по умолчанию</label>
+                            <select id="settings-currency" name="currency" class="custom-select" data-searchable
+                                data-search-placeholder="currency_search_placeholder"
+                                data-search-empty="currency_search_empty"></select>
+                            <p class="setting-desc" data-i18n="currency_settings_hint">Применяется к новым вещам и
+                                чекам — старые записи не меняются</p>
+                        </div>
+                    </div>
+
+                    <div class="save-bar">
+                        <button class="btn btn-primary" id="save-profile-btn" data-i18n="btn_save" disabled>Сохранить</button>
+                    </div>
+                </div>
+
+                <div class="settings-section" data-animate>
+                    <h2><i class="fa-solid fa-bell"></i> <span data-i18n="settings_notifications">Уведомления</span>
+                    </h2>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label" data-i18n="setting_expiry_alerts">Напоминания об истечении
+                                гарантии</span>
+                            <span class="setting-desc" data-i18n="setting_expiry_desc">За 30, 7 и 1 день до
+                                окончания</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-expiry" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label" data-i18n="setting_email_digest">Еженедельная сводка</span>
+                            <span class="setting-desc" data-i18n="setting_digest_desc">Обзор ваших активов каждый
+                                понедельник</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-digest">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-section" data-animate>
+                    <h2><i class="fa-solid fa-palette"></i> <span data-i18n="settings_appearance">Вид</span></h2>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label" data-i18n="setting_theme">Тёмная тема</span>
+                            <span class="setting-desc" data-i18n="setting_theme_desc">Переключить оформление</span>
+                        </div>
+                        <button class="btn btn-outline btn-sm" id="settings-theme-toggle">
+                            <i class="fa-solid fa-moon"></i> <span id="settings-theme-label">Тёмная</span>
+                        </button>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label" data-i18n="setting_language">Язык</span>
+                            <span class="setting-desc" data-i18n="setting_language_desc">Русский / English</span>
+                        </div>
+                        <button class="btn btn-outline btn-sm" id="settings-lang-toggle">
+                            <span id="settings-lang-label">RU</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-section danger-zone disabled-section" data-animate>
+                    <h2><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="settings_danger">Опасная
+                            зона</span></h2>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label" data-i18n="setting_delete_all">Удалить все мои данные</span>
+                            <span class="setting-desc" data-i18n="setting_delete_disabled_desc">Функция появится в
+                                следующем обновлении</span>
+                        </div>
+                        <button class="btn-danger btn-disabled" disabled data-i18n="btn_unavailable">Недоступно</button>
+                    </div>
+
+                    <div class="disabled-overlay">
+                        <div class="disabled-badge">
+                            <i class="fa-solid fa-lock"></i>
+                            <span data-i18n="coming_soon">Скоро</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section settings-logout" data-animate>
+                    <button type="button" id="logout-btn-mobile" class="btn-logout-settings">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <span data-i18n="ui_logout">Выйти</span>
+                    </button>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="#view-items" class="bottom-nav-item active" data-view="items">
+            <i class="fa-solid fa-box-open"></i>
+            <span data-i18n="nav_items">Мои вещи</span>
+        </a>
+        <a href="receipts.html" class="bottom-nav-item">
+            <i class="fa-solid fa-receipt"></i>
+            <span data-i18n="nav_receipts">Чеки</span>
+        </a>
+        <a href="business.html" class="bottom-nav-item">
+            <i class="fa-solid fa-store"></i>
+            <span data-i18n="nav_business">Бизнес</span>
+        </a>
+        <a href="verify.html?from=dashboard.html" class="bottom-nav-item">
+            <i class="fa-solid fa-qrcode"></i>
+            <span data-i18n="nav_verify">QR</span>
+        </a>
+        <a href="#view-notifications" class="bottom-nav-item" data-view="notifications">
+            <span class="icon-badge-wrap">
+                <i class="fa-solid fa-bell"></i>
+                <span class="nav-badge hidden" data-notif-badge></span>
+            </span>
+            <span data-i18n="nav_notifications">Уведомления</span>
+        </a>
+        <a href="#view-settings" class="bottom-nav-item" data-view="settings">
+            <i class="fa-solid fa-gear"></i>
+            <span data-i18n="nav_settings">Настройки</span>
+        </a>
+    </nav>
+
+    <div id="add-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-heading">
+                    <span class="modal-heading-icon"><i class="fa-solid fa-box-open"></i></span>
+                    <div class="modal-heading-text">
+                        <h2 data-i18n="modal_title">Добавить новую вещь</h2>
+                        <p data-i18n="modal_title_subtitle">Данные о покупке и гарантии</p>
+                    </div>
+                </div>
+                <button id="close-modal" class="btn-close" aria-label="Закрыть"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form class="modal-form" action="#">
+                <div class="input-group">
+                    <label data-i18n="label_name">Название товара</label>
+                    <input type="text" name="name" placeholder="MacBook Air M2" required>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_type">Тип устройства</label>
+                        <select name="type" class="custom-select" required data-searchable
+                                data-search-placeholder="type_search_placeholder"
+                                data-search-empty="type_search_empty"></select>
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_brand">Бренд</label>
+                        <input type="text" name="brand" placeholder="Apple, Samsung..." required>
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_price">Цена покупки</label>
+                        <span class="input-suffix">
+                            <input type="number" name="price" min="0" step="0.01" placeholder="0.00">
+                            <span class="suffix-hint">€</span>
+                        </span>
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_store">Магазин / Продавец</label>
+                        <input type="text" name="store_name" data-i18n-placeholder="ph_store">
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_serial">Серийный номер</label>
+                        <input type="text" name="serial_number" placeholder="S/N...">
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_location">Место хранения</label>
+                        <input type="text" name="location" data-i18n-placeholder="ph_location">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_months">Срок гарантии</label>
+                        <span class="input-suffix">
+                            <input type="number" name="warranty_months" min="0" max="60" value="0">
+                            <span class="suffix-hint" data-i18n="months_suffix">мес.</span>
+                        </span>
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_date">Дата покупки</label>
+                        <input type="date" name="purchase_date" class="custom-datepicker" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label data-i18n="label_item_currency">Валюта</label>
+                    <select name="currency" class="custom-select" data-searchable
+                        data-search-placeholder="currency_search_placeholder"
+                        data-search-empty="currency_search_empty"></select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="cancel-modal" class="btn btn-outline"
+                        data-i18n="btn_cancel">Отмена</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_save">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="edit-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-heading">
+                    <span class="modal-heading-icon"><i class="fa-solid fa-pen"></i></span>
+                    <div class="modal-heading-text">
+                        <h2 data-i18n="modal_edit_title">Изменить товар</h2>
+                        <p data-i18n="modal_edit_title_subtitle">Обновите данные о вещи</p>
+                    </div>
+                </div>
+                <button id="close-edit-modal" class="btn-close" aria-label="Закрыть"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="edit-item-form" class="modal-form" action="#">
+                <input type="hidden" name="item_id" id="edit-item-id">
+                <div class="input-group">
+                    <label data-i18n="label_name">Название товара</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_type">Тип устройства</label>
+                        <select name="type" class="custom-select" required data-searchable
+                                data-search-placeholder="type_search_placeholder"
+                                data-search-empty="type_search_empty"></select>
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_brand">Бренд</label>
+                        <input type="text" name="brand">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_price">Цена покупки</label>
+                        <span class="input-suffix">
+                            <input type="number" name="price" min="0" step="0.01">
+                            <span class="suffix-hint">€</span>
+                        </span>
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_store">Магазин / Продавец</label>
+                        <input type="text" name="store_name" data-i18n-placeholder="ph_store">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_serial">Серийный номер</label>
+                        <input type="text" name="serial_number">
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_location">Место хранения</label>
+                        <input type="text" name="location" data-i18n-placeholder="ph_location">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_months">Срок гарантии</label>
+                        <span class="input-suffix">
+                            <input type="number" name="warranty_months" min="0" max="60">
+                            <span class="suffix-hint" data-i18n="months_suffix">мес.</span>
+                        </span>
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_date">Дата покупки</label>
+                        <input type="date" name="purchase_date" class="custom-datepicker" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label data-i18n="label_item_currency">Валюта</label>
+                    <select name="currency" class="custom-select" data-searchable
+                        data-search-placeholder="currency_search_placeholder"
+                        data-search-empty="currency_search_empty"></select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="cancel-edit-modal" class="btn btn-outline"
+                        data-i18n="btn_cancel">Отмена</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_save">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="delete-item-modal" class="modal-overlay">
+        <div class="modal-content delete-confirm-card">
+            <div class="delete-icon-wrapper">
+                <i class="fa-solid fa-trash"></i>
+            </div>
+            <h2 data-i18n="delete_item_title">Удалить товар?</h2>
+            <p data-i18n="delete_item_desc">Товар и связанные данные будут удалены безвозвратно.</p>
+            <div class="modal-actions confirm-actions">
+                <button type="button" id="cancel-delete-item" class="btn btn-outline"
+                    data-i18n="btn_cancel">Отмена</button>
+                <button type="button" id="confirm-delete-item" class="btn btn-danger"
+                    data-i18n="btn_delete">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+
+    <script src="js/theme.js"></script>
+    <script src="js/toast.js"></script>
+    <script src="js/devices.js"></script>
+
+    <script src="js/custom-select.js?v=300"></script>
+    <script src="js/custom-datepicker.js"></script>
+    <script src="js/currencies.js"></script>
+    <script src="js/dashboard-lang.js"></script>
+    <script src="js/rotating-loader.js"></script>
+    
+    <script type="module" src="js/dashboard-items.js"></script>
+    <script type="module" src="js/dashboard-notifications.js"></script>
+    <script src="js/dashboard-nav.js"></script>
+    <script type="module" src="js/dashboard-settings.js"></script>
+    <script src="js/animations.js"></script>
+    <div id="cookie-banner" class="cookie-banner">
+        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
+                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <button id="cookie-btn" class="btn btn-primary small"
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+    </div>
+    <script src="js/cookie-banner.js"></script>
+    <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+</body>
+
+</html>

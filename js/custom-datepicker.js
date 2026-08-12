@@ -372,6 +372,10 @@ class CustomDatePicker {
             clearTimeout(this._closeTimer);
             this._closeTimer = null;
         }
+        if (window.__valuonActivePicker && window.__valuonActivePicker !== this) {
+            window.__valuonActivePicker.close();
+        }
+        window.__valuonActivePicker = this;
 
         this.isOpen = true;
         this.mode = 'days';
@@ -420,6 +424,10 @@ class CustomDatePicker {
     close() {
         if (!this.isOpen) return;
         this.isOpen = false;
+
+        if (window.__valuonActivePicker === this) {
+            window.__valuonActivePicker = null;
+        }
 
         const shouldRefocus = this.panel.contains(document.activeElement);
 
