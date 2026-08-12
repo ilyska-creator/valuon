@@ -3,6 +3,7 @@ import { escapeHtml, logError } from './security.js';
 import { downloadICS } from './calendar-export.js';
 import { refreshNotifBadge } from './dashboard-notifications.js';
 import { attachModalA11y } from './modal-a11y.js';
+import { calculateDaysLeft } from './warranty-utils.js';
 
 let currentClient = null;
 let currentUserId = null;
@@ -119,26 +120,7 @@ async function loadItems(userId, client) {
     }
 }
 
-export function calculateDaysLeft(warrantyEndDate) {
-    let endDate;
-
-    if (warrantyEndDate instanceof Date) {
-        endDate = new Date(warrantyEndDate.getTime());
-    } else if (typeof warrantyEndDate === 'string' && /^\d{4}-\d{2}-\d{2}/.test(warrantyEndDate)) {
-        const [year, month, day] = warrantyEndDate.slice(0, 10).split('-').map(Number);
-        endDate = new Date(year, month - 1, day);
-    } else {
-        return -999;
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    endDate.setHours(0, 0, 0, 0);
-
-    const diffTime = endDate.getTime() - today.getTime();
-    const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Number.isFinite(days) ? days : -999;
-}
+export { calculateDaysLeft };
 
 function getStatusInfo(daysLeft) {
     if (daysLeft > 30) return { class: 'active' };

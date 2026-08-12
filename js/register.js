@@ -2,6 +2,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
 import { checkSignupRateLimit, logError } from './security.js';
 import { initPasswordStrength, checkPasswordStrength } from './password-strength.js';
+import { getAuthSession } from './dashboard-auth.js';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const getLang = () => localStorage.getItem('valuon-lang') || 'ru';
@@ -29,7 +30,7 @@ function waitForTurnstile(timeoutMs = 5000) {
 let registerWidgetId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let { data: { session } } = await supabase.auth.getSession();
+    let { session } = await getAuthSession();
     if (session) {
         window.location.href = 'dashboard.html';
         return;

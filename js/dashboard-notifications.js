@@ -1,5 +1,6 @@
 import { requireAuth } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
+import { calculateDaysLeft } from './warranty-utils.js';
 
 function getNotifLang() {
     return localStorage.getItem('valuon-lang') || 'ru';
@@ -8,27 +9,6 @@ function getNotifLang() {
 function getNotifT() {
     const lang = getNotifLang();
     return window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
-}
-
-function calculateDaysLeft(warrantyEndDate) {
-    let endDate;
-
-    if (warrantyEndDate instanceof Date) {
-        endDate = new Date(warrantyEndDate.getTime());
-    } else if (typeof warrantyEndDate === 'string' && /^\d{4}-\d{2}-\d{2}/.test(warrantyEndDate)) {
-        const [year, month, day] = warrantyEndDate.slice(0, 10).split('-').map(Number);
-        endDate = new Date(year, month - 1, day);
-    } else {
-        return -999;
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    endDate.setHours(0, 0, 0, 0);
-
-    const diffTime = endDate.getTime() - today.getTime();
-    const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Number.isFinite(days) ? days : -999;
 }
 
 function formatDate(dateStr) {
@@ -152,7 +132,7 @@ async function loadNotifications(userId, client) {
             notifications.push({
                 type: 'warning',
                 icon: 'fa-triangle-exclamation',
-                title: (t.notif_expiring_title || 'Warranty for "{name}" is expiring').replace('{name}', escapeHtml(item.name)),
+                title: (t.notif_expiring_title || 'Warranty for "{name}" is expiring').replace('{name}', () => escapeHtml(item.name)),
                 text: (t.notif_expiring_text || '{count} days left. Check device condition.').replace('{count}', daysLeft),
                 date: formatDate(new Date().toISOString())
             });
@@ -161,7 +141,7 @@ async function loadNotifications(userId, client) {
             notifications.push({
                 type: 'expired',
                 icon: 'fa-circle-xmark',
-                title: (t.notif_expired_title || 'Warranty for "{name}" has expired').replace('{name}', escapeHtml(item.name)),
+                title: (t.notif_expired_title || 'Warranty for "{name}" has expired').replace('{name}', () => escapeHtml(item.name)),
                 text: (t.notif_expired_text || 'Expired {count} days ago.').replace('{count}', absDays),
                 date: formatDate(item.purchase_date)
             });
