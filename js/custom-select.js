@@ -184,6 +184,26 @@ class CustomSelect {
         });
     }
 
+    scrollTriggerToTop() {
+        const offset = 12;
+        let scroller = this.trigger.parentElement;
+        while (scroller && scroller !== document.body && scroller !== document.documentElement) {
+            const style = getComputedStyle(scroller);
+            if (/(auto|scroll)/.test(style.overflowY) && scroller.scrollHeight > scroller.clientHeight + 1) {
+                break;
+            }
+            scroller = scroller.parentElement;
+        }
+
+        if (scroller && scroller !== document.body && scroller !== document.documentElement) {
+            const delta = this.trigger.getBoundingClientRect().top - scroller.getBoundingClientRect().top - offset;
+            scroller.scrollBy({ top: delta, behavior: 'auto' });
+        } else {
+            const delta = this.trigger.getBoundingClientRect().top - offset;
+            window.scrollBy({ top: delta, behavior: 'auto' });
+        }
+    }
+
     open() {
         if (this.isOpen) return;
         if (this._closeTimer) {
@@ -192,6 +212,10 @@ class CustomSelect {
         }
         this.isOpen = true;
         this.dropdown.classList.remove('closing');
+
+        if (this.searchable && window.matchMedia('(max-width: 900px)').matches) {
+            this.scrollTriggerToTop();
+        }
 
         document.body.appendChild(this.dropdown);
         this.dropdown.style.display = 'block';
