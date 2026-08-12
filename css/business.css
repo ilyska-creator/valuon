@@ -1647,6 +1647,17 @@
     font-size: 0.85rem;
 }
 
+.receipt-item-row .input-group .custom-select-trigger {
+    padding: 0.45rem 2.1rem 0.45rem 0.6rem;
+    font-size: 0.85rem;
+}
+
+.receipt-item-row .input-group .custom-select-arrow {
+    right: 0.6rem;
+    width: 14px;
+    height: 14px;
+}
+
 .item-fields {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

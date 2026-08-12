@@ -24,7 +24,7 @@ function renderItemCurrencySelects() {
 function renderItemTypeSelects() {
     const lang = localStorage.getItem('valuon-lang') || 'ru';
     document.querySelectorAll('#add-modal select[name="type"], #edit-modal select[name="type"]').forEach((select) => {
-        if (typeof window.renderDeviceTypeOptions === 'function') window.renderDeviceTypeOptions(select, lang);
+        if (typeof window.renderDeviceTypeOptions === 'function') window.renderDeviceTypeOptions(select, lang, { withIcons: true });
     });
     if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
 }
@@ -343,7 +343,7 @@ function renderVerifiedItems(receipts, t) {
     lastVerifiedItems = allItems;
 
     grid.innerHTML = allItems.map(item => {
-        const iconClass = window.DEVICE_ICONS[item.type] || window.DEVICE_ICONS.other;
+        const iconClass = window.DEVICE_ICONS[item.category] || window.DEVICE_ICONS.other;
         const d = item.purchase_date ? item.purchase_date.slice(0, 10).split('-') : null;
         const dateStr = d ? (lang === 'ru' ? `${d[2]}.${d[1]}.${d[0]}` : `${d[1]}/${d[2]}/${d[0]}`) : '';
         const qty = parseInt(item.qty, 10) || 1;
@@ -483,7 +483,7 @@ async function loadVerifiedItems(userEmail, client) {
 
     const { data, error } = await client
         .from('business_receipts')
-        .select('purchase_date, shop_name, receipt_items(id, item_name, qty, gross_total, currency, warranty_months, warranty_end_date)')
+        .select('purchase_date, shop_name, receipt_items(id, item_name, qty, gross_total, currency, warranty_months, warranty_end_date, category)')
         .eq('customer_email', userEmail)
         .order('purchase_date', { ascending: false });
 

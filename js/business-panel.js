@@ -324,12 +324,33 @@ async function initBusinessPanel() {
 
     // --- Динамические позиции чека ---------------------------------
 
+    function categoryBlankLabel() {
+        const t = bizT();
+        return t.category_none || (bizLang() === 'en' ? 'No category' : 'Без категории');
+    }
+
+    function renderItemCategoryOptions(select) {
+        if (!select || typeof window.renderDeviceTypeOptions !== 'function') return;
+        window.renderDeviceTypeOptions(select, bizLang(), { withIcons: true, blankLabel: categoryBlankLabel() });
+    }
+
+    function refreshItemCategorySelects() {
+        if (!itemsList) return;
+        itemsList.querySelectorAll('[data-field="category"]').forEach((select) => {
+            renderItemCategoryOptions(select);
+            if (select._cs) select._cs.refresh();
+        });
+    }
+
     function addItemRow(focusName) {
         if (!itemsList || !itemTemplate) return;
         const node = itemTemplate.content.firstElementChild.cloneNode(true);
         const priceSuffix = node.querySelector('.item-price .suffix-hint');
         if (priceSuffix) priceSuffix.textContent = window.currencySymbol(currentShop?.currency || 'EUR');
+        const categorySelect = node.querySelector('[data-field="category"]');
+        renderItemCategoryOptions(categorySelect);
         itemsList.appendChild(node);
+        if (categorySelect && typeof CustomSelect !== 'undefined') CustomSelect.init(node);
         updateRemoveButtonsState();
         renumberRows();
         updateTotalPreview();
@@ -1582,6 +1603,9 @@ async function initBusinessPanel() {
             if (typeof CustomSelect !== 'undefined') {
                 const pay = modal.el.querySelector('[name="payment_method"]');
                 if (pay && pay._cs) pay._cs.refresh();
+                itemsList?.querySelectorAll('[data-field="category"]').forEach((sel) => {
+                    if (sel._cs) sel._cs.refresh();
+                });
             }
 
             renderPosSelect();
@@ -2387,6 +2411,7 @@ async function initBusinessPanel() {
     });
 
     window.addEventListener('business-lang-changed', () => {
+        refreshItemCategorySelects();
         if (!currentShop) return;
         renderReceiptCards(list, currentReceiptsList);
         window.applyBusinessTranslations?.();

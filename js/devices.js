@@ -30,23 +30,35 @@ window.DEVICE_ICONS = DEVICE_TYPES.reduce((map, t) => {
     return map;
 }, {});
 
-function deviceTypeList(lang) {
+function deviceTypeList(lang, listOptions) {
     const key = lang === 'en' ? 'en' : 'ru';
     const locale = key === 'en' ? 'en' : 'ru';
+    const withEmoji = !(listOptions && listOptions.noEmoji);
     const real = DEVICE_TYPES.filter((t) => t.value !== 'other');
     real.sort((a, b) => a[key].localeCompare(b[key], locale));
     const other = DEVICE_TYPES.find((t) => t.value === 'other');
-    return [...real, other].map((t) => ({ value: t.value, label: `${t.emoji} ${t[key]}` }));
+    return [...real, other].map((t) => ({ value: t.value, label: withEmoji ? `${t.emoji} ${t[key]}` : t[key] }));
 }
 
-function renderDeviceTypeOptions(select, lang) {
+function renderDeviceTypeOptions(select, lang, options) {
     if (!select) return;
+    const opts = options || {};
     const current = select.value;
     select.innerHTML = '';
-    deviceTypeList(lang).forEach(({ value, label }) => {
+    if (opts.blankLabel) {
+        const blank = document.createElement('option');
+        blank.value = '';
+        blank.textContent = opts.blankLabel;
+        select.appendChild(blank);
+    }
+    // Иконка через data-icon (fa-иконка) и эмодзи в тексте опции — это два
+    // разных способа показать одно и то же. Если явно просят FA-иконку
+    // (withIcons), эмодзи из текста убираем, чтобы не дублировать иконку.
+    deviceTypeList(lang, { noEmoji: opts.withIcons }).forEach(({ value, label }) => {
         const opt = document.createElement('option');
         opt.value = value;
         opt.textContent = label;
+        if (opts.withIcons) opt.setAttribute('data-icon', deviceIconMarkup(value));
         select.appendChild(opt);
     });
     if (current && DEVICE_TYPES.some((t) => t.value === current)) {
