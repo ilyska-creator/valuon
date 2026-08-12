@@ -209,7 +209,7 @@ class CustomSelect {
             this.dropdown.querySelectorAll('.custom-select-option').forEach((l) => l.classList.remove('highlighted'));
             const sel = this._allOptions.find((o) => o.value === this.select.value);
             if (sel) sel.li.classList.add('highlighted');
-            this.search.focus();
+            this.search.focus({ preventScroll: true });
         }
 
         this._closeHandler = (e) => {
@@ -217,8 +217,15 @@ class CustomSelect {
                 this.close();
             }
         };
-        this._scrollHandler = () => this.position();
-        this._resizeHandler = () => this.position();
+        const reposition = () => {
+            if (this._positionRaf) return;
+            this._positionRaf = requestAnimationFrame(() => {
+                this._positionRaf = null;
+                if (this.isOpen) this.position();
+            });
+        };
+        this._scrollHandler = reposition;
+        this._resizeHandler = reposition;
         this._keyHandler = (e) => {
             if (e.key === 'Escape') this.close();
         };
@@ -232,6 +239,11 @@ class CustomSelect {
     close() {
         if (!this.isOpen) return;
         this.isOpen = false;
+
+        if (this._positionRaf) {
+            cancelAnimationFrame(this._positionRaf);
+            this._positionRaf = null;
+        }
 
         if (this.searchable && this.search) {
             this.search.setAttribute('aria-expanded', 'false');
