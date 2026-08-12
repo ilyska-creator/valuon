@@ -290,20 +290,20 @@ html {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: var(--space-6);
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-5);
     margin-bottom: var(--space-10);
     margin-top: var(--space-8);
 }
 
 .stat-card {
     background: var(--white);
-    padding: var(--space-6);
+    padding: var(--space-5);
     border-radius: var(--radius-xl);
     border: 1px solid var(--border);
     display: flex;
     align-items: center;
-    gap: var(--space-5);
+    gap: var(--space-4);
 }
 
 [data-theme="dark"] .stat-card {
@@ -351,13 +351,13 @@ html {
 }
 
 .stat-icon {
-    width: 50px;
-    height: 50px;
+    width: 44px;
+    height: 44px;
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
 }
 
 .stat-icon.blue {
@@ -982,12 +982,12 @@ html {
 
 .mine-item-actions .btn-edit-item {
     flex: 1;
-    background: var(--accent-strong);
-    color: var(--accent-text);
+    background: var(--primary);
+    color: var(--white);
 }
 
 .mine-item-actions .btn-edit-item:hover {
-    filter: brightness(1.08);
+    background: var(--primary-dark);
     transform: translateY(-1px);
 }
 
