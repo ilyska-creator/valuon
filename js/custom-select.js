@@ -217,8 +217,8 @@ class CustomSelect {
                 this.close();
             }
         };
-        this._scrollHandler = () => this.close();
-        this._resizeHandler = () => this.close();
+        this._scrollHandler = () => this.position();
+        this._resizeHandler = () => this.position();
         this._keyHandler = (e) => {
             if (e.key === 'Escape') this.close();
         };
