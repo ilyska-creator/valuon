@@ -73,8 +73,6 @@ const businessTranslations = {
         field_required: 'Заполните это поле',
         error_item_name: 'Укажите название товара',
         error_item_qty: 'Количество должно быть не меньше 1',
-        status_verified_short: 'Зарегистрирован',
-        status_new_short: 'Новый клиент',
 
         success_title: 'Чек выписан!',
         success_client_label: 'Клиент',
@@ -291,8 +289,6 @@ const businessTranslations = {
         field_required: 'Please fill out this field',
         error_item_name: 'Enter a product name',
         error_item_qty: 'Quantity must be at least 1',
-        status_verified_short: 'Registered',
-        status_new_short: 'New client',
 
         success_title: 'Receipt issued!',
         success_client_label: 'Client',

@@ -161,7 +161,6 @@ async function initBusinessPanel() {
     const emailInput = document.getElementById('customer-email');
     const emailGroup = document.getElementById('customer-email-group');
     const emailErrorEl = document.getElementById('customer-email-error');
-    const emailStatusBadge = document.getElementById('customer-status-badge');
     const autocompleteEl = document.getElementById('customer-autocomplete');
     const modalBody = document.getElementById('receipt-modal-body');
     const successScreen = document.getElementById('receipt-success-screen');
@@ -175,9 +174,6 @@ async function initBusinessPanel() {
     let lastIssuedReceipt = null;
     let customerHistory = null;
     let customerHistoryPromise = null;
-    const customerStatusCache = new Map();
-    let emailCheckTimer = null;
-    let emailCheckToken = 0;
     let currentTerminals = [];
 
     function fmtMoney(v) {
@@ -625,7 +621,6 @@ async function initBusinessPanel() {
     });
     emailInput?.addEventListener('input', () => {
         if (emailGroup?.classList.contains('is-invalid')) validateEmailField(true);
-        scheduleCustomerLookup();
         renderAutocomplete();
     });
     emailInput?.addEventListener('focus', () => {
@@ -712,7 +707,6 @@ async function initBusinessPanel() {
         emailInput.value = item.dataset.email;
         hideAutocomplete();
         validateEmailField(false);
-        scheduleCustomerLookup(0);
         emailInput.focus();
     });
 
@@ -721,53 +715,6 @@ async function initBusinessPanel() {
         if (e.target === emailInput || autocompleteEl.contains(e.target)) return;
         hideAutocomplete();
     });
-
-    function setCustomerStatusBadge(state) {
-        if (!emailStatusBadge) return;
-        const t = bizT();
-        if (state === 'checking') {
-            emailStatusBadge.className = 'customer-status-badge checking';
-            emailStatusBadge.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
-        } else if (state === 'verified') {
-            emailStatusBadge.className = 'customer-status-badge verified';
-            emailStatusBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>${escapeHtml(t.status_verified_short || (bizLang() === 'en' ? 'Registered' : 'Зарегистрирован'))}</span>`;
-        } else if (state === 'new') {
-            emailStatusBadge.className = 'customer-status-badge new';
-            emailStatusBadge.innerHTML = `<i class="fa-solid fa-circle-info"></i> <span>${escapeHtml(t.status_new_short || (bizLang() === 'en' ? 'New client' : 'Новый клиент'))}</span>`;
-        } else {
-            emailStatusBadge.className = 'customer-status-badge is-hidden';
-            emailStatusBadge.innerHTML = '';
-            return;
-        }
-        emailStatusBadge.classList.remove('is-hidden');
-    }
-
-    function scheduleCustomerLookup(delay = 500) {
-        clearTimeout(emailCheckTimer);
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const value = emailInput?.value.trim().toLowerCase() || '';
-        if (!emailRegex.test(value)) {
-            setCustomerStatusBadge(null);
-            return;
-        }
-        if (customerStatusCache.has(value)) {
-            setCustomerStatusBadge(customerStatusCache.get(value) ? 'verified' : 'new');
-            return;
-        }
-        setCustomerStatusBadge('checking');
-        const token = ++emailCheckToken;
-        emailCheckTimer = setTimeout(async () => {
-            try {
-                const res = await client.rpc('check_profile_exists', { p_email: value });
-                if (token !== emailCheckToken) return;
-                if (res.error) { setCustomerStatusBadge(null); return; }
-                customerStatusCache.set(value, !!res.data);
-                setCustomerStatusBadge(res.data ? 'verified' : 'new');
-            } catch (e) {
-                if (token === emailCheckToken) setCustomerStatusBadge(null);
-            }
-        }, delay);
-    }
 
     // --- Динамическая сумма на кнопке отправки ----------------------
 
@@ -837,7 +784,6 @@ async function initBusinessPanel() {
             clearAllValidationState();
             forms.receipt?.reset();
             resetItemRows();
-            setCustomerStatusBadge(null);
             emailInput?.setAttribute('readonly', '');
             const dateInput = forms.receipt?.querySelector('[name="purchase_date"]');
             if (dateInput) {
@@ -870,12 +816,6 @@ async function initBusinessPanel() {
         updateSubmitLabel();
         renderTerminalsWidget();
         renderPosSelect();
-        if (modal.el && !modal.el.classList.contains('is-hidden')) {
-            const activeEmail = emailInput?.value.trim().toLowerCase();
-            if (activeEmail && customerStatusCache.has(activeEmail)) {
-                setCustomerStatusBadge(customerStatusCache.get(activeEmail) ? 'verified' : 'new');
-            }
-        }
     });
 
     const stats = {
@@ -1578,7 +1518,6 @@ async function initBusinessPanel() {
             resetItemRows();
             clearAllValidationState();
             hideAutocomplete();
-            setCustomerStatusBadge(null);
             hideSuccessScreen();
             lastIssuedReceipt = null;
             emailInput?.setAttribute('readonly', '');
@@ -1624,7 +1563,6 @@ async function initBusinessPanel() {
             hideSuccessScreen();
             clearAllValidationState();
             hideAutocomplete();
-            setCustomerStatusBadge(null);
             loadCustomerHistory();
             const draft = readDraft();
             if (draft) applyDraft(draft);
@@ -1788,7 +1726,6 @@ async function initBusinessPanel() {
                     customerHistory = customerHistory.filter((c) => c.email !== email);
                     customerHistory.unshift({ email, status: issued.status });
                 }
-                customerStatusCache.set(email, issued.status === 'verified');
 
                 showSuccessScreen({
                     id: issued.id,

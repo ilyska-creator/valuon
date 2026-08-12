@@ -214,12 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         logError('reg:saveProfile', profileError);
                         showToast(lang === 'ru' ? 'Ошибка сохранения данных профиля' : 'Error saving profile data', 'error');
                     } else {
-                        const { error: lazyBindError } = await supabase
-                            .from('business_receipts')
-                            .update({ status: 'verified' })
-                            .eq('customer_email', email.toLowerCase().trim())
-                            .eq('status', 'pending')
-                            .select('id');
+                        const { error: lazyBindError } = await supabase.rpc('bind_pending_receipts');
 
                         if (lazyBindError) {
                             logError('reg:lazyBind', lazyBindError);

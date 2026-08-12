@@ -1982,44 +1982,6 @@
     position: relative;
 }
 
-.customer-status-badge {
-    position: absolute;
-    right: 0.6rem;
-    top: 50%;
-    transform: translateY(-50%);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 0.28rem 0.55rem;
-    border-radius: var(--radius-full);
-    white-space: nowrap;
-    pointer-events: none;
-}
-
-.customer-status-badge.is-hidden {
-    display: none;
-}
-
-.customer-status-badge.checking {
-    color: var(--text-muted);
-}
-
-.customer-status-badge.verified {
-    color: var(--success);
-    background: rgba(16, 185, 129, 0.12);
-}
-
-.customer-status-badge.new {
-    color: var(--warning);
-    background: rgba(245, 158, 11, 0.12);
-}
-
-#customer-email {
-    padding-right: 8.5rem;
-}
-
 .customer-autocomplete {
     position: absolute;
     top: calc(100% + 6px);
@@ -2618,19 +2580,6 @@
     #create-receipt-modal .receipt-item-row .input-group input {
         font-size: 1rem;
         padding: 0.6rem 0.7rem;
-    }
-
-    #create-receipt-modal .customer-status-badge span {
-        display: none;
-    }
-
-    #create-receipt-modal .customer-status-badge {
-        padding: 0.3rem;
-        border-radius: 50%;
-    }
-
-    #create-receipt-modal #customer-email {
-        padding-right: 3.1rem;
     }
 
     #create-receipt-modal .receipt-success-card {

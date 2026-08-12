@@ -150,7 +150,7 @@ function getStatusInfo(daysLeft) {
 // либо (для старых/импортированных записей) дата окончания гарантии
 // совпадает с датой покупки — оба случая нужно отличать от «гарантия истекла».
 function isNoWarranty(item) {
-    if (!item.warranty_months) return true;
+    if (!item.warranty_months || item.warranty_months <= 0) return true;
     if (item.purchase_date && item.warranty_end_date
         && item.purchase_date.slice(0, 10) === item.warranty_end_date.slice(0, 10)) {
         return true;
@@ -739,7 +739,7 @@ function setupEditModal(client, userId) {
                 store_name: form.querySelector('[name="store_name"]').value.trim(),
                 serial_number: form.querySelector('[name="serial_number"]').value.trim(),
                 purchase_date: form.querySelector('[name="purchase_date"]').value,
-                warranty_months: (m => isNaN(m) ? 12 : m)(parseInt(form.querySelector('[name="warranty_months"]').value)),
+                warranty_months: (m => isNaN(m) ? 12 : Math.max(0, m))(parseInt(form.querySelector('[name="warranty_months"]').value)),
                 location: form.querySelector('[name="location"]').value.trim(),
                 currency: form.querySelector('[name="currency"]')?.value || 'EUR',
                 updated_at: new Date().toISOString()
@@ -913,7 +913,7 @@ function setupModal(client) {
                 brand: brandInput ? brandInput.value.trim() : '',
                 serial_number: serialInput ? serialInput.value.trim() : '',
                 purchase_date: dateInput.value,
-                warranty_months: (m => isNaN(m) ? 12 : m)(parseInt(monthsInput.value)),
+                warranty_months: (m => isNaN(m) ? 12 : Math.max(0, m))(parseInt(monthsInput.value)),
                 location: locationInput ? locationInput.value.trim() : '',
                 price: Math.max(0, parseFloat(priceInput?.value) || 0),
                 store_name: storeInput ? storeInput.value.trim() : '',

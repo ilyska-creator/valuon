@@ -97,18 +97,18 @@ valuon/
 - RLS (Row Level Security) — разграничение доступа (пользователь видит только свои данные)
 - Анонимный ключ на клиенте, все ограничения — через RLS
 
-### 2. Ed25519 через WebCrypto
-- Ключи генерируются в браузере продавца
-- Приватный ключ хранится в localStorage (не отправляется на сервер)
-- Публичный ключ сохраняется в БД (таблица `shop_keys`)
-- Подпись чека и верификация — на клиенте
-- QR-код чека содержит: `{id}|{signature}|{publicKey}|{data}`
+### 2. Ed25519 — целиком на сервере (Edge Functions)
+- Пара ключей генерируется внутри Edge Function `create-shop` — приватный ключ не появляется в браузере продавца ни разу, даже при создании магазина
+- Приватный ключ (`shops.private_key`) физически недоступен для чтения ни `anon`, ни `authenticated` — нет `SELECT`-гранта на уровне Postgres (не только RLS); читает его только `service_role`-клиент внутри `issue-receipt`
+- `INSERT` в `shops` для клиента ограничен на уровне колонок — `public_key`/`private_key` нельзя задать напрямую через REST, их пишет только `service_role` отдельным `UPDATE` сразу после вставки строки магазина
+- Подпись чека — внутри `issue-receipt` (server-side), верификация — внутри `verify-receipt` (server-side); browser никогда не видит приватный ключ и не выполняет крипто-операции сам
+- QR-код чека: `RECEIPT:<serial>|DATE:<iso>|TAX:<vat>|TOTAL:<gross>|SELLER:<taxId>|SHOP_ID:<id>|SIG:<fiscal_hash>` (значения — `encodeURIComponent`); при верификации клиент отправляет на сервер только `SIG`, остальные поля из QR не используются для отображения
 
 ### 3. RLS-политики
-- `items`: SELECT/INSERT/UPDATE/DELETE WHERE user_id = auth.uid()
-- `business_receipts`: SELECT WHERE customer_email = auth.email() (покупатель), INSERT/UPDATE WHERE shop owner (продавец)
-- `shops`: SELECT/INSERT/UPDATE WHERE owner_id = auth.uid()
-- `shop_keys`: SELECT WHERE shop owner, INSERT при регистрации магазина
+- `items`: SELECT/INSERT/UPDATE/DELETE WHERE user_id = auth.uid(); `warranty_months >= 0` (CHECK)
+- `business_receipts`: SELECT WHERE customer_email = auth.email() (покупатель); INSERT/UPDATE/DELETE WHERE shop owner (продавец). У покупателя больше нет прямого UPDATE на эту таблицу — привязка своих чеков (`pending → verified`) идёт через RPC `bind_pending_receipts()`, которая трогает только колонку `status`
+- `shops`: SELECT/UPDATE WHERE owner_id = auth.uid(); INSERT WHERE owner_id = auth.uid(), но без прав на колонки `public_key`/`private_key` — их создаёт только `create-shop`
+- `check_profile_exists` (RPC) — вызывается только изнутри Edge Function `issue-receipt` через `service_role`; прямой вызов с клиента (`anon`/`authenticated`) запрещён (иначе это утечка — можно перебирать email зарегистрированных пользователей)
 
 ### 4. i18n
 - Самописная система: словари в JS-объектах, `data-i18n` атрибуты в HTML
@@ -159,8 +159,8 @@ valuon/
 - ~~**XSS-вектор в `sanitizeHTML`** (B-4) — заменён на `textContent`~~ ✅
 - ~~**XSS-вектор в переводах** (B-5) — сознательно пропущен (см. бэклог)~~
 - **SRI/integrity для CDN** (B-6) — не добавлены
-- **QR-формат** (B-7) — `|` и `:` в значениях могут сломать парсинг
-- **Недостающие i18n-ключи** (B-8)
+- **QR-формат** (B-7) — `|`/`:` в значениях теоретически ломают парсинг QR-строки, но практического риска уже нет: `verify.js` при верификации использует из распарсенного QR только `SIG`, а весь остальной контент чека (даты/суммы/товары) приходит с сервера через `verify-receipt` и рендерится через `textContent`
+- ~~**Недостающие i18n-ключи** (B-8)~~ ✅ Проверено — `verify_btn` есть в обоих языках `business-lang.js`, сообщения `security.js` локализуются на стороне вызывающего кода (`auth.js`/`register.js`), расхождений RU/EN ключей не найдено
 - **Retention трекинг** — пока нет продуктивной аналитики
 
 ### 🎯 Последние изменения (22 июля 2026)
@@ -196,37 +196,34 @@ valuon/
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
-### `business_receipts`
+### `business_receipts` (шапка чека, товарные строки — в отдельной таблице `receipt_items`)
 | Поле | Тип | Назначение |
 |---|---|---|
 | id | uuid PK | |
 | shop_id | uuid FK → shops | Магазин |
+| receipt_number | bigint (seq) | Порядковый номер чека |
 | customer_email | text | Email покупателя |
-| purchase_date | date | Дата покупки |
-| shop_name | text | Название магазина (денормализовано) |
-| signature | text | Ed25519-подпись |
-| public_key | text | Публичный ключ продавца |
-| receipt_items | jsonb | Массив товаров (item_name, qty, gross_total, warranty_months) |
-| logo_path | text | Путь к логотипу магазина |
+| purchase_date | timestamptz | Дата покупки |
+| net_total / vat_amount / gross_total | numeric | Суммы (считаются на сервере, в `issue-receipt`) |
+| fiscal_hash | text | Ed25519-подпись |
+| status | text | `pending` / `verified` (CHECK) |
+| shop_name / tax_id / address / country / logo_path | text | Денормализовано на момент выписки |
+| pos_terminal_id / pos_serial | uuid / text | Касса, с которой выписан чек |
 | created_at | timestamptz | |
+
+Row-level: SELECT по `customer_email = auth.email()` (покупатель) или по владению магазином (продавец); INSERT/UPDATE/DELETE — только владелец магазина, через `issue-receipt`. У покупателя нет прямого UPDATE — привязка `pending → verified` идёт через RPC `bind_pending_receipts()`.
 
 ### `shops`
 | Поле | Тип | Назначение |
 |---|---|---|
 | id | uuid PK | |
 | owner_id | uuid FK → auth.users | Владелец |
-| shop_name | text | Название |
-| shop_address | text | Адрес |
-| vat_number | text | VAT / registrikood |
+| shop_name / tax_id / address | text | |
+| country | text | ISO 3166-1 alpha-2 |
+| currency | text | ISO 4217, по умолчанию EUR |
 | logo_path | text | Путь к логотипу (Supabase Storage) |
-| created_at | timestamptz | |
-
-### `shop_keys`
-| Поле | Тип | Назначение |
-|---|---|---|
-| id | uuid PK | |
-| shop_id | uuid FK → shops | Магазин |
-| public_key | text | Ed25519 публичный ключ |
+| public_key | text | Ed25519 публичный ключ — читаем клиентом (SELECT есть) |
+| private_key | text | Ed25519 приватный ключ (PKCS8) — **не читаем и не записываем** напрямую клиентом ни на SELECT, ни на INSERT; пишет и читает только `service_role` внутри `create-shop`/`issue-receipt` |
 | created_at | timestamptz | |
 
 ---

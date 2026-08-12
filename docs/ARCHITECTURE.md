@@ -24,12 +24,14 @@ Valuon — статический фронтенд-проект без сбор�
 ┌──────────────▼───────────────────────────────────────────────┐
 │  Supabase                                                    │
 │  ├── Auth (GoTrue) — email/password, Turnstile captcha       │
-│  ├── Postgres — profiles, items, receipts, shops, shop_keys, │
+│  ├── Postgres — profiles, items, receipts, shops,            │
 │  │             business_receipts, receipt_items + RLS        │
 │  ├── Storage — bucket `receipts` (фото чеков),               │
 │  │             bucket `shop-logos` (публичный)               │
-│  └── Edge Function `verify-receipt` — серверная проверка     │
-│      Ed25519-подписи по fiscal_hash (не в этом репозитории)  │
+│  └── Edge Functions (не в этом репозитории):                │
+│      `create-shop`   — генерация Ed25519-ключей магазина     │
+│      `issue-receipt` — расчёт сумм + подпись чека            │
+│      `verify-receipt`— проверка Ed25519-подписи по fiscal_hash│
 └───────────────────────────────────────────────────────────────┘
 ```
 
@@ -138,10 +140,11 @@ profiles
   updated_at timestamptz
 
 items
-  id uuid PK, user_id FK → auth.users
+  id bigint identity PK, user_id FK → auth.users
   name, brand, type (laptop/phone/…/other), serial_number
-  purchase_date date, warranty_months int (0 = нет гарантии)
-  price numeric, store_name text, location text
+  purchase_date date, warranty_months int (0 = нет гарантии, CHECK >= 0)
+  price numeric, store_name text, location text, currency text (ISO 4217)
+  warranty_end_date date (generated: purchase_date + warranty_months, NULL если <= 0)
   created_at, updated_at timestamptz
 
 receipts                       (личные загрузки покупателя)
@@ -156,12 +159,13 @@ shops
   id uuid PK, owner_id FK → auth.users
   shop_name, tax_id, address
   country text (ISO 3166-1 alpha-2, напр. 'RU')
+  currency text (ISO 4217, по умолчанию EUR)
   logo_path text (Storage shop-logos)
-  public_key text, private_key text (PKCS8 base64)
+  public_key text (SELECT доступен клиенту)
+  private_key text (PKCS8 base64) — SELECT и клиентский INSERT закрыты
+    на уровне Postgres-грантов для anon/authenticated; читает и пишет
+    только service_role внутри create-shop/issue-receipt
   created_at
-
-shop_keys
-  id uuid PK, shop_id FK → shops, public_key text, created_at
 
 pos_terminals                (кассовые аппараты)
   id uuid PK, shop_id FK → shops
@@ -229,14 +233,14 @@ RECEIPT:<serial>|DATE:<ISO>|TAX:<vat>|TOTAL:<gross>|SELLER:<taxId>|SHOP_ID:<id>|
 ### 5.1. Регистрация → ленивая привязка чеков
 1. `register.js`: валидация (возраст 16–120, сила пароля ≥3/5, terms) → Turnstile → `auth.signUp` с метаданными
 2. `profiles.upsert` профиля
-3. `business_receipts.update({status:'verified'}).eq('customer_email', email).eq('status','pending')` — чеки, выпущенные продавцами на этот email ДО регистрации, привязываются
+3. `supabase.rpc('bind_pending_receipts')` — SECURITY DEFINER RPC, привязывает (только меняет `status: pending → verified`) чеки, выпущенные продавцами на этот email ДО регистрации; email берётся из `auth.jwt()`, не из клиентского параметра. Раньше это был прямой `business_receipts.update({status:'verified'}).eq(...)` с широкой RLS-политикой — заменено, т.к. та политика позволяла покупателю переписать любую колонку своего чека (суммы, дату), а не только статус
 
 ### 5.2. Выписка чека продавцом (business)
-1. Регистрация магазина: `Ed25519Signer.generateKeyPair()` → public SPKI + **private PKCS8 сохраняются в `shops`** → логотип в Storage → кэш в sessionStorage
-2. Форма чека: динамические строки из `<template>` → живой пересчёт сумм → выбор даты/времени (custom-datepicker)
-3. Подпись: приватный ключ повторно тянется из БД → `buildSignaturePayload(...)` → `sign()` → `fiscal_hash`
-4. Проверка покупателя: RPC `check_profile_exists` (ретраи, до 3 попыток) → статус `verified`/`pending`
-5. Вставка: шапка `business_receipts` + позиции `receipt_items` с **откатом** шапки при ошибке позиций
+1. Регистрация магазина: `client.functions.invoke('create-shop', ...)` — пара ключей генерируется и сохраняется целиком внутри Edge Function (public SPKI + private PKCS8 в `shops`, ключевые колонки дозаписываются `service_role`-клиентом отдельным UPDATE после вставки строки) → логотип в Storage (клиент грузит его сам после ответа) → кэш в sessionStorage. Приватный ключ не появляется в браузере ни разу
+2. Форма чека: динамические строки из `<template>` → живой пересчёт сумм (превью на клиенте) → выбор даты/времени (custom-datepicker)
+3. Отправка: `client.functions.invoke('issue-receipt', {...})` — суммы пересчитываются на сервере (авторитетные), приватный ключ читается только `service_role`-клиентом внутри функции, подпись (`buildSignaturePayload` → `sign()` → `fiscal_hash`) считается там же; клиенту возвращаются только итоговые суммы и статус, ключ и сырые данные магазина в ответ не попадают
+4. Проверка покупателя: внутри `issue-receipt`, RPC `check_profile_exists` вызывается `service_role`-клиентом (не браузером — прямой вызов с клиента запрещён на уровне грантов, иначе это утечка: можно перебирать email зарегистрированных пользователей), с ретраями до 3 попыток → статус `verified`/`pending`
+5. Вставка: `issue_business_receipt` (SECURITY DEFINER RPC) — шапка `business_receipts` + позиции `receipt_items` одной транзакцией
 6. Покупатель видит чек в `receipts.html` и «подтверждённые товары» в `dashboard-items.js`
 
 ### 5.3. Верификация чека (verify)
@@ -273,7 +277,7 @@ RECEIPT:<serial>|DATE:<ISO>|TAX:<vat>|TOTAL:<gross>|SELLER:<taxId>|SHOP_ID:<id>|
 - Каноническая строка `buildSignaturePayload`: `taxId | items | net | vat | gross | date`
 - Позиции: `name~qty~unitPrice~vatRate~warrantyMonths~net~vat`; суммы `toFixed(2)`, дата `YYYY-MM-DD`, имя — `encodeURIComponent` (защита от подмены разделителей)
 - **Гарантия входит в подпись** — её нельзя «продлить» задним числом
-- Верификация — **только серверная** (Edge Function); приватный ключ в `shops.private_key` — компромисс ради офлайн-выписки, отмечен в аудитах
+- Подпись и верификация — **обе только серверные** (Edge Functions `issue-receipt`/`verify-receipt`); приватный ключ в `shops.private_key` физически недоступен для чтения `anon`/`authenticated` (нет `SELECT`-гранта на уровне Postgres, не только RLS) и недоступен для записи напрямую через клиентский `INSERT` (нет `INSERT`-гранта на эту колонку) — читает и пишет его только `service_role` изнутри `create-shop`/`issue-receipt`
 
 ### 6.3. Прочие меры
 - `escapeHtml` везде (без innerHTML с пользовательскими данными)
@@ -320,9 +324,9 @@ RECEIPT:<serial>|DATE:<ISO>|TAX:<vat>|TOTAL:<gross>|SELLER:<taxId>|SHOP_ID:<id>|
 
 ### JS
 8. `calculateDaysLeft` дублируется в `dashboard-items.js` и `dashboard-notifications.js`
-9. `loginAttempts`/`signupAttempts` — in-memory rate-limit (сбрасывается перезагрузкой)
-10. Приватный ключ магазина в открытом виде в БД (`shops.private_key`)
-11. QR-формат: `|` и `:` в значениях могут сломать парсинг (частично решено encodeURIComponent)
+9. `loginAttempts`/`signupAttempts` — in-memory rate-limit (сбрасывается перезагрузкой); реальная защита — Turnstile + серверные лимиты Supabase Auth
+10. ~~Приватный ключ магазина в открытом виде в БД (`shops.private_key`)~~ ✅ Закрыто — колонка недоступна для SELECT и для клиентского INSERT ни `anon`, ни `authenticated` (только `service_role` внутри `create-shop`/`issue-receipt`); RLS UPDATE для покупателя на `business_receipts` тоже сужен до RPC `bind_pending_receipts()`, которая трогает только `status`
+11. QR-формат: `|` и `:` в значениях теоретически могут сломать парсинг QR-строки, но `verify.js` использует из QR только `SIG` — весь остальной контент чека приходит с сервера и рендерится через `textContent`, так что реального риска нет
 12. SRI/integrity для CDN-скриптов не добавлены
 13. Email-напоминания о гарантиях не реализованы (нужна Edge Function + cron)
 
