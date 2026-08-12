@@ -2536,7 +2536,7 @@
     #create-receipt-modal .receipt-items {
         padding: 0.7rem calc(0.7rem + 8px) 0.7rem 0.7rem;
         overflow-y: auto;
-        overscroll-behavior: contain;
+        overscroll-behavior: auto;
         min-height: 0;
         max-height: 55dvh;
         scrollbar-gutter: stable;
