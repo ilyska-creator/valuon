@@ -203,8 +203,9 @@ export async function downloadReceiptPDF(receipt, shop) {
         });
         const scaleFactor = canvas.width / cardWidthCss;
 
-        const PDF_WIDTH_MM = 200;
-        const PDF_MARGIN_MM = 5;
+        // Full-bleed: the card's own cream background (#FAFAF9) should fill
+        // the page edge-to-edge, not sit on a white PDF-page margin.
+        const PDF_WIDTH_MM = 210;
         const pxPerMm = cardWidthCss / PDF_WIDTH_MM;
         const cardHeightMm = cardHeightCss / pxPerMm;
 
@@ -216,15 +217,13 @@ export async function downloadReceiptPDF(receipt, shop) {
         // items) fall through to real multi-page A4 pagination below.
         const SINGLE_PAGE_CAP_MM = 400;
         let doc;
-        if (cardHeightMm + PDF_MARGIN_MM * 2 <= SINGLE_PAGE_CAP_MM) {
-            const pageHeightMm = cardHeightMm + PDF_MARGIN_MM * 2;
-            doc = new jsPDF({ unit: 'mm', format: [PDF_WIDTH_MM + PDF_MARGIN_MM * 2, pageHeightMm] });
+        if (cardHeightMm <= SINGLE_PAGE_CAP_MM) {
+            doc = new jsPDF({ unit: 'mm', format: [PDF_WIDTH_MM, cardHeightMm] });
             const sliceDataUrl = sliceCanvas(canvas, 0, canvas.height);
-            doc.addImage(sliceDataUrl, 'JPEG', PDF_MARGIN_MM, PDF_MARGIN_MM, PDF_WIDTH_MM, cardHeightMm);
+            doc.addImage(sliceDataUrl, 'JPEG', 0, 0, PDF_WIDTH_MM, cardHeightMm);
         } else {
             doc = new jsPDF({ unit: 'mm', format: 'a4' });
-            const PDF_PAGE_HEIGHT_MM = 297 - PDF_MARGIN_MM * 2;
-            const pageHeightCss = PDF_PAGE_HEIGHT_MM * pxPerMm;
+            const pageHeightCss = 297 * pxPerMm;
 
             const theadEl = card.querySelector('table thead');
             const tbodyRows = [...card.querySelectorAll('table tbody tr')];
@@ -259,7 +258,7 @@ export async function downloadReceiptPDF(receipt, shop) {
                 const imgHeightMm = totalHeightCss / pxPerMm;
 
                 if (i > 0) doc.addPage();
-                doc.addImage(sliceDataUrl, 'JPEG', PDF_MARGIN_MM, PDF_MARGIN_MM, PDF_WIDTH_MM, imgHeightMm);
+                doc.addImage(sliceDataUrl, 'JPEG', 0, 0, PDF_WIDTH_MM, imgHeightMm);
             });
         }
 

@@ -96,6 +96,16 @@ function formatFiscalHashChip(hash) {
     return clean.match(/.{1,4}/g).join(' ');
 }
 
+// Steps the store-name font size down for long names so the header stays
+// compact instead of wrapping to 4-5 lines at the full 33px size.
+function titleFontSizeFor(name) {
+    const len = String(name || '').length;
+    if (len <= 24) return '33px';
+    if (len <= 40) return '27px';
+    if (len <= 60) return '23px';
+    return '20px';
+}
+
 function initialsFor(name) {
     const words = String(name || '').trim().split(/\s+/).filter(Boolean);
     if (words.length === 0) return '—';
@@ -152,15 +162,18 @@ function buildHeader(receipt, shop, opts) {
     left.appendChild(avatar);
 
     const info = el('div', { minWidth: '0', flex: '1 1 auto' });
+    const shopName = shop.shop_name || 'Unnamed Store';
     info.appendChild(el('h1', {
-        fontFamily: FONT_SERIF, fontWeight: '600', fontSize: '33px', letterSpacing: '-0.01em',
+        fontFamily: FONT_SERIF, fontWeight: '600', fontSize: titleFontSizeFor(shopName), letterSpacing: '-0.01em',
         margin: '0 0 10px', lineHeight: '1.15', overflowWrap: 'break-word',
-    }, { text: shop.shop_name || 'Unnamed Store' }));
+    }, { text: shopName }));
 
-    if (shop.address) {
+    const countryName = typeof window.countryName === 'function' ? window.countryName(shop.country, 'en') : shop.country;
+    const locationLine = [shop.address, countryName].filter(Boolean).join(', ');
+    if (locationLine) {
         info.appendChild(el('p', {
             margin: '0 0 4px', fontSize: '13.5px', color: COLORS.secondary, lineHeight: '1.5', overflowWrap: 'break-word',
-        }, { text: shop.address }));
+        }, { text: locationLine }));
     }
 
     const idLine = [];
@@ -221,7 +234,7 @@ function buildTopBlock(receipt, shop, opts) {
     grid.appendChild(metaCol('Customer', receipt.customer_email || '—', { border: true }));
     grid.appendChild(metaCol('Payment', formatPayment(receipt.payment_method), { border: true, padding: '0 0 0 20px' }));
     grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = '0.85fr 1.3fr 0.85fr';
+    grid.style.gridTemplateColumns = '0.7fr 1.75fr 0.55fr';
     block.appendChild(grid);
 
     return block;
