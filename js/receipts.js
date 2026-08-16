@@ -539,6 +539,14 @@ function restoreListeners(client, userId) {
                         document.head.appendChild(s);
                     });
                 }
+                if (typeof window.html2canvas === 'undefined') {
+                    await new Promise((resolve, reject) => {
+                        const s = document.createElement('script');
+                        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                        s.onload = resolve; s.onerror = reject;
+                        document.head.appendChild(s);
+                    });
+                }
                 const { downloadReceiptPDF } = await import('./receipt-generator.js');
                 let { data: receipt, error } = await client
                     .from('business_receipts')

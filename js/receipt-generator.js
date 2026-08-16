@@ -1,5 +1,6 @@
 import { SUPABASE_URL } from './supabase-client.js';
 import { logError } from './security.js';
+import { buildReceiptCard, ensureReceiptFontsLoaded } from './receipt-template.js';
 
 export function generateQRDataURL(text, size = 80) {
     if (typeof qrcode === 'undefined') {
@@ -39,267 +40,241 @@ export function generateQRDataURL(text, size = 80) {
     return canvas.toDataURL('image/png');
 }
 
+async function fetchLogoDataUrl(shop) {
+    if (!shop?.logo_path) return null;
+    try {
+        const logoUrl = `${SUPABASE_URL}/storage/v1/object/public/shop-logos/${shop.logo_path}`;
+        const resp = await fetch(logoUrl);
+        if (!resp.ok) return null;
+        const blob = await resp.blob();
+        return await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+        });
+    } catch (e) {
+        return null;
+    }
+}
+
+function buildQrPayload(receipt) {
+    const purchaseDate = new Date(receipt.purchase_date);
+    const qrDate = Number.isNaN(purchaseDate.getTime()) ? '' : purchaseDate.toISOString();
+    const receiptSerial = receipt.receipt_number
+        ? `RCP-${receipt.receipt_number}`
+        : `RCP-${String(receipt.id || '').slice(0, 8).toUpperCase()}`;
+    const vatAmount = Number(receipt.vat_amount) || 0;
+    const grossTotal = Number(receipt.gross_total) || 0;
+
+    const esc = (v) => encodeURIComponent(String(v ?? ''));
+    return {
+        receiptSerial,
+        data: `RECEIPT:${esc(receiptSerial)}|DATE:${esc(qrDate)}|TAX:${esc(vatAmount.toFixed(2))}|TOTAL:${esc(grossTotal.toFixed(2))}|SELLER:${esc(receipt.tax_id)}|SHOP_ID:${esc(receipt.shop_id)}|SIG:${esc(receipt.fiscal_hash)}`,
+    };
+}
+
+// Finds elements marked data-page-atomic and returns their [top, bottom]
+// bounds (in css px, relative to `root`), sorted by position. A PDF page
+// break is never allowed to land strictly inside one of these ranges —
+// that's what stops a table row (or the totals box, etc.) from being cut
+// in half across two pages.
+function findAtomicRanges(root) {
+    const rootTop = root.getBoundingClientRect().top;
+    return [...root.querySelectorAll('[data-page-atomic]')]
+        .map((node) => {
+            const r = node.getBoundingClientRect();
+            return [r.top - rootTop, r.bottom - rootTop];
+        })
+        .sort((a, b) => a[0] - b[0]);
+}
+
+function nextSafeCut(atomicRanges, candidateY, maxY) {
+    for (const [start, end] of atomicRanges) {
+        if (candidateY > start && candidateY < end) return start;
+    }
+    return Math.min(candidateY, maxY);
+}
+
+// Splits the card into pages, each described as { top, bottom, repeatHeader }.
+// `repeatHeader` is true for a continuation page (not the first) that opens
+// mid-table — i.e. its top falls after the real header row but before the
+// last item row ends — so the caller knows to prepend a cropped copy of the
+// header band there. Such pages get a smaller height budget (pageHeight
+// minus the header band) so the composited page still fits one physical
+// A4 sheet once the repeated header is glued on top of it.
+function computePages(totalHeight, pageHeight, atomicRanges, headerRange) {
+    const pages = [];
+    let cur = 0;
+    let index = 0;
+    while (cur < totalHeight - 0.5) {
+        const repeatHeader = index > 0 && headerRange
+            && cur >= headerRange[1] - 0.5 && cur < headerRange[2] - 0.5;
+        const budget = repeatHeader ? Math.max(pageHeight - (headerRange[1] - headerRange[0]), 1) : pageHeight;
+
+        let next = nextSafeCut(atomicRanges, cur + budget, totalHeight);
+        if (next <= cur + 0.5) {
+            // A single atomic block is taller than one page — fall back to a
+            // hard cut rather than looping forever; content is still
+            // complete, just split mid-block in this rare case.
+            next = Math.min(cur + budget, totalHeight);
+        }
+        pages.push({ top: cur, bottom: next, repeatHeader });
+        cur = next;
+        index++;
+    }
+    return pages;
+}
+
+// JPEG rather than PNG: the card is a photograph-free UI (flat fills, text,
+// a faint full-bleed watermark) but PNG's lossless run-length-ish encoding
+// compresses that watermark's dithering badly — a 3-item receipt at scale 2
+// came out to ~13MB as PNG. JPEG's DCT coding handles that texture far
+// better; quality 0.92 keeps text crisp while landing in the hundreds of KB.
+function sliceCanvas(sourceCanvas, sy, sh) {
+    const slice = document.createElement('canvas');
+    slice.width = sourceCanvas.width;
+    slice.height = Math.max(1, Math.round(sh));
+    const ctx = slice.getContext('2d');
+    ctx.drawImage(sourceCanvas, 0, sy, sourceCanvas.width, slice.height, 0, 0, sourceCanvas.width, slice.height);
+    return slice.toDataURL('image/jpeg', 0.92);
+}
+
+// Same as sliceCanvas, but with a copy of the table's header band (cropped
+// from headerSy/headerSh, always the same source region) glued above the
+// body slice — used for continuation pages that open mid-table.
+function sliceCanvasWithHeader(sourceCanvas, headerSy, headerSh, bodySy, bodySh) {
+    const headerH = Math.max(1, Math.round(headerSh));
+    const bodyH = Math.max(1, Math.round(bodySh));
+    const composite = document.createElement('canvas');
+    composite.width = sourceCanvas.width;
+    composite.height = headerH + bodyH;
+    const ctx = composite.getContext('2d');
+    ctx.drawImage(sourceCanvas, 0, headerSy, sourceCanvas.width, headerH, 0, 0, sourceCanvas.width, headerH);
+    ctx.drawImage(sourceCanvas, 0, bodySy, sourceCanvas.width, bodyH, 0, headerH, sourceCanvas.width, bodyH);
+    return composite.toDataURL('image/jpeg', 0.92);
+}
 
 export async function downloadReceiptPDF(receipt, shop) {
-    if (typeof window.jspdf === 'undefined') {
-        console.error('jsPDF library is not loaded');
-        if (typeof window.showToast === 'function') {
-            const genLang = (typeof localStorage !== 'undefined' && localStorage.getItem('valuon-lang')) || 'ru';
-            window.showToast(genLang === 'en' ? 'PDF generation library not loaded. Please refresh the page.' : 'Библиотека генерации PDF не загружена. Попробуйте обновить страницу.', 'error');
-        }
+    const genLang = (typeof localStorage !== 'undefined' && localStorage.getItem('valuon-lang')) || 'ru';
+    const toastError = (msg) => {
+        if (typeof window.showToast === 'function') window.showToast(msg, 'error');
+    };
+
+    if (typeof window.jspdf === 'undefined' || typeof window.html2canvas === 'undefined') {
+        console.error('jsPDF or html2canvas is not loaded');
+        toastError(genLang === 'en' ? 'PDF generation library not loaded. Please refresh the page.' : 'Библиотека генерации PDF не загружена. Попробуйте обновить страницу.');
         return;
     }
 
+    let card = null;
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+        const { receiptSerial, data: qrData } = buildQrPayload({ ...receipt, tax_id: shop?.tax_id, shop_id: receipt.shop_id });
 
-        const sellerName = shop?.shop_name || 'Valuon Seller';
-        const sellerAddress = shop?.address || '';
-        const genLang = (typeof localStorage !== 'undefined' && localStorage.getItem('valuon-lang')) || 'ru';
-        const sellerCountry = shop?.country
-            ? (typeof window.countryName === 'function' ? window.countryName(shop.country, genLang) : shop.country)
-            : '';
-        const taxId = shop?.tax_id || '';
-        const registerSerial = receipt.pos_serial || '—';
-        const pdfCurrency = shop?.currency || 'EUR';
-        const money = (v) => window.formatCurrency(Number(v) || 0, pdfCurrency, genLang);
+        const [logoDataUrl] = await Promise.all([
+            fetchLogoDataUrl(shop),
+            ensureReceiptFontsLoaded(),
+        ]);
+        const qrDataUrl = generateQRDataURL(qrData, 220);
 
-        // Fetch logo if exists
-        let logoDataUrl = null;
-        if (shop?.logo_path) {
-            try {
-                const logoUrl = `${SUPABASE_URL}/storage/v1/object/public/shop-logos/${shop.logo_path}`;
-                const resp = await fetch(logoUrl);
-                if (resp.ok) {
-                    const blob = await resp.blob();
-                    logoDataUrl = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(reader.result);
-                        reader.readAsDataURL(blob);
-                    });
+        card = buildReceiptCard(receipt, shop, { logoDataUrl, qrDataUrl });
+
+        // Layout must settle (webfonts swapped in, images sized) before we
+        // measure atomic-block boundaries — otherwise the page-break math
+        // below would be computed against stale positions. rAF normally
+        // fires within a frame, but browsers can suspend it indefinitely
+        // for a backgrounded/inactive tab, so race it against a timeout
+        // rather than risk hanging the download forever.
+        await Promise.race([
+            new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+            new Promise((resolve) => setTimeout(resolve, 400)),
+        ]);
+
+        const cardWidthCss = card.offsetWidth;
+        const cardHeightCss = card.offsetHeight;
+        const atomicRanges = findAtomicRanges(card);
+
+        const canvas = await window.html2canvas(card, {
+            scale: 2,
+            backgroundColor: '#FAFAF9',
+            useCORS: true,
+            logging: false,
+        });
+        const scaleFactor = canvas.width / cardWidthCss;
+
+        const PDF_WIDTH_MM = 200;
+        const PDF_MARGIN_MM = 5;
+        const pxPerMm = cardWidthCss / PDF_WIDTH_MM;
+        const cardHeightMm = cardHeightCss / pxPerMm;
+
+        // The mockup's generous whitespace means even a 2-3 item receipt
+        // often runs a few mm past one A4 page — forcing real pagination
+        // there would produce a near-empty second page for every receipt.
+        // Anything under this cap just gets one custom-sized PDF page fit
+        // to the content instead; only genuinely long receipts (many
+        // items) fall through to real multi-page A4 pagination below.
+        const SINGLE_PAGE_CAP_MM = 400;
+        let doc;
+        if (cardHeightMm + PDF_MARGIN_MM * 2 <= SINGLE_PAGE_CAP_MM) {
+            const pageHeightMm = cardHeightMm + PDF_MARGIN_MM * 2;
+            doc = new jsPDF({ unit: 'mm', format: [PDF_WIDTH_MM + PDF_MARGIN_MM * 2, pageHeightMm] });
+            const sliceDataUrl = sliceCanvas(canvas, 0, canvas.height);
+            doc.addImage(sliceDataUrl, 'JPEG', PDF_MARGIN_MM, PDF_MARGIN_MM, PDF_WIDTH_MM, cardHeightMm);
+        } else {
+            doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            const PDF_PAGE_HEIGHT_MM = 297 - PDF_MARGIN_MM * 2;
+            const pageHeightCss = PDF_PAGE_HEIGHT_MM * pxPerMm;
+
+            const theadEl = card.querySelector('table thead');
+            const tbodyRows = [...card.querySelectorAll('table tbody tr')];
+            let headerRange = null;
+            if (theadEl && tbodyRows.length) {
+                const cardTop = card.getBoundingClientRect().top;
+                const theadRect = theadEl.getBoundingClientRect();
+                const lastRowRect = tbodyRows[tbodyRows.length - 1].getBoundingClientRect();
+                headerRange = [theadRect.top - cardTop, theadRect.bottom - cardTop, lastRowRect.bottom - cardTop];
+            }
+
+            const pages = computePages(cardHeightCss, pageHeightCss, atomicRanges, headerRange);
+
+            pages.forEach((page, i) => {
+                const bodyHeightCss = page.bottom - page.top;
+                if (bodyHeightCss <= 0) return;
+
+                let sliceDataUrl;
+                let totalHeightCss;
+                if (page.repeatHeader) {
+                    const headerHeightCss = headerRange[1] - headerRange[0];
+                    sliceDataUrl = sliceCanvasWithHeader(
+                        canvas,
+                        headerRange[0] * scaleFactor, headerHeightCss * scaleFactor,
+                        page.top * scaleFactor, bodyHeightCss * scaleFactor,
+                    );
+                    totalHeightCss = headerHeightCss + bodyHeightCss;
+                } else {
+                    sliceDataUrl = sliceCanvas(canvas, page.top * scaleFactor, bodyHeightCss * scaleFactor);
+                    totalHeightCss = bodyHeightCss;
                 }
-            } catch (e) { /* skip logo */ }
+                const imgHeightMm = totalHeightCss / pxPerMm;
+
+                if (i > 0) doc.addPage();
+                doc.addImage(sliceDataUrl, 'JPEG', PDF_MARGIN_MM, PDF_MARGIN_MM, PDF_WIDTH_MM, imgHeightMm);
+            });
         }
 
-        const purchaseDate = new Date(receipt.purchase_date);
-        const pdfDate = purchaseDate.toLocaleString('ru-RU', {
-            day: 'numeric', month: 'numeric', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
+        doc.setProperties({
+            title: `Receipt ${receiptSerial}`,
+            subject: 'Valuon Digital Receipt',
+            author: shop?.shop_name || 'Valuon',
+            creator: 'Valuon',
         });
-        const qrDate = purchaseDate.toISOString();
-        const receiptSerial = receipt.receipt_number
-            ? `RCP-${receipt.receipt_number}`
-            : `RCP-${String(receipt.id).slice(0, 8).toUpperCase()}`;
-
-        // Supabase/PostgREST сериализует колонки типа numeric как СТРОКИ
-        // (чтобы не терять точность), а не как JS number — поэтому здесь
-        // обязательно приводим к Number. Раньше vatAmount/grossTotal ниже
-        // передавались как есть, и .toFixed() на строке падал с
-        // TypeError, из-за чего генерация PDF для чеков бизнеса была
-        // сломана целиком (всегда попадала в catch и показывала
-        // "Ошибка при создании PDF").
-        const netTotal = Number(receipt.net_total) || 0;
-        const vatAmount = Number(receipt.vat_amount) || 0;
-        const grossTotal = Number(receipt.gross_total) || 0;
-        const items = Array.isArray(receipt.receipt_items) && receipt.receipt_items.length > 0
-            ? receipt.receipt_items
-            : [{ item_name: receipt.receipt_items?.[0]?.item_name || receipt.shop_name || 'Digital Receipt', qty: 1, unit_price: grossTotal, vat_rate: 0, net_total: netTotal, gross_total: grossTotal }];
-
-
-        function qrEscape(v) { return encodeURIComponent(String(v)); }
-        const qrData = `RECEIPT:${qrEscape(receiptSerial)}|DATE:${qrEscape(qrDate)}|TAX:${qrEscape(vatAmount.toFixed(2))}|TOTAL:${qrEscape(grossTotal.toFixed(2))}|SELLER:${qrEscape(taxId)}|SHOP_ID:${qrEscape(receipt.shop_id)}|SIG:${qrEscape(receipt.fiscal_hash)}`;
-
-        let y = 0;
-        const leftCol = 20;
-        const rightCol = 120;
-
-
-        doc.setFillColor(59, 130, 246);
-        doc.rect(0, 0, 210, 18, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(12);
-        doc.setFont(undefined, 'bold');
-        doc.text("VALUON DIGITAL RECEIPT SYSTEM", 20, 11);
-
-        y = 28;
-        doc.setTextColor(0, 0, 0);
-
-        const nameLeft = logoDataUrl ? leftCol + 22 : leftCol;
-
-        if (logoDataUrl) {
-            doc.addImage(logoDataUrl, 'PNG', leftCol, y - 4, 16, 16);
-        }
-
-        doc.setFontSize(16);
-        doc.setFont(undefined, 'bold');
-        doc.text(sellerName, nameLeft, y);
-        y += 7;
-
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(60, 60, 60);
-        if (sellerCountry) {
-            doc.text(sellerCountry, nameLeft, y);
-            y += 4;
-        }
-        const addressLines = doc.splitTextToSize(sellerAddress, 170);
-        doc.text(addressLines, nameLeft, y);
-        y += addressLines.length * 4 + 2;
-        doc.text(`Tax ID: ${taxId}   |   Reg. S/N: ${registerSerial}`, nameLeft, y);
-        y += 10;
-
-        doc.setDrawColor(220, 220, 220);
-        doc.setLineWidth(0.3);
-        doc.line(leftCol, y, 190, y);
-        y += 8;
-
-
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont(undefined, 'bold');
-        doc.text(`Receipt #:`, leftCol, y);
-        doc.setFont(undefined, 'normal');
-        doc.text(receiptSerial, leftCol + 25, y);
-
-        doc.setFont(undefined, 'bold');
-        doc.text(`Date:`, rightCol, y);
-        doc.setFont(undefined, 'normal');
-        doc.text(pdfDate, rightCol + 15, y);
-        y += 6;
-
-        if (receipt.customer_email) {
-            doc.setFont(undefined, 'bold');
-            doc.text(`Customer:`, leftCol, y);
-            doc.setFont(undefined, 'normal');
-            doc.text(receipt.customer_email, leftCol + 25, y);
-            y += 6;
-        }
-
-        doc.setFont(undefined, 'bold');
-        doc.text(`Payment:`, leftCol, y);
-        doc.setFont(undefined, 'normal');
-        doc.text(receipt.payment_method || '—', leftCol + 25, y);
-        y += 10;
-
-
-        doc.setDrawColor(180, 180, 180);
-        doc.setLineDashPattern([1, 1], 0);
-        doc.line(leftCol, y, 190, y);
-        doc.setLineDashPattern([], 0);
-        y += 6;
-
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(100, 100, 100);
-        doc.text("ITEM DESCRIPTION", leftCol, y);
-        doc.text("QTY", 95, y);
-        doc.text("PRICE", 125, y);
-        doc.text("TAX", 150, y);
-        doc.text("TOTAL", 170, y);
-        y += 2;
-
-        doc.setDrawColor(220, 220, 220);
-        doc.line(leftCol, y, 190, y);
-        y += 6;
-
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(0, 0, 0);
-
-        const rates = new Set();
-        items.forEach((item) => {
-            const rate = item.vat_rate;
-            if (rate !== undefined && rate !== null) rates.add(Number(rate));
-            const warrantyNote = item.warranty_months ? ` (warranty: ${item.warranty_months}mo)` : '';
-            doc.text((String(item.item_name || '') + warrantyNote).substring(0, 46), leftCol, y);
-
-            doc.setFont("courier", "normal");
-            doc.text(String(item.qty ?? ''), 95, y);
-            doc.text(money(item.unit_price), 125, y);
-            doc.text(rate !== undefined && rate !== null ? `${Number(rate)}%` : '—', 150, y);
-            // Колонка называется "TOTAL" и стоит сразу после "TAX" — по
-            // смыслу это сумма по строке С учётом налога (как gross_total),
-            // а не net_total (сумма без налога), который тут раньше
-            // ошибочно выводился и совпадал с ценой без НДС.
-            doc.text(money(item.gross_total), 170, y);
-            doc.setFont("helvetica", "normal");
-            y += 6;
-        });
-        doc.setDrawColor(180, 180, 180);
-        doc.setLineDashPattern([1, 1], 0);
-        doc.line(leftCol, y, 190, y);
-        doc.setLineDashPattern([], 0);
-        y += 8;
-
-
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        doc.text(`Net Amount:`, rightCol, y);
-        doc.setFont("courier", "normal");
-        doc.text(money(netTotal), 165, y);
-        y += 6;
-
-        doc.setFont("helvetica", "normal");
-        const vatRatesList = [...rates].sort((a, b) => a - b);
-        const vatLabel = vatRatesList.length === 1
-            ? `Tax (${vatRatesList[0]}%):`
-            : `Tax (${vatRatesList.join('/')}%):`;
-        doc.text(vatLabel, rightCol, y);
-        doc.setFont("courier", "normal");
-        doc.text(money(vatAmount), 165, y);
-        y += 8;
-
-        doc.setFillColor(243, 244, 246);
-        doc.rect(rightCol - 5, y - 5, 70, 12, 'F');
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(12);
-        doc.text(`GROSS TOTAL:`, rightCol, y);
-        doc.setFont("courier", "bold");
-        doc.text(money(grossTotal), 165, y);
-        y += 12;
-
-        doc.setDrawColor(59, 130, 246);
-        doc.setLineWidth(0.5);
-        doc.line(rightCol - 5, y, 190, y);
-        doc.setLineWidth(0.2);
-        doc.line(rightCol - 5, y + 1.5, 190, y + 1.5);
-        y += 15;
-
-
-        const qrImg = generateQRDataURL(qrData, 70);
-        if (qrImg) {
-            doc.addImage(qrImg, 'PNG', leftCol, y, 35, 35);
-
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(8);
-            doc.setTextColor(100, 100, 100);
-            doc.text("Scan to verify fiscal data", leftCol + 40, y + 10);
-            doc.text("(Contains Tax, Total, Seller ID & Timestamp)", leftCol + 40, y + 16);
-        }
-        y += 45;
-
-
-        doc.setDrawColor(220, 220, 220);
-        doc.setLineWidth(0.3);
-        doc.line(leftCol, y, 190, y);
-        y += 6;
-
-        doc.setFontSize(7);
-        doc.setTextColor(150, 150, 150);
-        doc.text("This document complies with international fiscal standards.", leftCol, y);
-        y += 4;
-        doc.text("Generated securely by Valuon Digital Ownership Infrastructure.", leftCol, y);
-        y += 4;
-        doc.text("For support or verification issues, contact valuonguard@proton.me", leftCol, y);
 
         doc.save(`${receiptSerial}_receipt.pdf`);
-
     } catch (e) {
         logError('receiptGen:pdf', e);
-        if (typeof window.showToast === 'function') {
-            const genLang = (typeof localStorage !== 'undefined' && localStorage.getItem('valuon-lang')) || 'ru';
-            window.showToast(genLang === 'en' ? 'Error creating PDF' : 'Ошибка при создании PDF', 'error');
-        }
+        toastError(genLang === 'en' ? 'Error creating PDF' : 'Ошибка при создании PDF');
+    } finally {
+        if (card) card.remove();
     }
 }

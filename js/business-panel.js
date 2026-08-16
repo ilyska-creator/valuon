@@ -1771,6 +1771,7 @@ async function initBusinessPanel() {
                         unit_price: it.unitPrice,
                         vat_rate: it.vatRate,
                         warranty_months: it.warrantyMonths,
+                        discount_rate: it.discount,
                         net_total: it.netTotal,
                         vat_amount: it.vatAmount,
                         gross_total: it.grossTotal,
