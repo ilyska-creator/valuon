@@ -202,7 +202,7 @@ async function initBusinessPanel() {
 
             const manageBtnHtml = !closed ? `
                     <button type="button" class="btn-action manage-lifecycle btn-manage-lifecycle" data-id="${escapeHtml(r.id)}" data-i18n-title="lifecycle_manage_tooltip" title="${escapeHtml(t.lifecycle_manage_tooltip || 'Возврат / Аннулирование')}">
-                        <i class="fa-solid fa-rotate-left"></i>
+                        <i class="fa-solid fa-rotate-left"></i> <span data-i18n="lifecycle_manage_btn">${escapeHtml(t.lifecycle_manage_btn || 'Возврат')}</span>
                     </button>` : '';
 
             return `
@@ -289,6 +289,7 @@ async function initBusinessPanel() {
     let issuingClose = false;
     let guardVisible = false;
     let baselineDate = '';
+    let baselinePosTerminalId = '';
     let lastIssuedReceipt = null;
     let customerHistory = null;
     let customerHistoryPromise = null;
@@ -334,6 +335,7 @@ async function initBusinessPanel() {
             email: fd.querySelector('[name="customer_email"]').value.trim(),
             payment: fd.querySelector('[name="payment_method"]').value || 'card',
             purchase_date: fd.querySelector('[name="purchase_date"]').value || '',
+            pos_terminal_id: fd.querySelector('[name="pos_terminal_id"]')?.value || '',
             items
         };
     }
@@ -341,6 +343,7 @@ async function initBusinessPanel() {
     function draftEquals(a, b) {
         if ((a.email || '') !== (b.email || '')) return false;
         if ((a.payment || 'card') !== (b.payment || 'card')) return false;
+        if ((a.pos_terminal_id || '') !== (b.pos_terminal_id || '')) return false;
         if ((a.purchase_date || '') && (a.purchase_date || '') !== (b.purchase_date || '')) return false;
         const ai = a.items || [];
         const bi = b.items || [];
@@ -365,6 +368,7 @@ async function initBusinessPanel() {
         return !!(
             d.email ||
             d.payment !== 'card' ||
+            (d.pos_terminal_id || '') !== (baselinePosTerminalId || '') ||
             (d.purchase_date && d.purchase_date !== baselineDate) ||
             d.items.length > 0
         );
@@ -401,6 +405,7 @@ async function initBusinessPanel() {
         if (!d) return false;
         if (d.email) return true;
         if (d.payment && d.payment !== 'card') return true;
+        if (d.pos_terminal_id) return true;
         if (d.purchase_date && d.purchase_date !== defaultDateString()) return true;
         if (Array.isArray(d.items)) {
             return d.items.some((it) => (
@@ -418,6 +423,10 @@ async function initBusinessPanel() {
         }
         if (d.payment) {
             forms.receipt.querySelector('[name="payment_method"]').value = d.payment;
+        }
+        const posEl = forms.receipt.querySelector('[name="pos_terminal_id"]');
+        if (posEl && d.pos_terminal_id !== undefined) {
+            posEl.value = d.pos_terminal_id || '';
         }
         if (d.items && Array.isArray(d.items) && d.items.length) {
             itemsList.innerHTML = '';
@@ -1098,11 +1107,11 @@ async function initBusinessPanel() {
         });
     }
 
-    function renderPosSelect() {
+    function renderPosSelect(preferredId) {
         if (!posSelect) return;
         const t = bizT();
         const active = currentTerminals.filter((term) => term.is_active);
-        const prevValue = posSelect.value || '';
+        const targetValue = preferredId !== undefined ? String(preferredId || '') : (posSelect.value || '');
         posSelect.innerHTML = '';
 
         if (active.length === 0) {
@@ -1110,6 +1119,7 @@ async function initBusinessPanel() {
             opt.value = '';
             opt.textContent = t.pos_no_terminal || 'Без кассы';
             posSelect.appendChild(opt);
+            posSelect.value = '';
             if (posSelectHint) posSelectHint.style.display = 'block';
         } else {
             const opt = document.createElement('option');
@@ -1123,7 +1133,7 @@ async function initBusinessPanel() {
                 posSelect.appendChild(o);
             });
             if (posSelectHint) posSelectHint.style.display = 'none';
-            if (active.some((term) => term.id === prevValue)) posSelect.value = prevValue;
+            posSelect.value = active.some((term) => String(term.id) === targetValue) ? targetValue : '';
         }
 
         if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
@@ -1718,15 +1728,17 @@ async function initBusinessPanel() {
             }
             if (dateInput) baselineDate = dateInput.value;
 
+            renderPosSelect(draft?.pos_terminal_id ?? '');
+            baselinePosTerminalId = posSelect?.value || '';
+
             if (typeof CustomSelect !== 'undefined') {
                 const pay = modal.el.querySelector('[name="payment_method"]');
                 if (pay && pay._cs) pay._cs.refresh();
+                if (posSelect && posSelect._cs) posSelect._cs.refresh();
                 itemsList?.querySelectorAll('[data-field="category"]').forEach((sel) => {
                     if (sel._cs) sel._cs.refresh();
                 });
             }
-
-            renderPosSelect();
 
             modal.el.classList.remove('is-hidden');
             document.documentElement.classList.add('modal-open');
@@ -2323,6 +2335,31 @@ async function initBusinessPanel() {
 
     // Filter bar & card action delegation (bound once, survives language switches)
     const filterBar = document.getElementById('receipt-filter-bar');
+    const filterIndicator = document.getElementById('receipt-filter-indicator');
+    let filterFadeTimer = null;
+
+    function moveReceiptFilterIndicator() {
+        if (!filterBar || !filterIndicator) return;
+        const activeBtn = filterBar.querySelector('.receipt-filter-btn.active');
+        if (!activeBtn || activeBtn.offsetWidth === 0) return;
+        filterIndicator.style.width = `${activeBtn.offsetWidth}px`;
+        filterIndicator.style.transform = `translateX(${activeBtn.offsetLeft - 4}px)`;
+    }
+
+    function updateReceiptFilterCounts(receipts) {
+        const all = receipts || [];
+        const activeCnt = all.filter(r => !isReceiptClosed(r)).length;
+        const closedCnt = all.filter(r => getLifecycleStatus(r) !== 'active').length;
+        const setCnt = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(val);
+        };
+        setCnt('filter-count-all', all.length);
+        setCnt('filter-count-active', activeCnt);
+        setCnt('filter-count-closed', closedCnt);
+        requestAnimationFrame(moveReceiptFilterIndicator);
+    }
+
     if (filterBar) {
         filterBar.addEventListener('click', (e) => {
             const btn = e.target.closest('.receipt-filter-btn');
@@ -2335,9 +2372,26 @@ async function initBusinessPanel() {
                 b.classList.toggle('active', active);
                 b.setAttribute('aria-selected', String(active));
             });
-            renderReceiptCards(list, currentReceiptsList);
-            window.applyBusinessTranslations?.();
+            moveReceiptFilterIndicator();
+
+            if (filterFadeTimer) clearTimeout(filterFadeTimer);
+            if (list.grid) {
+                list.grid.classList.add('filter-fade-out');
+                filterFadeTimer = setTimeout(() => {
+                    renderReceiptCards(list, currentReceiptsList);
+                    window.applyBusinessTranslations?.();
+                    list.grid.classList.remove('filter-fade-out');
+                    list.grid.classList.add('filter-fade-in');
+                    setTimeout(() => list.grid?.classList.remove('filter-fade-in'), 200);
+                }, 150);
+            } else {
+                renderReceiptCards(list, currentReceiptsList);
+                window.applyBusinessTranslations?.();
+            }
         });
+
+        requestAnimationFrame(moveReceiptFilterIndicator);
+        window.addEventListener('resize', moveReceiptFilterIndicator);
     }
 
     if (list.grid) {
@@ -2425,6 +2479,7 @@ async function initBusinessPanel() {
             }
 
             currentReceiptsList = receipts;
+            updateReceiptFilterCounts(receipts);
 
             if (receipts.length === 0) {
                 listEl.grid.innerHTML = '';
@@ -2437,6 +2492,7 @@ async function initBusinessPanel() {
 
             renderReceiptCards(listEl, receipts);
             window.applyBusinessTranslations?.();
+            requestAnimationFrame(moveReceiptFilterIndicator);
             updateChart();
         } catch (e) {
             logError('biz:refreshDashboard', e);
@@ -2889,6 +2945,7 @@ async function initBusinessPanel() {
         if (!currentShop) return;
         renderReceiptCards(list, currentReceiptsList);
         window.applyBusinessTranslations?.();
+        requestAnimationFrame(moveReceiptFilterIndicator);
         if (lcReceipt && lcModal && !lcModal.classList.contains('is-hidden')) {
             renderLifecycleItems();
             updateLifecycleTabUI();

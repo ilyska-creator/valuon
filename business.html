@@ -247,12 +247,22 @@
                 <div class="receipts-section-header">
                     <h2 class="section-title" data-i18n="issued_receipts_title">🧾 Выписанные чеки</h2>
                     <div class="receipt-filter-bar" id="receipt-filter-bar" role="tablist" aria-label="Фильтр чеков">
+                        <span class="receipt-filter-indicator" id="receipt-filter-indicator" aria-hidden="true"></span>
                         <button type="button" class="receipt-filter-btn active" data-receipt-filter="all" role="tab"
-                            aria-selected="true" data-i18n="filter_all">Все</button>
+                            aria-selected="true">
+                            <span data-i18n="filter_all">Все</span>
+                            <span class="receipt-filter-count" id="filter-count-all">0</span>
+                        </button>
                         <button type="button" class="receipt-filter-btn" data-receipt-filter="active" role="tab"
-                            aria-selected="false" data-i18n="filter_active">Активные</button>
+                            aria-selected="false">
+                            <span data-i18n="filter_active">Активные</span>
+                            <span class="receipt-filter-count" id="filter-count-active">0</span>
+                        </button>
                         <button type="button" class="receipt-filter-btn" data-receipt-filter="closed" role="tab"
-                            aria-selected="false" data-i18n="filter_closed">Возвраты</button>
+                            aria-selected="false">
+                            <span data-i18n="filter_closed">Возвраты</span>
+                            <span class="receipt-filter-count" id="filter-count-closed">0</span>
+                        </button>
                     </div>
                 </div>
                 <div id="business-receipts-grid" class="items-grid">

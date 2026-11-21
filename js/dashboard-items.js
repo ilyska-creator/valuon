@@ -315,6 +315,8 @@ function renderItems(items) {
     }
 }
 
+const VERIFIED_EXPAND_UNIT_LIMIT = 20;
+
 function extractActiveVerifiedItems(receipts) {
     const activeItems = [];
     (receipts || []).forEach(r => {
@@ -327,17 +329,32 @@ function extractActiveVerifiedItems(receipts) {
             if (activeQty <= 0) return;
 
             const origGross = parseFloat(it.gross_total) || 0;
-            const activeGross = refQty > 0
-                ? Math.max(0, Math.round(origGross * (activeQty / origQty) * 100) / 100)
-                : origGross;
 
-            activeItems.push({
-                ...it,
-                qty: activeQty,
-                gross_total: activeGross,
-                shop_name: r.shop_name,
-                purchase_date: r.purchase_date,
-            });
+            if (activeQty <= VERIFIED_EXPAND_UNIT_LIMIT) {
+                const unitGross = Math.max(0, Math.round((origGross / origQty) * 100) / 100);
+                for (let u = 0; u < activeQty; u++) {
+                    activeItems.push({
+                        ...it,
+                        id: activeQty === 1 ? String(it.id) : `${it.id}__unit_${u + 1}`,
+                        qty: 1,
+                        gross_total: unitGross,
+                        shop_name: r.shop_name,
+                        purchase_date: r.purchase_date,
+                    });
+                }
+            } else {
+                const activeGross = refQty > 0
+                    ? Math.max(0, Math.round(origGross * (activeQty / origQty) * 100) / 100)
+                    : origGross;
+
+                activeItems.push({
+                    ...it,
+                    qty: activeQty,
+                    gross_total: activeGross,
+                    shop_name: r.shop_name,
+                    purchase_date: r.purchase_date,
+                });
+            }
         });
     });
     return activeItems;
