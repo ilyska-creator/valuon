@@ -25,6 +25,12 @@ const resultSellerStatus = document.getElementById('result-seller-status');
 const resultItemsRow = document.getElementById('result-items-row');
 const resultItemsWrap = document.getElementById('result-items-wrap');
 const resultItemsList = document.getElementById('result-items-list');
+const resultLifecycleDt = document.getElementById('result-lifecycle-dt');
+const resultLifecycleDd = document.getElementById('result-lifecycle-dd');
+const resultReasonDt = document.getElementById('result-reason-dt');
+const resultReasonDd = document.getElementById('result-reason-dd');
+const resultRefundedDt = document.getElementById('result-refunded-dt');
+const resultRefundedDd = document.getElementById('result-refunded-dd');
 const uploadZone = document.getElementById('upload-zone');
 const fileInput = document.getElementById('receipt-file');
 const uploadPreview = document.getElementById('upload-preview');
@@ -60,6 +66,8 @@ tabs.forEach(tab => {
         const target = panels[tab.dataset.tab];
         if (target) target.classList.add('active');
         resultBlockWrapper?.classList.remove('active');
+        lastResultState = null;
+        lastResultData = null;
         sessionStorage.setItem('verify-active-tab', tab.dataset.tab);
     });
 });
@@ -75,6 +83,8 @@ if (savedTab && savedTab !== 'scan' && panels[savedTab]) {
 
 function resetAll() {
     stopCamera();
+    lastResultState = null;
+    lastResultData = null;
     Object.values(panels).forEach(p => p?.classList.remove('done'));
     resultBlockWrapper?.classList.remove('active');
     if (copyBtn) {
@@ -201,6 +211,85 @@ async function decodeQR(file) {
     });
 }
 
+function normalizeLifecycleStatus(raw) {
+    return raw === 'voided' || raw === 'refunded' || raw === 'partially_refunded'
+        ? raw
+        : 'active';
+}
+
+function formatVerifyDate(isoStr) {
+    if (!isoStr) return '';
+    const d = new Date(isoStr);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleDateString(window.getVerifyLocale(), {
+        day: 'numeric', month: 'numeric', year: 'numeric',
+    });
+}
+
+function setRowVisibility(dtEl, ddEl, visible, text = '—') {
+    if (dtEl) dtEl.style.display = visible ? '' : 'none';
+    if (ddEl) {
+        ddEl.style.display = visible ? '' : 'none';
+        if (visible) ddEl.textContent = text;
+    }
+}
+
+function buildViewDataFromVerified(receipt, shop) {
+    const locale = window.getVerifyLocale();
+    const currency = receipt.currency || 'EUR';
+    const lifecycleStatus = normalizeLifecycleStatus(receipt.lifecycleStatus ?? receipt.lifecycle_status);
+    const statusChangedAt = receipt.statusChangedAt ?? receipt.status_changed_at ?? null;
+    const statusReason = String(receipt.statusReason ?? receipt.status_reason ?? '').trim() || null;
+    const refundedNum = parseFloat(receipt.refundedAmount ?? receipt.refunded_amount ?? 0);
+    const refundedAmountNum = Number.isFinite(refundedNum) && refundedNum > 0 ? refundedNum : 0;
+
+    const dateStr = formatVerifyDate(receipt.purchaseDate) || '—';
+    const statusDateStr = formatVerifyDate(statusChangedAt);
+    const gross = parseFloat(receipt.grossTotal);
+    const amount = Number.isFinite(gross) ? window.formatCurrency(gross, currency, locale) : '—';
+    const refundedFormatted = refundedAmountNum > 0
+        ? `−${window.formatCurrency(refundedAmountNum, currency, locale)}`
+        : null;
+
+    const sellerStatus = receipt.status === 'verified'
+        ? window.t('seller_verified')
+        : window.t('seller_pending');
+
+    const items = Array.isArray(receipt.items) ? receipt.items : [];
+    const receiptNum = receipt.receiptNumber ? `#RCP-${receipt.receiptNumber}` : null;
+    const registerSerial = receipt.posSerial || receipt.pos_serial || null;
+    const shopLogoUrl = shop?.logoPath
+        ? `${SUPABASE_URL}/storage/v1/object/public/shop-logos/${shop.logoPath}`
+        : null;
+
+    let lifecycleLabel = null;
+    if (lifecycleStatus === 'voided') {
+        lifecycleLabel = window.t('lifecycle_status_voided');
+    } else if (lifecycleStatus === 'refunded') {
+        lifecycleLabel = window.t('lifecycle_status_refunded');
+    } else if (lifecycleStatus === 'partially_refunded') {
+        lifecycleLabel = window.t('lifecycle_status_partially_refunded');
+    }
+    if (lifecycleLabel && statusDateStr) {
+        lifecycleLabel = `${lifecycleLabel} · ${statusDateStr}`;
+    }
+
+    return {
+        receiptNumber: receiptNum || '—',
+        items,
+        date: dateStr,
+        amount,
+        store: shop?.shopName || '—',
+        sellerStatus,
+        shopLogo: shopLogoUrl,
+        registerSerial,
+        lifecycleStatus,
+        lifecycleLabel,
+        statusReason,
+        refundedFormatted,
+    };
+}
+
 function showResult(status, data) {
     if (!resultBlock) return;
     stopCamera();
@@ -212,63 +301,136 @@ function showResult(status, data) {
     copyBtn && (copyBtn.style.display = '');
     resultBlock.className = 'verify-result';
 
-    lastResultData = status === 'success' ? data : null;
+    lastResultState = { status, raw: data };
 
-    if (status === 'success') {
-        resultBlock.classList.add('success');
-        resultBlock.classList.remove('failure');
-        resultIcon.className = 'fa-solid fa-circle-check';
-        resultTitle.textContent = window.t('result_success_title');
-        resultDesc.textContent = window.t('result_success_desc');
-        resultBadge.className = 'verify-badge verified';
-        resultBadge.textContent = window.t('result_success_badge');
+    if (status === 'success' && data && data.receipt) {
+        const view = buildViewDataFromVerified(data.receipt, data.shop);
+        lastResultData = view;
 
-        if (data) {
-            if (resultDetails) resultDetails.style.display = 'block';
-            resultReceiptNumber.textContent = data.receiptNumber || '—';
-            resultReceiptDate.textContent = data.date || '—';
-            if (resultRegisterSerial) resultRegisterSerial.textContent = data.registerSerial || '—';
-            resultReceiptAmount.textContent = data.amount || '—';
-            const storeSpan = resultReceiptStore.querySelector('span');
-            if (storeSpan) storeSpan.textContent = data.store || '—';
-            resultSellerStatus.textContent = data.sellerStatus || '—';
-
-            // Shop logo
-            const logoImg = document.getElementById('result-shop-logo');
-            if (logoImg && data.shopLogo) {
-                logoImg.onerror = () => { logoImg.style.display = 'none'; };
-                logoImg.src = data.shopLogo;
-                logoImg.style.display = 'inline-block';
-            } else if (logoImg) {
-                logoImg.style.display = 'none';
-            }
-
-            const lineItems = Array.isArray(data.items) ? data.items : [];
-            if (resultItemsList && resultItemsRow && resultItemsWrap) {
-                resultItemsList.innerHTML = '';
-                if (lineItems.length > 0) {
-                    lineItems.forEach(it => {
-                        const li = document.createElement('li');
-                        const qty = it.qty ?? 1;
-                        let text = `${it.item_name} × ${qty}`;
-                        if (it.warranty_months) {
-                            text += ` — ${it.warranty_months} ${window.t('items_warranty_suffix')}`;
-                        }
-                        li.textContent = text;
-                        resultItemsList.appendChild(li);
-                    });
-                    resultItemsRow.style.display = '';
-                    resultItemsWrap.style.display = '';
-                }
-            }
+        const lc = view.lifecycleStatus;
+        if (lc === 'voided') {
+            resultBlock.classList.add('voided');
+            resultIcon.className = 'fa-solid fa-ban';
+            resultTitle.textContent = window.t('result_voided_title');
+            resultDesc.textContent = window.t('result_voided_desc');
+            resultBadge.className = 'verify-badge voided';
+            resultBadge.textContent = window.t('result_voided_badge');
+        } else if (lc === 'refunded') {
+            resultBlock.classList.add('refunded');
+            resultIcon.className = 'fa-solid fa-rotate-left';
+            resultTitle.textContent = window.t('result_refunded_title');
+            resultDesc.textContent = window.t('result_refunded_desc');
+            resultBadge.className = 'verify-badge refunded';
+            resultBadge.textContent = window.t('result_refunded_badge');
+        } else if (lc === 'partially_refunded') {
+            resultBlock.classList.add('partial');
+            resultIcon.className = 'fa-solid fa-rotate-left';
+            resultTitle.textContent = window.t('result_partial_title');
+            resultDesc.textContent = window.t('result_partial_desc');
+            resultBadge.className = 'verify-badge partial';
+            resultBadge.textContent = window.t('result_partial_badge');
         } else {
-            if (resultDetails) resultDetails.style.display = 'none';
-            if (resultItemsRow) resultItemsRow.style.display = 'none';
-            if (resultItemsWrap) resultItemsWrap.style.display = 'none';
+            resultBlock.classList.add('success');
+            resultIcon.className = 'fa-solid fa-circle-check';
+            resultTitle.textContent = window.t('result_success_title');
+            resultDesc.textContent = window.t('result_success_desc');
+            resultBadge.className = 'verify-badge verified';
+            resultBadge.textContent = window.t('result_success_badge');
+        }
+
+        if (resultDetails) resultDetails.style.display = 'block';
+        setRowVisibility(resultLifecycleDt, resultLifecycleDd, lc !== 'active' && !!view.lifecycleLabel, view.lifecycleLabel || '—');
+        setRowVisibility(resultReasonDt, resultReasonDd, lc !== 'active' && !!view.statusReason, view.statusReason || '—');
+        setRowVisibility(
+            resultRefundedDt,
+            resultRefundedDd,
+            (lc === 'partially_refunded' || lc === 'refunded') && !!view.refundedFormatted,
+            view.refundedFormatted || '—'
+        );
+
+        resultReceiptNumber.textContent = view.receiptNumber || '—';
+        resultReceiptDate.textContent = view.date || '—';
+        if (resultRegisterSerial) resultRegisterSerial.textContent = view.registerSerial || '—';
+        resultReceiptAmount.textContent = view.amount || '—';
+        resultReceiptAmount.classList.toggle('amount-struck', lc === 'voided' || lc === 'refunded');
+
+        const storeSpan = resultReceiptStore.querySelector('span');
+        if (storeSpan) storeSpan.textContent = view.store || '—';
+        resultSellerStatus.textContent = view.sellerStatus || '—';
+
+        // Shop logo
+        const logoImg = document.getElementById('result-shop-logo');
+        if (logoImg && view.shopLogo) {
+            logoImg.onerror = () => { logoImg.style.display = 'none'; };
+            logoImg.src = view.shopLogo;
+            logoImg.style.display = 'inline-block';
+        } else if (logoImg) {
+            logoImg.style.display = 'none';
+        }
+
+        const lineItems = Array.isArray(view.items) ? view.items : [];
+        if (resultItemsList && resultItemsRow && resultItemsWrap) {
+            resultItemsList.innerHTML = '';
+            if (lineItems.length > 0) {
+                lineItems.forEach(it => {
+                    const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+                    const refundedQty = Math.max(0, parseInt(it.refunded_qty, 10) || 0);
+                    const isItemVoided = lc === 'voided';
+                    const isItemFullyReturned = lc === 'refunded' || refundedQty >= qty;
+                    const isItemPartiallyReturned = !isItemVoided && !isItemFullyReturned && refundedQty > 0;
+                    const isStruck = isItemVoided || isItemFullyReturned;
+
+                    const li = document.createElement('li');
+                    li.className = 'verify-item-li' + (isStruck ? ' is-struck' : '');
+
+                    const mainRow = document.createElement('div');
+                    mainRow.className = 'verify-item-main';
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'verify-item-name';
+                    nameSpan.textContent = `${it.item_name || '—'} × ${qty}`;
+                    mainRow.appendChild(nameSpan);
+
+                    if (isItemVoided) {
+                        const pill = document.createElement('span');
+                        pill.className = 'verify-item-pill is-void';
+                        pill.textContent = window.t('item_status_voided');
+                        mainRow.appendChild(pill);
+                    } else if (isItemFullyReturned) {
+                        const pill = document.createElement('span');
+                        pill.className = 'verify-item-pill is-refunded';
+                        pill.textContent = window.t('item_status_returned');
+                        mainRow.appendChild(pill);
+                    } else if (isItemPartiallyReturned) {
+                        const pill = document.createElement('span');
+                        pill.className = 'verify-item-pill is-partial';
+                        pill.textContent = window.t('item_status_partial').replace('{n}', String(refundedQty));
+                        mainRow.appendChild(pill);
+                    }
+
+                    li.appendChild(mainRow);
+
+                    if (it.warranty_months) {
+                        const wSpan = document.createElement('span');
+                        wSpan.className = 'verify-item-warranty' + (isStruck ? ' is-void' : '');
+                        wSpan.textContent = isStruck
+                            ? `${it.warranty_months} ${window.t('items_warranty_suffix')} · ${window.t('item_warranty_void')}`
+                            : `${it.warranty_months} ${window.t('items_warranty_suffix')}`;
+                        li.appendChild(wSpan);
+                    }
+
+                    resultItemsList.appendChild(li);
+                });
+                resultItemsRow.style.display = '';
+                resultItemsWrap.style.display = '';
+            } else {
+                resultItemsRow.style.display = 'none';
+                resultItemsWrap.style.display = 'none';
+            }
         }
     } else {
+        lastResultData = null;
         resultBlock.classList.add('failure');
-        resultBlock.classList.remove('success');
         resultIcon.className = 'fa-solid fa-circle-xmark';
         resultBadge.className = 'verify-badge invalid';
 
@@ -282,15 +444,11 @@ function showResult(status, data) {
             resultBadge.textContent = window.t('result_invalid_badge');
         } else if (status === 'no-qr') {
             resultTitle.textContent = window.t('result_no_qr_title');
-            resultDesc.textContent = data || window.t('result_no_qr_desc');
-            resultBadge.textContent = window.t('result_error_badge');
-        } else if (status === 'error') {
-            resultTitle.textContent = window.t('result_error_title');
-            resultDesc.textContent = data || window.t('result_error_desc');
+            resultDesc.textContent = (typeof data === 'string' && data) || window.t('result_no_qr_desc');
             resultBadge.textContent = window.t('result_error_badge');
         } else {
             resultTitle.textContent = window.t('result_error_title');
-            resultDesc.textContent = data || window.t('result_error_desc');
+            resultDesc.textContent = (typeof data === 'string' && data) || window.t('result_error_desc');
             resultBadge.textContent = window.t('result_error_badge');
         }
         if (resultDetails) resultDetails.style.display = 'none';
@@ -344,39 +502,9 @@ async function verifyReceiptFromQRData(qrRaw) {
             return;
         }
 
-        const receipt = data.receipt;
-        const shop = data.shop;
-
-        const dateStr = receipt.purchaseDate
-            ? new Date(receipt.purchaseDate).toLocaleDateString(window.getVerifyLocale(), {
-                day: 'numeric', month: 'numeric', year: 'numeric'
-            })
-            : '—';
-        const gross = parseFloat(receipt.grossTotal);
-        const amount = Number.isFinite(gross) ? window.formatCurrency(gross, receipt.currency || 'EUR', window.getVerifyLocale()) : '—';
-        const sellerStatus = receipt.status === 'verified'
-            ? window.t('seller_verified')
-            : window.t('seller_pending');
-
-        const items = Array.isArray(receipt.items) ? receipt.items : [];
-        const receiptNum = receipt.receiptNumber ? `#RCP-${receipt.receiptNumber}` : null;
-
-        let registerSerial = receipt.posSerial || receipt.pos_serial || null;
-
-        let shopLogoUrl = null;
-        if (shop.logoPath) {
-            shopLogoUrl = `${SUPABASE_URL}/storage/v1/object/public/shop-logos/${shop.logoPath}`;
-        }
-
         showResult('success', {
-            receiptNumber: receiptNum || '—',
-            items,
-            date: dateStr,
-            amount,
-            store: shop.shopName || '—',
-            sellerStatus,
-            shopLogo: shopLogoUrl,
-            registerSerial,
+            receipt: data.receipt,
+            shop: data.shop || {},
         });
     } catch (err) {
         logError('verify:unexpected', err);
@@ -390,6 +518,7 @@ let mediaStream = null;
 let scanInterval = null;
 let verifying = false;
 let lastResultData = null;
+let lastResultState = null;
 const video = document.getElementById('scanner-video');
 const canvas = document.getElementById('scanner-canvas');
 const qrOverlay = document.getElementById('qr-overlay');
@@ -609,14 +738,27 @@ copyBtn?.addEventListener('click', async () => {
     if (!lastResultData) return;
     const lines = [
         window.t('detail_receipt_number') + ': ' + lastResultData.receiptNumber,
-        window.t('detail_date') + ': ' + lastResultData.date,
-        window.t('detail_amount') + ': ' + lastResultData.amount,
-        window.t('detail_store') + ': ' + lastResultData.store,
-        window.t('detail_status') + ': ' + lastResultData.sellerStatus,
     ];
-    if (lastResultData.registerSerial) {
-        lines.splice(1, 0, window.t('detail_register') + ': ' + lastResultData.registerSerial);
+    if (lastResultData.lifecycleStatus !== 'active' && lastResultData.lifecycleLabel) {
+        lines.push(window.t('detail_lifecycle_status') + ': ' + lastResultData.lifecycleLabel);
     }
+    if (lastResultData.lifecycleStatus !== 'active' && lastResultData.statusReason) {
+        lines.push(window.t('detail_reason') + ': ' + lastResultData.statusReason);
+    }
+    if (lastResultData.registerSerial) {
+        lines.push(window.t('detail_register') + ': ' + lastResultData.registerSerial);
+    }
+    lines.push(
+        window.t('detail_date') + ': ' + lastResultData.date,
+        window.t('detail_amount') + ': ' + lastResultData.amount
+    );
+    if (lastResultData.refundedFormatted && (lastResultData.lifecycleStatus === 'partially_refunded' || lastResultData.lifecycleStatus === 'refunded')) {
+        lines.push(window.t('detail_refunded') + ': ' + lastResultData.refundedFormatted);
+    }
+    lines.push(
+        window.t('detail_store') + ': ' + lastResultData.store,
+        window.t('detail_status') + ': ' + lastResultData.sellerStatus
+    );
     const text = lines.join('\n');
     try {
         await navigator.clipboard.writeText(text);
@@ -755,6 +897,9 @@ window.addEventListener('verify-lang-changed', () => {
         scanBtn.innerHTML = mediaStream
             ? '<i class="fa-solid fa-stop"></i> ' + window.t('scan_btn_stop')
             : '<i class="fa-solid fa-camera"></i> ' + window.t('scan_btn_open');
+    }
+    if (lastResultState && resultBlockWrapper?.classList.contains('active')) {
+        showResult(lastResultState.status, lastResultState.raw);
     }
     if (copyBtn && lastResultData) {
         copyBtn.style.display = '';

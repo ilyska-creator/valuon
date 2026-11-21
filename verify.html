@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Valuon — Верификация чека</title>
-    <meta name="description" content="Valuon — Проверьте подлинность чека по QR-коду. Криптографическая верификация Ed25519.">
+    <meta name="description"
+        content="Valuon — Проверьте подлинность чека по QR-коду. Криптографическая верификация Ed25519.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -37,7 +38,8 @@
                 <a id="verify-back-btn" class="verify-back-link" href="index.html">
                     <i class="fa-solid fa-arrow-left"></i> <span data-i18n="back">Назад</span>
                 </a>
-                <button type="button" id="lang-toggle" class="icon-btn lang-toggle" aria-label="Switch language / Переключить язык">EN</button>
+                <button type="button" id="lang-toggle" class="icon-btn lang-toggle"
+                    aria-label="Switch language / Переключить язык">EN</button>
             </div>
             <div class="verify-logo" data-animate="zoom">
                 <div class="shield-icon">
@@ -98,7 +100,8 @@
                     <img id="preview-img" data-i18n-alt="preview_img_alt" alt="Превью чека">
                     <button type="button" id="preview-remove-btn" class="preview-remove-btn"
                         data-i18n-aria-label="preview_remove" aria-label="Удалить превью"
-                        data-i18n-title="preview_remove" title="Удалить превью"><i class="fa-solid fa-xmark"></i></button>
+                        data-i18n-title="preview_remove" title="Удалить превью"><i
+                            class="fa-solid fa-xmark"></i></button>
                 </div>
                 <button id="verify-upload-btn" class="btn btn-primary verify-auth-btn" data-animate>
                     <i class="fa-solid fa-qrcode"></i> <span data-i18n="upload_btn">Проверить</span>
@@ -112,6 +115,11 @@
                     <p id="result-desc">Данные чека совпадают с записью в реестре.</p>
                     <div id="result-badge" class="verify-badge verified">Подлинный</div>
                     <dl id="result-details" class="result-details">
+                        <dt id="result-lifecycle-dt" data-i18n="detail_lifecycle_status" style="display:none">Статус
+                            чека</dt>
+                        <dd id="result-lifecycle-dd" class="result-lifecycle-dd" style="display:none">—</dd>
+                        <dt id="result-reason-dt" data-i18n="detail_reason" style="display:none">Причина</dt>
+                        <dd id="result-reason-dd" class="result-reason-dd" style="display:none">—</dd>
                         <dt data-i18n="detail_receipt_number">Номер чека</dt>
                         <dd id="result-receipt-number">—</dd>
                         <dt id="result-items-row" class="result-items-row" data-i18n="detail_items"
@@ -125,6 +133,8 @@
                         <dd id="result-register-serial">—</dd>
                         <dt data-i18n="detail_amount">Сумма</dt>
                         <dd id="result-receipt-amount">—</dd>
+                        <dt id="result-refunded-dt" data-i18n="detail_refunded" style="display:none">Возвращено</dt>
+                        <dd id="result-refunded-dd" class="result-refunded-dd" style="display:none">—</dd>
                         <dt data-i18n="detail_store">Продавец</dt>
                         <dd id="result-receipt-store" class="result-store-dd">
                             <img id="result-shop-logo" src="" alt="" style="display:none">
@@ -145,8 +155,10 @@
             <div class="verify-footer" data-animate="fade">
                 <p data-i18n="footer_text">Все данные проверяются по защищённому реестру.</p>
                 <p class="brand-highlight" data-i18n="footer_brand">Valuon — гарантия подлинности</p>
-                <p style="margin-top:24px;"><a href="privacy.html" data-i18n="verify_privacy_link" style="color:var(--text-muted); font-size:0.85rem;">Политика конфиденциальности</a></p>
-                <p><a href="terms.html" data-i18n="verify_terms_link" style="color:var(--text-muted); font-size:0.85rem;">Условия пользования</a></p>
+                <p style="margin-top:24px;"><a href="privacy.html" data-i18n="verify_privacy_link"
+                        style="color:var(--text-muted); font-size:0.85rem;">Политика конфиденциальности</a></p>
+                <p><a href="terms.html" data-i18n="verify_terms_link"
+                        style="color:var(--text-muted); font-size:0.85rem;">Условия пользования</a></p>
             </div>
 
         </div>
@@ -154,8 +166,10 @@
 
     <div id="toast-container" class="toast-container"></div>
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a href="privacy.html">Политикой конфиденциальности</a>.</p>
-        <button id="cookie-btn" class="btn btn-primary small" onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
+                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <button id="cookie-btn" class="btn btn-primary small"
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
     </div>
     <script src="js/toast.js"></script>
     <script src="js/theme.js"></script>
@@ -180,9 +194,9 @@
     <script src="js/verify-lang.js"></script>
     <script type="module" src="js/verify.js"></script>
     <script src="js/cookie-banner.js"></script>
-<script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-</script>
-<script defer src="/_vercel/insights/script.js"></script>
+    <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
 </body>
 
 </html>

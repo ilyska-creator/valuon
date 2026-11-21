@@ -967,3 +967,185 @@
     object-fit: cover;
     flex-shrink: 0;
 }
+
+/* === Receipt lifecycle states on verify page === */
+.verify-result.partial {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.verify-result.partial #result-icon {
+    color: #d97706;
+}
+
+[data-theme="dark"] .verify-result.partial #result-icon {
+    color: #fbbf24;
+}
+
+.verify-result.refunded {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.26);
+}
+
+.verify-result.refunded #result-icon {
+    color: var(--error);
+}
+
+.verify-result.voided {
+    background: rgba(100, 116, 139, 0.09);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.verify-result.voided #result-icon {
+    color: #64748b;
+}
+
+[data-theme="dark"] .verify-result.voided #result-icon {
+    color: #94a3b8;
+}
+
+.verify-result.partial #result-icon,
+.verify-result.refunded #result-icon,
+.verify-result.voided #result-icon {
+    animation: badgePopIn 0.45s ease both;
+}
+
+.verify-badge.partial {
+    background: rgba(245, 158, 11, 0.14);
+    color: #b45309;
+    animation: badgePopIn 0.55s ease 0.2s both;
+}
+
+[data-theme="dark"] .verify-badge.partial {
+    background: rgba(245, 158, 11, 0.16);
+    color: #fbbf24;
+}
+
+.verify-badge.refunded {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--error);
+    animation: badgePopIn 0.55s ease 0.2s both;
+}
+
+.verify-badge.voided {
+    background: rgba(100, 116, 139, 0.15);
+    color: #475569;
+    animation: badgePopIn 0.55s ease 0.2s both;
+}
+
+[data-theme="dark"] .verify-badge.voided {
+    background: rgba(148, 163, 184, 0.16);
+    color: #cbd5e1;
+}
+
+.result-lifecycle-dd {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.result-reason-dd {
+    padding: 0.45rem 0.65rem;
+    border-radius: 8px;
+    background: var(--bg-body);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    word-break: break-word;
+}
+
+.verify-result.partial .result-reason-dd {
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.verify-result.refunded .result-reason-dd {
+    border-color: rgba(239, 68, 68, 0.28);
+}
+
+.verify-result.voided .result-reason-dd {
+    border-color: rgba(100, 116, 139, 0.32);
+}
+
+#result-receipt-amount.amount-struck {
+    text-decoration: line-through;
+    opacity: 0.62;
+}
+
+.result-refunded-dd {
+    font-weight: 700;
+    color: #d97706;
+}
+
+[data-theme="dark"] .result-refunded-dd {
+    color: #fbbf24;
+}
+
+.verify-result.refunded .result-refunded-dd {
+    color: var(--error);
+}
+
+.verify-items-list .verify-item-li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.verify-item-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.verify-item-name {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.verify-item-li.is-struck .verify-item-name {
+    text-decoration: line-through;
+    color: var(--text-muted);
+    opacity: 0.72;
+}
+
+.verify-item-warranty {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.verify-item-warranty.is-void {
+    text-decoration: line-through;
+    opacity: 0.65;
+}
+
+.verify-item-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.12rem 0.48rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.verify-item-pill.is-partial {
+    background: rgba(245, 158, 11, 0.16);
+    color: #b45309;
+}
+
+[data-theme="dark"] .verify-item-pill.is-partial {
+    color: #fbbf24;
+}
+
+.verify-item-pill.is-refunded {
+    background: rgba(239, 68, 68, 0.13);
+    color: var(--error);
+}
+
+.verify-item-pill.is-void {
+    background: rgba(100, 116, 139, 0.16);
+    color: #475569;
+}
+
+[data-theme="dark"] .verify-item-pill.is-void {
+    color: #cbd5e1;
+}
