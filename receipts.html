@@ -59,8 +59,9 @@
                 <button type="button" id="lang-toggle" class="circle-btn"
                     aria-label="Toggle Language"><span>RU</span></button>
             </div>
-            <a href="#" id="logout-btn" class="nav-item full-width"><i class="fa-solid fa-arrow-right-from-bracket"></i>
-                <span data-i18n="ui_logout">Выйти</span></a>
+            <button type="button" id="logout-btn" class="nav-item full-width"><i
+                    class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span data-i18n="ui_logout">Выйти</span></button>
         </div>
     </aside>
 
@@ -80,18 +81,29 @@
         <section class="items-section" data-animate data-delay="120">
             <div class="items-section-header">
                 <h2 data-i18n="section_documents">Ваши документы</h2>
-                <div class="items-tabs" id="receipts-tabs" role="tablist">
-                    <span class="items-tab-indicator" id="receipts-tab-indicator" aria-hidden="true"></span>
-                    <button type="button" class="items-tab active" data-receipts-tab="personal" role="tab"
-                        aria-selected="true">
-                        <span data-i18n="receipts_tab_personal">Ваши чеки</span>
-                        <span class="items-tab-count" id="receipts-count-personal">0</span>
-                    </button>
-                    <button type="button" class="items-tab" data-receipts-tab="business" role="tab"
-                        aria-selected="false">
-                        <span data-i18n="receipts_tab_business">Чеки от партнеров</span>
-                        <span class="items-tab-count" id="receipts-count-business">0</span>
-                    </button>
+                <div class="section-toolbar-controls">
+                    <div class="items-tabs" id="receipts-tabs" role="tablist">
+                        <span class="items-tab-indicator" id="receipts-tab-indicator" aria-hidden="true"></span>
+                        <button type="button" class="items-tab active" data-receipts-tab="personal" role="tab"
+                            aria-selected="true">
+                            <span data-i18n="receipts_tab_personal">Ваши чеки</span>
+                            <span class="items-tab-count" id="receipts-count-personal">0</span>
+                        </button>
+                        <button type="button" class="items-tab" data-receipts-tab="business" role="tab"
+                            aria-selected="false">
+                            <span data-i18n="receipts_tab_business">Чеки от партнеров</span>
+                            <span class="items-tab-count" id="receipts-count-business">0</span>
+                        </button>
+                    </div>
+                    <div class="sort-control-wrap">
+                        <i class="fa-solid fa-arrow-down-wide-short sort-control-icon" aria-hidden="true"></i>
+                        <select id="receipts-sort-select" class="custom-select" aria-label="Сортировка">
+                            <option value="newest" data-i18n="sort_newest">Сначала новые</option>
+                            <option value="oldest" data-i18n="sort_oldest">Сначала старые</option>
+                            <option value="price_desc" data-i18n="sort_price_desc">По цене ↓</option>
+                            <option value="price_asc" data-i18n="sort_price_asc">По цене ↑</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="receipts-grid" id="receipts-grid-personal"></div>

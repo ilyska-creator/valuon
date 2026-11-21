@@ -208,7 +208,7 @@
 
             <div class="chart-section mb-6" data-animate>
                 <div class="chart-header">
-                    <h2 class="section-title"><span data-i18n="analytics_title">📊 Аналитика</span> <span
+                    <h2 class="section-title"><span data-i18n="analytics_title">Аналитика</span> <span
                             class="chart-period-label" id="analytics-period"></span></h2>
                     <div class="chart-controls">
                         <button class="chart-period-btn active" data-period="week"
@@ -245,7 +245,7 @@
 
             <div class="receipts-list-container" data-animate>
                 <div class="receipts-section-header">
-                    <h2 class="section-title" data-i18n="issued_receipts_title">🧾 Выписанные чеки</h2>
+                    <h2 class="section-title" data-i18n="issued_receipts_title">Выписанные чеки</h2>
                     <div class="receipts-toolbar-controls">
                         <div class="receipt-search-box">
                             <i class="fa-solid fa-magnifying-glass receipt-search-icon" aria-hidden="true"></i>
@@ -279,6 +279,11 @@
                                 <span class="receipt-filter-count" id="filter-count-closed">0</span>
                             </button>
                         </div>
+                        <button type="button" id="export-receipts-csv-btn" class="receipt-csv-btn"
+                            data-i18n-title="export_csv_tooltip" title="Экспорт реестра в CSV">
+                            <i class="fa-solid fa-file-csv" aria-hidden="true"></i>
+                            <span data-i18n="export_csv_btn">CSV</span>
+                        </button>
                     </div>
                 </div>
                 <div id="business-receipts-grid" class="receipts-ledger">

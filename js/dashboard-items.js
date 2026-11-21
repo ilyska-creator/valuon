@@ -7,11 +7,17 @@ import { calculateDaysLeft } from './warranty-utils.js';
 
 let currentClient = null;
 let currentUserId = null;
+let currentUserEmail = null;
 let pendingDeleteItemId = null;
 let verifiedStats = { total: 0, active: 0, expiring: 0, expired: 0 };
 let lastMineItems = [];
+let lastVerifiedReceipts = [];
 let lastVerifiedItems = [];
+let linkedReceiptsByItemId = new Map();
+let currentItemsSort = sessionStorage.getItem('valuon-items-sort') || 'newest';
 let userDefaultCurrency = 'EUR';
+const verifiedReceiptPdfCache = new Map();
+const SIGNED_URL_TTL = 60 * 60;
 
 function renderItemCurrencySelects() {
     const lang = localStorage.getItem('valuon-lang') || 'ru';
@@ -59,6 +65,7 @@ async function initDashboardItems() {
 
     currentClient = auth.client;
     currentUserId = auth.user.id;
+    currentUserEmail = auth.user.email;
 
     const { data: profile } = await auth.client
         .from('profiles')
@@ -71,12 +78,201 @@ async function initDashboardItems() {
 
     applySavedItemsTab();
     setupItemsTabs(auth.user.id, auth.user.email, auth.client);
+    setupItemsSort();
     await loadItems(auth.user.id, auth.client);
     await loadVerifiedItems(auth.user.email, auth.client);
     setupModal(auth.client);
     setupEditModal(auth.client, auth.user.id);
     setupDeleteItemModal(auth.client, auth.user.id);
     setupLogout(auth.client);
+}
+
+const VALID_ITEMS_SORTS = new Set(['newest', 'warranty_asc', 'price_desc', 'price_asc']);
+
+function setupItemsSort() {
+    const select = document.getElementById('items-sort-select');
+    if (!select) return;
+    if (!VALID_ITEMS_SORTS.has(currentItemsSort)) {
+        currentItemsSort = 'newest';
+    }
+    select.value = currentItemsSort;
+    if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+
+    select.addEventListener('change', () => {
+        const nextSort = VALID_ITEMS_SORTS.has(select.value) ? select.value : 'newest';
+        currentItemsSort = nextSort;
+        sessionStorage.setItem('valuon-items-sort', nextSort);
+        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+        renderItems(lastMineItems, { animateCount: false });
+        renderVerifiedItems(lastVerifiedReceipts, t, { animateCount: false });
+    });
+}
+
+function getItemDateTs(item) {
+    const raw = item.purchase_date || item.created_at;
+    if (!raw) return 0;
+    const ms = new Date(raw).getTime();
+    return Number.isFinite(ms) ? ms : 0;
+}
+
+function sortDashboardItems(items, mode, isVerified) {
+    const copy = [...(items || [])];
+    const getPrice = (it) => {
+        const val = parseFloat(isVerified ? it.gross_total : it.price);
+        return Number.isFinite(val) && val > 0 ? val : null;
+    };
+
+    copy.sort((a, b) => {
+        if (mode === 'warranty_asc') {
+            const noA = isNoWarranty(a);
+            const noB = isNoWarranty(b);
+            const daysA = noA ? null : calculateDaysLeft(a.warranty_end_date);
+            const daysB = noB ? null : calculateDaysLeft(b.warranty_end_date);
+            const bucketA = noA ? 2 : (daysA > 0 ? 0 : 1);
+            const bucketB = noB ? 2 : (daysB > 0 ? 0 : 1);
+            if (bucketA !== bucketB) return bucketA - bucketB;
+            if (bucketA === 0 && daysA !== daysB) return daysA - daysB;
+            if (bucketA === 1 && daysA !== daysB) return daysB - daysA;
+            return getItemDateTs(b) - getItemDateTs(a);
+        }
+        if (mode === 'price_desc' || mode === 'price_asc') {
+            const pa = getPrice(a);
+            const pb = getPrice(b);
+            if (pa === null && pb === null) return getItemDateTs(b) - getItemDateTs(a);
+            if (pa === null) return 1;
+            if (pb === null) return -1;
+            if (pa !== pb) return mode === 'price_desc' ? pb - pa : pa - pb;
+            return getItemDateTs(b) - getItemDateTs(a);
+        }
+        return getItemDateTs(b) - getItemDateTs(a);
+    });
+    return copy;
+}
+
+async function openLinkedPersonalReceipt(itemId, btn) {
+    const receipt = linkedReceiptsByItemId.get(String(itemId));
+    if (!receipt || !currentClient) return;
+    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+    try {
+        let targetUrl = receipt.file_url || '';
+        const expiresAt = receipt.created_at
+            ? new Date(receipt.created_at).getTime() + SIGNED_URL_TTL * 1000
+            : 0;
+        const needsRefresh = receipt.file_path && (!targetUrl || Date.now() >= expiresAt);
+
+        if (needsRefresh) {
+            const { data, error } = await currentClient.storage
+                .from('receipts')
+                .createSignedUrl(receipt.file_path, SIGNED_URL_TTL);
+            if (error || !data?.signedUrl) throw error || new Error('Failed to create signed URL');
+            targetUrl = data.signedUrl;
+            receipt.file_url = targetUrl;
+            receipt.created_at = new Date().toISOString();
+        }
+
+        if (!targetUrl) throw new Error('Missing receipt URL');
+        const parsed = new URL(targetUrl, window.location.origin);
+        if (parsed.protocol === 'https:' || (parsed.protocol === 'http:' && parsed.origin === window.location.origin)) {
+            window.open(parsed.href, '_blank', 'noopener,noreferrer');
+        } else {
+            throw new Error('Unsupported URL protocol');
+        }
+    } catch (e) {
+        logError('items:openLinkedReceipt', e);
+        showToast(t.receipt_open_error || (lang === 'ru' ? 'Не удалось открыть файл чека' : 'Failed to open receipt file'), 'error');
+    } finally {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
+}
+
+async function downloadVerifiedReceiptPDF(receiptId, btn) {
+    if (!receiptId || !currentClient || !currentUserEmail) return;
+    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+    try {
+        if (typeof window.jspdf === 'undefined') {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                s.onload = resolve; s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+        if (typeof qrcode === 'undefined') {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
+                s.onload = resolve; s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+        if (typeof window.html2canvas === 'undefined') {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                s.onload = resolve; s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+
+        const { downloadReceiptPDF } = await import('./receipt-generator.js');
+        let receipt = verifiedReceiptPdfCache.get(String(receiptId));
+
+        if (!receipt) {
+            const { data, error } = await currentClient
+                .from('business_receipts')
+                .select('*, receipt_items(*)')
+                .eq('id', receiptId)
+                .eq('customer_email', currentUserEmail)
+                .order('sort_order', { referencedTable: 'receipt_items', ascending: true })
+                .single();
+
+            if (error || !data) throw error || new Error('Receipt not found');
+            receipt = data;
+
+            if (!Array.isArray(receipt.receipt_items) || receipt.receipt_items.length === 0) {
+                const { data: items } = await currentClient
+                    .from('receipt_items')
+                    .select('*')
+                    .eq('receipt_id', receipt.id)
+                    .order('sort_order');
+                if (items?.length) receipt.receipt_items = items;
+            }
+            verifiedReceiptPdfCache.set(String(receiptId), receipt);
+        }
+
+        const mockShop = {
+            shop_name: receipt.shop_name || 'Partner Store',
+            address: receipt.address || '',
+            country: receipt.country || null,
+            currency: receipt.currency || 'EUR',
+            tax_id: receipt.tax_id || '',
+            logo_path: receipt.logo_path || null
+        };
+        await downloadReceiptPDF(receipt, mockShop);
+    } catch (e) {
+        logError('items:downloadVerifiedReceipt', e);
+        showToast(
+            lang === 'ru'
+                ? 'Генератор PDF пока недоступен'
+                : 'PDF generator is not available yet',
+            'error'
+        );
+    } finally {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
 }
 
 
@@ -96,17 +292,37 @@ async function loadItems(userId, client) {
         ], { interval: 800 });
     }
 
-    const { data: items, error } = await client
-        .from('items')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+    const [itemsRes, receiptsRes] = await Promise.all([
+        client
+            .from('items')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false }),
+        client
+            .from('receipts')
+            .select('id, item_id, file_url, file_path, file_type, receipt_name, created_at')
+            .eq('user_id', userId)
+            .not('item_id', 'is', null)
+            .order('created_at', { ascending: false })
+    ]);
+
+    const { data: items, error } = itemsRes;
 
     if (error) {
         logError('items:load', error);
         const loadLang = localStorage.getItem('valuon-lang') || 'ru';
         grid.innerHTML = '<p class="empty-state error">' + (loadLang === 'en' ? 'Data load error.' : 'Ошибка загрузки данных.') + '</p>';
         return;
+    }
+
+    linkedReceiptsByItemId = new Map();
+    if (!receiptsRes.error && Array.isArray(receiptsRes.data)) {
+        receiptsRes.data.forEach(r => {
+            const key = String(r.item_id);
+            if (!linkedReceiptsByItemId.has(key)) {
+                linkedReceiptsByItemId.set(key, r);
+            }
+        });
     }
 
     const safeItems = items || [];
@@ -140,7 +356,7 @@ function isNoWarranty(item) {
     return false;
 }
 
-function renderItems(items) {
+function renderItems(items, opts = {}) {
     const grid = document.querySelector('#items-grid-mine');
     if (!grid) return;
 
@@ -148,7 +364,7 @@ function renderItems(items) {
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
     const countEl = document.getElementById('items-count-mine');
-    if (countEl) window.animateCount(countEl, items.length);
+    if (countEl && opts.animateCount !== false) window.animateCount(countEl, items.length);
 
     if (items.length === 0) {
         grid.innerHTML = `
@@ -167,7 +383,9 @@ function renderItems(items) {
         return;
     }
 
-    grid.innerHTML = items.map(item => {
+    const sortedItems = sortDashboardItems(items, currentItemsSort, false);
+
+    grid.innerHTML = sortedItems.map(item => {
         const iconClass = window.DEVICE_ICONS[item.type] || window.DEVICE_ICONS.other;
         const noWarranty = isNoWarranty(item);
         const daysLeft = noWarranty ? null : calculateDaysLeft(item.warranty_end_date);
@@ -208,6 +426,13 @@ function renderItems(items) {
         const btnEditText = escapeHtml(t.btn_edit || 'Изменить');
         const btnDeleteText = escapeHtml(t.btn_delete || 'Удалить');
         const btnCalendarText = escapeHtml(t.add_to_calendar || 'В календарь');
+        const btnOpenReceiptText = escapeHtml(t.btn_open_receipt || (lang === 'ru' ? 'Открыть чек' : 'Open receipt'));
+        const hasLinkedReceipt = linkedReceiptsByItemId.has(String(item.id));
+        const linkedReceiptButtonHtml = hasLinkedReceipt ? `
+                        <button type="button" class="btn-action btn-open-linked-receipt" data-item-id="${escapeHtml(item.id)}"
+                                title="${btnOpenReceiptText}" aria-label="${btnOpenReceiptText}">
+                            <i class="fa-solid fa-receipt"></i>
+                        </button>` : '';
         const calendarButtonHtml = item.warranty_end_date && daysLeft > 0 ? `
                         <button type="button" class="btn-action btn-add-calendar" data-id="${escapeHtml(item.id)}"
                                 title="${btnCalendarText}" aria-label="${btnCalendarText}">
@@ -258,6 +483,7 @@ function renderItems(items) {
                     ${progressSectionHtml}
 
                     <div class="mine-item-actions">
+                        ${linkedReceiptButtonHtml}
                         ${calendarButtonHtml}
                         <button class="btn-action btn-edit-item" data-id="${escapeHtml(item.id)}" title="${btnEditText}">
                             <i class="fa-solid fa-pen"></i>
@@ -310,6 +536,12 @@ function renderItems(items) {
         });
     });
 
+    grid.querySelectorAll('.btn-open-linked-receipt').forEach(btn => {
+        btn.addEventListener('click', () => {
+            openLinkedPersonalReceipt(btn.dataset.itemId, btn);
+        });
+    });
+
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(lang);
     }
@@ -336,6 +568,7 @@ function extractActiveVerifiedItems(receipts) {
                     activeItems.push({
                         ...it,
                         id: activeQty === 1 ? String(it.id) : `${it.id}__unit_${u + 1}`,
+                        receipt_id: r.id,
                         qty: 1,
                         gross_total: unitGross,
                         shop_name: r.shop_name,
@@ -349,6 +582,7 @@ function extractActiveVerifiedItems(receipts) {
 
                 activeItems.push({
                     ...it,
+                    receipt_id: r.id,
                     qty: activeQty,
                     gross_total: activeGross,
                     shop_name: r.shop_name,
@@ -360,7 +594,7 @@ function extractActiveVerifiedItems(receipts) {
     return activeItems;
 }
 
-function renderVerifiedItems(receipts, t) {
+function renderVerifiedItems(receipts, t, opts = {}) {
     const grid = document.querySelector('#items-grid-verified');
     if (!grid) return;
 
@@ -368,7 +602,7 @@ function renderVerifiedItems(receipts, t) {
     const allItems = extractActiveVerifiedItems(receipts);
 
     const countEl = document.getElementById('items-count-verified');
-    if (countEl) window.animateCount(countEl, allItems.length);
+    if (countEl && opts.animateCount !== false) window.animateCount(countEl, allItems.length);
 
     if (allItems.length === 0) {
         grid.innerHTML = `
@@ -380,9 +614,10 @@ function renderVerifiedItems(receipts, t) {
         return;
     }
 
-    lastVerifiedItems = allItems;
+    const sortedItems = sortDashboardItems(allItems, currentItemsSort, true);
+    lastVerifiedItems = sortedItems;
 
-    grid.innerHTML = allItems.map(item => {
+    grid.innerHTML = sortedItems.map(item => {
         const iconClass = window.DEVICE_ICONS[item.category] || window.DEVICE_ICONS.other;
         const d = item.purchase_date ? item.purchase_date.slice(0, 10).split('-') : null;
         const dateStr = d ? (lang === 'ru' ? `${d[2]}.${d[1]}.${d[0]}` : `${d[1]}/${d[2]}/${d[0]}`) : '';
@@ -416,11 +651,17 @@ function renderVerifiedItems(receipts, t) {
                         </div>`).join('');
 
         const btnCalendarText = escapeHtml(t.add_to_calendar || 'В календарь');
+        const btnReceiptPdfText = escapeHtml(t.btn_receipt_pdf || (lang === 'ru' ? 'Чек PDF' : 'PDF Receipt'));
         const calendarButtonHtml = item.warranty_end_date && daysLeft > 0 ? `
                         <button type="button" class="btn-action btn-add-calendar" data-id="${escapeHtml(item.id)}"
                                 title="${btnCalendarText}" aria-label="${btnCalendarText}">
                             <i class="fa-solid fa-calendar-plus"></i>
-                            <span data-i18n="add_to_calendar">${btnCalendarText}</span>
+                        </button>` : '';
+        const receiptButtonHtml = item.receipt_id ? `
+                        <button type="button" class="btn-action btn-download-item-receipt" data-receipt-id="${escapeHtml(item.receipt_id)}"
+                                title="${btnReceiptPdfText}">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                            <span data-i18n="btn_receipt_pdf">${btnReceiptPdfText}</span>
                         </button>` : '';
 
         let progressSectionHtml;
@@ -473,7 +714,7 @@ function renderVerifiedItems(receipts, t) {
 
                     ${progressSectionHtml}
 
-                    ${calendarButtonHtml ? `<div class="mine-item-actions calendar-only">${calendarButtonHtml}</div>` : ''}
+                    ${(calendarButtonHtml || receiptButtonHtml) ? `<div class="mine-item-actions verified-actions">${calendarButtonHtml}${receiptButtonHtml}</div>` : ''}
                 </div>
             </div>`;
     }).join('');
@@ -500,6 +741,12 @@ function renderVerifiedItems(receipts, t) {
         });
     });
 
+    grid.querySelectorAll('.btn-download-item-receipt').forEach(btn => {
+        btn.addEventListener('click', () => {
+            downloadVerifiedReceiptPDF(btn.dataset.receiptId, btn);
+        });
+    });
+
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(lang);
     }
@@ -523,14 +770,14 @@ async function loadVerifiedItems(userEmail, client) {
 
     let res = await client
         .from('business_receipts')
-        .select('lifecycle_status, purchase_date, shop_name, receipt_items(id, item_name, qty, refunded_qty, gross_total, currency, warranty_months, warranty_end_date, category)')
+        .select('id, lifecycle_status, purchase_date, shop_name, receipt_items(id, item_name, qty, refunded_qty, gross_total, currency, warranty_months, warranty_end_date, category)')
         .eq('customer_email', userEmail)
         .order('purchase_date', { ascending: false });
 
     if (res.error && res.error.code === '42703') {
         res = await client
             .from('business_receipts')
-            .select('purchase_date, shop_name, receipt_items(id, item_name, qty, gross_total, currency, warranty_months, warranty_end_date, category)')
+            .select('id, purchase_date, shop_name, receipt_items(id, item_name, qty, gross_total, currency, warranty_months, warranty_end_date, category)')
             .eq('customer_email', userEmail)
             .order('purchase_date', { ascending: false });
     }
@@ -545,7 +792,8 @@ async function loadVerifiedItems(userEmail, client) {
 
     const lang = localStorage.getItem('valuon-lang') || 'ru';
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
-    renderVerifiedItems(data || [], t);
+    lastVerifiedReceipts = data || [];
+    renderVerifiedItems(lastVerifiedReceipts, t);
 
     const activeItems = extractActiveVerifiedItems(data || []);
     let verifiedActive = 0, verifiedExpiring = 0, verifiedExpired = 0;

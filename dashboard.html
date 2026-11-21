@@ -119,17 +119,30 @@
             <section class="items-section" data-animate>
                 <div class="items-section-header">
                     <h2 data-i18n="section_recent">Недавние покупки</h2>
-                    <div class="items-tabs" id="items-tabs" role="tablist">
-                        <span class="items-tab-indicator" id="items-tab-indicator" aria-hidden="true"></span>
-                        <button type="button" class="items-tab active" data-items-tab="verified" role="tab"
-                            aria-selected="true">
-                            <span data-i18n="items_tab_verified">Подтвержденные товары</span>
-                            <span class="items-tab-count" id="items-count-verified">0</span>
-                        </button>
-                        <button type="button" class="items-tab" data-items-tab="mine" role="tab" aria-selected="false">
-                            <span data-i18n="items_tab_mine">Мои вещи</span>
-                            <span class="items-tab-count" id="items-count-mine">0</span>
-                        </button>
+                    <div class="section-toolbar-controls">
+                        <div class="items-tabs" id="items-tabs" role="tablist">
+                            <span class="items-tab-indicator" id="items-tab-indicator" aria-hidden="true"></span>
+                            <button type="button" class="items-tab active" data-items-tab="verified" role="tab"
+                                aria-selected="true">
+                                <span data-i18n="items_tab_verified">Подтвержденные товары</span>
+                                <span class="items-tab-count" id="items-count-verified">0</span>
+                            </button>
+                            <button type="button" class="items-tab" data-items-tab="mine" role="tab"
+                                aria-selected="false">
+                                <span data-i18n="items_tab_mine">Мои вещи</span>
+                                <span class="items-tab-count" id="items-count-mine">0</span>
+                            </button>
+                        </div>
+                        <div class="sort-control-wrap">
+                            <i class="fa-solid fa-arrow-down-wide-short sort-control-icon" aria-hidden="true"></i>
+                            <select id="items-sort-select" class="custom-select" aria-label="Сортировка">
+                                <option value="newest" data-i18n="sort_newest">Сначала новые</option>
+                                <option value="warranty_asc" data-i18n="sort_warranty_soon">Скоро истекает гарантия
+                                </option>
+                                <option value="price_desc" data-i18n="sort_price_desc">По цене ↓</option>
+                                <option value="price_asc" data-i18n="sort_price_asc">По цене ↑</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="items-grid hidden" id="items-grid-mine"></div>

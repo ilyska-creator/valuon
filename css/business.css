@@ -2928,6 +2928,62 @@
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
+.receipt-csv-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    height: 42px;
+    padding: 0 0.9rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-main);
+    font-family: var(--font-main);
+    font-size: 0.84rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.receipt-csv-btn i {
+    font-size: 0.85rem;
+    color: var(--primary);
+}
+
+.receipt-csv-btn:hover:not(:disabled) {
+    background: rgba(37, 99, 235, 0.06);
+    border-color: rgba(37, 99, 235, 0.38);
+    color: var(--primary);
+}
+
+.receipt-csv-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.receipt-csv-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+[data-theme="dark"] .receipt-csv-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+}
+
+[data-theme="dark"] .receipt-csv-btn i {
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .receipt-csv-btn:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.14);
+    border-color: rgba(96, 165, 250, 0.4);
+    color: #93c5fd;
+}
+
 .receipt-search-clear:hover {
     background: rgba(100, 116, 139, 0.14);
     color: var(--text-main);
@@ -4173,6 +4229,11 @@
     .receipt-search-box {
         flex: none;
         width: 100%;
+    }
+
+    .receipt-csv-btn {
+        width: 100%;
+        height: 42px;
     }
 
     .receipt-filter-bar {

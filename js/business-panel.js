@@ -139,6 +139,10 @@ async function initBusinessPanel() {
         };
 
         const filtered = filterReceiptsList(receiptsList || [], payMethodMap);
+        const csvExportBtn = document.getElementById('export-receipts-csv-btn');
+        if (csvExportBtn) {
+            csvExportBtn.disabled = filtered.length === 0;
+        }
         const hasSearch = receiptSearchQuery.trim().length > 0;
         const filteredEmptyMsg = document.getElementById('no-filtered-receipts-msg');
         if (filteredEmptyMsg) {
@@ -2549,6 +2553,110 @@ async function initBusinessPanel() {
             });
         }
     }
+
+    function sanitizeCsvCell(value) {
+        let str = value == null ? '' : String(value);
+        if (/^[=+\-@\t\r]/.test(str) && !/^-\d+(\.\d+)?$/.test(str)) {
+            str = `'${str}`;
+        }
+        if (/[",\r\n;]/.test(str)) {
+            return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+    }
+
+    function exportFilteredReceiptsCsv() {
+        const currentLang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
+        const bt = window.businessTranslations || {};
+        const t = bt[currentLang] || bt.ru || {};
+        const payMethodMap = {
+            card: t.payment_card || 'Card',
+            cash: t.payment_cash || 'Cash',
+        };
+        const filtered = filterReceiptsList(currentReceiptsList || [], payMethodMap);
+        if (filtered.length === 0) {
+            window.showToast(t.export_csv_empty || (currentLang === 'en' ? 'No receipts to export' : 'Нет чеков для экспорта'), 'warning');
+            return;
+        }
+
+        const lcLabelMap = {
+            active: t.lifecycle_active || (currentLang === 'en' ? 'Active' : 'Активен'),
+            partially_refunded: t.lifecycle_partially_refunded || (currentLang === 'en' ? 'Partial Refund' : 'Частичный возврат'),
+            refunded: t.lifecycle_refunded || (currentLang === 'en' ? 'Refunded' : 'Возврат'),
+            voided: t.lifecycle_voided || (currentLang === 'en' ? 'Voided' : 'Аннулирован'),
+        };
+
+        const headers = [
+            t.csv_col_number || 'Receipt #',
+            t.csv_col_date || 'Date',
+            t.csv_col_email || 'Customer Email',
+            t.csv_col_binding || 'Binding',
+            t.csv_col_lifecycle || 'Receipt Status',
+            t.csv_col_payment || 'Payment',
+            t.csv_col_register || 'Register',
+            t.csv_col_items || 'Items',
+            t.csv_col_currency || 'Currency',
+            t.csv_col_gross || 'Gross Total',
+            t.csv_col_vat || 'VAT',
+            t.csv_col_refunded || 'Refunded',
+            t.csv_col_net_revenue || 'Net Revenue',
+            t.csv_col_reason || 'Reason',
+        ];
+
+        const rows = filtered.map(r => {
+            const lc = getLifecycleStatus(r);
+            const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
+            const dateIso = r.purchase_date ? new Date(r.purchase_date).toISOString().slice(0, 10) : '';
+            const binding = r.status === 'verified'
+                ? (t.status_verified_short || 'Linked')
+                : (t.status_pending_short || 'Pending');
+            const payRaw = (r.payment_method || '').toLowerCase();
+            const payLabel = payMethodMap[payRaw] || r.payment_method || '';
+            const itemsSummary = Array.isArray(r.receipt_items)
+                ? r.receipt_items.map(it => `${it.item_name || ''} ×${Math.max(1, parseInt(it.qty, 10) || 1)}`).join('; ')
+                : '';
+            const grossVal = (parseFloat(r.gross_total) || 0).toFixed(2);
+            const vatVal = (parseFloat(r.vat_amount) || 0).toFixed(2);
+            const refundedVal = (parseFloat(r.refunded_amount) || 0).toFixed(2);
+            const netRevenueVal = getNetReceiptRevenue(r).toFixed(2);
+
+            return [
+                receiptNum,
+                dateIso,
+                r.customer_email || '',
+                binding,
+                lcLabelMap[lc] || lc,
+                payLabel,
+                r.pos_serial || '',
+                itemsSummary,
+                r.currency || currentShop?.currency || 'EUR',
+                grossVal,
+                vatVal,
+                refundedVal,
+                netRevenueVal,
+                r.status_reason || '',
+            ].map(sanitizeCsvCell).join(',');
+        });
+
+        const csvContent = '\uFEFF' + [headers.map(sanitizeCsvCell).join(','), ...rows].join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `valuon-receipts-${todayStr}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 200);
+
+        const doneTpl = t.export_csv_done || (currentLang === 'en' ? 'Exported {n} receipts' : 'Экспортировано чеков: {n}');
+        window.showToast(doneTpl.replace('{n}', String(filtered.length)), 'success');
+    }
+
+    document.getElementById('export-receipts-csv-btn')?.addEventListener('click', exportFilteredReceiptsCsv);
 
     function toggleLedgerRow(summaryEl) {
         const itemEl = summaryEl?.closest('.receipt-ledger-item');

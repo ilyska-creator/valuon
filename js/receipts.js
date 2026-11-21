@@ -7,17 +7,26 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const SIGNED_URL_TTL = 60 * 60;
 
 
+let currentClient = null;
 let currentUserId = null;
 let currentUserEmail = null;
 let userDefaultCurrency = 'EUR';
+let lastBusinessReceipts = [];
+let lastPersonalReceipts = [];
+let currentReceiptsSort = sessionStorage.getItem('valuon-receipts-sort') || 'newest';
+let receiptsLoaded = false;
 
 
 let uploadModal = null;
 
 window.addEventListener('lang-changed', (e) => {
     const select = document.getElementById('upload-receipt-currency');
-    if (!select || typeof window.renderCurrencyOptions !== 'function') return;
-    window.renderCurrencyOptions(select, e.detail?.lang || getLang());
+    if (select && typeof window.renderCurrencyOptions === 'function') {
+        window.renderCurrencyOptions(select, e.detail?.lang || getLang());
+    }
+    if (receiptsLoaded && currentClient && currentUserId) {
+        renderSplitReceipts(lastBusinessReceipts, lastPersonalReceipts, currentClient, currentUserId, { animateCounts: false, skipLangApply: true });
+    }
     if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
 });
 
@@ -80,6 +89,7 @@ async function initReceipts() {
     const { user, client } = auth;
     setupLogout(client);
 
+    currentClient = client;
     currentUserId = user.id;
     currentUserEmail = user.email;
 
@@ -101,6 +111,7 @@ async function initReceipts() {
 
     applySavedReceiptsTab();
     setupReceiptsTabs();
+    setupReceiptsSort();
 
     await loadAllReceipts(currentUserEmail, currentUserId, client);
     await populateItemSelect(currentUserId, client);
@@ -108,6 +119,73 @@ async function initReceipts() {
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(getLang());
     }
+}
+
+const VALID_RECEIPTS_SORTS = new Set(['newest', 'oldest', 'price_desc', 'price_asc']);
+
+function setupReceiptsSort() {
+    const select = document.getElementById('receipts-sort-select');
+    if (!select) return;
+    if (!VALID_RECEIPTS_SORTS.has(currentReceiptsSort)) {
+        currentReceiptsSort = 'newest';
+    }
+    select.value = currentReceiptsSort;
+    if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+
+    select.addEventListener('change', () => {
+        const nextSort = VALID_RECEIPTS_SORTS.has(select.value) ? select.value : 'newest';
+        currentReceiptsSort = nextSort;
+        sessionStorage.setItem('valuon-receipts-sort', nextSort);
+        if (receiptsLoaded && currentClient && currentUserId) {
+            renderSplitReceipts(lastBusinessReceipts, lastPersonalReceipts, currentClient, currentUserId, { animateCounts: false });
+        }
+    });
+}
+
+function getDateTimestamp(primary, fallback) {
+    const raw = primary || fallback;
+    if (!raw) return 0;
+    const ms = new Date(raw).getTime();
+    return Number.isFinite(ms) ? ms : 0;
+}
+
+function getEffectiveBusinessAmount(r) {
+    const gross = parseFloat(r.gross_total);
+    if (!Number.isFinite(gross) || gross <= 0) return null;
+    if (r.lifecycle_status === 'partially_refunded') {
+        const ref = parseFloat(r.refunded_amount) || 0;
+        return Math.max(0, Math.round((gross - ref) * 100) / 100);
+    }
+    return gross;
+}
+
+function sortReceiptsArray(list, mode, isBusiness) {
+    const copy = [...(list || [])];
+    const getDate = (r) => isBusiness
+        ? getDateTimestamp(r.purchase_date, r.created_at)
+        : getDateTimestamp(r.display_date, r.created_at);
+    const getAmount = (r) => {
+        if (isBusiness) return getEffectiveBusinessAmount(r);
+        const val = parseFloat(r.display_amount);
+        return Number.isFinite(val) && val > 0 ? val : null;
+    };
+
+    copy.sort((a, b) => {
+        if (mode === 'oldest') {
+            return getDate(a) - getDate(b);
+        }
+        if (mode === 'price_desc' || mode === 'price_asc') {
+            const pa = getAmount(a);
+            const pb = getAmount(b);
+            if (pa === null && pb === null) return getDate(b) - getDate(a);
+            if (pa === null) return 1;
+            if (pb === null) return -1;
+            if (pa !== pb) return mode === 'price_desc' ? pb - pa : pa - pb;
+            return getDate(b) - getDate(a);
+        }
+        return getDate(b) - getDate(a);
+    });
+    return copy;
 }
 
 async function attachFreshSignedUrls(receipts, client) {
@@ -177,7 +255,11 @@ async function loadAllReceipts(userEmail, userId, client) {
 
         const personalWithFreshUrls = await attachFreshSignedUrls(personalData || [], client);
 
-        renderSplitReceipts(businessData || [], personalWithFreshUrls, client, userId);
+        lastBusinessReceipts = businessData || [];
+        lastPersonalReceipts = personalWithFreshUrls;
+        receiptsLoaded = true;
+
+        renderSplitReceipts(lastBusinessReceipts, lastPersonalReceipts, client, userId);
     } catch (e) {
         logError('receipts:load', e);
         const errorHtml = '<p class="empty-state error">Ошибка загрузки данных.</p>';
@@ -186,9 +268,7 @@ async function loadAllReceipts(userEmail, userId, client) {
     }
 }
 
-function renderSplitReceipts(businessReceipts, personalReceipts, client, userId) {
-    // Шапка, заголовок секции и вкладки статичны в HTML и сюда больше не
-    // попадают — обновляем только содержимое сеток и счётчики на вкладках.
+function renderSplitReceipts(businessReceipts, personalReceipts, client, userId, opts = {}) {
     const lang = getLang();
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
@@ -199,13 +279,15 @@ function renderSplitReceipts(businessReceipts, personalReceipts, client, userId)
     personalGrid.innerHTML = buildPersonalGridHTML(personalReceipts, t, lang);
     businessGrid.innerHTML = buildBusinessGridHTML(businessReceipts, t, lang);
 
-    requestAnimationFrame(() => {
-        window.animateCount(document.getElementById('receipts-count-personal'), personalReceipts.length);
-        window.animateCount(document.getElementById('receipts-count-business'), businessReceipts.length);
-    });
+    if (opts.animateCounts !== false) {
+        requestAnimationFrame(() => {
+            window.animateCount(document.getElementById('receipts-count-personal'), personalReceipts.length);
+            window.animateCount(document.getElementById('receipts-count-business'), businessReceipts.length);
+        });
+    }
     restoreListeners(client, userId);
 
-    if (typeof window.applyDashboardLang === 'function') {
+    if (!opts.skipLangApply && typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(lang);
     }
 }
@@ -234,7 +316,8 @@ function buildPersonalGridHTML(receipts, t, lang) {
         is_linked: !!r.items
     }));
 
-    return flatData.map(r => renderPersonalCard(r, t)).join('');
+    const sorted = sortReceiptsArray(flatData, currentReceiptsSort, false);
+    return sorted.map(r => renderPersonalCard(r, t)).join('');
 }
 
 function buildBusinessGridHTML(receipts, t, lang) {
@@ -247,7 +330,8 @@ function buildBusinessGridHTML(receipts, t, lang) {
             </div>`;
     }
 
-    return receipts.map(r => renderBusinessCard(r, t)).join('');
+    const sorted = sortReceiptsArray(receipts, currentReceiptsSort, true);
+    return sorted.map(r => renderBusinessCard(r, t)).join('');
 }
 
 let _switchingReceiptsTab = false;
@@ -324,7 +408,7 @@ function setupReceiptsTabs() {
 function renderBusinessCard(r, t) {
     const lang = getLang();
     const locale = lang === 'ru' ? 'ru-RU' : 'en-US';
-    const dateStr = new Date(r.purchase_date).toLocaleDateString(locale);
+    const dateStr = r.purchase_date ? new Date(r.purchase_date).toLocaleDateString(locale) : '—';
     const receiptNum = escapeHtml(r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`);
 
     const lc = r.lifecycle_status || 'active';
@@ -344,193 +428,183 @@ function renderBusinessCard(r, t) {
             : partRef
                 ? `<span class="item-refund-pill partial">${escapeHtml((t.lifecycle_item_returned_short || '−{n} возвр.').replace('{n}', String(refQty)))}</span>`
                 : '';
-        return {
-            cls: fullRef ? 'item-row-refunded' : '',
-            inner: `<span class="item-name">${escapeHtml(it.item_name)}</span> <span class="item-qty">×${qty}</span> ${refPill}${it.warranty_months && !fullRef && !closed ? ` <span class="item-warranty">${it.warranty_months} ${escapeHtml(t.months_short || 'mo')}.</span>` : ''}`
-        };
+        const warrantyHtml = (it.warranty_months && !fullRef && !closed)
+            ? `<span class="receipt-doc-item-warranty">${escapeHtml(String(it.warranty_months))} ${escapeHtml(t.months_short || 'mo')}.</span>`
+            : '';
+        return `
+            <li class="receipt-doc-item-row${fullRef ? ' item-row-refunded' : ''}">
+                <div class="receipt-doc-item-left">
+                    <span class="item-name">${escapeHtml(it.item_name)}</span>
+                    <span class="item-qty">×${qty}</span>
+                    ${refPill}
+                </div>
+                ${warrantyHtml}
+            </li>`;
     };
 
     const itemsListHtml = itemsCount > 0 ? `
-        <div class="receipt-card-items${closed ? ' is-struck' : ''}">
-            ${itemsCount === 1
-            ? (() => {
-                const row = renderLineItem(lineItems[0]);
-                return `<div class="receipt-card-item single ${row.cls}">${row.inner}</div>`;
-            })()
-            : `<ul class="receipt-card-items-list">${lineItems.map(it => {
-                const row = renderLineItem(it);
-                return `<li class="${row.cls}">${row.inner}</li>`;
-            }).join('')}</ul>`
-        }
-        </div>` : '';
+        <ul class="receipt-doc-items${closed ? ' is-struck' : ''}">
+            ${lineItems.map(renderLineItem).join('')}
+        </ul>` : '';
 
     const currency = r.currency || 'EUR';
     const grossVal = parseFloat(r.gross_total) || 0;
     const refundedVal = parseFloat(r.refunded_amount) || 0;
     const netVal = isPartial ? Math.max(0, Math.round((grossVal - refundedVal) * 100) / 100) : grossVal;
     const priceFormatted = escapeHtml(window.formatCurrency(isPartial ? netVal : grossVal, currency, lang));
-
-    const stats = [
-        {
-            icon: 'fa-tag',
-            labelKey: 'stat_price',
-            fallback: 'Price',
-            valueHtml: closed ? `<span class="amount-struck">${priceFormatted}</span>` : priceFormatted,
-            titleText: priceFormatted,
-            extraClass: ''
-        },
-        {
-            icon: 'fa-regular fa-calendar',
-            labelKey: 'stat_date',
-            fallback: 'Date',
-            valueHtml: escapeHtml(dateStr),
-            titleText: escapeHtml(dateStr),
-            extraClass: ''
-        }
-    ];
-    if (isPartial && refundedVal > 0) {
-        const refFormatted = `−${escapeHtml(window.formatCurrency(refundedVal, currency, lang))}`;
-        stats.push({
-            icon: 'fa-rotate-left',
-            labelKey: 'lifecycle_refunded_short',
-            fallback: 'Refunded',
-            valueHtml: refFormatted,
-            titleText: refFormatted,
-            extraClass: ' accent-refund'
-        });
-    }
-
-    const statsHtml = stats.map(s => `
-                        <div class="mine-stat${s.extraClass}">
-                            <span class="mine-stat-icon"><i class="fa-solid ${s.icon}"></i></span>
-                            <div class="mine-stat-text">
-                                <div class="mine-stat-label" data-i18n="${s.labelKey}">${escapeHtml(t[s.labelKey] || s.fallback)}</div>
-                                <div class="mine-stat-value" title="${s.titleText}">${s.valueHtml}</div>
-                            </div>
-                        </div>`).join('');
+    const deltaHtml = (isPartial && refundedVal > 0)
+        ? `<span class="receipt-doc-amount-delta">−${escapeHtml(window.formatCurrency(refundedVal, currency, lang))}</span>`
+        : '';
 
     const lcMetaMap = {
-        active: { icon: 'fa-check', badgeCls: '', labelKey: 'status_business_verified', fallback: 'Verified' },
-        partially_refunded: { icon: 'fa-rotate-left', badgeCls: ' is-partial', labelKey: 'lifecycle_partially_refunded', fallback: 'Partial Refund' },
-        refunded: { icon: 'fa-rotate-left', badgeCls: ' is-refunded', labelKey: 'lifecycle_refunded', fallback: 'Refunded' },
-        voided: { icon: 'fa-ban', badgeCls: ' is-voided', labelKey: 'lifecycle_voided', fallback: 'Voided' },
+        active: { labelKey: 'status_business_verified', fallback: 'Verified' },
+        partially_refunded: { labelKey: 'lifecycle_partially_refunded', fallback: 'Partial Refund' },
+        refunded: { labelKey: 'lifecycle_refunded', fallback: 'Refunded' },
+        voided: { labelKey: 'lifecycle_voided', fallback: 'Voided' },
     };
     const lcMeta = lcMetaMap[lc] || lcMetaMap.active;
     const statusLabel = escapeHtml(t[lcMeta.labelKey] || lcMeta.fallback);
     const btnDownloadText = escapeHtml(t.btn_download || 'Скачать');
-    const shopName = escapeHtml(r.shop_name || '');
-    const email = escapeHtml(r.customer_email || '');
-
-    const lcPillHtml = lc !== 'active'
-        ? `<span class="lifecycle-pill is-${escapeHtml(lc)}" data-i18n="${lcMeta.labelKey}">${statusLabel}</span>`
-        : '';
+    const shopName = escapeHtml(r.shop_name || '—');
 
     let lifecycleNoteHtml = '';
     if (lc !== 'active' && (r.status_reason || r.status_changed_at)) {
         const changedStr = r.status_changed_at ? new Date(r.status_changed_at).toLocaleDateString(locale) : '';
         const reasonStr = r.status_reason ? escapeHtml(r.status_reason) : '';
         lifecycleNoteHtml = `
-                <div class="receipt-lifecycle-meta is-${escapeHtml(lc)}">
-                    ${changedStr ? `<span><strong>${statusLabel}</strong> · ${escapeHtml(changedStr)}</span>` : ''}
-                    ${reasonStr ? `<span>${escapeHtml(t.lifecycle_reason_prefix || 'Причина:')} ${reasonStr}</span>` : ''}
-                </div>`;
+            <div class="receipt-lifecycle-meta is-${escapeHtml(lc)}">
+                ${changedStr ? `<span><strong>${statusLabel}</strong> · ${escapeHtml(changedStr)}</span>` : ''}
+                ${reasonStr ? `<span>${escapeHtml(t.lifecycle_reason_prefix || 'Причина:')} ${reasonStr}</span>` : ''}
+            </div>`;
     }
 
     return `
-        <div class="mine-item-card business${lc !== 'active' ? ` lifecycle-${escapeHtml(lc)}` : ''}" data-id="${escapeHtml(r.id)}" data-lifecycle-status="${escapeHtml(lc)}">
-            <div class="mine-item-header">
-                <div class="mine-item-icon">
-                    <i class="fa-solid fa-file-invoice-dollar"></i>
-                    <span class="verified-check${lcMeta.badgeCls}" title="${statusLabel}" aria-label="${statusLabel}"><i class="fa-solid ${lcMeta.icon}"></i></span>
+        <article class="receipt-doc-card is-business lifecycle-${escapeHtml(lc)}" data-id="${escapeHtml(r.id)}" data-lifecycle-status="${escapeHtml(lc)}">
+            <div class="receipt-doc-top">
+                <div class="receipt-doc-identity">
+                    <div class="receipt-doc-icon is-${escapeHtml(lc)}" aria-hidden="true">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </div>
+                    <div class="receipt-doc-heading">
+                        <h3 class="receipt-doc-title" title="${receiptNum}">${receiptNum}</h3>
+                        <div class="receipt-doc-subtitle" title="${shopName}">
+                            <i class="fa-solid fa-store" aria-hidden="true"></i>
+                            <span>${shopName}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="mine-item-heading">
-                    <h3 class="mine-item-title" title="${receiptNum}">${receiptNum}</h3>
-                    <div class="mine-item-brand">${email}</div>
-                </div>
+                <span class="receipt-status-badge is-${escapeHtml(lc)}" data-i18n="${lcMeta.labelKey}">${statusLabel}</span>
             </div>
 
-            <div class="mine-item-body">
-                <div class="business-card-pills">
-                    <div class="shop-pill"><i class="fa-solid fa-store"></i> ${shopName}</div>
-                    ${lcPillHtml}
+            <div class="receipt-doc-hero">
+                <div class="receipt-doc-amount-wrap">
+                    <span class="receipt-doc-amount${closed ? ' is-struck' : ''}">${priceFormatted}</span>
+                    ${deltaHtml}
                 </div>
+                <span class="receipt-doc-date">
+                    <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                    <span>${escapeHtml(dateStr)}</span>
+                </span>
+            </div>
 
-                <div class="mine-stats-grid">${statsHtml}</div>
-
+            <div class="receipt-doc-content">
                 ${itemsListHtml}
                 ${lifecycleNoteHtml}
-
-                <div class="mine-item-actions download-only">
-                    <button class="btn-action btn-download-biz" data-receipt-id="${escapeHtml(r.id)}" title="${btnDownloadText}">
-                        <i class="fa-solid fa-download"></i> <span data-i18n="btn_download">${btnDownloadText}</span>
-                    </button>
-                </div>
             </div>
-        </div>
+
+            <div class="receipt-doc-actions">
+                <button type="button" class="receipt-doc-btn is-primary btn-download-biz" data-receipt-id="${escapeHtml(r.id)}" title="${btnDownloadText}">
+                    <i class="fa-solid fa-download" aria-hidden="true"></i>
+                    <span data-i18n="btn_download">${btnDownloadText}</span>
+                </button>
+            </div>
+        </article>
     `;
 }
 
 function renderPersonalCard(r, t) {
+    const lang = getLang();
     const isPdf = r.file_type === 'application/pdf';
     const isImage = r.file_type && r.file_type.startsWith('image/');
     const iconClass = isPdf ? 'fa-file-pdf' : isImage ? 'fa-file-image' : 'fa-file-invoice';
+    const typeKey = isPdf ? 'receipt_type_pdf' : isImage ? 'receipt_type_image' : 'receipt_type_file';
+    const typeFallback = isPdf ? 'PDF' : isImage ? (lang === 'ru' ? 'Фото' : 'Photo') : (lang === 'ru' ? 'Файл' : 'File');
+    const typeLabel = escapeHtml(t[typeKey] || typeFallback);
 
-    const stats = [];
-    if (r.display_amount) {
-        stats.push({ icon: 'fa-tag', labelKey: 'stat_price', fallback: 'Price', value: escapeHtml(window.formatCurrency(parseFloat(r.display_amount), r.display_currency || 'EUR', getLang())) });
-    }
-    if (r.display_date) {
-        const date = new Date(r.display_date).toLocaleDateString(getLang() === 'ru' ? 'ru-RU' : 'en-US');
-        stats.push({ icon: 'fa-regular fa-calendar', labelKey: 'stat_date', fallback: 'Date', value: escapeHtml(date) });
-    }
-    if (r.display_store) {
-        stats.push({ icon: 'fa-store', labelKey: 'stat_store', fallback: 'Store', value: escapeHtml(r.display_store) });
-    }
-    if (r.is_linked) {
-        stats.push({ icon: 'fa-link', labelKey: 'stat_linked_item', fallback: 'Linked item', value: escapeHtml(r.item_name) });
-    }
-
-    const statsHtml = stats.map(s => `
-                        <div class="mine-stat">
-                            <span class="mine-stat-icon"><i class="fa-solid ${s.icon}"></i></span>
-                            <div class="mine-stat-text">
-                                <div class="mine-stat-label" data-i18n="${s.labelKey}">${escapeHtml(t[s.labelKey] || s.fallback)}</div>
-                                <div class="mine-stat-value" title="${s.value}">${s.value}</div>
-                            </div>
-                        </div>`).join('');
+    const amountVal = parseFloat(r.display_amount);
+    const hasAmount = Number.isFinite(amountVal) && amountVal > 0;
+    const priceFormatted = hasAmount
+        ? escapeHtml(window.formatCurrency(amountVal, r.display_currency || 'EUR', lang))
+        : '';
+    const dateStr = r.display_date
+        ? escapeHtml(new Date(r.display_date).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US'))
+        : '';
 
     const displayName = escapeHtml(r.display_name);
+    const storeHtml = r.display_store ? `
+        <div class="receipt-doc-subtitle" title="${escapeHtml(r.display_store)}">
+            <i class="fa-solid fa-store" aria-hidden="true"></i>
+            <span>${escapeHtml(r.display_store)}</span>
+        </div>` : '';
+
+    const heroHtml = (hasAmount || dateStr) ? `
+        <div class="receipt-doc-hero${!hasAmount ? ' is-date-only' : ''}">
+            ${hasAmount ? `<div class="receipt-doc-amount-wrap"><span class="receipt-doc-amount">${priceFormatted}</span></div>` : ''}
+            ${dateStr ? `<span class="receipt-doc-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><span>${dateStr}</span></span>` : ''}
+        </div>` : '';
+
+    const linkedHtml = r.is_linked ? `
+        <div class="receipt-doc-linked" title="${escapeHtml(r.item_name)}">
+            <i class="fa-solid fa-link" aria-hidden="true"></i>
+            <span class="receipt-doc-linked-label" data-i18n="receipt_linked_label">${escapeHtml(t.receipt_linked_label || (lang === 'ru' ? 'Товар' : 'Item'))}:</span>
+            <span class="receipt-doc-linked-val">${escapeHtml(r.item_name)}</span>
+        </div>` : '';
+
     const btnViewText = escapeHtml(t.btn_view || 'Просмотр');
     const btnDownloadText = escapeHtml(t.btn_download || 'Скачать');
     const btnDeleteText = escapeHtml(t.btn_delete || 'Удалить');
 
     return `
-        <div class="mine-item-card" data-id="${escapeHtml(r.id)}">
-            <div class="mine-item-header">
-                <div class="mine-item-icon"><i class="fa-solid ${iconClass}"></i></div>
-                <div class="mine-item-heading">
-                    <h3 class="mine-item-title" title="${displayName}">${displayName}</h3>
+        <article class="receipt-doc-card is-personal" data-id="${escapeHtml(r.id)}">
+            <div class="receipt-doc-top">
+                <div class="receipt-doc-identity">
+                    <div class="receipt-doc-icon is-personal" aria-hidden="true">
+                        <i class="fa-solid ${iconClass}"></i>
+                    </div>
+                    <div class="receipt-doc-heading">
+                        <h3 class="receipt-doc-title" title="${displayName}">${displayName}</h3>
+                        ${storeHtml}
+                    </div>
                 </div>
+                <span class="receipt-type-badge" data-i18n="${typeKey}">${typeLabel}</span>
             </div>
 
-            <div class="mine-item-body">
-                ${stats.length ? `<div class="mine-stats-grid">${statsHtml}</div>` : ''}
+            ${heroHtml}
 
-                <div class="mine-item-actions receipt-actions">
-                    <button class="btn-action btn-view-receipt"
-                            data-url="${escapeHtml(r.file_url)}"
-                            title="${btnViewText}">
-                        <i class="fa-solid fa-eye"></i> <span data-i18n="btn_view">${btnViewText}</span>
-                    </button>
-                    <button class="btn-action btn-download-receipt" data-url="${escapeHtml(r.file_url)}" data-name="${displayName}" title="${btnDownloadText}">
-                        <i class="fa-solid fa-download"></i> <span data-i18n="btn_download">${btnDownloadText}</span>
-                    </button>
-                    <button class="btn-action btn-delete-receipt" data-id="${escapeHtml(r.id)}" title="${btnDeleteText}">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
+            <div class="receipt-doc-content">
+                ${linkedHtml}
             </div>
-        </div>
+
+            <div class="receipt-doc-actions">
+                <button type="button" class="receipt-doc-btn is-primary btn-view-receipt"
+                        data-url="${escapeHtml(r.file_url)}"
+                        title="${btnViewText}">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                    <span data-i18n="btn_view">${btnViewText}</span>
+                </button>
+                <button type="button" class="receipt-doc-btn is-secondary btn-download-receipt"
+                        data-url="${escapeHtml(r.file_url)}" data-name="${displayName}"
+                        title="${btnDownloadText}">
+                    <i class="fa-solid fa-download" aria-hidden="true"></i>
+                    <span data-i18n="btn_download">${btnDownloadText}</span>
+                </button>
+                <button type="button" class="receipt-doc-btn is-danger is-icon btn-delete-receipt"
+                        data-id="${escapeHtml(r.id)}"
+                        title="${btnDeleteText}" aria-label="${btnDeleteText}">
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                </button>
+            </div>
+        </article>
     `;
 }
 
