@@ -180,6 +180,19 @@ const dashboardTranslations = {
         loading_items_check: "Проверяем данные…",
         loading_items_update: "Обновляем статусы…",
         load_error: "Ошибка загрузки. Обновите страницу.",
+        lifecycle_voided: "Аннулирован",
+        lifecycle_refunded: "Возврат",
+        lifecycle_partially_refunded: "Частичный возврат",
+        lifecycle_reason_prefix: "Причина:",
+        lifecycle_refunded_short: "Возврат",
+        lifecycle_item_returned_badge: "Возвращено",
+        lifecycle_item_returned_short: "−{n} возвр.",
+        notif_receipt_voided_title: "Чек {num} аннулирован",
+        notif_receipt_voided_text: "Магазин «{shop}» аннулировал чек.{reason}",
+        notif_receipt_refunded_title: "Возврат по чеку {num}",
+        notif_receipt_refunded_text: "Магазин «{shop}» оформил полный возврат ({amount}).{reason}",
+        notif_receipt_partial_title: "Частичный возврат по чеку {num}",
+        notif_receipt_partial_text: "Магазин «{shop}» вернул часть позиций ({amount}).{reason}",
     },
     en: {
         page_title: "Valuon — Dashboard",
@@ -362,9 +375,22 @@ const dashboardTranslations = {
         loading_items_check: "Checking data…",
         loading_items_update: "Updating statuses…",
         load_error: "Load error. Please refresh.",
+        lifecycle_voided: "Voided",
+        lifecycle_refunded: "Refunded",
+        lifecycle_partially_refunded: "Partial Refund",
+        lifecycle_reason_prefix: "Reason:",
+        lifecycle_refunded_short: "Refunded",
+        lifecycle_item_returned_badge: "Refunded",
+        lifecycle_item_returned_short: "−{n} ref.",
+        notif_receipt_voided_title: "Receipt {num} voided",
+        notif_receipt_voided_text: "Store \"{shop}\" voided the receipt.{reason}",
+        notif_receipt_refunded_title: "Refund on receipt {num}",
+        notif_receipt_refunded_text: "Store \"{shop}\" issued a full refund ({amount}).{reason}",
+        notif_receipt_partial_title: "Partial refund on receipt {num}",
+        notif_receipt_partial_text: "Store \"{shop}\" refunded part of your order ({amount}).{reason}",
     }
 };
-window.animateCount = function(el, target, duration) {
+window.animateCount = function (el, target, duration) {
     if (!el) return;
     const start = parseInt(el.textContent) || 0;
     if (start === target) { el.textContent = String(target); return; }

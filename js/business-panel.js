@@ -50,47 +50,166 @@ async function initBusinessPanel() {
         }
     };
 
+    let receiptFilter = 'all';
+
+    function getLifecycleStatus(r) {
+        return r?.lifecycle_status || 'active';
+    }
+
+    function isReceiptClosed(r) {
+        const lc = getLifecycleStatus(r);
+        return lc === 'voided' || lc === 'refunded';
+    }
+
+    function getNetReceiptRevenue(r) {
+        if (isReceiptClosed(r)) return 0;
+        const gross = parseFloat(r?.gross_total) || 0;
+        if (getLifecycleStatus(r) === 'partially_refunded') {
+            const ref = parseFloat(r?.refunded_amount) || 0;
+            return Math.max(0, Math.round((gross - ref) * 100) / 100);
+        }
+        return gross;
+    }
+
+    function getVoidRemainingHours(r) {
+        if (getLifecycleStatus(r) !== 'active' || !r?.created_at) return 0;
+        const elapsedMs = Date.now() - new Date(r.created_at).getTime();
+        const limitMs = 24 * 60 * 60 * 1000;
+        if (elapsedMs > limitMs) return 0;
+        return Math.max(1, Math.ceil((limitMs - elapsedMs) / (60 * 60 * 1000)));
+    }
+
+    function calcLineRefundAmount(item, deltaQty) {
+        const qty = Math.max(1, parseInt(item.qty, 10) || 1);
+        const already = Math.max(0, parseInt(item.refunded_qty, 10) || 0);
+        const gross = parseFloat(item.gross_total) || 0;
+        const safeDelta = Math.max(0, Math.min(qty - already, parseInt(deltaQty, 10) || 0));
+        if (safeDelta <= 0) return 0;
+        const prevRefundedAmt = Math.round((gross * already / qty) * 100) / 100;
+        if (already + safeDelta >= qty) {
+            return Math.max(0, Math.round((gross - prevRefundedAmt) * 100) / 100);
+        }
+        return Math.round((gross * safeDelta / qty) * 100) / 100;
+    }
+
+    function filterReceiptsList(receiptsList) {
+        if (receiptFilter === 'active') {
+            return receiptsList.filter(r => !isReceiptClosed(r));
+        }
+        if (receiptFilter === 'closed') {
+            return receiptsList.filter(r => getLifecycleStatus(r) !== 'active');
+        }
+        return receiptsList;
+    }
+
     function renderReceiptCards(gridEl, receiptsList) {
         const currentLang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
         const bt = window.businessTranslations || {};
-        const warrantySuffix = bt[currentLang]?.warranty_suffix || 'мес.';
+        const t = bt[currentLang] || bt.ru || {};
+        const warrantySuffix = t.warranty_suffix || 'мес.';
         const payMethodMap = {
-            card: bt[currentLang]?.payment_card || 'Card',
-            cash: bt[currentLang]?.payment_cash || 'Cash',
+            card: t.payment_card || 'Card',
+            cash: t.payment_cash || 'Cash',
         };
 
-        gridEl.grid.innerHTML = receiptsList.map(r => {
+        const filtered = filterReceiptsList(receiptsList || []);
+        const filteredEmptyMsg = document.getElementById('no-filtered-receipts-msg');
+        if (filteredEmptyMsg) {
+            filteredEmptyMsg.style.display = (receiptsList && receiptsList.length > 0 && filtered.length === 0) ? 'block' : 'none';
+        }
 
+        const locale = currentLang === 'ru' ? 'ru-RU' : 'en-US';
+
+        gridEl.grid.innerHTML = filtered.map(r => {
+            const lc = getLifecycleStatus(r);
+            const closed = lc === 'voided' || lc === 'refunded';
+            const isPartial = lc === 'partially_refunded';
             const isVerified = r.status === 'verified';
             const statusClass = isVerified ? 'active' : 'warning';
             const statusKey = isVerified ? 'status_verified' : 'status_pending';
-            const dateStr = new Date(r.purchase_date).toLocaleDateString(currentLang === 'ru' ? 'ru-RU' : 'en-US');
+            const dateStr = new Date(r.purchase_date).toLocaleDateString(locale);
 
             const lineItems = Array.isArray(r.receipt_items) ? r.receipt_items : [];
             const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
             const itemsCount = lineItems.length;
             const payMethodVal = r.payment_method ? r.payment_method.toLowerCase() : '';
             const payMethod = payMethodMap[payMethodVal] || r.payment_method || '—';
+            const currency = r.currency || 'EUR';
+            const grossVal = parseFloat(r.gross_total) || 0;
+            const refundedVal = parseFloat(r.refunded_amount) || 0;
+            const netVal = getNetReceiptRevenue(r);
+
+            const lcKeyMap = {
+                voided: 'lifecycle_voided',
+                refunded: 'lifecycle_refunded',
+                partially_refunded: 'lifecycle_partially_refunded',
+            };
+
+            const badgesHtml = lc === 'active'
+                ? `<span class="item-status-badge ${statusClass}" data-i18n="${statusKey}">${escapeHtml(t[statusKey] || '')}</span>`
+                : `<div class="item-header-badges">
+                       <span class="item-status-badge lifecycle-${escapeHtml(lc)}" data-i18n="${lcKeyMap[lc]}">${escapeHtml(t[lcKeyMap[lc]] || lc)}</span>
+                       ${isPartial ? `<span class="item-status-badge ${statusClass}" data-i18n="${statusKey}">${escapeHtml(t[statusKey] || '')}</span>` : ''}
+                   </div>`;
+
+            const amountTagHtml = closed
+                ? `<span class="tag tag-amount-struck"><i class="fa-solid fa-tag"></i> ${escapeHtml(window.formatCurrency(grossVal, currency, currentLang))}</span>`
+                : isPartial
+                    ? `<span class="tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(window.formatCurrency(netVal, currency, currentLang))}</span>
+                       <span class="tag tag-refunded-chip"><i class="fa-solid fa-rotate-left"></i> −${escapeHtml(window.formatCurrency(refundedVal, currency, currentLang))}</span>`
+                    : `<span class="tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(window.formatCurrency(grossVal, currency, currentLang))}</span>`;
+
+            const renderLineItem = (it) => {
+                const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+                const refQty = Math.max(0, parseInt(it.refunded_qty, 10) || 0);
+                const fullRef = !closed && refQty >= qty;
+                const partRef = !closed && refQty > 0 && refQty < qty;
+                const refPill = fullRef
+                    ? `<span class="item-refund-pill">${escapeHtml(t.lifecycle_item_returned_badge || 'Возвращено')}</span>`
+                    : partRef
+                        ? `<span class="item-refund-pill partial">${escapeHtml((t.lifecycle_item_returned_short || '−{n} возвр.').replace('{n}', String(refQty)))}</span>`
+                        : '';
+                return {
+                    cls: fullRef ? 'item-row-refunded' : '',
+                    inner: `<span class="item-name">${escapeHtml(it.item_name)}</span> <span class="item-qty">×${qty}</span> ${refPill}${it.warranty_months && !fullRef && !closed ? ` <span class="item-warranty">${it.warranty_months} ${escapeHtml(warrantySuffix)}</span>` : ''}`
+                };
+            };
 
             const itemsHtml = itemsCount > 0 ? `
-                <div class="receipt-card-items">
+                <div class="receipt-card-items${closed ? ' is-struck' : ''}">
                     ${itemsCount === 1
-                    ? `<div class="receipt-card-item single">
-                               <span class="item-name">${escapeHtml(lineItems[0].item_name)}</span>
-                               <span class="item-qty">×${lineItems[0].qty}</span>
-                               <span class="item-warranty">${lineItems[0].warranty_months ? `${lineItems[0].warranty_months} ${warrantySuffix}` : ''}</span>
-                           </div>`
-                    : `<ul class="receipt-card-items-list">${lineItems.map(it =>
-                        `<li><span class="item-name">${escapeHtml(it.item_name)}</span> <span class="item-qty">×${it.qty}</span>${it.warranty_months ? ` <span class="item-warranty">${it.warranty_months} ${warrantySuffix}</span>` : ''}</li>`
-                    ).join('')}</ul>`
+                    ? (() => {
+                        const row = renderLineItem(lineItems[0]);
+                        return `<div class="receipt-card-item single ${row.cls}">${row.inner}</div>`;
+                    })()
+                    : `<ul class="receipt-card-items-list">${lineItems.map(it => {
+                        const row = renderLineItem(it);
+                        return `<li class="${row.cls}">${row.inner}</li>`;
+                    }).join('')}</ul>`
                 }
                 </div>` : '';
 
+            let lifecycleMetaHtml = '';
+            if (lc !== 'active' && (r.status_reason || r.status_changed_at)) {
+                const changedStr = r.status_changed_at ? new Date(r.status_changed_at).toLocaleDateString(locale) : '';
+                const reasonText = r.status_reason ? escapeHtml(r.status_reason) : '';
+                lifecycleMetaHtml = `
+                <div class="receipt-lifecycle-meta is-${escapeHtml(lc)}">
+                    ${changedStr ? `<span><strong>${escapeHtml(t[lcKeyMap[lc]] || '')}</strong> · ${escapeHtml(changedStr)}</span>` : ''}
+                    ${reasonText ? `<span>${escapeHtml(t.lifecycle_reason_prefix || 'Причина:')} ${reasonText}</span>` : ''}
+                </div>`;
+            }
+
+            const manageBtnHtml = !closed ? `
+                    <button type="button" class="btn-action manage-lifecycle btn-manage-lifecycle" data-id="${escapeHtml(r.id)}" data-i18n-title="lifecycle_manage_tooltip" title="${escapeHtml(t.lifecycle_manage_tooltip || 'Возврат / Аннулирование')}">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>` : '';
+
             return `
-        <div class="item-card status-${escapeHtml(r.status)}" data-receipt-id="${escapeHtml(r.id)}" data-receipt-status="${escapeHtml(r.status)}" data-receipt-date="${escapeHtml(r.purchase_date)}">
+        <div class="item-card status-${escapeHtml(r.status)} lifecycle-${escapeHtml(lc)}" data-receipt-id="${escapeHtml(r.id)}" data-receipt-status="${escapeHtml(r.status)}" data-lifecycle-status="${escapeHtml(lc)}" data-receipt-date="${escapeHtml(r.purchase_date)}">
             <div class="item-header">
                 <div class="item-icon"><i class="fa-solid fa-receipt"></i></div>
-                <span class="item-status-badge ${statusClass}" data-i18n="${statusKey}">${bt[currentLang]?.[statusKey] || ''}</span>
+                ${badgesHtml}
             </div>
             <div class="item-body">
                 <h3 class="item-title" title="${escapeHtml(receiptNum)}">${escapeHtml(receiptNum)}</h3>
@@ -98,22 +217,21 @@ async function initBusinessPanel() {
                     <i class="fa-regular fa-envelope"></i> ${escapeHtml(r.customer_email)}
                 </div>
                 <div class="item-tags">
-                    <span class="tag"><i class="fa-solid fa-tag"></i> ${window.formatCurrency(parseFloat(r.gross_total) || 0, r.currency || 'EUR', currentLang)}</span>
+                    ${amountTagHtml}
                     <span class="tag"><i class="fa-solid fa-calendar-days"></i> <span class="receipt-date">${escapeHtml(dateStr)}</span></span>
                     <span class="tag"><i class="fa-solid fa-credit-card"></i> ${escapeHtml(payMethod)}</span>
-                    ${r.pos_serial ? `<span class="tag" title="${escapeHtml(bt[currentLang]?.pos_serial_label || 'Register S/N')}"><i class="fa-solid fa-cash-register"></i> ${escapeHtml(r.pos_serial)}</span>` : ''}
+                    ${r.pos_serial ? `<span class="tag" title="${escapeHtml(t.pos_serial_label || 'Register S/N')}"><i class="fa-solid fa-cash-register"></i> ${escapeHtml(r.pos_serial)}</span>` : ''}
                     ${itemsCount > 1 ? `<span class="tag"><i class="fa-solid fa-boxes-stacked"></i> ${itemsCount}</span>` : ''}
                 </div>
 
                 ${itemsHtml}
+                ${lifecycleMetaHtml}
 
                 <div class="item-actions">
-                    <button class="btn-action download btn-download-receipt" data-id="${r.id}" data-i18n-title="download_receipt_title">
-                        <i class="fa-solid fa-download"></i> <span data-i18n="download_btn"></span>
+                    <button type="button" class="btn-action download btn-download-receipt" data-id="${escapeHtml(r.id)}" data-i18n-title="download_receipt_title">
+                        <i class="fa-solid fa-download"></i> <span data-i18n="download_btn">${escapeHtml(t.download_btn || 'Скачать')}</span>
                     </button>
-                    <button class="btn-action delete btn-delete-receipt" data-id="${r.id}" data-i18n-title="delete_btn_tooltip">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
+                    ${manageBtnHtml}
                 </div>
             </div>
         </div>`;
@@ -1791,7 +1909,460 @@ async function initBusinessPanel() {
         });
     }
 
-    let currentDeleteCleanup = null;
+    // === Receipt Lifecycle Modal (Refund / Void) ===
+    const lcModal = document.getElementById('receipt-lifecycle-modal');
+    const lcForm = document.getElementById('receipt-lifecycle-form');
+    const lcSubtitle = document.getElementById('lifecycle-modal-subtitle');
+    const lcCloseBtn = document.getElementById('close-lifecycle-modal');
+    const lcCancelBtn = document.getElementById('cancel-lifecycle-btn');
+    const lcConfirmBtn = document.getElementById('confirm-lifecycle-btn');
+    const lcConfirmLabel = document.getElementById('confirm-lifecycle-label');
+    const lcTabBtns = Array.from(document.querySelectorAll('#receipt-lifecycle-modal .lifecycle-tab-btn'));
+    const lcVoidNotice = document.getElementById('lifecycle-void-notice');
+    const lcRefundSection = document.getElementById('lifecycle-refund-section');
+    const lcItemsList = document.getElementById('lifecycle-items-list');
+    const lcSelectAllBtn = document.getElementById('lifecycle-select-all-btn');
+    const lcRefundTotal = document.getElementById('lifecycle-refund-total');
+    const lcRefundKindBadge = document.getElementById('lifecycle-refund-kind-badge');
+    const lcReasonPresets = document.getElementById('lifecycle-reason-presets');
+    const lcReasonInput = document.getElementById('lifecycle-reason-input');
+    const lcErrorEl = document.getElementById('lifecycle-error');
+
+    let lcReceipt = null;
+    let lcAction = 'refund';
+    let lcSelections = new Map(); // itemId -> qty to refund (0 = unchecked)
+    let lcSubmitting = false;
+
+    function getBizT() {
+        const lang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
+        return { lang, t: window.businessTranslations?.[lang] || window.businessTranslations?.ru || {} };
+    }
+
+    function closeLifecycleModal() {
+        if (!lcModal || lcModal.classList.contains('is-hidden') || lcModal.classList.contains('closing') || lcSubmitting) return;
+        lcModal.classList.add('closing');
+        setTimeout(() => {
+            lcModal.classList.add('is-hidden');
+            lcModal.classList.remove('closing');
+            lcModal.setAttribute('aria-hidden', 'true');
+            document.documentElement.classList.remove('modal-open');
+            lcReceipt = null;
+            lcSelections.clear();
+        }, 250);
+    }
+
+    if (lcModal) {
+        attachModalA11y(lcModal, { mode: 'hidden', onClose: closeLifecycleModal });
+        lcCloseBtn?.addEventListener('click', closeLifecycleModal);
+        lcCancelBtn?.addEventListener('click', closeLifecycleModal);
+        lcModal.addEventListener('click', (e) => {
+            if (e.target === lcModal || e.target.classList.contains('modal-backdrop')) {
+                closeLifecycleModal();
+            }
+        });
+    }
+
+    function setLifecycleError(msg) {
+        if (!lcErrorEl) return;
+        lcErrorEl.textContent = msg || '';
+    }
+
+    function renderLifecyclePresets() {
+        if (!lcReasonPresets) return;
+        const { t } = getBizT();
+        const presets = lcAction === 'void'
+            ? (t.lifecycle_presets_void || [])
+            : (t.lifecycle_presets_refund || []);
+        const currentVal = (lcReasonInput?.value || '').trim();
+        lcReasonPresets.innerHTML = presets.map(p =>
+            `<button type="button" class="lifecycle-preset-chip${currentVal === p ? ' active' : ''}" data-preset="${escapeHtml(p)}">${escapeHtml(p)}</button>`
+        ).join('');
+    }
+
+    function updateLifecycleRefundSummary() {
+        if (!lcReceipt || !lcRefundTotal) return;
+        const { lang, t } = getBizT();
+        const currency = lcReceipt.currency || currentShop?.currency || 'EUR';
+        const lineItems = Array.isArray(lcReceipt.receipt_items) ? lcReceipt.receipt_items : [];
+
+        let totalDelta = 0;
+        let allRemainingSelected = true;
+        let anySelected = false;
+        let selectableCount = 0;
+
+        lineItems.forEach(it => {
+            const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+            const already = Math.max(0, parseInt(it.refunded_qty, 10) || 0);
+            const remaining = Math.max(0, qty - already);
+            if (remaining > 0) {
+                selectableCount++;
+                const selQty = lcSelections.get(String(it.id)) || 0;
+                if (selQty > 0) {
+                    anySelected = true;
+                    totalDelta += calcLineRefundAmount(it, selQty);
+                }
+                if (selQty < remaining) allRemainingSelected = false;
+            }
+        });
+
+        totalDelta = Math.round(totalDelta * 100) / 100;
+        const gross = parseFloat(lcReceipt.gross_total) || 0;
+        const prevRef = parseFloat(lcReceipt.refunded_amount) || 0;
+        if (allRemainingSelected && anySelected) {
+            totalDelta = Math.max(0, Math.round((gross - prevRef) * 100) / 100);
+        }
+
+        lcRefundTotal.textContent = window.formatCurrency(totalDelta, currency, lang);
+
+        if (lcRefundKindBadge) {
+            if (!anySelected) {
+                lcRefundKindBadge.textContent = '';
+                lcRefundKindBadge.classList.remove('is-full');
+            } else if (allRemainingSelected) {
+                lcRefundKindBadge.textContent = t.lifecycle_kind_full || 'Полный возврат';
+                lcRefundKindBadge.classList.add('is-full');
+            } else {
+                lcRefundKindBadge.textContent = t.lifecycle_kind_partial || 'Частичный возврат';
+                lcRefundKindBadge.classList.remove('is-full');
+            }
+        }
+
+        if (lcSelectAllBtn) {
+            const key = (allRemainingSelected && selectableCount > 0) ? 'lifecycle_deselect_all' : 'lifecycle_select_all';
+            lcSelectAllBtn.textContent = t[key] || (key === 'lifecycle_deselect_all' ? 'Снять выбор' : 'Выбрать все');
+        }
+    }
+
+    function renderLifecycleItems() {
+        if (!lcReceipt || !lcItemsList) return;
+        const { lang, t } = getBizT();
+        const currency = lcReceipt.currency || currentShop?.currency || 'EUR';
+        const lineItems = Array.isArray(lcReceipt.receipt_items) ? lcReceipt.receipt_items : [];
+
+        lcItemsList.innerHTML = lineItems.map(it => {
+            const id = String(it.id || '');
+            const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+            const already = Math.max(0, parseInt(it.refunded_qty, 10) || 0);
+            const remaining = Math.max(0, qty - already);
+            const exhausted = remaining <= 0;
+            const selQty = exhausted ? 0 : (lcSelections.get(id) || 0);
+            const checked = selQty > 0;
+            const previewAmt = checked ? calcLineRefundAmount(it, selQty) : calcLineRefundAmount(it, remaining);
+            const subText = exhausted
+                ? (t.lifecycle_item_returned_badge || 'Возвращено')
+                : already > 0
+                    ? (t.lifecycle_item_remaining || 'Доступно: {rem} из {qty}').replace('{rem}', String(remaining)).replace('{qty}', String(qty))
+                    : `×${qty}`;
+
+            const stepperHtml = (!exhausted && remaining > 1 && checked) ? `
+                <div class="lifecycle-qty-stepper" data-item-id="${escapeHtml(id)}">
+                    <button type="button" class="lifecycle-qty-btn" data-qty-delta="-1" ${selQty <= 1 ? 'disabled' : ''} aria-label="−">−</button>
+                    <span class="lifecycle-qty-val">${selQty}</span>
+                    <button type="button" class="lifecycle-qty-btn" data-qty-delta="1" ${selQty >= remaining ? 'disabled' : ''} aria-label="+">+</button>
+                </div>` : '';
+
+            return `
+                <div class="lifecycle-item-row${checked ? ' is-selected' : ''}${exhausted ? ' is-exhausted' : ''}" data-item-id="${escapeHtml(id)}">
+                    <input type="checkbox" class="lifecycle-item-check" data-item-id="${escapeHtml(id)}" ${checked ? 'checked' : ''} ${exhausted ? 'disabled' : ''}>
+                    <div class="lifecycle-item-info">
+                        <span class="lifecycle-item-name" title="${escapeHtml(it.item_name)}">${escapeHtml(it.item_name)}</span>
+                        <span class="lifecycle-item-sub">${escapeHtml(subText)}</span>
+                    </div>
+                    ${stepperHtml}
+                    <span class="lifecycle-item-amount">${exhausted ? '—' : escapeHtml(window.formatCurrency(previewAmt, currency, lang))}</span>
+                </div>`;
+        }).join('');
+
+        updateLifecycleRefundSummary();
+    }
+
+    function updateLifecycleTabUI() {
+        if (!lcReceipt) return;
+        const { t } = getBizT();
+        const lc = getLifecycleStatus(lcReceipt);
+        const voidHours = getVoidRemainingHours(lcReceipt);
+        const voidAllowed = lc === 'active' && voidHours > 0;
+
+        lcTabBtns.forEach(btn => {
+            const act = btn.dataset.lifecycleAction;
+            const isActive = act === lcAction;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-selected', String(isActive));
+            if (act === 'void') {
+                btn.disabled = !voidAllowed;
+            }
+        });
+
+        if (lcRefundSection) {
+            lcRefundSection.classList.toggle('is-hidden', lcAction !== 'refund');
+        }
+
+        if (lcVoidNotice) {
+            if (lcAction === 'void') {
+                lcVoidNotice.classList.remove('is-hidden', 'is-warning');
+                lcVoidNotice.innerHTML = `<i class="fa-solid fa-clock" aria-hidden="true"></i><span>${escapeHtml((t.lifecycle_void_available || '').replace('{hours}', String(voidHours)))}</span>`;
+            } else if (!voidAllowed) {
+                lcVoidNotice.classList.remove('is-hidden');
+                lcVoidNotice.classList.add('is-warning');
+                const msg = lc === 'partially_refunded'
+                    ? (t.lifecycle_void_has_refunds || 'По этому чеку уже был частичный возврат — аннулирование недоступно.')
+                    : (t.lifecycle_void_expired || 'Прошло более 24 часов — аннулирование недоступно. Оформите возврат.');
+                lcVoidNotice.innerHTML = `<i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>${escapeHtml(msg)}</span>`;
+            } else {
+                lcVoidNotice.classList.add('is-hidden');
+            }
+        }
+
+        if (lcConfirmLabel && lcConfirmBtn) {
+            const icon = lcConfirmBtn.querySelector('i');
+            if (lcAction === 'void') {
+                lcConfirmLabel.textContent = t.lifecycle_confirm_void || 'Аннулировать чек';
+                if (icon) icon.className = 'fa-solid fa-ban';
+            } else {
+                lcConfirmLabel.textContent = t.lifecycle_confirm_refund || 'Оформить возврат';
+                if (icon) icon.className = 'fa-solid fa-rotate-left';
+            }
+        }
+
+        setLifecycleError('');
+        renderLifecyclePresets();
+    }
+
+    function openLifecycleModal(receipt) {
+        if (!lcModal || !receipt || isReceiptClosed(receipt)) return;
+        lcReceipt = receipt;
+        lcAction = 'refund';
+        lcSelections.clear();
+        setLifecycleError('');
+
+        const lineItems = Array.isArray(receipt.receipt_items) ? receipt.receipt_items : [];
+        lineItems.forEach(it => {
+            const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+            const already = Math.max(0, parseInt(it.refunded_qty, 10) || 0);
+            const remaining = Math.max(0, qty - already);
+            if (remaining > 0 && it.id) {
+                lcSelections.set(String(it.id), remaining);
+            }
+        });
+
+        const receiptNum = receipt.receipt_number ? `#RCP-${receipt.receipt_number}` : `#${String(receipt.id).slice(0, 8).toUpperCase()}`;
+        if (lcSubtitle) {
+            lcSubtitle.textContent = `${receiptNum} · ${receipt.customer_email || ''}`;
+        }
+        if (lcReasonInput) {
+            lcReasonInput.value = '';
+        }
+
+        renderLifecycleItems();
+        updateLifecycleTabUI();
+
+        lcModal.classList.remove('is-hidden');
+        lcModal.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('modal-open');
+    }
+
+    lcTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.disabled) return;
+            const nextAction = btn.dataset.lifecycleAction;
+            if (nextAction === lcAction) return;
+            lcAction = nextAction;
+            if (lcReasonInput) lcReasonInput.value = '';
+            updateLifecycleTabUI();
+        });
+    });
+
+    lcSelectAllBtn?.addEventListener('click', () => {
+        if (!lcReceipt) return;
+        const lineItems = Array.isArray(lcReceipt.receipt_items) ? lcReceipt.receipt_items : [];
+        let allSelected = true;
+        lineItems.forEach(it => {
+            const rem = Math.max(0, (parseInt(it.qty, 10) || 1) - (parseInt(it.refunded_qty, 10) || 0));
+            if (rem > 0 && (lcSelections.get(String(it.id)) || 0) < rem) allSelected = false;
+        });
+
+        lineItems.forEach(it => {
+            const rem = Math.max(0, (parseInt(it.qty, 10) || 1) - (parseInt(it.refunded_qty, 10) || 0));
+            if (rem <= 0 || !it.id) return;
+            if (allSelected) lcSelections.delete(String(it.id));
+            else lcSelections.set(String(it.id), rem);
+        });
+        setLifecycleError('');
+        renderLifecycleItems();
+    });
+
+    lcItemsList?.addEventListener('change', (e) => {
+        const cb = e.target.closest('.lifecycle-item-check');
+        if (!cb || !lcReceipt) return;
+        const id = cb.dataset.itemId;
+        const item = (lcReceipt.receipt_items || []).find(x => String(x.id) === id);
+        if (!item) return;
+        const rem = Math.max(0, (parseInt(item.qty, 10) || 1) - (parseInt(item.refunded_qty, 10) || 0));
+        if (cb.checked && rem > 0) {
+            lcSelections.set(id, rem);
+        } else {
+            lcSelections.delete(id);
+        }
+        setLifecycleError('');
+        renderLifecycleItems();
+    });
+
+    lcItemsList?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.lifecycle-qty-btn');
+        if (!btn || !lcReceipt) return;
+        const stepper = btn.closest('.lifecycle-qty-stepper');
+        const id = stepper?.dataset.itemId;
+        const delta = parseInt(btn.dataset.qtyDelta, 10) || 0;
+        const item = (lcReceipt.receipt_items || []).find(x => String(x.id) === id);
+        if (!item) return;
+        const rem = Math.max(0, (parseInt(item.qty, 10) || 1) - (parseInt(item.refunded_qty, 10) || 0));
+        const cur = lcSelections.get(id) || 1;
+        const next = Math.max(1, Math.min(rem, cur + delta));
+        lcSelections.set(id, next);
+        renderLifecycleItems();
+    });
+
+    lcReasonPresets?.addEventListener('click', (e) => {
+        const chip = e.target.closest('.lifecycle-preset-chip');
+        if (!chip || !lcReasonInput) return;
+        lcReasonInput.value = chip.dataset.preset || '';
+        setLifecycleError('');
+        renderLifecyclePresets();
+    });
+
+    lcReasonInput?.addEventListener('input', () => {
+        setLifecycleError('');
+        renderLifecyclePresets();
+    });
+
+    lcForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!lcReceipt || lcSubmitting || !currentShop) return;
+
+        const { t } = getBizT();
+        const reason = (lcReasonInput?.value || '').trim();
+        if (!reason) {
+            setLifecycleError(t.lifecycle_err_reason_required || 'Укажите причину операции');
+            lcReasonInput?.focus();
+            return;
+        }
+
+        let pItems = null;
+        if (lcAction === 'refund') {
+            pItems = [];
+            (lcReceipt.receipt_items || []).forEach(it => {
+                const selQty = lcSelections.get(String(it.id)) || 0;
+                if (selQty > 0 && it.id) {
+                    pItems.push({ item_id: it.id, qty: selQty });
+                }
+            });
+            if (pItems.length === 0) {
+                setLifecycleError(t.lifecycle_err_items_required || 'Выберите хотя бы одну позицию для возврата');
+                return;
+            }
+        }
+
+        lcSubmitting = true;
+        if (lcConfirmBtn) {
+            lcConfirmBtn.disabled = true;
+            const icon = lcConfirmBtn.querySelector('i');
+            if (icon) icon.className = 'fa-solid fa-circle-notch fa-spin';
+        }
+
+        try {
+            const { data, error } = await client.rpc('change_receipt_lifecycle', {
+                p_receipt_id: lcReceipt.id,
+                p_action: lcAction,
+                p_reason: reason,
+                p_items: pItems,
+            });
+
+            if (error) throw error;
+
+            const newStatus = data?.lifecycle_status || (lcAction === 'void' ? 'voided' : 'refunded');
+            const toastMsg = newStatus === 'voided'
+                ? (t.lifecycle_success_void || 'Чек аннулирован')
+                : newStatus === 'partially_refunded'
+                    ? (t.lifecycle_success_partial || 'Частичный возврат оформлен')
+                    : (t.lifecycle_success_refund || 'Полный возврат оформлен');
+
+            window.showToast(toastMsg, 'success');
+            lcSubmitting = false;
+            closeLifecycleModal();
+            await refreshDashboard(client, currentShop.id, stats, list);
+        } catch (err) {
+            logError('biz:changeLifecycle', err);
+            const rawMsg = String(err?.message || '');
+            let userMsg = t.lifecycle_err_generic || 'Не удалось обновить статус чека';
+            if (err?.code === 'PGRST202' || err?.code === '42883' || rawMsg.includes('change_receipt_lifecycle')) {
+                userMsg = t.lifecycle_err_migration || 'Примените SQL-миграцию в Supabase для включения возвратов и аннулирования.';
+            } else if (rawMsg.includes('VOID_WINDOW_EXPIRED')) {
+                userMsg = t.lifecycle_err_void_window || 'Срок аннулирования (24 часа) истёк. Оформите возврат.';
+            } else if (rawMsg.includes('RECEIPT_ALREADY_CLOSED')) {
+                userMsg = t.lifecycle_err_already_closed || 'Чек уже закрыт.';
+            }
+            setLifecycleError(userMsg);
+            window.showToast(userMsg, 'error');
+        } finally {
+            lcSubmitting = false;
+            if (lcConfirmBtn) {
+                lcConfirmBtn.disabled = false;
+                const { t: t2 } = getBizT();
+                const icon = lcConfirmBtn.querySelector('i');
+                if (icon) {
+                    icon.className = lcAction === 'void' ? 'fa-solid fa-ban' : 'fa-solid fa-rotate-left';
+                }
+                if (lcConfirmLabel) {
+                    lcConfirmLabel.textContent = lcAction === 'void'
+                        ? (t2.lifecycle_confirm_void || 'Аннулировать чек')
+                        : (t2.lifecycle_confirm_refund || 'Оформить возврат');
+                }
+            }
+        }
+    });
+
+    // Filter bar & card action delegation (bound once, survives language switches)
+    const filterBar = document.getElementById('receipt-filter-bar');
+    if (filterBar) {
+        filterBar.addEventListener('click', (e) => {
+            const btn = e.target.closest('.receipt-filter-btn');
+            if (!btn) return;
+            const nextFilter = btn.dataset.receiptFilter || 'all';
+            if (nextFilter === receiptFilter) return;
+            receiptFilter = nextFilter;
+            filterBar.querySelectorAll('.receipt-filter-btn').forEach(b => {
+                const active = b === btn;
+                b.classList.toggle('active', active);
+                b.setAttribute('aria-selected', String(active));
+            });
+            renderReceiptCards(list, currentReceiptsList);
+            window.applyBusinessTranslations?.();
+        });
+    }
+
+    if (list.grid) {
+        list.grid.addEventListener('click', async (e) => {
+            const manageBtn = e.target.closest('.btn-manage-lifecycle');
+            if (manageBtn) {
+                const receiptId = manageBtn.dataset.id;
+                const receipt = currentReceiptsList.find(r => String(r.id) === String(receiptId));
+                if (receipt) openLifecycleModal(receipt);
+                return;
+            }
+
+            const dlBtn = e.target.closest('.btn-download-receipt');
+            if (dlBtn) {
+                const receiptId = dlBtn.dataset.id;
+                const receipt = currentReceiptsList.find(r => String(r.id) === String(receiptId));
+                if (receipt && currentShop) {
+                    await downloadReceiptPDF(receipt, currentShop);
+                } else {
+                    const errLang = localStorage.getItem('valuon-lang') || 'ru';
+                    window.showToast(errLang === 'en' ? 'Receipt data not found' : 'Не удалось найти данные чека', 'error');
+                }
+            }
+        });
+    }
 
     async function refreshDashboard(client, shopId, statsEl, listEl) {
         if (!shopId) return;
@@ -1800,38 +2371,47 @@ async function initBusinessPanel() {
 
         const emptyMsg = document.getElementById('no-receipts-msg');
         if (emptyMsg) emptyMsg.style.display = 'none';
+        const filteredEmptyMsg = document.getElementById('no-filtered-receipts-msg');
+        if (filteredEmptyMsg) filteredEmptyMsg.style.display = 'none';
 
         try {
             const receiptsSel = async () => {
-                const res = await client.from('business_receipts')
-                    .select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)')
+                const fullRes = await client.from('business_receipts')
+                    .select('id, receipt_number, status, lifecycle_status, status_changed_at, status_reason, refunded_amount, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order, refunded_qty)')
                     .eq('shop_id', shopId)
                     .order('created_at', { ascending: false })
                     .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
-                if (res.error && res.error.code === '42703') {
-                    // Колонки pos_* ещё не в БД (миграция не применена) — повторяем без них
-                    return client.from('business_receipts')
-                        .select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, receipt_items(item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)')
-                        .eq('shop_id', shopId)
-                        .order('created_at', { ascending: false })
-                        .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
-                }
-                return res;
+                if (!fullRes.error || fullRes.error.code !== '42703') return fullRes;
+
+                // Fallback 1: lifecycle columns not yet migrated, pos_* present
+                const noLcRes = await client.from('business_receipts')
+                    .select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)')
+                    .eq('shop_id', shopId)
+                    .order('created_at', { ascending: false })
+                    .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
+                if (!noLcRes.error || noLcRes.error.code !== '42703') return noLcRes;
+
+                // Fallback 2: legacy schema without pos_* and lifecycle_*
+                return client.from('business_receipts')
+                    .select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)')
+                    .eq('shop_id', shopId)
+                    .order('created_at', { ascending: false })
+                    .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
             };
 
-            const [totalRes, pendingRes, receiptsRes] = await Promise.all([
-                client.from('business_receipts').select('*', { count: 'exact', head: true }).eq('shop_id', shopId),
-                client.from('business_receipts').select('*', { count: 'exact', head: true }).eq('shop_id', shopId).eq('status', 'pending'),
-                receiptsSel()
-            ]);
-
-            if (statsEl.total) { statsEl.total.textContent = '0'; window.animateCount(statsEl.total, totalRes.count || 0); }
-            if (statsEl.pending) { statsEl.pending.textContent = '0'; window.animateCount(statsEl.pending, pendingRes.count || 0); }
+            const receiptsRes = await receiptsSel();
+            if (receiptsRes.error) throw receiptsRes.error;
 
             const receipts = receiptsRes.data || [];
-            const grossTotals = receipts.map(r => parseFloat(r.gross_total)).filter(v => Number.isFinite(v));
-            const totalRevenue = grossTotals.reduce((s, v) => s + v, 0);
-            const avgReceipt = grossTotals.length > 0 ? totalRevenue / grossTotals.length : 0;
+            const activeReceipts = receipts.filter(r => !isReceiptClosed(r));
+            const pendingCount = activeReceipts.filter(r => r.status === 'pending').length;
+
+            if (statsEl.total) { statsEl.total.textContent = '0'; window.animateCount(statsEl.total, receipts.length); }
+            if (statsEl.pending) { statsEl.pending.textContent = '0'; window.animateCount(statsEl.pending, pendingCount); }
+
+            const netRevenues = activeReceipts.map(r => getNetReceiptRevenue(r)).filter(v => Number.isFinite(v));
+            const totalRevenue = Math.round(netRevenues.reduce((s, v) => s + v, 0) * 100) / 100;
+            const avgReceipt = netRevenues.length > 0 ? totalRevenue / netRevenues.length : 0;
 
             const statsLang = localStorage.getItem('valuon-lang') || 'ru';
             const statsCurrency = currentShop?.currency || 'EUR';
@@ -1856,114 +2436,7 @@ async function initBusinessPanel() {
             if (emptyMsg) emptyMsg.style.display = 'none';
 
             renderReceiptCards(listEl, receipts);
-
-
-
-
-
             window.applyBusinessTranslations?.();
-
-            listEl.grid.querySelectorAll('.btn-delete-receipt').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (currentDeleteCleanup) currentDeleteCleanup();
-
-                    const receiptId = btn.dataset.id;
-                    const deleteModal = document.getElementById('delete-confirm-modal');
-                    const confirmBtn = document.getElementById('confirm-delete-btn');
-                    const cancelBtn = document.getElementById('cancel-delete-btn');
-
-                    if (!deleteModal) return;
-
-                    attachModalA11y(deleteModal, { mode: 'hidden', onClose: () => handleCancel() });
-
-                    deleteModal.classList.remove('is-hidden');
-                    document.documentElement.classList.add('modal-open');
-
-                    confirmBtn.disabled = false;
-                    const lang = localStorage.getItem('valuon-lang') || 'ru';
-                    const deleteText = lang === 'en' ? 'Delete' : 'Удалить';
-                    confirmBtn.innerHTML = `<i class="fa-solid fa-trash"></i> ${deleteText}`;
-
-                    const handleConfirm = async () => {
-                        confirmBtn.disabled = true;
-                        confirmBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
-
-                        try {
-                            const { error } = await client
-                                .from('business_receipts')
-                                .delete()
-                                .eq('id', receiptId)
-                                .eq('shop_id', shopId);
-
-                            if (error) throw error;
-
-                            const successMsg = lang === 'en' ? 'Receipt successfully deleted' : 'Чек успешно удален';
-                            window.showToast(successMsg, 'success');
-                            deleteModal.classList.add('closing');
-                            setTimeout(async () => {
-                                deleteModal.classList.add('is-hidden');
-                                deleteModal.classList.remove('closing');
-                                document.documentElement.classList.remove('modal-open');
-                                cleanup();
-                                await refreshDashboard(client, shopId, statsEl, listEl);
-                                if (typeof window.applyBusinessTranslations === 'function') {
-                                    window.applyBusinessTranslations();
-                                }
-                            }, 250);
-                        } catch (e) {
-                            logError('biz:deleteReceipt', e);
-                            const errorMsg = lang === 'en' ? 'Error deleting receipt' : 'Ошибка при удалении чека';
-                            window.showToast(errorMsg, 'error');
-                            confirmBtn.disabled = false;
-                            confirmBtn.innerHTML = `<i class="fa-solid fa-trash"></i> ${deleteText}`;
-                        }
-                    };
-
-                    const handleCancel = () => {
-                        if (deleteModal.classList.contains('closing')) return;
-                        deleteModal.classList.add('closing');
-                        setTimeout(() => {
-                            deleteModal.classList.add('is-hidden');
-                            deleteModal.classList.remove('closing');
-                            document.documentElement.classList.remove('modal-open');
-                            cleanup();
-                        }, 250);
-                    };
-
-                    const cleanup = () => {
-                        confirmBtn.removeEventListener('click', handleConfirm);
-                        cancelBtn.removeEventListener('click', handleCancel);
-                        deleteModal.removeEventListener('click', handleClickOutside);
-                        currentDeleteCleanup = null;
-                    };
-
-                    const handleClickOutside = (e) => {
-                        if (e.target === deleteModal || e.target.classList.contains('modal-backdrop')) {
-                            handleCancel();
-                        }
-                    };
-
-                    confirmBtn.addEventListener('click', handleConfirm);
-                    cancelBtn.addEventListener('click', handleCancel);
-                    deleteModal.addEventListener('click', handleClickOutside);
-                    currentDeleteCleanup = cleanup;
-                });
-            });
-
-            listEl.grid.querySelectorAll('.btn-download-receipt').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const receiptId = btn.dataset.id;
-                    const receipt = currentReceiptsList.find(r => r.id === receiptId);
-
-                    if (receipt && currentShop) {
-                        await downloadReceiptPDF(receipt, currentShop);
-                    } else {
-                        const errLang = localStorage.getItem('valuon-lang') || 'ru';
-                        window.showToast(errLang === 'en' ? 'Receipt data not found' : 'Не удалось найти данные чека', 'error');
-                    }
-                });
-            });
-
             updateChart();
         } catch (e) {
             logError('biz:refreshDashboard', e);
@@ -2057,7 +2530,7 @@ async function initBusinessPanel() {
 
     function fillReceiptCounts(receipts, groups, daysMap) {
         receipts.forEach(r => {
-            if (!r.purchase_date) return;
+            if (!r.purchase_date || isReceiptClosed(r)) return;
             const dateStr = r.purchase_date.slice(0, 10);
             if (daysMap[dateStr]) {
                 groups[dateStr].count++;
@@ -2067,12 +2540,12 @@ async function initBusinessPanel() {
 
     function fillRevenueTotals(receipts, groups, daysMap) {
         receipts.forEach(r => {
-            if (!r.purchase_date) return;
+            if (!r.purchase_date || isReceiptClosed(r)) return;
             const dateStr = r.purchase_date.slice(0, 10);
             if (daysMap[dateStr]) {
-                const gross = parseFloat(r.gross_total);
-                if (Number.isFinite(gross)) {
-                    groups[dateStr].total += gross;
+                const net = getNetReceiptRevenue(r);
+                if (Number.isFinite(net)) {
+                    groups[dateStr].total += net;
                 }
             }
         });
@@ -2416,6 +2889,10 @@ async function initBusinessPanel() {
         if (!currentShop) return;
         renderReceiptCards(list, currentReceiptsList);
         window.applyBusinessTranslations?.();
+        if (lcReceipt && lcModal && !lcModal.classList.contains('is-hidden')) {
+            renderLifecycleItems();
+            updateLifecycleTabUI();
+        }
         setTimeout(updateChart, 50);
     });
 }

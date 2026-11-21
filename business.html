@@ -244,8 +244,23 @@
             </div>
 
             <div class="receipts-list-container" data-animate>
-                <h2 class="section-title" data-i18n="issued_receipts_title">🧾 Выписанные чеки</h2>
+                <div class="receipts-section-header">
+                    <h2 class="section-title" data-i18n="issued_receipts_title">🧾 Выписанные чеки</h2>
+                    <div class="receipt-filter-bar" id="receipt-filter-bar" role="tablist" aria-label="Фильтр чеков">
+                        <button type="button" class="receipt-filter-btn active" data-receipt-filter="all" role="tab"
+                            aria-selected="true" data-i18n="filter_all">Все</button>
+                        <button type="button" class="receipt-filter-btn" data-receipt-filter="active" role="tab"
+                            aria-selected="false" data-i18n="filter_active">Активные</button>
+                        <button type="button" class="receipt-filter-btn" data-receipt-filter="closed" role="tab"
+                            aria-selected="false" data-i18n="filter_closed">Возвраты</button>
+                    </div>
+                </div>
                 <div id="business-receipts-grid" class="items-grid">
+                </div>
+                <div id="no-filtered-receipts-msg" class="empty-state" style="display: none;">
+                    <div class="empty-icon"><i class="fa-solid fa-filter"></i></div>
+                    <h3 data-i18n="no_filtered_receipts_title">Нет чеков в этой категории</h3>
+                    <p data-i18n="no_filtered_receipts_desc">Попробуйте выбрать другой фильтр.</p>
                 </div>
                 <div id="no-receipts-msg" class="empty-state" style="display: none;">
                     <div class="empty-icon"><i class="fa-solid fa-receipt"></i></div>
@@ -302,8 +317,7 @@
                                 <div class="receipt-meta-col">
                                     <div class="input-group" id="receipt-pos-group">
                                         <label data-i18n="pos_select_label">Касса</label>
-                                        <select name="pos_terminal_id" class="custom-select"
-                                            id="receipt-pos-select">
+                                        <select name="pos_terminal_id" class="custom-select" id="receipt-pos-select">
                                             <option value="" data-i18n="pos_no_terminal">Без кассы</option>
                                         </select>
                                         <small class="field-hint" id="pos-select-hint" data-i18n="pos_select_empty"
@@ -500,23 +514,81 @@
             </div>
         </div>
 
-        <div id="delete-confirm-modal" class="modal-overlay is-hidden">
+        <div id="receipt-lifecycle-modal" class="modal-overlay is-hidden" aria-hidden="true">
             <div class="modal-backdrop"></div>
-            <div class="modal-content max-w-md delete-confirm-card">
-                <div class="delete-icon-wrapper">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
+            <div class="modal-content max-w-lg lifecycle-modal-card">
+                <div class="modal-header">
+                    <div class="modal-heading">
+                        <span class="modal-heading-icon lifecycle-heading-icon"><i
+                                class="fa-solid fa-rotate-left"></i></span>
+                        <div class="modal-heading-text">
+                            <h2 data-i18n="lifecycle_modal_title">Возврат или аннулирование</h2>
+                            <p id="lifecycle-modal-subtitle"></p>
+                        </div>
+                    </div>
+                    <button type="button" id="close-lifecycle-modal" class="btn-close" aria-label="Закрыть"><i
+                            class="fa-solid fa-xmark"></i></button>
                 </div>
-                <h2 data-i18n="delete_receipt_title">Удалить чек?</h2>
-                <p data-i18n="delete_receipt_desc">Это действие необратимо. Чек будет удален из системы безвозвратно.
-                </p>
 
-                <div class="modal-actions confirm-actions">
-                    <button type="button" id="cancel-delete-btn" class="btn btn-outline w-full"
-                        data-i18n="cancel_btn">Отмена</button>
-                    <button type="button" id="confirm-delete-btn" class="btn btn-danger w-full" data-i18n="delete_btn">
-                        <i class="fa-solid fa-trash"></i> Удалить
-                    </button>
-                </div>
+                <form id="receipt-lifecycle-form" class="modal-form lifecycle-modal-form" action="#" novalidate>
+                    <div class="lifecycle-action-tabs" role="tablist">
+                        <button type="button" class="lifecycle-tab-btn active" data-lifecycle-action="refund" role="tab"
+                            aria-selected="true">
+                            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                            <span data-i18n="lifecycle_tab_refund">Оформить возврат</span>
+                        </button>
+                        <button type="button" class="lifecycle-tab-btn" data-lifecycle-action="void" role="tab"
+                            aria-selected="false">
+                            <i class="fa-solid fa-ban" aria-hidden="true"></i>
+                            <span data-i18n="lifecycle_tab_void">Аннулировать чек</span>
+                        </button>
+                    </div>
+
+                    <div id="lifecycle-void-notice" class="lifecycle-notice is-hidden"></div>
+
+                    <div id="lifecycle-refund-section" class="lifecycle-refund-section">
+                        <div class="lifecycle-items-header">
+                            <span class="lifecycle-section-label" data-i18n="lifecycle_select_items">Позиции для
+                                возврата</span>
+                            <button type="button" id="lifecycle-select-all-btn" class="lifecycle-text-btn"
+                                data-i18n="lifecycle_select_all">Выбрать все</button>
+                        </div>
+                        <div id="lifecycle-items-list" class="lifecycle-items-list"></div>
+                        <div class="lifecycle-refund-summary">
+                            <div class="lifecycle-summary-left">
+                                <span class="lifecycle-summary-label" data-i18n="lifecycle_refund_amount">Сумма
+                                    возврата</span>
+                                <span id="lifecycle-refund-kind-badge" class="lifecycle-kind-badge"></span>
+                            </div>
+                            <strong id="lifecycle-refund-total">€0.00</strong>
+                        </div>
+                    </div>
+
+                    <div class="input-group lifecycle-reason-group">
+                        <label for="lifecycle-reason-input" data-i18n="lifecycle_reason_label">Причина</label>
+                        <div id="lifecycle-reason-presets" class="lifecycle-reason-presets"></div>
+                        <textarea id="lifecycle-reason-input" name="reason" rows="2" maxlength="300" required
+                            data-i18n-placeholder="lifecycle_reason_placeholder"
+                            placeholder="Укажите причину (увидит покупатель)"></textarea>
+                        <small class="field-error" id="lifecycle-error" role="alert"></small>
+                    </div>
+
+                    <div class="lifecycle-warning-box">
+                        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                        <span data-i18n="lifecycle_irreversible_note">Чек останется в реестре и у покупателя с новым
+                            статусом. Отменить это действие будет нельзя.</span>
+                    </div>
+
+                    <div class="modal-actions confirm-actions">
+                        <button type="button" id="cancel-lifecycle-btn" class="btn btn-outline w-full"
+                            data-i18n="cancel_btn">Отмена</button>
+                        <button type="submit" id="confirm-lifecycle-btn" class="btn btn-danger w-full">
+                            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                            <span id="confirm-lifecycle-label" data-i18n="lifecycle_confirm_refund">Оформить
+                                возврат</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 

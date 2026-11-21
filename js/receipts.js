@@ -298,50 +298,126 @@ function setupReceiptsTabs() {
 }
 
 function renderBusinessCard(r, t) {
-    const dateStr = new Date(r.purchase_date).toLocaleDateString(getLang() === 'ru' ? 'ru-RU' : 'en-US');
+    const lang = getLang();
+    const locale = lang === 'ru' ? 'ru-RU' : 'en-US';
+    const dateStr = new Date(r.purchase_date).toLocaleDateString(locale);
     const receiptNum = escapeHtml(r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`);
+
+    const lc = r.lifecycle_status || 'active';
+    const closed = lc === 'voided' || lc === 'refunded';
+    const isPartial = lc === 'partially_refunded';
 
     const lineItems = Array.isArray(r.receipt_items) ? r.receipt_items : [];
     const itemsCount = lineItems.length;
 
+    const renderLineItem = (it) => {
+        const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+        const refQty = Math.max(0, parseInt(it.refunded_qty, 10) || 0);
+        const fullRef = !closed && refQty >= qty;
+        const partRef = !closed && refQty > 0 && refQty < qty;
+        const refPill = fullRef
+            ? `<span class="item-refund-pill">${escapeHtml(t.lifecycle_item_returned_badge || 'Возвращено')}</span>`
+            : partRef
+                ? `<span class="item-refund-pill partial">${escapeHtml((t.lifecycle_item_returned_short || '−{n} возвр.').replace('{n}', String(refQty)))}</span>`
+                : '';
+        return {
+            cls: fullRef ? 'item-row-refunded' : '',
+            inner: `<span class="item-name">${escapeHtml(it.item_name)}</span> <span class="item-qty">×${qty}</span> ${refPill}${it.warranty_months && !fullRef && !closed ? ` <span class="item-warranty">${it.warranty_months} ${escapeHtml(t.months_short || 'mo')}.</span>` : ''}`
+        };
+    };
+
     const itemsListHtml = itemsCount > 0 ? `
-        <div class="receipt-card-items">
+        <div class="receipt-card-items${closed ? ' is-struck' : ''}">
             ${itemsCount === 1
-            ? `<div class="receipt-card-item single">
-                       <span class="item-name">${escapeHtml(lineItems[0].item_name)}</span>
-                       <span class="item-qty">×${lineItems[0].qty}</span>
-                       ${lineItems[0].warranty_months ? ` <span class="item-warranty">${lineItems[0].warranty_months} ${t.months_short || 'mo'}.</span>` : ''}
-                   </div>`
-            : `<ul class="receipt-card-items-list">${lineItems.map(it =>
-                `<li><span class="item-name">${escapeHtml(it.item_name)}</span> <span class="item-qty">×${it.qty}</span>${it.warranty_months ? ` <span class="item-warranty">${it.warranty_months} ${t.months_short || 'mo'}.</span>` : ''}</li>`
-            ).join('')}</ul>`
+            ? (() => {
+                const row = renderLineItem(lineItems[0]);
+                return `<div class="receipt-card-item single ${row.cls}">${row.inner}</div>`;
+            })()
+            : `<ul class="receipt-card-items-list">${lineItems.map(it => {
+                const row = renderLineItem(it);
+                return `<li class="${row.cls}">${row.inner}</li>`;
+            }).join('')}</ul>`
         }
         </div>` : '';
 
+    const currency = r.currency || 'EUR';
+    const grossVal = parseFloat(r.gross_total) || 0;
+    const refundedVal = parseFloat(r.refunded_amount) || 0;
+    const netVal = isPartial ? Math.max(0, Math.round((grossVal - refundedVal) * 100) / 100) : grossVal;
+    const priceFormatted = escapeHtml(window.formatCurrency(isPartial ? netVal : grossVal, currency, lang));
+
     const stats = [
-        { icon: 'fa-tag', labelKey: 'stat_price', fallback: 'Price', value: escapeHtml(window.formatCurrency(parseFloat(r.gross_total) || 0, r.currency || 'EUR', getLang())) },
-        { icon: 'fa-regular fa-calendar', labelKey: 'stat_date', fallback: 'Date', value: escapeHtml(dateStr) }
+        {
+            icon: 'fa-tag',
+            labelKey: 'stat_price',
+            fallback: 'Price',
+            valueHtml: closed ? `<span class="amount-struck">${priceFormatted}</span>` : priceFormatted,
+            titleText: priceFormatted,
+            extraClass: ''
+        },
+        {
+            icon: 'fa-regular fa-calendar',
+            labelKey: 'stat_date',
+            fallback: 'Date',
+            valueHtml: escapeHtml(dateStr),
+            titleText: escapeHtml(dateStr),
+            extraClass: ''
+        }
     ];
+    if (isPartial && refundedVal > 0) {
+        const refFormatted = `−${escapeHtml(window.formatCurrency(refundedVal, currency, lang))}`;
+        stats.push({
+            icon: 'fa-rotate-left',
+            labelKey: 'lifecycle_refunded_short',
+            fallback: 'Refunded',
+            valueHtml: refFormatted,
+            titleText: refFormatted,
+            extraClass: ' accent-refund'
+        });
+    }
+
     const statsHtml = stats.map(s => `
-                        <div class="mine-stat">
+                        <div class="mine-stat${s.extraClass}">
                             <span class="mine-stat-icon"><i class="fa-solid ${s.icon}"></i></span>
                             <div class="mine-stat-text">
                                 <div class="mine-stat-label" data-i18n="${s.labelKey}">${escapeHtml(t[s.labelKey] || s.fallback)}</div>
-                                <div class="mine-stat-value" title="${s.value}">${s.value}</div>
+                                <div class="mine-stat-value" title="${s.titleText}">${s.valueHtml}</div>
                             </div>
                         </div>`).join('');
 
-    const verifiedLabel = escapeHtml(t.status_business_verified || 'Verified');
+    const lcMetaMap = {
+        active: { icon: 'fa-check', badgeCls: '', labelKey: 'status_business_verified', fallback: 'Verified' },
+        partially_refunded: { icon: 'fa-rotate-left', badgeCls: ' is-partial', labelKey: 'lifecycle_partially_refunded', fallback: 'Partial Refund' },
+        refunded: { icon: 'fa-rotate-left', badgeCls: ' is-refunded', labelKey: 'lifecycle_refunded', fallback: 'Refunded' },
+        voided: { icon: 'fa-ban', badgeCls: ' is-voided', labelKey: 'lifecycle_voided', fallback: 'Voided' },
+    };
+    const lcMeta = lcMetaMap[lc] || lcMetaMap.active;
+    const statusLabel = escapeHtml(t[lcMeta.labelKey] || lcMeta.fallback);
     const btnDownloadText = escapeHtml(t.btn_download || 'Скачать');
     const shopName = escapeHtml(r.shop_name || '');
     const email = escapeHtml(r.customer_email || '');
 
+    const lcPillHtml = lc !== 'active'
+        ? `<span class="lifecycle-pill is-${escapeHtml(lc)}" data-i18n="${lcMeta.labelKey}">${statusLabel}</span>`
+        : '';
+
+    let lifecycleNoteHtml = '';
+    if (lc !== 'active' && (r.status_reason || r.status_changed_at)) {
+        const changedStr = r.status_changed_at ? new Date(r.status_changed_at).toLocaleDateString(locale) : '';
+        const reasonStr = r.status_reason ? escapeHtml(r.status_reason) : '';
+        lifecycleNoteHtml = `
+                <div class="receipt-lifecycle-meta is-${escapeHtml(lc)}">
+                    ${changedStr ? `<span><strong>${statusLabel}</strong> · ${escapeHtml(changedStr)}</span>` : ''}
+                    ${reasonStr ? `<span>${escapeHtml(t.lifecycle_reason_prefix || 'Причина:')} ${reasonStr}</span>` : ''}
+                </div>`;
+    }
+
     return `
-        <div class="mine-item-card business" data-id="${escapeHtml(r.id)}">
+        <div class="mine-item-card business${lc !== 'active' ? ` lifecycle-${escapeHtml(lc)}` : ''}" data-id="${escapeHtml(r.id)}" data-lifecycle-status="${escapeHtml(lc)}">
             <div class="mine-item-header">
                 <div class="mine-item-icon">
                     <i class="fa-solid fa-file-invoice-dollar"></i>
-                    <span class="verified-check" title="${verifiedLabel}" aria-label="${verifiedLabel}"><i class="fa-solid fa-check"></i></span>
+                    <span class="verified-check${lcMeta.badgeCls}" title="${statusLabel}" aria-label="${statusLabel}"><i class="fa-solid ${lcMeta.icon}"></i></span>
                 </div>
                 <div class="mine-item-heading">
                     <h3 class="mine-item-title" title="${receiptNum}">${receiptNum}</h3>
@@ -350,11 +426,15 @@ function renderBusinessCard(r, t) {
             </div>
 
             <div class="mine-item-body">
-                <div class="shop-pill"><i class="fa-solid fa-store"></i> ${shopName}</div>
+                <div class="business-card-pills">
+                    <div class="shop-pill"><i class="fa-solid fa-store"></i> ${shopName}</div>
+                    ${lcPillHtml}
+                </div>
 
                 <div class="mine-stats-grid">${statsHtml}</div>
 
                 ${itemsListHtml}
+                ${lifecycleNoteHtml}
 
                 <div class="mine-item-actions download-only">
                     <button class="btn-action btn-download-biz" data-receipt-id="${escapeHtml(r.id)}" title="${btnDownloadText}">
@@ -921,7 +1001,7 @@ function createUploadModal(client, userId) {
             });
 
             if (dbError) {
-                await client.storage.from('receipts').remove([filePath]).catch(() => {});
+                await client.storage.from('receipts').remove([filePath]).catch(() => { });
                 throw dbError;
             }
 

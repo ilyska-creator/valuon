@@ -3132,3 +3132,232 @@ html {
         opacity: 1;
     }
 }
+
+/* ==== Partner Receipt Lifecycle (Buyer Receipts & Notifications) ==== */
+
+.business-card-pills {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.lifecycle-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.lifecycle-pill.is-voided {
+    background: rgba(100, 116, 139, 0.16);
+    color: #475569;
+}
+
+[data-theme="dark"] .lifecycle-pill.is-voided {
+    background: rgba(148, 163, 184, 0.2);
+    color: #cbd5e1;
+}
+
+.lifecycle-pill.is-refunded {
+    background: rgba(239, 68, 68, 0.14);
+    color: var(--error);
+}
+
+[data-theme="dark"] .lifecycle-pill.is-refunded {
+    background: rgba(239, 68, 68, 0.22);
+    color: #fca5a5;
+}
+
+.lifecycle-pill.is-partially_refunded {
+    background: rgba(245, 158, 11, 0.16);
+    color: #d97706;
+}
+
+[data-theme="dark"] .lifecycle-pill.is-partially_refunded {
+    background: rgba(245, 158, 11, 0.22);
+    color: #fcd34d;
+}
+
+.mine-item-card.business.lifecycle-voided {
+    --accent: #64748b;
+    --accent-soft: rgba(100, 116, 139, 0.14);
+    opacity: 0.86;
+}
+
+.mine-item-card.business.lifecycle-refunded {
+    --accent: var(--error);
+    --accent-soft: rgba(239, 68, 68, 0.14);
+    opacity: 0.88;
+}
+
+.mine-item-card.business.lifecycle-partially_refunded {
+    --accent: var(--warning);
+    --accent-soft: rgba(245, 158, 11, 0.16);
+}
+
+.mine-item-card.business.lifecycle-voided .mine-item-icon {
+    background: rgba(100, 116, 139, 0.16);
+    color: #64748b;
+}
+
+.mine-item-card.business.lifecycle-refunded .mine-item-icon {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--error);
+}
+
+.mine-item-card.business.lifecycle-partially_refunded .mine-item-icon {
+    background: rgba(245, 158, 11, 0.16);
+    color: #d97706;
+}
+
+.verified-check.is-voided {
+    background: #64748b;
+}
+
+.verified-check.is-refunded {
+    background: var(--error);
+}
+
+.verified-check.is-partial {
+    background: var(--warning);
+}
+
+[data-theme="dark"] .verified-check.is-voided {
+    background: #64748b;
+}
+
+[data-theme="dark"] .verified-check.is-refunded {
+    background: #ef4444;
+}
+
+[data-theme="dark"] .verified-check.is-partial {
+    background: #f59e0b;
+}
+
+.amount-struck {
+    text-decoration: line-through;
+    opacity: 0.65;
+}
+
+.mine-stat.accent-refund {
+    background: rgba(245, 158, 11, 0.12);
+}
+
+.mine-stat.accent-refund .mine-stat-icon,
+.mine-stat.accent-refund .mine-stat-value {
+    color: #d97706;
+}
+
+[data-theme="dark"] .mine-stat.accent-refund {
+    background: rgba(245, 158, 11, 0.16);
+}
+
+[data-theme="dark"] .mine-stat.accent-refund .mine-stat-icon,
+[data-theme="dark"] .mine-stat.accent-refund .mine-stat-value {
+    color: #fcd34d;
+}
+
+.receipt-card-items.is-struck .item-name,
+.receipt-card-items.is-struck .item-qty,
+.receipt-card-items .item-row-refunded .item-name,
+.receipt-card-items .item-row-refunded .item-qty {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.item-refund-pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(239, 68, 68, 0.14);
+    color: var(--error);
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .item-refund-pill {
+    background: rgba(239, 68, 68, 0.22);
+    color: #fca5a5;
+}
+
+.item-refund-pill.partial {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+}
+
+[data-theme="dark"] .item-refund-pill.partial {
+    background: rgba(245, 158, 11, 0.22);
+    color: #fcd34d;
+}
+
+.receipt-lifecycle-meta {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(100, 116, 139, 0.08);
+    border: 1px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    line-height: 1.4;
+}
+
+.receipt-lifecycle-meta.is-refunded {
+    background: rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.receipt-lifecycle-meta.is-partially_refunded {
+    background: rgba(245, 158, 11, 0.07);
+    border-color: rgba(245, 158, 11, 0.22);
+}
+
+.receipt-lifecycle-meta strong {
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+/* Lifecycle Notification Cards */
+
+.notification-card.lifecycle-voided::before {
+    background: #64748b;
+}
+
+.notification-card.lifecycle-voided .notif-icon {
+    background: rgba(100, 116, 139, 0.14);
+    color: #64748b;
+}
+
+[data-theme="dark"] .notification-card.lifecycle-voided .notif-icon {
+    background: rgba(148, 163, 184, 0.18);
+    color: #cbd5e1;
+}
+
+.notification-card.lifecycle-refunded::before {
+    background: var(--error);
+}
+
+.notification-card.lifecycle-refunded .notif-icon {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--error);
+}
+
+.notification-card.lifecycle-partial::before {
+    background: var(--warning);
+}
+
+.notification-card.lifecycle-partial .notif-icon {
+    background: rgba(245, 158, 11, 0.14);
+    color: #d97706;
+}
+
+[data-theme="dark"] .notification-card.lifecycle-partial .notif-icon {
+    color: #fcd34d;
+}

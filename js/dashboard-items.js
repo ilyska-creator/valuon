@@ -315,17 +315,40 @@ function renderItems(items) {
     }
 }
 
+function extractActiveVerifiedItems(receipts) {
+    const activeItems = [];
+    (receipts || []).forEach(r => {
+        const lc = r.lifecycle_status || 'active';
+        if (lc === 'voided' || lc === 'refunded') return;
+        (r.receipt_items || []).forEach(it => {
+            const origQty = Math.max(1, parseInt(it.qty, 10) || 1);
+            const refQty = Math.max(0, parseInt(it.refunded_qty, 10) || 0);
+            const activeQty = origQty - refQty;
+            if (activeQty <= 0) return;
+
+            const origGross = parseFloat(it.gross_total) || 0;
+            const activeGross = refQty > 0
+                ? Math.max(0, Math.round(origGross * (activeQty / origQty) * 100) / 100)
+                : origGross;
+
+            activeItems.push({
+                ...it,
+                qty: activeQty,
+                gross_total: activeGross,
+                shop_name: r.shop_name,
+                purchase_date: r.purchase_date,
+            });
+        });
+    });
+    return activeItems;
+}
+
 function renderVerifiedItems(receipts, t) {
     const grid = document.querySelector('#items-grid-verified');
     if (!grid) return;
 
     const lang = localStorage.getItem('valuon-lang') || 'ru';
-    const allItems = [];
-    (receipts || []).forEach(r => {
-        (r.receipt_items || []).forEach(it => {
-            allItems.push({ ...it, shop_name: r.shop_name, purchase_date: r.purchase_date });
-        });
-    });
+    const allItems = extractActiveVerifiedItems(receipts);
 
     const countEl = document.getElementById('items-count-verified');
     if (countEl) window.animateCount(countEl, allItems.length);
@@ -481,11 +504,21 @@ async function loadVerifiedItems(userEmail, client) {
         ], { interval: 800 });
     }
 
-    const { data, error } = await client
+    let res = await client
         .from('business_receipts')
-        .select('purchase_date, shop_name, receipt_items(id, item_name, qty, gross_total, currency, warranty_months, warranty_end_date, category)')
+        .select('lifecycle_status, purchase_date, shop_name, receipt_items(id, item_name, qty, refunded_qty, gross_total, currency, warranty_months, warranty_end_date, category)')
         .eq('customer_email', userEmail)
         .order('purchase_date', { ascending: false });
+
+    if (res.error && res.error.code === '42703') {
+        res = await client
+            .from('business_receipts')
+            .select('purchase_date, shop_name, receipt_items(id, item_name, qty, gross_total, currency, warranty_months, warranty_end_date, category)')
+            .eq('customer_email', userEmail)
+            .order('purchase_date', { ascending: false });
+    }
+
+    const { data, error } = res;
 
     if (error) {
         logError('items:loadVerified', error);
@@ -497,20 +530,19 @@ async function loadVerifiedItems(userEmail, client) {
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
     renderVerifiedItems(data || [], t);
 
-    let verifiedActive = 0, verifiedExpiring = 0, verifiedExpired = 0, verifiedTotal = 0;
-    (data || []).forEach(r => {
-        (r.receipt_items || []).forEach(it => {
-            verifiedTotal++;
-            if (isNoWarranty({ warranty_months: it.warranty_months, purchase_date: r.purchase_date, warranty_end_date: it.warranty_end_date })) return;
-            const days = calculateDaysLeft(it.warranty_end_date);
-            if (days > 30) verifiedActive++;
-            else if (days > 0 && days <= 30) verifiedExpiring++;
-            else verifiedExpired++;
-        });
+    const activeItems = extractActiveVerifiedItems(data || []);
+    let verifiedActive = 0, verifiedExpiring = 0, verifiedExpired = 0;
+    const verifiedTotal = activeItems.length;
+    activeItems.forEach(it => {
+        if (isNoWarranty({ warranty_months: it.warranty_months, purchase_date: it.purchase_date, warranty_end_date: it.warranty_end_date })) return;
+        const days = calculateDaysLeft(it.warranty_end_date);
+        if (days > 30) verifiedActive++;
+        else if (days > 0 && days <= 30) verifiedExpiring++;
+        else verifiedExpired++;
     });
 
     verifiedStats = { total: verifiedTotal, active: verifiedActive, expiring: verifiedExpiring, expired: verifiedExpired };
-    if (lastMineItems.length || verifiedTotal > 0) updateStats(lastMineItems);
+    updateStats(lastMineItems);
 }
 
 let _switchingTab = false;
