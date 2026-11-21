@@ -8,14 +8,14 @@ html {
 
 :root {
     --font-brand: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
     --primary-light: #60a5fa;
     --secondary: #64748b;
-    --dark: #0f172a;
-    --light: #f6f7f9;
+    --dark: #0a0a0a;
+    --light: #f8fafc;
     --white: #ffffff;
-    --border: rgba(15, 23, 42, 0.09);
+    --border: #e2e8f0;
     --success: #10b981;
     --warning: #f59e0b;
     --error: #ef4444;
@@ -38,22 +38,22 @@ html {
 
 
     --radius-sm: 8px;
-    --radius-md: 11px;
-    --radius-lg: 14px;
-    --radius-xl: 18px;
-    --radius-2xl: 20px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-2xl: 24px;
     --radius-full: 9999px;
 
 
-    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-    --shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.08);
-    --shadow-lg: 0 12px 32px -8px rgba(15, 23, 42, 0.14);
-    --shadow-xl: 0 20px 50px -12px rgba(15, 23, 42, 0.18);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
+    --shadow-xl: 0 20px 60px -15px rgba(0, 0, 0, 0.2);
 
 
     --transition-fast: 0.15s ease;
-    --transition-base: 0.22s ease;
-    --transition-slow: 0.4s ease;
+    --transition-base: 0.3s ease;
+    --transition-slow: 0.5s ease;
 
 
     --z-navbar: 1000;
@@ -67,8 +67,8 @@ html {
 
 
     --bg-body: var(--white);
-    --card-bg: #ffffff;
-    --nav-bg: rgba(255, 255, 255, 0.88);
+    --card-bg: rgba(255, 255, 255, 0.95);
+    --nav-bg: rgba(255, 255, 255, 0.9);
 
 
     --text-main: var(--dark);
@@ -77,22 +77,16 @@ html {
 }
 
 [data-theme="dark"] {
-    --primary: #3b82f6;
-    --primary-dark: #2563eb;
-    --bg-body: #090a0f;
-    --text-main: #f1f5f9;
-    --text-heading: #f8fafc;
-    --text-muted: #94a3b8;
-    --text-secondary: #94a3b8;
-    --secondary: #94a3b8;
-    --card-bg: #111318;
-    --nav-bg: rgba(9, 10, 15, 0.82);
-    --border: rgba(255, 255, 255, 0.08);
-    --light: #171a21;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 6px 18px -4px rgba(0, 0, 0, 0.45);
-    --shadow-lg: 0 14px 36px -10px rgba(0, 0, 0, 0.65);
-    --shadow-xl: 0 22px 54px -12px rgba(0, 0, 0, 0.72);
+    --bg-body: #000000;
+    --text-main: #ffffff;
+    --text-heading: #ffffff;
+    --text-muted: #888888;
+    --card-bg: #111111;
+    --nav-bg: rgba(0, 0, 0, 0.8);
+    --border: #222222;
+    --light: #1a1a1a;
+    --shadow-lg: 0 10px 40px -10px rgba(0, 0, 0, 0.8);
+    --shadow-xl: 0 20px 60px -15px rgba(0, 0, 0, 0.6);
 }
 
 * {
@@ -113,7 +107,7 @@ body {
     -webkit-text-size-adjust: 100%;
     overflow-x: clip;
     -webkit-font-smoothing: antialiased;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .container {
@@ -125,7 +119,7 @@ body {
 a {
     text-decoration: none;
     color: inherit;
-    transition: 0.2s ease;
+    transition: 0.3s;
 }
 
 ul {
@@ -140,11 +134,11 @@ ul {
     gap: var(--space-2);
     padding: var(--space-4) var(--space-6);
     border-radius: var(--radius-full);
-    font-weight: 600;
-    font-size: 0.95rem;
+    font-weight: 700;
+    font-size: 1rem;
     cursor: pointer;
     border: none;
-    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+    transition: all var(--transition-base);
     font-family: var(--font-main);
     line-height: 1;
 }
@@ -152,34 +146,34 @@ ul {
 .btn.btn-primary {
     background: var(--primary);
     color: var(--white);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
 }
 
 .btn.btn-primary:hover {
     background: var(--primary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
 }
 
 .btn.btn-primary:active {
-    transform: translateY(0) scale(0.98);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14);
+    transform: translateY(0) scale(0.97);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
 }
 
 .btn-outline {
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     background: transparent;
     color: var(--text-main);
 }
 
 .btn-outline:hover {
-    border-color: rgba(37, 99, 235, 0.4);
+    border-color: var(--primary);
     color: var(--primary);
-    background: rgba(37, 99, 235, 0.05);
+    background: rgba(59, 130, 246, 0.05);
 }
 
 .btn-outline:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
 
 /* Компактный модификатор кнопки. Раньше был определён только в privacy.css
