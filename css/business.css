@@ -3552,7 +3552,7 @@
 /* ==== POS Receipt Ledger Table ==== */
 
 .receipts-ledger {
-    --ledger-cols: minmax(195px, 1.4fr) minmax(150px, 1.08fr) minmax(145px, 0.95fr) minmax(122px, 0.78fr) minmax(108px, 0.68fr) minmax(210px, auto);
+    --ledger-cols: minmax(220px, 1.55fr) minmax(165px, 1.05fr) minmax(132px, 0.85fr) minmax(118px, 0.75fr) minmax(212px, auto);
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-xl, 18px);
@@ -3699,60 +3699,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.ledger-col-items {
-    min-width: 0;
-}
-
-.ledger-items-empty {
-    color: var(--text-muted);
-    font-size: 0.84rem;
-}
-
-.ledger-items-preview {
-    display: flex;
-    align-items: baseline;
-    gap: 0.35rem;
-    min-width: 0;
-    font-size: 0.84rem;
-    color: var(--text-main);
-}
-
-.ledger-item-preview-name {
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-}
-
-.ledger-item-preview-qty {
-    font-size: 0.77rem;
-    color: var(--text-muted);
-    font-variant-numeric: tabular-nums;
-    flex-shrink: 0;
-}
-
-.ledger-items-more {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    font-variant-numeric: tabular-nums;
-    flex-shrink: 0;
-    padding: 0.06rem 0.38rem;
-    border-radius: 5px;
-    background: rgba(100, 116, 139, 0.11);
-}
-
-[data-theme="dark"] .ledger-items-more {
-    background: rgba(255, 255, 255, 0.07);
-}
-
-.ledger-items-preview.is-struck .ledger-item-preview-name,
-.ledger-items-preview.is-struck .ledger-item-preview-qty {
-    text-decoration: line-through;
-    opacity: 0.62;
 }
 
 .ledger-col-meta {
@@ -4136,7 +4082,6 @@
         grid-template-areas:
             "receipt amount"
             "meta status"
-            "items items"
             "actions actions";
         gap: 0.55rem 0.75rem;
         padding: 1rem 1.05rem;
@@ -4175,11 +4120,6 @@
     .ledger-col-status {
         grid-area: status;
         align-items: flex-end;
-    }
-
-    .ledger-col-items {
-        grid-area: items;
-        padding-left: 1.9rem;
     }
 
     .ledger-col-actions {
@@ -4250,8 +4190,7 @@
         padding: 0.9rem 0.9rem;
     }
 
-    .ledger-col-meta,
-    .ledger-col-items {
+    .ledger-col-meta {
         padding-left: 0;
     }
 

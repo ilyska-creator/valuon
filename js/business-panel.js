@@ -185,7 +185,6 @@ async function initBusinessPanel() {
         const headHtml = `
             <div class="receipt-ledger-head" aria-hidden="true">
                 <div class="ledger-head-cell" data-i18n="ledger_col_receipt">${escapeHtml(t.ledger_col_receipt || 'Чек и клиент')}</div>
-                <div class="ledger-head-cell" data-i18n="ledger_col_items">${escapeHtml(t.ledger_col_items || 'Позиции')}</div>
                 <div class="ledger-head-cell" data-i18n="ledger_col_meta">${escapeHtml(t.ledger_col_meta || 'Дата и касса')}</div>
                 <div class="ledger-head-cell" data-i18n="ledger_col_status">${escapeHtml(t.ledger_col_status || 'Статус')}</div>
                 <div class="ledger-head-cell is-right" data-i18n="ledger_col_amount">${escapeHtml(t.ledger_col_amount || 'Сумма')}</div>
@@ -228,22 +227,6 @@ async function initBusinessPanel() {
                 statusHtml = `<span class="ledger-status-badge is-refunded">${escapeHtml(t.lifecycle_refunded || 'Возврат')}</span>`;
             } else {
                 statusHtml = `<span class="ledger-status-badge is-voided">${escapeHtml(t.lifecycle_voided || 'Аннулирован')}</span>`;
-            }
-
-            // Items preview cell
-            let itemsPreviewHtml = '<span class="ledger-items-empty">—</span>';
-            if (itemsCount > 0) {
-                const first = lineItems[0];
-                const firstQty = Math.max(1, parseInt(first.qty, 10) || 1);
-                const moreHtml = itemsCount > 1
-                    ? `<span class="ledger-items-more">+${itemsCount - 1}</span>`
-                    : '';
-                itemsPreviewHtml = `
-                    <div class="ledger-items-preview${closed ? ' is-struck' : ''}">
-                        <span class="ledger-item-preview-name" title="${escapeHtml(first.item_name)}">${escapeHtml(first.item_name)}</span>
-                        <span class="ledger-item-preview-qty">×${firstQty}</span>
-                        ${moreHtml}
-                    </div>`;
             }
 
             // Meta cell (date + payment · register)
@@ -348,7 +331,6 @@ async function initBusinessPanel() {
                             <span class="ledger-customer-email" title="${escapeHtml(r.customer_email)}">${escapeHtml(r.customer_email)}</span>
                         </div>
                     </div>
-                    <div class="ledger-col-items">${itemsPreviewHtml}</div>
                     <div class="ledger-col-meta">
                         <span class="ledger-date receipt-date">${escapeHtml(dateStr)}</span>
                         <span class="ledger-submeta">${subMetaHtml}</span>
