@@ -47,8 +47,7 @@
                 <i class="fa-solid fa-qrcode"></i> <span data-i18n="nav_verify">Проверить чек</span>
             </a>
             <a href="dashboard.html#view-notifications" class="nav-item"><span class="icon-badge-wrap"><i
-                            class="fa-solid fa-bell"></i><span class="nav-badge hidden"
-                            data-notif-badge></span></span>
+                        class="fa-solid fa-bell"></i><span class="nav-badge hidden" data-notif-badge></span></span>
                 <span data-i18n="nav_notifications">Уведомления</span></a>
             <a href="dashboard.html#view-settings" class="nav-item"><i class="fa-solid fa-gear"></i> <span
                     data-i18n="nav_settings">Настройки</span></a>
@@ -83,13 +82,13 @@
                 <h2 data-i18n="section_documents">Ваши документы</h2>
                 <div class="items-tabs" id="receipts-tabs" role="tablist">
                     <span class="items-tab-indicator" id="receipts-tab-indicator" aria-hidden="true"></span>
-                    <button class="items-tab active" data-receipts-tab="personal" role="tab" aria-selected="true">
-                        <i class="fa-solid fa-receipt"></i>
+                    <button type="button" class="items-tab active" data-receipts-tab="personal" role="tab"
+                        aria-selected="true">
                         <span data-i18n="receipts_tab_personal">Ваши чеки</span>
                         <span class="items-tab-count" id="receipts-count-personal">0</span>
                     </button>
-                    <button class="items-tab" data-receipts-tab="business" role="tab" aria-selected="false">
-                        <i class="fa-solid fa-store"></i>
+                    <button type="button" class="items-tab" data-receipts-tab="business" role="tab"
+                        aria-selected="false">
                         <span data-i18n="receipts_tab_business">Чеки от партнеров</span>
                         <span class="items-tab-count" id="receipts-count-business">0</span>
                     </button>
@@ -140,7 +139,8 @@
                         <p data-i18n="modal_upload_receipt_subtitle">Файл чека и основные данные</p>
                     </div>
                 </div>
-                <button id="close-upload-modal" class="btn-close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+                <button id="close-upload-modal" class="btn-close" aria-label="Закрыть"><i
+                        class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="upload-receipt-form" class="modal-form" action="#">
                 <div class="input-group">
@@ -164,7 +164,9 @@
                     <div class="upload-zone-mini" id="modal-drop-zone">
                         <i class="fa-solid fa-cloud-arrow-up"></i>
                         <span id="file-name-display" data-i18n="upload_select_hint">Нажмите для выбора файла</span>
-                        <input type="file" id="modal-file-input" accept="image/*,.pdf" style="display: none;">
+                        <input type="file" id="modal-file-input"
+                            accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,.jpg,.jpeg,.png,.gif,.webp,.pdf"
+                            style="display: none;">
                     </div>
                 </div>
 
@@ -247,9 +249,9 @@
             onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
     </div>
     <script src="js/cookie-banner.js"></script>
-<script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-</script>
-<script defer src="/_vercel/insights/script.js"></script>
+    <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
 </body>
 
 </html>

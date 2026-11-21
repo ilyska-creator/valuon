@@ -1691,6 +1691,10 @@ async function initBusinessPanel() {
 
                 // Validate logo up front (uploaded after the shop exists, since
                 // the storage path is keyed by shop id)
+                const LOGO_MIME_TO_EXT = {
+                    'image/png': 'png',
+                    'image/jpeg': 'jpg',
+                };
                 const logoFile = fd.get('logo');
                 if (logoFile && logoFile.size && logoFile.size > 0) {
                     if (logoFile.size > 2 * 1024 * 1024) {
@@ -1699,7 +1703,7 @@ async function initBusinessPanel() {
                         btn.innerHTML = originalHTML;
                         return;
                     }
-                    if (!['image/png', 'image/jpeg'].includes(logoFile.type)) {
+                    if (!Object.prototype.hasOwnProperty.call(LOGO_MIME_TO_EXT, logoFile.type)) {
                         window.showToast(createLang === 'en' ? 'Only PNG and JPG are allowed.' : 'Только PNG и JPG.', 'error');
                         btn.disabled = false;
                         btn.innerHTML = originalHTML;
@@ -1738,14 +1742,16 @@ async function initBusinessPanel() {
                 // Upload logo now that the shop exists
                 if (logoFile && logoFile.size && logoFile.size > 0) {
                     try {
-                        const ext = logoFile.name.split('.').pop().toLowerCase();
-                        const filePath = `${newShop.id}/logo.${ext}`;
-                        const { error: upErr } = await client.storage
-                            .from('shop-logos')
-                            .upload(filePath, logoFile, { upsert: false });
-                        if (!upErr) {
-                            await client.from('shops').update({ logo_path: filePath }).eq('id', newShop.id);
-                            newShop = { ...newShop, logo_path: filePath };
+                        const ext = LOGO_MIME_TO_EXT[logoFile.type];
+                        if (ext) {
+                            const filePath = `${newShop.id}/logo.${ext}`;
+                            const { error: upErr } = await client.storage
+                                .from('shop-logos')
+                                .upload(filePath, logoFile, { upsert: false, contentType: logoFile.type });
+                            if (!upErr) {
+                                await client.from('shops').update({ logo_path: filePath }).eq('id', newShop.id);
+                                newShop = { ...newShop, logo_path: filePath };
+                            }
                         }
                     } catch (_) { /* logo is optional */ }
                 }

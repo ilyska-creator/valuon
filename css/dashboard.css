@@ -2972,11 +2972,13 @@ html {
 .items-tabs {
     position: relative;
     display: inline-flex;
+    align-items: center;
     max-width: 100%;
     gap: 2px;
-    background: var(--light);
-    border-radius: var(--radius-md);
     padding: 4px;
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     overflow-x: auto;
     scrollbar-width: none;
 }
@@ -2987,6 +2989,7 @@ html {
 
 [data-theme="dark"] .items-tabs {
     background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .items-tab-indicator {
@@ -3003,18 +3006,23 @@ html {
     pointer-events: none;
 }
 
+[data-theme="dark"] .items-tab-indicator {
+    background: rgba(255, 255, 255, 0.1);
+}
+
 .items-tab {
     position: relative;
     z-index: 1;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 9px 16px;
+    justify-content: center;
+    gap: 7px;
+    padding: 8px 14px;
     border: none;
     background: transparent;
     color: var(--text-muted);
     font-family: var(--font-main);
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
@@ -3022,22 +3030,12 @@ html {
     transition: color 0.2s ease;
 }
 
-.items-tab i {
-    font-size: 0.82rem;
-    opacity: 0.75;
-    transition: opacity 0.2s ease;
-}
-
 .items-tab:hover {
     color: var(--text-main);
 }
 
 .items-tab.active {
-    color: var(--primary);
-}
-
-.items-tab.active i {
-    opacity: 1;
+    color: var(--text-main);
 }
 
 .items-tab-count {
@@ -3047,21 +3045,23 @@ html {
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    border-radius: var(--radius-full);
-    background: rgba(100, 116, 139, 0.12);
+    border-radius: 999px;
+    background: rgba(100, 116, 139, 0.14);
     color: var(--text-muted);
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
     transition: background 0.2s ease, color 0.2s ease;
 }
 
 .items-tab.active .items-tab-count {
-    background: rgba(59, 130, 246, 0.14);
+    background: rgba(37, 99, 235, 0.14);
     color: var(--primary);
 }
 
-[data-theme="dark"] .items-tab-count {
-    background: rgba(255, 255, 255, 0.08);
+[data-theme="dark"] .items-tab.active .items-tab-count {
+    background: rgba(96, 165, 250, 0.2);
+    color: #93c5fd;
 }
 
 .mine-item-card.verified:hover {
@@ -3113,23 +3113,21 @@ html {
     animation: gridFadeIn 0.3s ease;
 }
 
-@media (max-width: 450px) {
+@media (max-width: 640px) {
+    .items-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
     .items-tabs {
         width: 100%;
     }
 
     .items-tab {
         flex: 1;
-        justify-content: center;
-    }
-
-    .items-tab span:not(.items-tab-count) {
-        display: none;
-    }
-
-    .items-tab i {
-        font-size: 1rem;
-        opacity: 1;
+        padding: 7px 10px;
+        font-size: 0.78rem;
+        gap: 5px;
     }
 }
 

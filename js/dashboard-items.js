@@ -593,14 +593,15 @@ function moveItemsTabIndicator() {
     const tabsWrap = document.getElementById('items-tabs');
     const indicator = document.getElementById('items-tab-indicator');
     const activeTab = tabsWrap?.querySelector('.items-tab.active');
-    if (!tabsWrap || !indicator || !activeTab) return;
+    if (!tabsWrap || !indicator || !activeTab || activeTab.offsetWidth === 0) return;
 
     indicator.style.width = `${activeTab.offsetWidth}px`;
     indicator.style.transform = `translateX(${activeTab.offsetLeft - 4}px)`;
 }
 
 function setupItemsTabs(userId, userEmail, client) {
-    const tabs = document.querySelectorAll('.items-tab');
+    const tabsWrap = document.getElementById('items-tabs');
+    const tabs = document.querySelectorAll('#items-tabs .items-tab');
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -624,11 +625,16 @@ function setupItemsTabs(userId, userEmail, client) {
         });
     });
 
-    // Position the sliding indicator once layout has settled, and keep it
-    // aligned when the viewport or the tab label language changes.
+    // Keep sliding indicator aligned on initial layout, count updates,
+    // language switches, view visibility changes, and viewport resizes.
     requestAnimationFrame(moveItemsTabIndicator);
     window.addEventListener('resize', moveItemsTabIndicator);
     window.addEventListener('lang-changed', () => requestAnimationFrame(moveItemsTabIndicator));
+    if (typeof ResizeObserver !== 'undefined' && tabsWrap) {
+        const ro = new ResizeObserver(() => moveItemsTabIndicator());
+        ro.observe(tabsWrap);
+        tabs.forEach(tab => ro.observe(tab));
+    }
 }
 
 function updateStats(items) {

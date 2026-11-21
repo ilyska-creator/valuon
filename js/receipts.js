@@ -41,14 +41,32 @@ function applySavedReceiptsTab() {
     document.getElementById('receipts-grid-business')?.classList.remove('hidden');
 }
 
-function validateFileSize(file) {
+const ALLOWED_RECEIPT_MIME_EXT = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'application/pdf': 'pdf'
+};
+
+function validateReceiptFile(file) {
+    if (!file) return false;
+    const lang = getLang();
     if (file.size > MAX_FILE_SIZE) {
-        const lang = getLang();
         showToast(
             lang === 'ru'
                 ? `Файл слишком большой (${(file.size / 1024 / 1024).toFixed(1)} МБ). Максимум 10 МБ.`
                 : `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max 10 MB.`,
             'warning'
+        );
+        return false;
+    }
+    if (!Object.prototype.hasOwnProperty.call(ALLOWED_RECEIPT_MIME_EXT, file.type)) {
+        showToast(
+            lang === 'ru'
+                ? 'Неподдерживаемый тип файла. Загрузите изображение (JPG, PNG, GIF, WebP) или PDF.'
+                : 'Unsupported file type. Please upload an image (JPG, PNG, GIF, WebP) or PDF.',
+            'error'
         );
         return false;
     }
@@ -260,12 +278,13 @@ function switchReceiptsGridTab(oldGrid, newGrid) {
 }
 
 function setupReceiptsTabs() {
+    const tabsWrap = document.getElementById('receipts-tabs');
     const tabs = document.querySelectorAll('#receipts-tabs .items-tab');
     const indicator = document.getElementById('receipts-tab-indicator');
 
     function moveIndicator() {
         const active = document.querySelector('#receipts-tabs .items-tab.active');
-        if (!indicator || !active) return;
+        if (!indicator || !active || active.offsetWidth === 0) return;
         indicator.style.width = `${active.offsetWidth}px`;
         indicator.style.transform = `translateX(${active.offsetLeft - 4}px)`;
     }
@@ -295,6 +314,11 @@ function setupReceiptsTabs() {
     requestAnimationFrame(moveIndicator);
     window.addEventListener('resize', moveIndicator);
     window.addEventListener('lang-changed', () => requestAnimationFrame(moveIndicator));
+    if (typeof ResizeObserver !== 'undefined' && tabsWrap) {
+        const ro = new ResizeObserver(() => moveIndicator());
+        ro.observe(tabsWrap);
+        tabs.forEach(tab => ro.observe(tab));
+    }
 }
 
 function renderBusinessCard(r, t) {
@@ -536,13 +560,7 @@ function setupUploadListeners(modal) {
     dropZone.addEventListener('drop', (e) => {
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-            if (!validateFileSize(files[0])) return;
-            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
-            if (!allowedTypes.includes(files[0].type)) {
-                const lang = getLang();
-                showToast(lang === 'ru' ? 'Неподдерживаемый тип файла. Загрузите изображение или PDF.' : 'Unsupported file type. Please upload an image or PDF.', 'error');
-                return;
-            }
+            if (!validateReceiptFile(files[0])) return;
             modal.open();
             modal.setFile(files[0]);
         }
@@ -559,7 +577,14 @@ function restoreListeners(client, userId) {
 
     document.querySelectorAll('.btn-view-receipt').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (btn.dataset.url) window.open(btn.dataset.url, '_blank');
+            const rawUrl = btn.dataset.url;
+            if (!rawUrl) return;
+            try {
+                const parsed = new URL(rawUrl, window.location.origin);
+                if (parsed.protocol === 'https:' || (parsed.protocol === 'http:' && parsed.origin === window.location.origin)) {
+                    window.open(parsed.href, '_blank', 'noopener,noreferrer');
+                }
+            } catch (_) { }
         });
     });
 
@@ -905,6 +930,7 @@ function createUploadModal(client, userId) {
     attachModalA11y(modal, { mode: 'active', onClose: close });
 
     function setFile(file) {
+        if (!validateReceiptFile(file)) return;
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(file);
         fileInput.files = dataTransfer.files;
@@ -919,8 +945,14 @@ function createUploadModal(client, userId) {
 
     fileInput?.addEventListener('change', () => {
         if (fileInput.files.length > 0) {
-            if (!validateFileSize(fileInput.files[0])) {
+            if (!validateReceiptFile(fileInput.files[0])) {
                 fileInput.value = '';
+                miniDropZone?.classList.remove('has-file');
+                if (fileNameDisplay) {
+                    const lang = getLang();
+                    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+                    fileNameDisplay.textContent = t.upload_select_hint || 'Нажмите для выбора файла (Макс. 10 МБ)';
+                }
                 return;
             }
             fileNameDisplay.textContent = fileInput.files[0].name;
@@ -952,23 +984,28 @@ function createUploadModal(client, userId) {
             showToast(lang === 'ru' ? 'Прикрепите файл чека' : 'Please attach a receipt file', 'warning');
             return;
         }
-        if (!validateFileSize(fileInput.files[0])) return;
+        const file = fileInput.files[0];
+        if (!validateReceiptFile(file)) return;
 
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
-            const file = fileInput.files[0];
-            const safeName = file.name
+            const ext = ALLOWED_RECEIPT_MIME_EXT[file.type];
+            const baseName = file.name
+                .replace(/\.[^/.]+$/, '')
                 .normalize('NFKD')
                 .replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-zA-Z0-9._-]/g, '_')
-                .toLowerCase();
-            const filePath = `${userId}/${Date.now()}_${safeName}`;
+                .replace(/[^a-zA-Z0-9_-]/g, '_')
+                .replace(/_+/g, '_')
+                .replace(/^_|_$/g, '')
+                .slice(0, 60)
+                .toLowerCase() || 'receipt';
+            const filePath = `${userId}/${Date.now()}_${baseName}.${ext}`;
 
             const { error: uploadError } = await client.storage
                 .from('receipts')
-                .upload(filePath, file, { upsert: false });
+                .upload(filePath, file, { upsert: false, contentType: file.type });
 
             if (uploadError) throw uploadError;
 
