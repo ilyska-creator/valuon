@@ -246,31 +246,49 @@
             <div class="receipts-list-container" data-animate>
                 <div class="receipts-section-header">
                     <h2 class="section-title" data-i18n="issued_receipts_title">🧾 Выписанные чеки</h2>
-                    <div class="receipt-filter-bar" id="receipt-filter-bar" role="tablist" aria-label="Фильтр чеков">
-                        <span class="receipt-filter-indicator" id="receipt-filter-indicator" aria-hidden="true"></span>
-                        <button type="button" class="receipt-filter-btn active" data-receipt-filter="all" role="tab"
-                            aria-selected="true">
-                            <span data-i18n="filter_all">Все</span>
-                            <span class="receipt-filter-count" id="filter-count-all">0</span>
-                        </button>
-                        <button type="button" class="receipt-filter-btn" data-receipt-filter="active" role="tab"
-                            aria-selected="false">
-                            <span data-i18n="filter_active">Активные</span>
-                            <span class="receipt-filter-count" id="filter-count-active">0</span>
-                        </button>
-                        <button type="button" class="receipt-filter-btn" data-receipt-filter="closed" role="tab"
-                            aria-selected="false">
-                            <span data-i18n="filter_closed">Возвраты</span>
-                            <span class="receipt-filter-count" id="filter-count-closed">0</span>
-                        </button>
+                    <div class="receipts-toolbar-controls">
+                        <div class="receipt-search-box">
+                            <i class="fa-solid fa-magnifying-glass receipt-search-icon" aria-hidden="true"></i>
+                            <input type="search" id="receipt-search-input" class="receipt-search-input"
+                                data-i18n-placeholder="receipt_search_placeholder"
+                                placeholder="Поиск по #RCP, email, товару, кассе..." autocomplete="off"
+                                spellcheck="false">
+                            <button type="button" id="receipt-search-clear" class="receipt-search-clear"
+                                data-i18n-title="receipt_search_clear" title="Очистить поиск"
+                                aria-label="Очистить поиск" style="display: none;">
+                                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <div class="receipt-filter-bar" id="receipt-filter-bar" role="tablist"
+                            aria-label="Фильтр чеков">
+                            <span class="receipt-filter-indicator" id="receipt-filter-indicator"
+                                aria-hidden="true"></span>
+                            <button type="button" class="receipt-filter-btn active" data-receipt-filter="all" role="tab"
+                                aria-selected="true">
+                                <span data-i18n="filter_all">Все</span>
+                                <span class="receipt-filter-count" id="filter-count-all">0</span>
+                            </button>
+                            <button type="button" class="receipt-filter-btn" data-receipt-filter="active" role="tab"
+                                aria-selected="false">
+                                <span data-i18n="filter_active">Активные</span>
+                                <span class="receipt-filter-count" id="filter-count-active">0</span>
+                            </button>
+                            <button type="button" class="receipt-filter-btn" data-receipt-filter="closed" role="tab"
+                                aria-selected="false">
+                                <span data-i18n="filter_closed">Возвраты</span>
+                                <span class="receipt-filter-count" id="filter-count-closed">0</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div id="business-receipts-grid" class="items-grid">
+                <div id="business-receipts-grid" class="receipts-ledger">
                 </div>
                 <div id="no-filtered-receipts-msg" class="empty-state" style="display: none;">
-                    <div class="empty-icon"><i class="fa-solid fa-filter"></i></div>
-                    <h3 data-i18n="no_filtered_receipts_title">Нет чеков в этой категории</h3>
-                    <p data-i18n="no_filtered_receipts_desc">Попробуйте выбрать другой фильтр.</p>
+                    <div class="empty-icon" id="no-filtered-receipts-icon"><i class="fa-solid fa-filter"></i></div>
+                    <h3 id="no-filtered-receipts-title" data-i18n="no_filtered_receipts_title">Нет чеков в этой
+                        категории</h3>
+                    <p id="no-filtered-receipts-desc" data-i18n="no_filtered_receipts_desc">Попробуйте выбрать другой
+                        фильтр.</p>
                 </div>
                 <div id="no-receipts-msg" class="empty-state" style="display: none;">
                     <div class="empty-icon"><i class="fa-solid fa-receipt"></i></div>

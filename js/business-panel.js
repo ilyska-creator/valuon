@@ -51,6 +51,8 @@ async function initBusinessPanel() {
     };
 
     let receiptFilter = 'all';
+    let receiptSearchQuery = '';
+    const expandedReceiptIds = new Set();
 
     function getLifecycleStatus(r) {
         return r?.lifecycle_status || 'active';
@@ -92,14 +94,38 @@ async function initBusinessPanel() {
         return Math.round((gross * safeDelta / qty) * 100) / 100;
     }
 
-    function filterReceiptsList(receiptsList) {
+    function matchesReceiptSearch(r, query, payMethodMap) {
+        const q = (query || '').trim().toLowerCase();
+        if (!q) return true;
+        const receiptNum = r.receipt_number ? `#rcp-${r.receipt_number} rcp-${r.receipt_number} ${r.receipt_number}` : String(r.id || '');
+        const payRaw = (r.payment_method || '').toLowerCase();
+        const payLocalized = payMethodMap?.[payRaw] || '';
+        const itemNames = Array.isArray(r.receipt_items)
+            ? r.receipt_items.map(it => it.item_name || '').join(' ')
+            : '';
+        const haystack = [
+            receiptNum,
+            r.customer_email || '',
+            r.pos_serial || '',
+            payRaw,
+            payLocalized,
+            r.status_reason || '',
+            itemNames
+        ].join(' ').toLowerCase();
+        return haystack.includes(q);
+    }
+
+    function filterReceiptsList(receiptsList, payMethodMap) {
+        let result = receiptsList || [];
         if (receiptFilter === 'active') {
-            return receiptsList.filter(r => !isReceiptClosed(r));
+            result = result.filter(r => !isReceiptClosed(r));
+        } else if (receiptFilter === 'closed') {
+            result = result.filter(r => getLifecycleStatus(r) !== 'active');
         }
-        if (receiptFilter === 'closed') {
-            return receiptsList.filter(r => getLifecycleStatus(r) !== 'active');
+        if (receiptSearchQuery.trim()) {
+            result = result.filter(r => matchesReceiptSearch(r, receiptSearchQuery, payMethodMap));
         }
-        return receiptsList;
+        return result;
     }
 
     function renderReceiptCards(gridEl, receiptsList) {
@@ -112,21 +138,66 @@ async function initBusinessPanel() {
             cash: t.payment_cash || 'Cash',
         };
 
-        const filtered = filterReceiptsList(receiptsList || []);
+        const filtered = filterReceiptsList(receiptsList || [], payMethodMap);
+        const hasSearch = receiptSearchQuery.trim().length > 0;
         const filteredEmptyMsg = document.getElementById('no-filtered-receipts-msg');
         if (filteredEmptyMsg) {
-            filteredEmptyMsg.style.display = (receiptsList && receiptsList.length > 0 && filtered.length === 0) ? 'block' : 'none';
+            const showEmpty = !!(receiptsList && receiptsList.length > 0 && filtered.length === 0);
+            filteredEmptyMsg.style.display = showEmpty ? 'block' : 'none';
+            if (showEmpty) {
+                const iconEl = document.getElementById('no-filtered-receipts-icon');
+                const titleEl = document.getElementById('no-filtered-receipts-title');
+                const descEl = document.getElementById('no-filtered-receipts-desc');
+                if (iconEl) {
+                    iconEl.innerHTML = hasSearch
+                        ? '<i class="fa-solid fa-magnifying-glass"></i>'
+                        : '<i class="fa-solid fa-filter"></i>';
+                }
+                if (titleEl) {
+                    titleEl.setAttribute('data-i18n', hasSearch ? 'no_search_receipts_title' : 'no_filtered_receipts_title');
+                    titleEl.textContent = hasSearch
+                        ? (t.no_search_receipts_title || 'Ничего не найдено')
+                        : (t.no_filtered_receipts_title || 'Нет чеков в этой категории');
+                }
+                if (descEl) {
+                    descEl.setAttribute('data-i18n', hasSearch ? 'no_search_receipts_desc' : 'no_filtered_receipts_desc');
+                    descEl.textContent = hasSearch
+                        ? (t.no_search_receipts_desc || 'Попробуйте изменить поисковый запрос или выбрать другой фильтр.')
+                        : (t.no_filtered_receipts_desc || 'Попробуйте выбрать другой фильтр.');
+                }
+            }
         }
 
-        const locale = currentLang === 'ru' ? 'ru-RU' : 'en-US';
+        if (filtered.length === 0) {
+            gridEl.grid.innerHTML = '';
+            gridEl.grid.style.display = 'none';
+            return;
+        }
 
-        gridEl.grid.innerHTML = filtered.map(r => {
+        gridEl.grid.style.display = '';
+        const locale = currentLang === 'ru' ? 'ru-RU' : 'en-US';
+        const lcKeyMap = {
+            voided: 'lifecycle_voided',
+            refunded: 'lifecycle_refunded',
+            partially_refunded: 'lifecycle_partially_refunded',
+        };
+
+        const headHtml = `
+            <div class="receipt-ledger-head" aria-hidden="true">
+                <div class="ledger-head-cell" data-i18n="ledger_col_receipt">${escapeHtml(t.ledger_col_receipt || 'Чек и клиент')}</div>
+                <div class="ledger-head-cell" data-i18n="ledger_col_items">${escapeHtml(t.ledger_col_items || 'Позиции')}</div>
+                <div class="ledger-head-cell" data-i18n="ledger_col_meta">${escapeHtml(t.ledger_col_meta || 'Дата и касса')}</div>
+                <div class="ledger-head-cell" data-i18n="ledger_col_status">${escapeHtml(t.ledger_col_status || 'Статус')}</div>
+                <div class="ledger-head-cell is-right" data-i18n="ledger_col_amount">${escapeHtml(t.ledger_col_amount || 'Сумма')}</div>
+                <div class="ledger-head-cell is-right" data-i18n="ledger_col_actions">${escapeHtml(t.ledger_col_actions || 'Действия')}</div>
+            </div>`;
+
+        const rowsHtml = filtered.map(r => {
             const lc = getLifecycleStatus(r);
             const closed = lc === 'voided' || lc === 'refunded';
             const isPartial = lc === 'partially_refunded';
             const isVerified = r.status === 'verified';
-            const statusClass = isVerified ? 'active' : 'warning';
-            const statusKey = isVerified ? 'status_verified' : 'status_pending';
+            const isExpanded = expandedReceiptIds.has(String(r.id));
             const dateStr = new Date(r.purchase_date).toLocaleDateString(locale);
 
             const lineItems = Array.isArray(r.receipt_items) ? r.receipt_items : [];
@@ -139,27 +210,74 @@ async function initBusinessPanel() {
             const refundedVal = parseFloat(r.refunded_amount) || 0;
             const netVal = getNetReceiptRevenue(r);
 
-            const lcKeyMap = {
-                voided: 'lifecycle_voided',
-                refunded: 'lifecycle_refunded',
-                partially_refunded: 'lifecycle_partially_refunded',
-            };
+            // Compact status cell
+            const bindingShortKey = isVerified ? 'status_verified_short' : 'status_pending_short';
+            const bindingShortText = t[bindingShortKey] || (isVerified ? 'Привязан' : 'Ожидает');
+            const bindingFullKey = isVerified ? 'status_verified' : 'status_pending';
+            const bindingFullText = t[bindingFullKey] || bindingShortText;
 
-            const badgesHtml = lc === 'active'
-                ? `<span class="item-status-badge ${statusClass}" data-i18n="${statusKey}">${escapeHtml(t[statusKey] || '')}</span>`
-                : `<div class="item-header-badges">
-                       <span class="item-status-badge lifecycle-${escapeHtml(lc)}" data-i18n="${lcKeyMap[lc]}">${escapeHtml(t[lcKeyMap[lc]] || lc)}</span>
-                       ${isPartial ? `<span class="item-status-badge ${statusClass}" data-i18n="${statusKey}">${escapeHtml(t[statusKey] || '')}</span>` : ''}
-                   </div>`;
+            let statusHtml = '';
+            if (lc === 'active') {
+                const statusMod = isVerified ? 'is-linked' : 'is-pending';
+                statusHtml = `<span class="ledger-status-badge ${statusMod}">${escapeHtml(bindingShortText)}</span>`;
+            } else if (isPartial) {
+                statusHtml = `
+                    <span class="ledger-status-badge is-partial">${escapeHtml(t.lifecycle_partially_refunded_short || t.lifecycle_partially_refunded || 'Част. возврат')}</span>
+                    <span class="ledger-status-sub">${escapeHtml(bindingShortText)}</span>`;
+            } else if (lc === 'refunded') {
+                statusHtml = `<span class="ledger-status-badge is-refunded">${escapeHtml(t.lifecycle_refunded || 'Возврат')}</span>`;
+            } else {
+                statusHtml = `<span class="ledger-status-badge is-voided">${escapeHtml(t.lifecycle_voided || 'Аннулирован')}</span>`;
+            }
 
-            const amountTagHtml = closed
-                ? `<span class="tag tag-amount-struck"><i class="fa-solid fa-tag"></i> ${escapeHtml(window.formatCurrency(grossVal, currency, currentLang))}</span>`
+            // Items preview cell
+            let itemsPreviewHtml = '<span class="ledger-items-empty">—</span>';
+            if (itemsCount > 0) {
+                const first = lineItems[0];
+                const firstQty = Math.max(1, parseInt(first.qty, 10) || 1);
+                const moreHtml = itemsCount > 1
+                    ? `<span class="ledger-items-more">+${itemsCount - 1}</span>`
+                    : '';
+                itemsPreviewHtml = `
+                    <div class="ledger-items-preview${closed ? ' is-struck' : ''}">
+                        <span class="ledger-item-preview-name" title="${escapeHtml(first.item_name)}">${escapeHtml(first.item_name)}</span>
+                        <span class="ledger-item-preview-qty">×${firstQty}</span>
+                        ${moreHtml}
+                    </div>`;
+            }
+
+            // Meta cell (date + payment · register)
+            const subMetaParts = [escapeHtml(payMethod)];
+            if (r.pos_serial) subMetaParts.push(escapeHtml(r.pos_serial));
+            const subMetaHtml = subMetaParts.join(' <span class="ledger-dot" aria-hidden="true">·</span> ');
+
+            // Amount cell
+            const amountHtml = closed
+                ? `<span class="ledger-amount-main is-struck">${escapeHtml(window.formatCurrency(grossVal, currency, currentLang))}</span>`
                 : isPartial
-                    ? `<span class="tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(window.formatCurrency(netVal, currency, currentLang))}</span>
-                       <span class="tag tag-refunded-chip"><i class="fa-solid fa-rotate-left"></i> −${escapeHtml(window.formatCurrency(refundedVal, currency, currentLang))}</span>`
-                    : `<span class="tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(window.formatCurrency(grossVal, currency, currentLang))}</span>`;
+                    ? `<span class="ledger-amount-main">${escapeHtml(window.formatCurrency(netVal, currency, currentLang))}</span>
+                       <span class="ledger-amount-delta">−${escapeHtml(window.formatCurrency(refundedVal, currency, currentLang))}</span>`
+                    : `<span class="ledger-amount-main">${escapeHtml(window.formatCurrency(grossVal, currency, currentLang))}</span>`;
 
-            const renderLineItem = (it) => {
+            // Actions cell: Refund on left (when active/partial), Download always pinned at far right
+            const manageBtnHtml = !closed ? `
+                <button type="button" class="ledger-btn ledger-btn-refund btn-manage-lifecycle" data-id="${escapeHtml(r.id)}" data-i18n-title="lifecycle_manage_tooltip" title="${escapeHtml(t.lifecycle_manage_tooltip || 'Возврат / Аннулирование')}">
+                    <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                    <span data-i18n="lifecycle_manage_btn">${escapeHtml(t.lifecycle_manage_btn || 'Возврат')}</span>
+                </button>` : '';
+
+            const downloadBtnHtml = `
+                <button type="button" class="ledger-btn ledger-btn-download btn-download-receipt" data-id="${escapeHtml(r.id)}" data-i18n-title="download_receipt_title" title="${escapeHtml(t.download_receipt_title || 'Скачать чек')}">
+                    <i class="fa-solid fa-download" aria-hidden="true"></i>
+                    <span data-i18n="download_btn">${escapeHtml(t.download_btn || 'Скачать')}</span>
+                </button>`;
+
+            // Expanded drawer line items
+            const drawerItemsHtml = itemsCount > 0 ? `
+                <div class="ledger-drawer-section">
+                    <div class="ledger-drawer-section-label">${escapeHtml(t.ledger_details_items || 'Состав чека')}</div>
+                    <ul class="ledger-items-list${closed ? ' is-struck' : ''}">
+                        ${lineItems.map(it => {
                 const qty = Math.max(1, parseInt(it.qty, 10) || 1);
                 const refQty = Math.max(0, parseInt(it.refunded_qty, 10) || 0);
                 const fullRef = !closed && refQty >= qty;
@@ -169,73 +287,92 @@ async function initBusinessPanel() {
                     : partRef
                         ? `<span class="item-refund-pill partial">${escapeHtml((t.lifecycle_item_returned_short || '−{n} возвр.').replace('{n}', String(refQty)))}</span>`
                         : '';
-                return {
-                    cls: fullRef ? 'item-row-refunded' : '',
-                    inner: `<span class="item-name">${escapeHtml(it.item_name)}</span> <span class="item-qty">×${qty}</span> ${refPill}${it.warranty_months && !fullRef && !closed ? ` <span class="item-warranty">${it.warranty_months} ${escapeHtml(warrantySuffix)}</span>` : ''}`
-                };
-            };
-
-            const itemsHtml = itemsCount > 0 ? `
-                <div class="receipt-card-items${closed ? ' is-struck' : ''}">
-                    ${itemsCount === 1
-                    ? (() => {
-                        const row = renderLineItem(lineItems[0]);
-                        return `<div class="receipt-card-item single ${row.cls}">${row.inner}</div>`;
-                    })()
-                    : `<ul class="receipt-card-items-list">${lineItems.map(it => {
-                        const row = renderLineItem(it);
-                        return `<li class="${row.cls}">${row.inner}</li>`;
-                    }).join('')}</ul>`
-                }
+                const warrantyHtml = (it.warranty_months && !fullRef && !closed)
+                    ? `<span class="ledger-item-warranty">${it.warranty_months} ${escapeHtml(warrantySuffix)}</span>`
+                    : '';
+                const lineGross = it.gross_total != null ? parseFloat(it.gross_total) : NaN;
+                const linePriceHtml = Number.isFinite(lineGross)
+                    ? `<span class="ledger-item-price">${escapeHtml(window.formatCurrency(lineGross, currency, currentLang))}</span>`
+                    : '';
+                return `
+                                <li class="ledger-item-row${fullRef ? ' item-row-refunded' : ''}">
+                                    <div class="ledger-item-row-left">
+                                        <span class="item-name">${escapeHtml(it.item_name)}</span>
+                                        <span class="item-qty">×${qty}</span>
+                                        ${refPill}
+                                    </div>
+                                    <div class="ledger-item-row-right">
+                                        ${warrantyHtml}
+                                        ${linePriceHtml}
+                                    </div>
+                                </li>`;
+            }).join('')}
+                    </ul>
                 </div>` : '';
 
+            // Expanded drawer lifecycle callout
             let lifecycleMetaHtml = '';
-            if (lc !== 'active' && (r.status_reason || r.status_changed_at)) {
+            if (lc !== 'active' && (r.status_reason || r.status_changed_at || refundedVal > 0)) {
                 const changedStr = r.status_changed_at ? new Date(r.status_changed_at).toLocaleDateString(locale) : '';
                 const reasonText = r.status_reason ? escapeHtml(r.status_reason) : '';
+                const refSumText = (lc === 'partially_refunded' || lc === 'refunded') && refundedVal > 0
+                    ? ` · −${escapeHtml(window.formatCurrency(refundedVal, currency, currentLang))}`
+                    : '';
                 lifecycleMetaHtml = `
-                <div class="receipt-lifecycle-meta is-${escapeHtml(lc)}">
-                    ${changedStr ? `<span><strong>${escapeHtml(t[lcKeyMap[lc]] || '')}</strong> · ${escapeHtml(changedStr)}</span>` : ''}
-                    ${reasonText ? `<span>${escapeHtml(t.lifecycle_reason_prefix || 'Причина:')} ${reasonText}</span>` : ''}
-                </div>`;
+                    <div class="receipt-lifecycle-meta is-${escapeHtml(lc)}">
+                        <span><strong>${escapeHtml(t[lcKeyMap[lc]] || '')}</strong>${changedStr ? ` · ${escapeHtml(changedStr)}` : ''}${refSumText}</span>
+                        ${reasonText ? `<span>${escapeHtml(t.lifecycle_reason_prefix || 'Причина:')} ${reasonText}</span>` : ''}
+                    </div>`;
             }
 
-            const manageBtnHtml = !closed ? `
-                    <button type="button" class="btn-action manage-lifecycle btn-manage-lifecycle" data-id="${escapeHtml(r.id)}" data-i18n-title="lifecycle_manage_tooltip" title="${escapeHtml(t.lifecycle_manage_tooltip || 'Возврат / Аннулирование')}">
-                        <i class="fa-solid fa-rotate-left"></i> <span data-i18n="lifecycle_manage_btn">${escapeHtml(t.lifecycle_manage_btn || 'Возврат')}</span>
-                    </button>` : '';
+            // Expanded drawer quiet metadata strip
+            const drawerMetaBits = [
+                `<span>${escapeHtml(t.ledger_details_binding || 'Привязка')}: <strong>${escapeHtml(bindingFullText)}</strong></span>`,
+                `<span>${escapeHtml(t.ledger_details_payment || 'Оплата')}: <strong>${escapeHtml(payMethod)}</strong></span>`,
+            ];
+            if (r.pos_serial) {
+                drawerMetaBits.push(`<span>${escapeHtml(t.ledger_details_register || 'Касса')}: <strong>${escapeHtml(r.pos_serial)}</strong></span>`);
+            }
 
             return `
-        <div class="item-card status-${escapeHtml(r.status)} lifecycle-${escapeHtml(lc)}" data-receipt-id="${escapeHtml(r.id)}" data-receipt-status="${escapeHtml(r.status)}" data-lifecycle-status="${escapeHtml(lc)}" data-receipt-date="${escapeHtml(r.purchase_date)}">
-            <div class="item-header">
-                <div class="item-icon"><i class="fa-solid fa-receipt"></i></div>
-                ${badgesHtml}
-            </div>
-            <div class="item-body">
-                <h3 class="item-title" title="${escapeHtml(receiptNum)}">${escapeHtml(receiptNum)}</h3>
-                <div class="item-brand">
-                    <i class="fa-regular fa-envelope"></i> ${escapeHtml(r.customer_email)}
+            <div class="receipt-ledger-item status-${escapeHtml(r.status)} lifecycle-${escapeHtml(lc)}${isExpanded ? ' is-expanded' : ''}"
+                 data-receipt-id="${escapeHtml(r.id)}"
+                 data-receipt-status="${escapeHtml(r.status)}"
+                 data-lifecycle-status="${escapeHtml(lc)}"
+                 data-receipt-date="${escapeHtml(r.purchase_date)}">
+                <div class="receipt-ledger-summary" role="button" tabindex="0" aria-expanded="${isExpanded ? 'true' : 'false'}" aria-label="${escapeHtml(receiptNum)} — ${escapeHtml(t.ledger_expand_label || 'Показать детали чека')}">
+                    <div class="ledger-col-receipt">
+                        <span class="ledger-chevron" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></span>
+                        <div class="ledger-receipt-text">
+                            <span class="ledger-receipt-num" title="${escapeHtml(receiptNum)}">${escapeHtml(receiptNum)}</span>
+                            <span class="ledger-customer-email" title="${escapeHtml(r.customer_email)}">${escapeHtml(r.customer_email)}</span>
+                        </div>
+                    </div>
+                    <div class="ledger-col-items">${itemsPreviewHtml}</div>
+                    <div class="ledger-col-meta">
+                        <span class="ledger-date receipt-date">${escapeHtml(dateStr)}</span>
+                        <span class="ledger-submeta">${subMetaHtml}</span>
+                    </div>
+                    <div class="ledger-col-status">${statusHtml}</div>
+                    <div class="ledger-col-amount">${amountHtml}</div>
+                    <div class="ledger-col-actions">
+                        ${manageBtnHtml}
+                        ${downloadBtnHtml}
+                    </div>
                 </div>
-                <div class="item-tags">
-                    ${amountTagHtml}
-                    <span class="tag"><i class="fa-solid fa-calendar-days"></i> <span class="receipt-date">${escapeHtml(dateStr)}</span></span>
-                    <span class="tag"><i class="fa-solid fa-credit-card"></i> ${escapeHtml(payMethod)}</span>
-                    ${r.pos_serial ? `<span class="tag" title="${escapeHtml(t.pos_serial_label || 'Register S/N')}"><i class="fa-solid fa-cash-register"></i> ${escapeHtml(r.pos_serial)}</span>` : ''}
-                    ${itemsCount > 1 ? `<span class="tag"><i class="fa-solid fa-boxes-stacked"></i> ${itemsCount}</span>` : ''}
+                <div class="ledger-drawer" aria-hidden="${isExpanded ? 'false' : 'true'}">
+                    <div class="ledger-drawer-inner">
+                        <div class="ledger-drawer-content">
+                            <div class="ledger-drawer-meta">${drawerMetaBits.join('<span class="ledger-dot" aria-hidden="true">·</span>')}</div>
+                            ${drawerItemsHtml}
+                            ${lifecycleMetaHtml}
+                        </div>
+                    </div>
                 </div>
-
-                ${itemsHtml}
-                ${lifecycleMetaHtml}
-
-                <div class="item-actions">
-                    <button type="button" class="btn-action download btn-download-receipt" data-id="${escapeHtml(r.id)}" data-i18n-title="download_receipt_title">
-                        <i class="fa-solid fa-download"></i> <span data-i18n="download_btn">${escapeHtml(t.download_btn || 'Скачать')}</span>
-                    </button>
-                    ${manageBtnHtml}
-                </div>
-            </div>
-        </div>`;
+            </div>`;
         }).join('');
+
+        gridEl.grid.innerHTML = `${headHtml}<div class="receipt-ledger-body">${rowsHtml}</div>`;
     }
 
     const auth = await requireAuth();
@@ -2394,6 +2531,52 @@ async function initBusinessPanel() {
         window.addEventListener('resize', moveReceiptFilterIndicator);
     }
 
+    // Search input wiring
+    const searchInput = document.getElementById('receipt-search-input');
+    const searchClearBtn = document.getElementById('receipt-search-clear');
+
+    if (searchInput) {
+        const applySearch = () => {
+            receiptSearchQuery = searchInput.value || '';
+            if (searchClearBtn) {
+                searchClearBtn.style.display = receiptSearchQuery.length > 0 ? 'inline-flex' : 'none';
+            }
+            renderReceiptCards(list, currentReceiptsList);
+        };
+
+        searchInput.addEventListener('input', applySearch);
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && searchInput.value) {
+                e.preventDefault();
+                searchInput.value = '';
+                applySearch();
+            }
+        });
+
+        if (searchClearBtn) {
+            searchClearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                applySearch();
+                searchInput.focus();
+            });
+        }
+    }
+
+    function toggleLedgerRow(summaryEl) {
+        const itemEl = summaryEl?.closest('.receipt-ledger-item');
+        if (!itemEl) return;
+        const receiptId = itemEl.dataset.receiptId;
+        const willExpand = !itemEl.classList.contains('is-expanded');
+        itemEl.classList.toggle('is-expanded', willExpand);
+        summaryEl.setAttribute('aria-expanded', willExpand ? 'true' : 'false');
+        const drawerEl = itemEl.querySelector('.ledger-drawer');
+        if (drawerEl) drawerEl.setAttribute('aria-hidden', willExpand ? 'false' : 'true');
+        if (receiptId) {
+            if (willExpand) expandedReceiptIds.add(String(receiptId));
+            else expandedReceiptIds.delete(String(receiptId));
+        }
+    }
+
     if (list.grid) {
         list.grid.addEventListener('click', async (e) => {
             const manageBtn = e.target.closest('.btn-manage-lifecycle');
@@ -2414,6 +2597,22 @@ async function initBusinessPanel() {
                     const errLang = localStorage.getItem('valuon-lang') || 'ru';
                     window.showToast(errLang === 'en' ? 'Receipt data not found' : 'Не удалось найти данные чека', 'error');
                 }
+                return;
+            }
+
+            const summaryEl = e.target.closest('.receipt-ledger-summary');
+            if (summaryEl) {
+                toggleLedgerRow(summaryEl);
+            }
+        });
+
+        list.grid.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            if (e.target.closest('button, a, input')) return;
+            const summaryEl = e.target.closest('.receipt-ledger-summary');
+            if (summaryEl) {
+                e.preventDefault();
+                toggleLedgerRow(summaryEl);
             }
         });
     }
@@ -2421,6 +2620,7 @@ async function initBusinessPanel() {
     async function refreshDashboard(client, shopId, statsEl, listEl) {
         if (!shopId) return;
 
+        listEl.grid.style.display = '';
         listEl.grid.innerHTML = '<div class="loading-spinner" style="text-align:center;padding:2rem;"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i></div>';
 
         const emptyMsg = document.getElementById('no-receipts-msg');
@@ -2483,6 +2683,7 @@ async function initBusinessPanel() {
 
             if (receipts.length === 0) {
                 listEl.grid.innerHTML = '';
+                listEl.grid.style.display = 'none';
                 if (emptyMsg) emptyMsg.style.display = 'block';
                 updateChart();
                 return;

@@ -221,8 +221,26 @@ const businessTranslations = {
         filter_all: 'Все',
         filter_active: 'Активные',
         filter_closed: 'Возвраты',
+        receipt_search_placeholder: 'Поиск по #RCP, email, товару, кассе...',
+        receipt_search_clear: 'Очистить поиск',
         no_filtered_receipts_title: 'Нет чеков в этой категории',
         no_filtered_receipts_desc: 'Попробуйте выбрать другой фильтр.',
+        no_search_receipts_title: 'Ничего не найдено',
+        no_search_receipts_desc: 'Попробуйте изменить поисковый запрос или выбрать другой фильтр.',
+        ledger_col_receipt: 'Чек и клиент',
+        ledger_col_items: 'Позиции',
+        ledger_col_meta: 'Дата и касса',
+        ledger_col_status: 'Статус',
+        ledger_col_amount: 'Сумма',
+        ledger_col_actions: 'Действия',
+        status_verified_short: 'Привязан',
+        status_pending_short: 'Ожидает',
+        lifecycle_partially_refunded_short: 'Част. возврат',
+        ledger_details_items: 'Состав чека',
+        ledger_details_payment: 'Оплата',
+        ledger_details_register: 'Касса',
+        ledger_details_binding: 'Привязка',
+        ledger_expand_label: 'Показать детали чека',
 
         lifecycle_voided: 'Аннулирован',
         lifecycle_refunded: 'Возврат',
@@ -482,8 +500,26 @@ const businessTranslations = {
         filter_all: 'All',
         filter_active: 'Active',
         filter_closed: 'Refunds & Voids',
+        receipt_search_placeholder: 'Search #RCP, email, item, register...',
+        receipt_search_clear: 'Clear search',
         no_filtered_receipts_title: 'No receipts in this category',
         no_filtered_receipts_desc: 'Try selecting another filter.',
+        no_search_receipts_title: 'No matching receipts',
+        no_search_receipts_desc: 'Try a different search query or filter.',
+        ledger_col_receipt: 'Receipt / Customer',
+        ledger_col_items: 'Items',
+        ledger_col_meta: 'Date & POS',
+        ledger_col_status: 'Status',
+        ledger_col_amount: 'Amount',
+        ledger_col_actions: 'Actions',
+        status_verified_short: 'Linked',
+        status_pending_short: 'Pending',
+        lifecycle_partially_refunded_short: 'Partial refund',
+        ledger_details_items: 'Receipt items',
+        ledger_details_payment: 'Payment',
+        ledger_details_register: 'Register',
+        ledger_details_binding: 'Customer',
+        ledger_expand_label: 'Toggle receipt details',
 
         lifecycle_voided: 'Voided',
         lifecycle_refunded: 'Refunded',
@@ -684,7 +720,7 @@ function translateReceiptCards(t) {
 
 
     document.querySelectorAll('.receipt-date').forEach(el => {
-        const card = el.closest('.item-card');
+        const card = el.closest('.receipt-ledger-item, .item-card');
         if (card) {
             const dateStr = card.getAttribute('data-receipt-date');
             if (dateStr) {
