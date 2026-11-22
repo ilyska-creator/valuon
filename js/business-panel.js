@@ -2,6 +2,7 @@ import { requireAuth } from './dashboard-auth.js';
 import { downloadReceiptPDF } from './receipt-generator.js';
 import { escapeHtml, logError } from './security.js';
 import { attachModalA11y } from './modal-a11y.js';
+import { buildXlsxBlob } from './xlsx-export.js';
 
 let currentClient = null;
 let currentShop = null;
@@ -128,7 +129,67 @@ async function initBusinessPanel() {
         return result;
     }
 
-    function renderReceiptCards(gridEl, receiptsList) {
+    let lockedReceiptsMinHeight = 0;
+
+    function lockReceiptsContainerHeight() {
+        const container = document.querySelector('.receipts-list-container');
+        if (!container) return;
+        const currentH = container.getBoundingClientRect().height;
+        if (currentH > lockedReceiptsMinHeight) {
+            lockedReceiptsMinHeight = Math.round(currentH);
+        }
+        if (lockedReceiptsMinHeight > 0) {
+            container.style.minHeight = `${lockedReceiptsMinHeight}px`;
+        }
+    }
+
+    function releaseReceiptsContainerHeight() {
+        const container = document.querySelector('.receipts-list-container');
+        lockedReceiptsMinHeight = 0;
+        if (container) {
+            container.style.minHeight = '';
+        }
+    }
+
+    function highlightMatch(rawText, query) {
+        const text = rawText == null ? '' : String(rawText);
+        const q = (query || '').trim();
+        if (!q) return escapeHtml(text);
+        const escapedPattern = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (!escapedPattern) return escapeHtml(text);
+        try {
+            const regex = new RegExp(`(${escapedPattern})`, 'ig');
+            const parts = text.split(regex);
+            if (parts.length <= 1) return escapeHtml(text);
+            return parts.map((part, idx) =>
+                idx % 2 === 1 ? `<mark class="search-hit">${escapeHtml(part)}</mark>` : escapeHtml(part)
+            ).join('');
+        } catch (_) {
+            return escapeHtml(text);
+        }
+    }
+
+    function updateExportMenuState(filteredCount, totalCount, t) {
+        const exportBtn = document.getElementById('export-receipts-btn');
+        const xlsxBtn = document.getElementById('export-receipts-xlsx-btn');
+        const csvBtn = document.getElementById('export-receipts-csv-btn');
+        const scopeEl = document.getElementById('export-menu-scope');
+        const hasReceipts = filteredCount > 0;
+        if (exportBtn) exportBtn.disabled = !hasReceipts;
+        if (xlsxBtn) xlsxBtn.disabled = !hasReceipts;
+        if (csvBtn) csvBtn.disabled = !hasReceipts;
+        if (scopeEl) {
+            const isFiltered = receiptFilter !== 'all' || receiptSearchQuery.trim().length > 0;
+            const tpl = isFiltered
+                ? (t.export_scope_filtered || 'По фильтру: {n} из {total}')
+                : (t.export_scope_all || 'Все чеки: {n}');
+            scopeEl.textContent = tpl
+                .replace('{n}', String(filteredCount))
+                .replace('{total}', String(totalCount));
+        }
+    }
+
+    function renderReceiptCards(gridEl, receiptsList, options = {}) {
         const currentLang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
         const bt = window.businessTranslations || {};
         const t = bt[currentLang] || bt.ru || {};
@@ -138,20 +199,36 @@ async function initBusinessPanel() {
             cash: t.payment_cash || 'Cash',
         };
 
+        const totalAll = (receiptsList || []).length;
         const filtered = filterReceiptsList(receiptsList || [], payMethodMap);
-        const csvExportBtn = document.getElementById('export-receipts-csv-btn');
-        if (csvExportBtn) {
-            csvExportBtn.disabled = filtered.length === 0;
+        const searchQueryTrimmed = receiptSearchQuery.trim();
+        const hasSearch = searchQueryTrimmed.length > 0;
+
+        updateExportMenuState(filtered.length, totalAll, t);
+
+        const searchMetaEl = document.getElementById('receipt-search-meta');
+        const searchCounterEl = document.getElementById('receipt-search-counter');
+        if (searchMetaEl && searchCounterEl) {
+            if (hasSearch && totalAll > 0) {
+                const countTpl = t.search_results_count || (currentLang === 'en' ? 'Found: {found} of {total}' : 'Найдено: {found} из {total}');
+                searchCounterEl.textContent = countTpl
+                    .replace('{found}', String(filtered.length))
+                    .replace('{total}', String(totalAll));
+                searchMetaEl.style.display = 'flex';
+            } else {
+                searchMetaEl.style.display = 'none';
+            }
         }
-        const hasSearch = receiptSearchQuery.trim().length > 0;
+
         const filteredEmptyMsg = document.getElementById('no-filtered-receipts-msg');
         if (filteredEmptyMsg) {
-            const showEmpty = !!(receiptsList && receiptsList.length > 0 && filtered.length === 0);
+            const showEmpty = !!(totalAll > 0 && filtered.length === 0);
             filteredEmptyMsg.style.display = showEmpty ? 'block' : 'none';
             if (showEmpty) {
                 const iconEl = document.getElementById('no-filtered-receipts-icon');
                 const titleEl = document.getElementById('no-filtered-receipts-title');
                 const descEl = document.getElementById('no-filtered-receipts-desc');
+                const resetBtn = document.getElementById('reset-receipt-filters-btn');
                 if (iconEl) {
                     iconEl.innerHTML = hasSearch
                         ? '<i class="fa-solid fa-magnifying-glass"></i>'
@@ -168,6 +245,9 @@ async function initBusinessPanel() {
                     descEl.textContent = hasSearch
                         ? (t.no_search_receipts_desc || 'Попробуйте изменить поисковый запрос или выбрать другой фильтр.')
                         : (t.no_filtered_receipts_desc || 'Попробуйте выбрать другой фильтр.');
+                }
+                if (resetBtn) {
+                    resetBtn.style.display = (hasSearch || receiptFilter !== 'all') ? 'inline-flex' : 'none';
                 }
             }
         }
@@ -195,23 +275,34 @@ async function initBusinessPanel() {
                 <div class="ledger-head-cell is-right" data-i18n="ledger_col_actions">${escapeHtml(t.ledger_col_actions || 'Действия')}</div>
             </div>`;
 
-        const rowsHtml = filtered.map(r => {
+        const animateRows = Boolean(options.animateRows);
+
+        const rowsHtml = filtered.map((r, rowIdx) => {
             const lc = getLifecycleStatus(r);
             const closed = lc === 'voided' || lc === 'refunded';
             const isPartial = lc === 'partially_refunded';
             const isVerified = r.status === 'verified';
             const isExpanded = expandedReceiptIds.has(String(r.id));
-            const dateStr = new Date(r.purchase_date).toLocaleDateString(locale);
+            const purchaseDateObj = r.purchase_date ? new Date(r.purchase_date) : null;
+            const dateStr = purchaseDateObj ? purchaseDateObj.toLocaleDateString(locale) : '—';
+            const dateTimeSource = r.created_at ? new Date(r.created_at) : purchaseDateObj;
+            const dateTimeStr = dateTimeSource
+                ? dateTimeSource.toLocaleString(locale, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+                : dateStr;
 
             const lineItems = Array.isArray(r.receipt_items) ? r.receipt_items : [];
             const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
             const itemsCount = lineItems.length;
             const payMethodVal = r.payment_method ? r.payment_method.toLowerCase() : '';
             const payMethod = payMethodMap[payMethodVal] || r.payment_method || '—';
-            const currency = r.currency || 'EUR';
+            const currency = r.currency || currentShop?.currency || 'EUR';
             const grossVal = parseFloat(r.gross_total) || 0;
+            const vatVal = parseFloat(r.vat_amount) || 0;
+            const netSubtotalVal = r.net_total != null && Number.isFinite(parseFloat(r.net_total))
+                ? parseFloat(r.net_total)
+                : Math.max(0, Math.round((grossVal - vatVal) * 100) / 100);
             const refundedVal = parseFloat(r.refunded_amount) || 0;
-            const netVal = getNetReceiptRevenue(r);
+            const netRevenueVal = getNetReceiptRevenue(r);
 
             // Compact status cell
             const bindingShortKey = isVerified ? 'status_verified_short' : 'status_pending_short';
@@ -235,18 +326,18 @@ async function initBusinessPanel() {
 
             // Meta cell (date + payment · register)
             const subMetaParts = [escapeHtml(payMethod)];
-            if (r.pos_serial) subMetaParts.push(escapeHtml(r.pos_serial));
+            if (r.pos_serial) subMetaParts.push(highlightMatch(r.pos_serial, searchQueryTrimmed));
             const subMetaHtml = subMetaParts.join(' <span class="ledger-dot" aria-hidden="true">·</span> ');
 
             // Amount cell
             const amountHtml = closed
                 ? `<span class="ledger-amount-main is-struck">${escapeHtml(window.formatCurrency(grossVal, currency, currentLang))}</span>`
                 : isPartial
-                    ? `<span class="ledger-amount-main">${escapeHtml(window.formatCurrency(netVal, currency, currentLang))}</span>
+                    ? `<span class="ledger-amount-main">${escapeHtml(window.formatCurrency(netRevenueVal, currency, currentLang))}</span>
                        <span class="ledger-amount-delta">−${escapeHtml(window.formatCurrency(refundedVal, currency, currentLang))}</span>`
                     : `<span class="ledger-amount-main">${escapeHtml(window.formatCurrency(grossVal, currency, currentLang))}</span>`;
 
-            // Actions cell: Refund on left (when active/partial), Download always pinned at far right
+            // Actions cell
             const manageBtnHtml = !closed ? `
                 <button type="button" class="ledger-btn ledger-btn-refund btn-manage-lifecycle" data-id="${escapeHtml(r.id)}" data-i18n-title="lifecycle_manage_tooltip" title="${escapeHtml(t.lifecycle_manage_tooltip || 'Возврат / Аннулирование')}">
                     <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
@@ -259,12 +350,75 @@ async function initBusinessPanel() {
                     <span data-i18n="download_btn">${escapeHtml(t.download_btn || 'Скачать')}</span>
                 </button>`;
 
-            // Expanded drawer line items
+            // Expanded drawer — structured metadata grid
+            const metaFields = [
+                {
+                    icon: isVerified ? 'fa-user-check' : 'fa-clock',
+                    label: t.ledger_details_binding || 'Привязка',
+                    value: bindingFullText,
+                },
+                {
+                    icon: payMethodVal === 'cash' ? 'fa-money-bill-wave' : 'fa-credit-card',
+                    label: t.ledger_details_payment || 'Оплата',
+                    value: payMethod,
+                },
+                {
+                    icon: 'fa-calendar-day',
+                    label: t.ledger_details_date || 'Дата и время',
+                    value: dateTimeStr,
+                    tabular: true,
+                },
+            ];
+            if (r.pos_serial) {
+                metaFields.push({
+                    icon: 'fa-cash-register',
+                    label: t.ledger_details_register || 'Касса',
+                    value: r.pos_serial,
+                    tabular: true,
+                });
+            }
+
+            const drawerMetaGridHtml = `
+                <div class="ledger-meta-grid">
+                    ${metaFields.map(f => `
+                        <div class="ledger-meta-cell">
+                            <span class="ledger-meta-label"><i class="fa-solid ${f.icon}" aria-hidden="true"></i> ${escapeHtml(f.label)}</span>
+                            <span class="ledger-meta-value${f.tabular ? ' is-tabular' : ''}">${escapeHtml(f.value)}</span>
+                        </div>`).join('')}
+                </div>`;
+
+            // Expanded drawer — quick actions (Copy receipt #, Verify QR)
+            const verifyHref = r.fiscal_hash
+                ? `verify.html?from=business.html#sig=${encodeURIComponent(r.fiscal_hash)}`
+                : 'verify.html?from=business.html';
+
+            const drawerQuickActionsHtml = `
+                <div class="ledger-quick-actions">
+                    <button type="button" class="ledger-quick-btn btn-copy-receipt-num" data-receipt-num="${escapeHtml(receiptNum)}">
+                        <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                        <span>${escapeHtml(t.ledger_action_copy || 'Копировать №')}</span>
+                    </button>
+                    <a href="${verifyHref}" class="ledger-quick-btn btn-verify-receipt">
+                        <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                        <span>${escapeHtml(t.ledger_action_verify || 'Проверить QR')}</span>
+                    </a>
+                </div>`;
+
+            // Expanded drawer — structured tabular items list
+            const eachWord = t.ledger_unit_price_each || 'за шт.';
+            const noWarrantyLabel = t.ledger_no_warranty || 'Без гарантии';
+
             const drawerItemsHtml = itemsCount > 0 ? `
                 <div class="ledger-drawer-section">
-                    <div class="ledger-drawer-section-label">${escapeHtml(t.ledger_details_items || 'Состав чека')}</div>
-                    <ul class="ledger-items-list${closed ? ' is-struck' : ''}">
-                        ${lineItems.map(it => {
+                    <div class="ledger-items-table${closed ? ' is-struck' : ''}">
+                        <div class="ledger-items-head" aria-hidden="true">
+                            <span>${escapeHtml(t.ledger_col_item_name || 'Позиция')}</span>
+                            <span class="is-right">${escapeHtml(t.ledger_col_item_qty || 'Кол-во')}</span>
+                            <span class="is-right">${escapeHtml(t.ledger_col_item_warranty || 'Гарантия')}</span>
+                            <span class="is-right">${escapeHtml(t.ledger_col_item_total || 'Сумма')}</span>
+                        </div>
+                        <ul class="ledger-items-list${closed ? ' is-struck' : ''}">
+                            ${lineItems.map(it => {
                 const qty = Math.max(1, parseInt(it.qty, 10) || 1);
                 const refQty = Math.max(0, parseInt(it.refunded_qty, 10) || 0);
                 const fullRef = !closed && refQty >= qty;
@@ -274,30 +428,39 @@ async function initBusinessPanel() {
                     : partRef
                         ? `<span class="item-refund-pill partial">${escapeHtml((t.lifecycle_item_returned_short || '−{n} возвр.').replace('{n}', String(refQty)))}</span>`
                         : '';
-                const warrantyHtml = (it.warranty_months && !fullRef && !closed)
-                    ? `<span class="ledger-item-warranty">${it.warranty_months} ${escapeHtml(warrantySuffix)}</span>`
-                    : '';
+                const hasWarranty = it.warranty_months && Number(it.warranty_months) > 0 && !fullRef && !closed;
+                const warrantyHtml = hasWarranty
+                    ? `<span class="ledger-item-warranty">${escapeHtml(String(it.warranty_months))} ${escapeHtml(warrantySuffix)}</span>`
+                    : `<span class="ledger-item-warranty is-none">${escapeHtml(noWarrantyLabel)}</span>`;
                 const lineGross = it.gross_total != null ? parseFloat(it.gross_total) : NaN;
+                const unitPriceVal = it.unit_price != null && Number.isFinite(parseFloat(it.unit_price))
+                    ? parseFloat(it.unit_price)
+                    : (Number.isFinite(lineGross) ? lineGross / qty : NaN);
+                const unitSubHtml = qty > 1 && Number.isFinite(unitPriceVal)
+                    ? `<span class="ledger-item-unit">${escapeHtml(window.formatCurrency(unitPriceVal, currency, currentLang))} ${escapeHtml(eachWord)}</span>`
+                    : '';
                 const linePriceHtml = Number.isFinite(lineGross)
                     ? `<span class="ledger-item-price">${escapeHtml(window.formatCurrency(lineGross, currency, currentLang))}</span>`
-                    : '';
+                    : `<span class="ledger-item-price">—</span>`;
                 return `
                                 <li class="ledger-item-row${fullRef ? ' item-row-refunded' : ''}">
-                                    <div class="ledger-item-row-left">
-                                        <span class="item-name">${escapeHtml(it.item_name)}</span>
-                                        <span class="item-qty">×${qty}</span>
-                                        ${refPill}
+                                    <div class="ledger-item-col-name">
+                                        <div class="ledger-item-title-line">
+                                            <span class="item-name">${highlightMatch(it.item_name, searchQueryTrimmed)}</span>
+                                            ${refPill}
+                                        </div>
+                                        ${unitSubHtml}
                                     </div>
-                                    <div class="ledger-item-row-right">
-                                        ${warrantyHtml}
-                                        ${linePriceHtml}
-                                    </div>
+                                    <div class="ledger-item-col-qty">×${qty}</div>
+                                    <div class="ledger-item-col-warranty">${warrantyHtml}</div>
+                                    <div class="ledger-item-col-price">${linePriceHtml}</div>
                                 </li>`;
             }).join('')}
-                    </ul>
+                        </ul>
+                    </div>
                 </div>` : '';
 
-            // Expanded drawer lifecycle callout
+            // Expanded drawer — lifecycle callout banner
             let lifecycleMetaHtml = '';
             if (lc !== 'active' && (r.status_reason || r.status_changed_at || refundedVal > 0)) {
                 const changedStr = r.status_changed_at ? new Date(r.status_changed_at).toLocaleDateString(locale) : '';
@@ -312,17 +475,41 @@ async function initBusinessPanel() {
                     </div>`;
             }
 
-            // Expanded drawer quiet metadata strip
-            const drawerMetaBits = [
-                `<span>${escapeHtml(t.ledger_details_binding || 'Привязка')}: <strong>${escapeHtml(bindingFullText)}</strong></span>`,
-                `<span>${escapeHtml(t.ledger_details_payment || 'Оплата')}: <strong>${escapeHtml(payMethod)}</strong></span>`,
-            ];
-            if (r.pos_serial) {
-                drawerMetaBits.push(`<span>${escapeHtml(t.ledger_details_register || 'Касса')}: <strong>${escapeHtml(r.pos_serial)}</strong></span>`);
-            }
+            // Expanded drawer — financial summary (Net / VAT / Refunded / Total)
+            const uniqueVatRates = [...new Set(
+                lineItems
+                    .map(it => (it.vat_rate != null && it.vat_rate !== '' ? Number(it.vat_rate) : null))
+                    .filter(v => Number.isFinite(v))
+            )];
+            const vatRateSuffix = uniqueVatRates.length === 1 && uniqueVatRates[0] > 0 ? ` (${uniqueVatRates[0]}%)` : '';
+            const summaryRefundRowHtml = refundedVal > 0
+                ? `<div class="ledger-summary-row is-refund">
+                       <span>${escapeHtml(t.ledger_summary_refunded || 'Возвращено')}</span>
+                       <span>−${escapeHtml(window.formatCurrency(refundedVal, currency, currentLang))}</span>
+                   </div>`
+                : '';
+
+            const drawerSummaryHtml = `
+                <div class="ledger-summary-box">
+                    <div class="ledger-summary-row">
+                        <span>${escapeHtml(t.ledger_summary_net || 'Нетто')}</span>
+                        <span>${escapeHtml(window.formatCurrency(netSubtotalVal, currency, currentLang))}</span>
+                    </div>
+                    <div class="ledger-summary-row">
+                        <span>${escapeHtml(t.ledger_summary_vat || 'НДС')}${escapeHtml(vatRateSuffix)}</span>
+                        <span>${escapeHtml(window.formatCurrency(vatVal, currency, currentLang))}</span>
+                    </div>
+                    ${summaryRefundRowHtml}
+                    <div class="ledger-summary-row is-total">
+                        <span>${escapeHtml(t.ledger_summary_total || 'Итого к учёту')}</span>
+                        <span class="${closed ? 'is-struck' : ''}">${escapeHtml(window.formatCurrency(closed ? grossVal : netRevenueVal, currency, currentLang))}</span>
+                    </div>
+                </div>`;
+
+            const animDelayStyle = animateRows && rowIdx < 12 ? ` style="--row-delay:${rowIdx * 18}ms"` : '';
 
             return `
-            <div class="receipt-ledger-item status-${escapeHtml(r.status)} lifecycle-${escapeHtml(lc)}${isExpanded ? ' is-expanded' : ''}"
+            <div class="receipt-ledger-item status-${escapeHtml(r.status)} lifecycle-${escapeHtml(lc)}${isExpanded ? ' is-expanded' : ''}${animateRows ? ' is-row-enter' : ''}"${animDelayStyle}
                  data-receipt-id="${escapeHtml(r.id)}"
                  data-receipt-status="${escapeHtml(r.status)}"
                  data-lifecycle-status="${escapeHtml(lc)}"
@@ -331,8 +518,8 @@ async function initBusinessPanel() {
                     <div class="ledger-col-receipt">
                         <span class="ledger-chevron" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></span>
                         <div class="ledger-receipt-text">
-                            <span class="ledger-receipt-num" title="${escapeHtml(receiptNum)}">${escapeHtml(receiptNum)}</span>
-                            <span class="ledger-customer-email" title="${escapeHtml(r.customer_email)}">${escapeHtml(r.customer_email)}</span>
+                            <span class="ledger-receipt-num" title="${escapeHtml(receiptNum)}">${highlightMatch(receiptNum, searchQueryTrimmed)}</span>
+                            <span class="ledger-customer-email" title="${escapeHtml(r.customer_email)}">${highlightMatch(r.customer_email, searchQueryTrimmed)}</span>
                         </div>
                     </div>
                     <div class="ledger-col-meta">
@@ -349,9 +536,15 @@ async function initBusinessPanel() {
                 <div class="ledger-drawer" aria-hidden="${isExpanded ? 'false' : 'true'}">
                     <div class="ledger-drawer-inner">
                         <div class="ledger-drawer-content">
-                            <div class="ledger-drawer-meta">${drawerMetaBits.join('<span class="ledger-dot" aria-hidden="true">·</span>')}</div>
+                            <div class="ledger-drawer-top">
+                                ${drawerMetaGridHtml}
+                                ${drawerQuickActionsHtml}
+                            </div>
                             ${drawerItemsHtml}
-                            ${lifecycleMetaHtml}
+                            <div class="ledger-drawer-footer">
+                                <div class="ledger-drawer-footer-left">${lifecycleMetaHtml}</div>
+                                ${drawerSummaryHtml}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2504,17 +2697,22 @@ async function initBusinessPanel() {
             moveReceiptFilterIndicator();
 
             if (filterFadeTimer) clearTimeout(filterFadeTimer);
+            if (nextFilter !== 'all' || receiptSearchQuery.trim()) {
+                lockReceiptsContainerHeight();
+            } else {
+                releaseReceiptsContainerHeight();
+            }
             if (list.grid) {
                 list.grid.classList.add('filter-fade-out');
                 filterFadeTimer = setTimeout(() => {
-                    renderReceiptCards(list, currentReceiptsList);
+                    renderReceiptCards(list, currentReceiptsList, { animateRows: true });
                     window.applyBusinessTranslations?.();
                     list.grid.classList.remove('filter-fade-out');
                     list.grid.classList.add('filter-fade-in');
                     setTimeout(() => list.grid?.classList.remove('filter-fade-in'), 200);
-                }, 150);
+                }, 130);
             } else {
-                renderReceiptCards(list, currentReceiptsList);
+                renderReceiptCards(list, currentReceiptsList, { animateRows: true });
                 window.applyBusinessTranslations?.();
             }
         });
@@ -2523,35 +2721,137 @@ async function initBusinessPanel() {
         window.addEventListener('resize', moveReceiptFilterIndicator);
     }
 
-    // Search input wiring
+    // Search input wiring with debounce, height stabilization (no scroll jump), and smooth row enter
     const searchInput = document.getElementById('receipt-search-input');
     const searchClearBtn = document.getElementById('receipt-search-clear');
+    const searchResetInlineBtn = document.getElementById('receipt-search-reset-inline');
+    const resetFiltersEmptyBtn = document.getElementById('reset-receipt-filters-btn');
+    let searchDebounceTimer = null;
+
+    function resetSearchAndFilters(focusSearch = false) {
+        if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+        if (searchInput) searchInput.value = '';
+        receiptSearchQuery = '';
+        if (searchClearBtn) searchClearBtn.style.display = 'none';
+        if (receiptFilter !== 'all' && filterBar) {
+            receiptFilter = 'all';
+            filterBar.querySelectorAll('.receipt-filter-btn').forEach(b => {
+                const active = b.dataset.receiptFilter === 'all';
+                b.classList.toggle('active', active);
+                b.setAttribute('aria-selected', String(active));
+            });
+            moveReceiptFilterIndicator();
+        }
+        releaseReceiptsContainerHeight();
+        renderReceiptCards(list, currentReceiptsList, { animateRows: true });
+        if (focusSearch && searchInput) searchInput.focus();
+    }
 
     if (searchInput) {
-        const applySearch = () => {
-            receiptSearchQuery = searchInput.value || '';
+        const executeSearch = (immediate = false) => {
+            const nextQuery = searchInput.value || '';
             if (searchClearBtn) {
-                searchClearBtn.style.display = receiptSearchQuery.length > 0 ? 'inline-flex' : 'none';
+                searchClearBtn.style.display = nextQuery.length > 0 ? 'inline-flex' : 'none';
             }
-            renderReceiptCards(list, currentReceiptsList);
+            if (nextQuery.trim().length > 0) {
+                lockReceiptsContainerHeight();
+            }
+            const run = () => {
+                receiptSearchQuery = nextQuery;
+                renderReceiptCards(list, currentReceiptsList, { animateRows: true });
+                if (!nextQuery.trim() && receiptFilter === 'all') {
+                    // Release lock smoothly on next frame once full list is rendered
+                    requestAnimationFrame(releaseReceiptsContainerHeight);
+                }
+            };
+            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+            if (immediate) {
+                run();
+            } else {
+                searchDebounceTimer = setTimeout(run, 120);
+            }
         };
 
-        searchInput.addEventListener('input', applySearch);
+        searchInput.addEventListener('input', () => executeSearch(false));
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && searchInput.value) {
                 e.preventDefault();
                 searchInput.value = '';
-                applySearch();
+                executeSearch(true);
             }
         });
 
         if (searchClearBtn) {
             searchClearBtn.addEventListener('click', () => {
                 searchInput.value = '';
-                applySearch();
+                executeSearch(true);
                 searchInput.focus();
             });
         }
+    }
+
+    searchResetInlineBtn?.addEventListener('click', () => {
+        if (searchInput) searchInput.value = '';
+        receiptSearchQuery = '';
+        if (searchClearBtn) searchClearBtn.style.display = 'none';
+        if (receiptFilter === 'all') releaseReceiptsContainerHeight();
+        renderReceiptCards(list, currentReceiptsList, { animateRows: true });
+        searchInput?.focus();
+    });
+
+    resetFiltersEmptyBtn?.addEventListener('click', () => resetSearchAndFilters(false));
+
+    // Release locked height gracefully if the user scrolls back above the receipts section
+    window.addEventListener('scroll', () => {
+        if (lockedReceiptsMinHeight <= 0) return;
+        if (receiptSearchQuery.trim() || receiptFilter !== 'all') return;
+        const container = document.querySelector('.receipts-list-container');
+        if (!container) return;
+        if (container.getBoundingClientRect().top > 120) {
+            releaseReceiptsContainerHeight();
+        }
+    }, { passive: true });
+
+    // Re-sync dynamic search counter, export scope & drawer labels when language toggles
+    window.addEventListener('business-lang-changed', () => {
+        if (currentReceiptsList && currentReceiptsList.length > 0) {
+            renderReceiptCards(list, currentReceiptsList, { animateRows: false });
+        }
+    });
+
+    // Export dropdown menu wiring
+    const exportWrap = document.getElementById('shop-export-wrap');
+    const exportTriggerBtn = document.getElementById('export-receipts-btn');
+    const exportMenu = document.getElementById('export-receipts-menu');
+
+    function setExportMenuOpen(open) {
+        if (!exportMenu || !exportTriggerBtn) return;
+        exportMenu.classList.toggle('is-open', open);
+        exportTriggerBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        exportMenu.setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
+
+    if (exportTriggerBtn && exportMenu) {
+        exportTriggerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (exportTriggerBtn.disabled) return;
+            const isOpen = exportMenu.classList.contains('is-open');
+            setExportMenuOpen(!isOpen);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!exportMenu.classList.contains('is-open')) return;
+            if (exportWrap && !exportWrap.contains(e.target)) {
+                setExportMenuOpen(false);
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && exportMenu.classList.contains('is-open')) {
+                setExportMenuOpen(false);
+                exportTriggerBtn.focus();
+            }
+        });
     }
 
     function sanitizeCsvCell(value) {
@@ -2565,7 +2865,20 @@ async function initBusinessPanel() {
         return str;
     }
 
-    function exportFilteredReceiptsCsv() {
+    function triggerBlobDownload(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 250);
+    }
+
+    function getExportContext() {
         const currentLang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
         const bt = window.businessTranslations || {};
         const t = bt[currentLang] || bt.ru || {};
@@ -2574,17 +2887,156 @@ async function initBusinessPanel() {
             cash: t.payment_cash || 'Cash',
         };
         const filtered = filterReceiptsList(currentReceiptsList || [], payMethodMap);
-        if (filtered.length === 0) {
-            window.showToast(t.export_csv_empty || (currentLang === 'en' ? 'No receipts to export' : 'Нет чеков для экспорта'), 'warning');
-            return;
-        }
-
         const lcLabelMap = {
             active: t.lifecycle_active || (currentLang === 'en' ? 'Active' : 'Активен'),
             partially_refunded: t.lifecycle_partially_refunded || (currentLang === 'en' ? 'Partial Refund' : 'Частичный возврат'),
             refunded: t.lifecycle_refunded || (currentLang === 'en' ? 'Refunded' : 'Возврат'),
             voided: t.lifecycle_voided || (currentLang === 'en' ? 'Voided' : 'Аннулирован'),
         };
+        return { currentLang, t, payMethodMap, filtered, lcLabelMap };
+    }
+
+    function exportFilteredReceiptsXlsx() {
+        setExportMenuOpen(false);
+        const { currentLang, t, payMethodMap, filtered, lcLabelMap } = getExportContext();
+        if (filtered.length === 0) {
+            window.showToast(t.export_csv_empty || (currentLang === 'en' ? 'No receipts to export' : 'Нет чеков для экспорта'), 'warning');
+            return;
+        }
+
+        const receiptRows = [];
+        const itemRows = [];
+
+        for (const r of filtered) {
+            const lc = getLifecycleStatus(r);
+            const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
+            const dateIso = r.purchase_date ? new Date(r.purchase_date).toISOString().slice(0, 10) : '';
+            const binding = r.status === 'verified'
+                ? (t.status_verified_short || 'Linked')
+                : (t.status_pending_short || 'Pending');
+            const payRaw = (r.payment_method || '').toLowerCase();
+            const payLabel = payMethodMap[payRaw] || r.payment_method || '';
+            const lineItems = Array.isArray(r.receipt_items) ? r.receipt_items : [];
+            const currency = r.currency || currentShop?.currency || 'EUR';
+            const grossVal = Math.round((parseFloat(r.gross_total) || 0) * 100) / 100;
+            const vatVal = Math.round((parseFloat(r.vat_amount) || 0) * 100) / 100;
+            const netVal = r.net_total != null && Number.isFinite(parseFloat(r.net_total))
+                ? Math.round(parseFloat(r.net_total) * 100) / 100
+                : Math.max(0, Math.round((grossVal - vatVal) * 100) / 100);
+            const refundedVal = Math.round((parseFloat(r.refunded_amount) || 0) * 100) / 100;
+            const netRevenueVal = Math.round(getNetReceiptRevenue(r) * 100) / 100;
+            const totalUnits = lineItems.reduce((sum, it) => sum + Math.max(1, parseInt(it.qty, 10) || 1), 0);
+
+            receiptRows.push([
+                receiptNum,
+                dateIso,
+                r.customer_email || '',
+                binding,
+                lcLabelMap[lc] || lc,
+                payLabel,
+                r.pos_serial || '',
+                totalUnits,
+                netVal,
+                vatVal,
+                grossVal,
+                refundedVal,
+                netRevenueVal,
+                currency,
+                r.status_reason || '',
+            ]);
+
+            for (const it of lineItems) {
+                const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+                const refQty = Math.max(0, parseInt(it.refunded_qty, 10) || 0);
+                const lineGross = Math.round((parseFloat(it.gross_total) || 0) * 100) / 100;
+                const lineVat = Math.round((parseFloat(it.vat_amount) || 0) * 100) / 100;
+                const lineNet = it.net_total != null && Number.isFinite(parseFloat(it.net_total))
+                    ? Math.round(parseFloat(it.net_total) * 100) / 100
+                    : Math.max(0, Math.round((lineGross - lineVat) * 100) / 100);
+                const unitPrice = it.unit_price != null && Number.isFinite(parseFloat(it.unit_price))
+                    ? Math.round(parseFloat(it.unit_price) * 100) / 100
+                    : Math.round((lineGross / qty) * 100) / 100;
+                const vatRate = it.vat_rate != null && Number.isFinite(parseFloat(it.vat_rate))
+                    ? parseFloat(it.vat_rate)
+                    : 0;
+                const warrantyMonths = Math.max(0, parseInt(it.warranty_months, 10) || 0);
+
+                itemRows.push([
+                    receiptNum,
+                    dateIso,
+                    r.customer_email || '',
+                    it.item_name || '',
+                    qty,
+                    refQty,
+                    unitPrice,
+                    vatRate,
+                    lineNet,
+                    lineVat,
+                    lineGross,
+                    warrantyMonths,
+                    currency,
+                    lcLabelMap[lc] || lc,
+                ]);
+            }
+        }
+
+        const blob = buildXlsxBlob([
+            {
+                name: t.export_sheet_receipts || (currentLang === 'en' ? 'Receipts' : 'Чеки'),
+                columns: [
+                    { header: t.csv_col_number || 'Receipt #', minWidth: 16 },
+                    { header: t.csv_col_date || 'Date', minWidth: 13 },
+                    { header: t.csv_col_email || 'Customer Email', minWidth: 24 },
+                    { header: t.csv_col_binding || 'Binding', minWidth: 14 },
+                    { header: t.csv_col_lifecycle || 'Receipt Status', minWidth: 18 },
+                    { header: t.csv_col_payment || 'Payment', minWidth: 12 },
+                    { header: t.csv_col_register || 'Register', minWidth: 14 },
+                    { header: t.csv_col_items_count || 'Items Qty', type: 'int', minWidth: 13 },
+                    { header: t.csv_col_net || 'Net', type: 'money', minWidth: 13 },
+                    { header: t.csv_col_vat || 'VAT', type: 'money', minWidth: 12 },
+                    { header: t.csv_col_gross || 'Gross Total', type: 'money', minWidth: 14 },
+                    { header: t.csv_col_refunded || 'Refunded', type: 'money', minWidth: 13 },
+                    { header: t.csv_col_net_revenue || 'Net Revenue', type: 'money', minWidth: 14 },
+                    { header: t.csv_col_currency || 'Currency', minWidth: 10 },
+                    { header: t.csv_col_reason || 'Reason', minWidth: 22 },
+                ],
+                rows: receiptRows,
+            },
+            {
+                name: t.export_sheet_items || (currentLang === 'en' ? 'Line Items' : 'Позиции'),
+                columns: [
+                    { header: t.csv_col_number || 'Receipt #', minWidth: 16 },
+                    { header: t.csv_col_date || 'Date', minWidth: 13 },
+                    { header: t.csv_col_email || 'Customer Email', minWidth: 24 },
+                    { header: t.xlsx_item_col_name || 'Product', minWidth: 26 },
+                    { header: t.xlsx_item_col_qty || 'Qty', type: 'int', minWidth: 10 },
+                    { header: t.xlsx_item_col_refunded_qty || 'Refunded Qty', type: 'int', minWidth: 14 },
+                    { header: t.xlsx_item_col_unit_price || 'Unit Price', type: 'money', minWidth: 13 },
+                    { header: t.xlsx_item_col_vat_rate || 'VAT %', type: 'number', minWidth: 10 },
+                    { header: t.csv_col_net || 'Net', type: 'money', minWidth: 13 },
+                    { header: t.csv_col_vat || 'VAT', type: 'money', minWidth: 12 },
+                    { header: t.csv_col_gross || 'Gross Total', type: 'money', minWidth: 14 },
+                    { header: t.xlsx_item_col_warranty || 'Warranty (mo.)', type: 'int', minWidth: 15 },
+                    { header: t.csv_col_currency || 'Currency', minWidth: 10 },
+                    { header: t.csv_col_lifecycle || 'Receipt Status', minWidth: 18 },
+                ],
+                rows: itemRows,
+            },
+        ]);
+
+        const todayStr = new Date().toISOString().slice(0, 10);
+        triggerBlobDownload(blob, `valuon-receipts-${todayStr}.xlsx`);
+        const doneTpl = t.export_xlsx_done || (currentLang === 'en' ? 'Excel downloaded ({n} receipts)' : 'Excel-файл скачан (чеков: {n})');
+        window.showToast(doneTpl.replace('{n}', String(filtered.length)), 'success');
+    }
+
+    function exportFilteredReceiptsCsv() {
+        setExportMenuOpen(false);
+        const { currentLang, t, payMethodMap, filtered, lcLabelMap } = getExportContext();
+        if (filtered.length === 0) {
+            window.showToast(t.export_csv_empty || (currentLang === 'en' ? 'No receipts to export' : 'Нет чеков для экспорта'), 'warning');
+            return;
+        }
 
         const headers = [
             t.csv_col_number || 'Receipt #',
@@ -2596,13 +3048,17 @@ async function initBusinessPanel() {
             t.csv_col_register || 'Register',
             t.csv_col_items || 'Items',
             t.csv_col_currency || 'Currency',
-            t.csv_col_gross || 'Gross Total',
+            t.csv_col_net || 'Net',
             t.csv_col_vat || 'VAT',
+            t.csv_col_gross || 'Gross Total',
             t.csv_col_refunded || 'Refunded',
             t.csv_col_net_revenue || 'Net Revenue',
             t.csv_col_reason || 'Reason',
         ];
 
+        // Use semicolon (;) delimiter for European/Russian Excel compatibility,
+        // and join line items with " | " so no internal delimiter splits columns.
+        const DELIM = ';';
         const rows = filtered.map(r => {
             const lc = getLifecycleStatus(r);
             const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
@@ -2613,12 +3069,17 @@ async function initBusinessPanel() {
             const payRaw = (r.payment_method || '').toLowerCase();
             const payLabel = payMethodMap[payRaw] || r.payment_method || '';
             const itemsSummary = Array.isArray(r.receipt_items)
-                ? r.receipt_items.map(it => `${it.item_name || ''} ×${Math.max(1, parseInt(it.qty, 10) || 1)}`).join('; ')
+                ? r.receipt_items
+                    .map(it => `${String(it.item_name || '').replace(/[;|\r\n]+/g, ' ').trim()} x${Math.max(1, parseInt(it.qty, 10) || 1)}`)
+                    .join(' | ')
                 : '';
-            const grossVal = (parseFloat(r.gross_total) || 0).toFixed(2);
-            const vatVal = (parseFloat(r.vat_amount) || 0).toFixed(2);
-            const refundedVal = (parseFloat(r.refunded_amount) || 0).toFixed(2);
-            const netRevenueVal = getNetReceiptRevenue(r).toFixed(2);
+            const grossNum = parseFloat(r.gross_total) || 0;
+            const vatNum = parseFloat(r.vat_amount) || 0;
+            const netNum = r.net_total != null && Number.isFinite(parseFloat(r.net_total))
+                ? parseFloat(r.net_total)
+                : Math.max(0, grossNum - vatNum);
+            const refundedNum = parseFloat(r.refunded_amount) || 0;
+            const netRevenueNum = getNetReceiptRevenue(r);
 
             return [
                 receiptNum,
@@ -2630,32 +3091,25 @@ async function initBusinessPanel() {
                 r.pos_serial || '',
                 itemsSummary,
                 r.currency || currentShop?.currency || 'EUR',
-                grossVal,
-                vatVal,
-                refundedVal,
-                netRevenueVal,
+                netNum.toFixed(2),
+                vatNum.toFixed(2),
+                grossNum.toFixed(2),
+                refundedNum.toFixed(2),
+                netRevenueNum.toFixed(2),
                 r.status_reason || '',
-            ].map(sanitizeCsvCell).join(',');
+            ].map(sanitizeCsvCell).join(DELIM);
         });
 
-        const csvContent = '\uFEFF' + [headers.map(sanitizeCsvCell).join(','), ...rows].join('\r\n');
+        const csvContent = '\uFEFF' + [headers.map(sanitizeCsvCell).join(DELIM), ...rows].join('\r\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
         const todayStr = new Date().toISOString().slice(0, 10);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `valuon-receipts-${todayStr}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 200);
+        triggerBlobDownload(blob, `valuon-receipts-${todayStr}.csv`);
 
         const doneTpl = t.export_csv_done || (currentLang === 'en' ? 'Exported {n} receipts' : 'Экспортировано чеков: {n}');
         window.showToast(doneTpl.replace('{n}', String(filtered.length)), 'success');
     }
 
+    document.getElementById('export-receipts-xlsx-btn')?.addEventListener('click', exportFilteredReceiptsXlsx);
     document.getElementById('export-receipts-csv-btn')?.addEventListener('click', exportFilteredReceiptsCsv);
 
     function toggleLedgerRow(summaryEl) {
@@ -2675,6 +3129,34 @@ async function initBusinessPanel() {
 
     if (list.grid) {
         list.grid.addEventListener('click', async (e) => {
+            const copyBtn = e.target.closest('.btn-copy-receipt-num');
+            if (copyBtn) {
+                e.stopPropagation();
+                const num = copyBtn.dataset.receiptNum || '';
+                if (!num) return;
+                const currentLang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
+                const t = window.businessTranslations?.[currentLang] || window.businessTranslations?.ru || {};
+                try {
+                    await navigator.clipboard.writeText(num);
+                    const iconEl = copyBtn.querySelector('i');
+                    const textEl = copyBtn.querySelector('span');
+                    const prevText = textEl?.textContent || '';
+                    copyBtn.classList.add('is-copied');
+                    if (iconEl) iconEl.className = 'fa-solid fa-check';
+                    if (textEl) textEl.textContent = t.ledger_action_copied || (currentLang === 'en' ? 'Copied' : 'Скопировано');
+                    const toastTpl = t.ledger_copied_toast || (currentLang === 'en' ? 'Receipt {num} copied' : 'Номер чека {num} скопирован');
+                    window.showToast(toastTpl.replace('{num}', num), 'success');
+                    setTimeout(() => {
+                        copyBtn.classList.remove('is-copied');
+                        if (iconEl) iconEl.className = 'fa-regular fa-copy';
+                        if (textEl) textEl.textContent = prevText || t.ledger_action_copy || 'Копировать №';
+                    }, 1800);
+                } catch (err) {
+                    logError('biz:copyReceiptNum', err);
+                }
+                return;
+            }
+
             const manageBtn = e.target.closest('.btn-manage-lifecycle');
             if (manageBtn) {
                 const receiptId = manageBtn.dataset.id;

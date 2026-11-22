@@ -936,3 +936,57 @@ if (backBtn) {
         backBtn.href = safePath;
     }
 }
+
+// Auto-verify receipt when opened via quick action link (#sig=<fiscal_hash>)
+async function verifyReceiptByHash(fiscalHash) {
+    if (!fiscalHash || verifying) return;
+    verifying = true;
+    try {
+        const resp = await fetch(`${SUPABASE_URL}/functions/v1/verify-receipt`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fiscal_hash: fiscalHash }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            showResult('error', window.t('rpc_error') + ': HTTP ' + resp.status);
+            return;
+        }
+        if (data?.error === 'not_found') {
+            showResult('not-found');
+            return;
+        }
+        if (data?.error === 'rate_limited') {
+            showResult('error', window.t('rate_limited'));
+            return;
+        }
+        if (data?.error === 'shop_key_missing') {
+            showResult('error', window.t('shop_not_found'));
+            return;
+        }
+        if (!data?.valid) {
+            showResult('invalid');
+            return;
+        }
+        showResult('success', {
+            receipt: data.receipt,
+            shop: data.shop || {},
+        });
+    } catch (err) {
+        logError('verify:autoHash', err);
+        showResult('error', window.t('internal_error'));
+    } finally {
+        verifying = false;
+    }
+}
+
+(() => {
+    const rawHash = window.location.hash || '';
+    if (!rawHash.startsWith('#sig=')) return;
+    const sig = decodeURIComponent(rawHash.slice(5)).trim();
+    if (!sig) return;
+    try {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    } catch (_) { /* ignore */ }
+    verifyReceiptByHash(sig);
+})();

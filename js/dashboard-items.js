@@ -434,9 +434,10 @@ function renderItems(items, opts = {}) {
                             <i class="fa-solid fa-receipt"></i>
                         </button>` : '';
         const calendarButtonHtml = item.warranty_end_date && daysLeft > 0 ? `
-                        <button type="button" class="btn-action btn-add-calendar" data-id="${escapeHtml(item.id)}"
+                        <button type="button" class="btn-action btn-add-calendar btn-calendar-wide" data-id="${escapeHtml(item.id)}"
                                 title="${btnCalendarText}" aria-label="${btnCalendarText}">
-                            <i class="fa-solid fa-calendar-plus"></i>
+                            <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i>
+                            <span data-i18n="add_to_calendar">${btnCalendarText}</span>
                         </button>` : '';
 
         let progressSectionHtml;
@@ -482,16 +483,18 @@ function renderItems(items, opts = {}) {
 
                     ${progressSectionHtml}
 
-                    <div class="mine-item-actions">
-                        ${linkedReceiptButtonHtml}
+                    <div class="mine-item-actions-wrap">
                         ${calendarButtonHtml}
-                        <button class="btn-action btn-edit-item" data-id="${escapeHtml(item.id)}" title="${btnEditText}">
-                            <i class="fa-solid fa-pen"></i>
-                            <span data-i18n="btn_edit">${btnEditText}</span>
-                        </button>
-                        <button class="btn-action btn-delete-item" data-id="${escapeHtml(item.id)}" title="${btnDeleteText}">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                        <div class="mine-item-actions">
+                            ${linkedReceiptButtonHtml}
+                            <button class="btn-action btn-edit-item" data-id="${escapeHtml(item.id)}" title="${btnEditText}">
+                                <i class="fa-solid fa-pen"></i>
+                                <span data-i18n="btn_edit">${btnEditText}</span>
+                            </button>
+                            <button class="btn-action btn-delete-item" data-id="${escapeHtml(item.id)}" title="${btnDeleteText}">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -653,9 +656,10 @@ function renderVerifiedItems(receipts, t, opts = {}) {
         const btnCalendarText = escapeHtml(t.add_to_calendar || 'В календарь');
         const btnReceiptPdfText = escapeHtml(t.btn_receipt_pdf || (lang === 'ru' ? 'Чек PDF' : 'PDF Receipt'));
         const calendarButtonHtml = item.warranty_end_date && daysLeft > 0 ? `
-                        <button type="button" class="btn-action btn-add-calendar" data-id="${escapeHtml(item.id)}"
+                        <button type="button" class="btn-action btn-add-calendar btn-calendar-wide" data-id="${escapeHtml(item.id)}"
                                 title="${btnCalendarText}" aria-label="${btnCalendarText}">
-                            <i class="fa-solid fa-calendar-plus"></i>
+                            <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i>
+                            <span data-i18n="add_to_calendar">${btnCalendarText}</span>
                         </button>` : '';
         const receiptButtonHtml = item.receipt_id ? `
                         <button type="button" class="btn-action btn-download-item-receipt" data-receipt-id="${escapeHtml(item.receipt_id)}"
@@ -714,7 +718,11 @@ function renderVerifiedItems(receipts, t, opts = {}) {
 
                     ${progressSectionHtml}
 
-                    ${(calendarButtonHtml || receiptButtonHtml) ? `<div class="mine-item-actions verified-actions">${calendarButtonHtml}${receiptButtonHtml}</div>` : ''}
+                    ${(calendarButtonHtml || receiptButtonHtml) ? `
+                    <div class="mine-item-actions-wrap verified-actions-wrap">
+                        ${calendarButtonHtml}
+                        ${receiptButtonHtml ? `<div class="mine-item-actions verified-actions">${receiptButtonHtml}</div>` : ''}
+                    </div>` : ''}
                 </div>
             </div>`;
     }).join('');

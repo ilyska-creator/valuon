@@ -812,31 +812,33 @@ html {
 }
 
 .mine-item-body {
-    padding: 18px 24px 24px;
+    padding: 20px 24px 22px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
     flex: 1;
 }
 
 .mine-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 10px;
 }
 
 .mine-stat {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 9px 10px;
+    gap: 9px;
+    padding: 10px 12px;
     border-radius: 12px;
     background: var(--light);
+    border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
     min-width: 0;
 }
 
 [data-theme="dark"] .mine-stat {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.06);
 }
 
 .mine-stat.accent {
@@ -845,10 +847,10 @@ html {
 
 .mine-stat-icon {
     flex-shrink: 0;
-    width: 16px;
+    width: 18px;
     text-align: center;
     color: var(--secondary);
-    font-size: 0.72rem;
+    font-size: 0.76rem;
 }
 
 .mine-stat.accent .mine-stat-icon {
@@ -860,19 +862,20 @@ html {
 }
 
 .mine-stat-label {
-    font-size: 0.6rem;
+    font-size: 0.64rem;
     font-weight: 700;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--secondary);
     opacity: 0.85;
-    margin-bottom: 1px;
+    margin-bottom: 2px;
 }
 
 .mine-stat-value {
-    font-size: 0.8rem;
+    font-size: 0.84rem;
     font-weight: 700;
     color: var(--text-main);
+    font-variant-numeric: tabular-nums;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -886,20 +889,26 @@ html {
     color: var(--accent);
 }
 
+.mine-progress {
+    padding-top: 2px;
+}
+
 .mine-progress-top {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 7px;
+    margin-bottom: 8px;
+    font-variant-numeric: tabular-nums;
 }
 
 .mine-progress-top .days-left-text {
-    font-size: 0.85rem;
+    font-size: 0.86rem;
+    font-weight: 700;
 }
 
 .mine-progress-until {
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     font-weight: 500;
     color: var(--secondary);
     white-space: nowrap;
@@ -946,40 +955,85 @@ html {
     margin: 0;
 }
 
+.mine-item-actions-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+[data-theme="dark"] .mine-item-actions-wrap {
+    border-top-color: rgba(255, 255, 255, 0.07);
+}
+
 .mine-item-actions {
     display: flex;
     gap: 8px;
-    margin-top: auto;
 }
 
+.mine-item-actions-wrap .btn-action,
 .mine-item-actions .btn-action {
     height: 44px;
-    border-radius: 13px;
+    border-radius: 12px;
     border: none;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 7px;
-    font-size: 0.8rem;
+    gap: 8px;
+    font-family: var(--font-main);
+    font-size: 0.84rem;
     font-weight: 700;
-    padding: 0 14px;
-    transition: all 0.2s ease;
+    padding: 0 15px;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.16s ease;
 }
 
-.mine-item-actions .btn-add-calendar,
+.mine-item-actions-wrap .btn-action:focus-visible,
+.mine-item-actions .btn-action:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.mine-item-actions-wrap .btn-calendar-wide {
+    width: 100%;
+    height: 44px;
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(16, 185, 129, 0.28);
+    color: #047857;
+    font-size: 0.86rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.mine-item-actions-wrap .btn-calendar-wide i {
+    font-size: 0.92rem;
+}
+
+.mine-item-actions-wrap .btn-calendar-wide:hover {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: rgba(16, 185, 129, 0.45);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .mine-item-actions-wrap .btn-calendar-wide {
+    background: rgba(16, 185, 129, 0.18);
+    border-color: rgba(52, 211, 153, 0.32);
+    color: #4ade80;
+}
+
+[data-theme="dark"] .mine-item-actions-wrap .btn-calendar-wide:hover {
+    background: rgba(16, 185, 129, 0.28);
+    border-color: rgba(74, 222, 128, 0.5);
+    color: #86efac;
+}
+
 .mine-item-actions .btn-delete-item,
 .mine-item-actions .btn-open-linked-receipt {
     flex: 0 0 auto;
     width: 44px;
     padding: 0;
-}
-
-.mine-item-actions.calendar-only .btn-add-calendar,
-.mine-item-actions.verified-actions .btn-add-calendar:only-child {
-    flex: 1;
-    width: auto;
-    padding: 0 14px;
 }
 
 .mine-item-actions .btn-edit-item {
@@ -995,67 +1049,65 @@ html {
 
 .mine-item-actions .btn-open-linked-receipt,
 .mine-item-actions.verified-actions .btn-download-item-receipt {
-    background: rgba(59, 130, 246, 0.14);
-    color: color-mix(in srgb, var(--primary) 85%, black);
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.22);
+    color: color-mix(in srgb, var(--primary) 88%, black);
 }
 
 .mine-item-actions.verified-actions .btn-download-item-receipt {
     flex: 1;
-    width: auto;
-    padding: 0 14px;
+    width: 100%;
+    padding: 0 15px;
 }
 
 .mine-item-actions .btn-open-linked-receipt:hover:not(:disabled),
 .mine-item-actions.verified-actions .btn-download-item-receipt:hover:not(:disabled) {
-    background: rgba(59, 130, 246, 0.22);
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.38);
     transform: translateY(-1px);
 }
 
 [data-theme="dark"] .mine-item-actions .btn-open-linked-receipt,
 [data-theme="dark"] .mine-item-actions.verified-actions .btn-download-item-receipt {
-    background: rgba(59, 130, 246, 0.24);
+    background: rgba(59, 130, 246, 0.18);
+    border-color: rgba(96, 165, 250, 0.28);
     color: #93c5fd;
 }
 
 [data-theme="dark"] .mine-item-actions .btn-open-linked-receipt:hover:not(:disabled),
 [data-theme="dark"] .mine-item-actions.verified-actions .btn-download-item-receipt:hover:not(:disabled) {
-    background: rgba(59, 130, 246, 0.34);
+    background: rgba(59, 130, 246, 0.28);
+    border-color: rgba(96, 165, 250, 0.45);
 }
 
+.mine-item-actions-wrap .btn-action:disabled,
 .mine-item-actions .btn-action:disabled {
     opacity: 0.6;
     cursor: wait;
     transform: none;
 }
 
-.mine-item-actions .btn-add-calendar {
-    background: rgba(16, 185, 129, 0.22);
-    color: color-mix(in srgb, var(--success) 85%, black);
-}
-
-.mine-item-actions .btn-add-calendar:hover {
-    background: rgba(16, 185, 129, 0.32);
-    transform: translateY(-1px);
-}
-
-[data-theme="dark"] .mine-item-actions .btn-add-calendar {
-    background: rgba(16, 185, 129, 0.3);
-    color: #4ade80;
-}
-
 .mine-item-actions .btn-delete-item {
-    background: rgba(239, 68, 68, 0.18);
-    color: color-mix(in srgb, var(--error) 85%, black);
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: color-mix(in srgb, var(--error) 88%, black);
 }
 
 .mine-item-actions .btn-delete-item:hover {
-    background: rgba(239, 68, 68, 0.28);
+    background: rgba(239, 68, 68, 0.22);
+    border-color: rgba(239, 68, 68, 0.36);
     transform: translateY(-1px);
 }
 
 [data-theme="dark"] .mine-item-actions .btn-delete-item {
-    background: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(248, 113, 113, 0.28);
     color: #f87171;
+}
+
+[data-theme="dark"] .mine-item-actions .btn-delete-item:hover {
+    background: rgba(239, 68, 68, 0.28);
+    border-color: rgba(248, 113, 113, 0.44);
 }
 
 @media (max-width: 480px) {

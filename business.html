@@ -156,6 +156,41 @@
                         <h3 class="shop-name" id="display-shop-name">Загрузка...</h3>
                         <span class="shop-badge" data-i18n="shop_badge">Магазин</span>
                     </div>
+                    <div class="shop-export-wrap" id="shop-export-wrap">
+                        <button type="button" id="export-receipts-btn" class="shop-export-btn" aria-haspopup="menu"
+                            aria-expanded="false" aria-controls="export-receipts-menu" data-i18n-title="export_tooltip"
+                            title="Экспорт чеков в Excel или CSV" disabled>
+                            <i class="fa-solid fa-file-export" aria-hidden="true"></i>
+                            <span data-i18n="export_btn">Экспорт</span>
+                            <i class="fa-solid fa-chevron-down shop-export-caret" aria-hidden="true"></i>
+                        </button>
+                        <div id="export-receipts-menu" class="export-dropdown" role="menu" aria-hidden="true">
+                            <div class="export-dropdown-header">
+                                <span id="export-menu-scope" class="export-dropdown-scope">Все чеки: 0</span>
+                            </div>
+                            <button type="button" id="export-receipts-xlsx-btn" class="export-dropdown-item"
+                                role="menuitem">
+                                <span class="export-item-icon is-xlsx"><i class="fa-solid fa-file-excel"
+                                        aria-hidden="true"></i></span>
+                                <span class="export-item-text">
+                                    <span class="export-item-title" data-i18n="export_xlsx_title">Excel (.xlsx)</span>
+                                    <span class="export-item-desc" data-i18n="export_xlsx_desc">2 листа: Чеки и
+                                        Позиции</span>
+                                </span>
+                            </button>
+                            <button type="button" id="export-receipts-csv-btn" class="export-dropdown-item"
+                                role="menuitem">
+                                <span class="export-item-icon is-csv"><i class="fa-solid fa-file-csv"
+                                        aria-hidden="true"></i></span>
+                                <span class="export-item-text">
+                                    <span class="export-item-title" data-i18n="export_csv_title">CSV для Excel
+                                        (;)</span>
+                                    <span class="export-item-desc" data-i18n="export_csv_desc">Таблица с разделителем
+                                        ;</span>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="shop-meta">
                     <div class="meta-item"><i class="fa-solid fa-hashtag"></i> <span id="display-tax-id">—</span></div>
@@ -279,12 +314,12 @@
                                 <span class="receipt-filter-count" id="filter-count-closed">0</span>
                             </button>
                         </div>
-                        <button type="button" id="export-receipts-csv-btn" class="receipt-csv-btn"
-                            data-i18n-title="export_csv_tooltip" title="Экспорт реестра в CSV">
-                            <i class="fa-solid fa-file-csv" aria-hidden="true"></i>
-                            <span data-i18n="export_csv_btn">CSV</span>
-                        </button>
                     </div>
+                </div>
+                <div id="receipt-search-meta" class="receipt-search-meta" style="display: none;" aria-live="polite">
+                    <span id="receipt-search-counter" class="receipt-search-counter"></span>
+                    <button type="button" id="receipt-search-reset-inline" class="receipt-search-reset-btn"
+                        data-i18n="search_reset_btn">Сбросить поиск</button>
                 </div>
                 <div id="business-receipts-grid" class="receipts-ledger">
                 </div>
@@ -294,6 +329,8 @@
                         категории</h3>
                     <p id="no-filtered-receipts-desc" data-i18n="no_filtered_receipts_desc">Попробуйте выбрать другой
                         фильтр.</p>
+                    <button type="button" id="reset-receipt-filters-btn" class="btn btn-outline mt-4"
+                        data-i18n="search_reset_btn">Сбросить поиск</button>
                 </div>
                 <div id="no-receipts-msg" class="empty-state" style="display: none;">
                     <div class="empty-icon"><i class="fa-solid fa-receipt"></i></div>
