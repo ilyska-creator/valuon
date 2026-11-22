@@ -24,11 +24,13 @@ export function setupLogout(currentClient) {
             try {
                 await currentClient.auth.signOut();
                 localStorage.removeItem('valuon-remember-email');
+                localStorage.removeItem('valuon-remember-login');
                 sessionStorage.clear();
                 window.location.href = 'index.html';
             } catch (err) {
                 logError('auth:logout', err);
                 localStorage.removeItem('valuon-remember-email');
+                localStorage.removeItem('valuon-remember-login');
                 sessionStorage.clear();
                 window.location.href = 'index.html';
             }

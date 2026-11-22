@@ -2248,19 +2248,43 @@
 }
 
 .customer-autocomplete li:hover,
-.customer-autocomplete li:focus-visible {
+.customer-autocomplete li:focus-visible,
+.customer-autocomplete li.is-active {
     background: rgba(59, 130, 246, 0.1);
 }
 
-.customer-autocomplete li i.fa-user {
+.customer-autocomplete li i.fa-user,
+.customer-autocomplete li i.fa-phone {
     color: var(--text-muted);
     font-size: 0.8rem;
     flex-shrink: 0;
 }
 
-.customer-autocomplete li span {
+.customer-autocomplete li>span {
     flex: 1;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.customer-autocomplete li .autocomplete-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1;
+    min-width: 0;
+}
+
+.customer-autocomplete li .autocomplete-primary {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.customer-autocomplete li .autocomplete-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

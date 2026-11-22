@@ -328,6 +328,16 @@ async function initSettings() {
                 }
             }, 600);
         });
+
+        newEmailInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmEmailChange?.click();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                resetEmailForm();
+            }
+        });
     }
 
     if (changeEmailBtn && changeEmailForm && emailDisplayRow) {
@@ -385,7 +395,24 @@ async function initSettings() {
         });
     }
 
+    let removePhoneConfirmTimer = null;
+    let isConfirmingRemovePhone = false;
+
+    function resetRemovePhoneConfirm() {
+        if (!removePhoneBtn) return;
+        clearTimeout(removePhoneConfirmTimer);
+        removePhoneConfirmTimer = null;
+        isConfirmingRemovePhone = false;
+        removePhoneBtn.classList.remove('is-confirming');
+        removePhoneBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+        const t = getSettingsT();
+        const label = t.btn_remove_phone || 'Удалить номер';
+        removePhoneBtn.setAttribute('aria-label', label);
+        removePhoneBtn.setAttribute('title', label);
+    }
+
     function resetPhoneForm() {
+        resetRemovePhoneConfirm();
         changePhoneForm?.classList.add('hidden');
         changePhoneBtn?.classList.remove('hidden');
         if (removePhoneBtn) removePhoneBtn.classList.toggle('hidden', !currentPhoneE164);
@@ -396,8 +423,21 @@ async function initSettings() {
         }
     }
 
+    if (newPhoneInput) {
+        newPhoneInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmPhoneChange?.click();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                resetPhoneForm();
+            }
+        });
+    }
+
     if (changePhoneBtn && changePhoneForm) {
         changePhoneBtn.addEventListener('click', () => {
+            resetRemovePhoneConfirm();
             changePhoneForm.classList.remove('hidden');
             changePhoneBtn.classList.add('hidden');
             removePhoneBtn?.classList.add('hidden');
@@ -485,11 +525,37 @@ async function initSettings() {
     }
 
     if (removePhoneBtn) {
+        document.addEventListener('click', (e) => {
+            if (isConfirmingRemovePhone && !removePhoneBtn.contains(e.target)) {
+                resetRemovePhoneConfirm();
+            }
+        });
+
+        window.addEventListener('lang-changed', () => {
+            if (isConfirmingRemovePhone) resetRemovePhoneConfirm();
+        });
+
         removePhoneBtn.addEventListener('click', async () => {
             if (!currentPhoneE164) return;
             const t = getSettingsT();
+
+            if (!isConfirmingRemovePhone) {
+                isConfirmingRemovePhone = true;
+                removePhoneBtn.classList.add('is-confirming');
+                const confirmText = t.btn_confirm_remove || 'Удалить?';
+                removePhoneBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i><span>${confirmText}</span>`;
+                removePhoneBtn.setAttribute('aria-label', confirmText);
+                removePhoneBtn.setAttribute('title', confirmText);
+                clearTimeout(removePhoneConfirmTimer);
+                removePhoneConfirmTimer = setTimeout(resetRemovePhoneConfirm, 3500);
+                return;
+            }
+
+            clearTimeout(removePhoneConfirmTimer);
+            removePhoneConfirmTimer = null;
+            isConfirmingRemovePhone = false;
+            removePhoneBtn.classList.remove('is-confirming');
             removePhoneBtn.disabled = true;
-            const prevHtml = removePhoneBtn.innerHTML;
             removePhoneBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
             try {
@@ -512,7 +578,7 @@ async function initSettings() {
                 logError('settings:phoneRemove', err);
                 showToast(t.msg_save_error || 'Ошибка сохранения', 'error');
             } finally {
-                removePhoneBtn.innerHTML = prevHtml;
+                resetRemovePhoneConfirm();
                 removePhoneBtn.disabled = false;
             }
         });

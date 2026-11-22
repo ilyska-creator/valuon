@@ -141,7 +141,8 @@ class CustomSelect {
                 li,
                 value: opt.value,
                 label: opt.textContent,
-                aliases: opt.getAttribute('data-aliases') || ''
+                aliases: opt.getAttribute('data-aliases') || '',
+                dial: opt.getAttribute('data-dial') || ''
             });
         });
 
@@ -160,16 +161,75 @@ class CustomSelect {
         }
     }
 
+    scoreOption(o, q) {
+        const val = o.value.toLowerCase();
+        const label = o.label.toLowerCase();
+        const dial = (o.dial || '').toLowerCase();
+        const dialDigits = dial.replace(/^\+/, '');
+        const aliasParts = o.aliases
+            ? o.aliases.toLowerCase().split(';').map((s) => s.trim()).filter(Boolean)
+            : [];
+
+        // Priority 0: exact match on ISO code, dial code (+7 / 7), or exact alias
+        if (
+            val === q ||
+            (dial && (dial === q || dialDigits === q)) ||
+            aliasParts.some((a) => a === q)
+        ) {
+            return 0;
+        }
+
+        // Priority 1: startsWith on dial code, ISO code, alias, or label
+        if (
+            val.startsWith(q) ||
+            (dial && (dial.startsWith(q) || dialDigits.startsWith(q))) ||
+            label.startsWith(q) ||
+            aliasParts.some((a) => a.startsWith(q))
+        ) {
+            return 1;
+        }
+
+        // Priority 2: substring match anywhere
+        if (
+            label.includes(q) ||
+            val.includes(q) ||
+            (o.aliases && o.aliases.toLowerCase().includes(q))
+        ) {
+            return 2;
+        }
+
+        return -1;
+    }
+
     applyFilter() {
         if (!this.searchable) return;
         const q = this.search.value.trim().toLowerCase();
         let visibleCount = 0;
-        this._allOptions.forEach((o) => {
-            const match = !q || o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q)
-                || (o.aliases && o.aliases.toLowerCase().includes(q));
-            o.li.style.display = match ? '' : 'none';
-            if (match) visibleCount++;
-        });
+
+        if (!q) {
+            this._allOptions.forEach((o) => {
+                o.li.style.display = '';
+                this.list.insertBefore(o.li, this.emptyRow || null);
+                visibleCount++;
+            });
+        } else {
+            const matched = [];
+            this._allOptions.forEach((o, idx) => {
+                const score = this.scoreOption(o, q);
+                if (score >= 0) {
+                    o.li.style.display = '';
+                    matched.push({ o, score, idx });
+                    visibleCount++;
+                } else {
+                    o.li.style.display = 'none';
+                }
+            });
+            matched.sort((a, b) => a.score - b.score || a.idx - b.idx);
+            matched.forEach(({ o }) => {
+                this.list.insertBefore(o.li, this.emptyRow || null);
+            });
+        }
+
         if (this.emptyRow) {
             this.emptyRow.style.display = visibleCount === 0 && q ? '' : 'none';
         }

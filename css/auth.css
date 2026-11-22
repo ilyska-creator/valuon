@@ -571,6 +571,23 @@
     margin-bottom: 24px;
 }
 
+.forgot-phone-hint {
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--primary);
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: -14px 0 18px;
+    text-align: left;
+}
+
+[data-theme="dark"] .forgot-phone-hint {
+    background: rgba(59, 130, 246, 0.14);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
 .forgot-back-login {
     margin-top: 8px;
 }

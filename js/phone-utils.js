@@ -2,68 +2,68 @@
 // Used across login, registration, dashboard settings, business receipt issuance and PDF rendering.
 
 export const PHONE_COUNTRIES = [
-    { code: 'EE', dial: '+372', ru: 'Эстония', en: 'Estonia', placeholder: '5555 1234', stripTrunkZero: false },
-    { code: 'LV', dial: '+371', ru: 'Латвия', en: 'Latvia', placeholder: '2123 4567', stripTrunkZero: false },
-    { code: 'LT', dial: '+370', ru: 'Литва', en: 'Lithuania', placeholder: '612 34567', stripTrunkZero: true },
-    { code: 'FI', dial: '+358', ru: 'Финляндия', en: 'Finland', placeholder: '40 123 4567', stripTrunkZero: true },
-    { code: 'RU', dial: '+7', ru: 'Россия', en: 'Russia', placeholder: '999 123 45 67', stripTrunkZero: false, trunkEight: true },
-    { code: 'UA', dial: '+380', ru: 'Украина', en: 'Ukraine', placeholder: '50 123 45 67', stripTrunkZero: true },
-    { code: 'BY', dial: '+375', ru: 'Беларусь', en: 'Belarus', placeholder: '29 123 45 67', stripTrunkZero: true },
-    { code: 'KZ', dial: '+7', ru: 'Казахстан', en: 'Kazakhstan', placeholder: '701 123 45 67', stripTrunkZero: false, trunkEight: true },
-    { code: 'DE', dial: '+49', ru: 'Германия', en: 'Germany', placeholder: '170 1234567', stripTrunkZero: true },
-    { code: 'PL', dial: '+48', ru: 'Польша', en: 'Poland', placeholder: '512 345 678', stripTrunkZero: false },
-    { code: 'GB', dial: '+44', ru: 'Великобритания', en: 'United Kingdom', placeholder: '7700 900123', stripTrunkZero: true },
-    { code: 'US', dial: '+1', ru: 'США', en: 'United States', placeholder: '415 555 2671', stripTrunkZero: false },
-    { code: 'CA', dial: '+1', ru: 'Канада', en: 'Canada', placeholder: '416 555 0199', stripTrunkZero: false },
-    { code: 'FR', dial: '+33', ru: 'Франция', en: 'France', placeholder: '6 12 34 56 78', stripTrunkZero: true },
-    { code: 'ES', dial: '+34', ru: 'Испания', en: 'Spain', placeholder: '612 34 56 78', stripTrunkZero: false },
-    { code: 'IT', dial: '+39', ru: 'Италия', en: 'Italy', placeholder: '312 345 6789', stripTrunkZero: false },
-    { code: 'NL', dial: '+31', ru: 'Нидерланды', en: 'Netherlands', placeholder: '6 12345678', stripTrunkZero: true },
-    { code: 'SE', dial: '+46', ru: 'Швеция', en: 'Sweden', placeholder: '70 123 45 67', stripTrunkZero: true },
-    { code: 'NO', dial: '+47', ru: 'Норвегия', en: 'Norway', placeholder: '412 34 567', stripTrunkZero: false },
-    { code: 'DK', dial: '+45', ru: 'Дания', en: 'Denmark', placeholder: '20 12 34 56', stripTrunkZero: false },
-    { code: 'CZ', dial: '+420', ru: 'Чехия', en: 'Czechia', placeholder: '601 123 456', stripTrunkZero: false },
-    { code: 'SK', dial: '+421', ru: 'Словакия', en: 'Slovakia', placeholder: '905 123 456', stripTrunkZero: true },
-    { code: 'AT', dial: '+43', ru: 'Австрия', en: 'Austria', placeholder: '664 123456', stripTrunkZero: true },
-    { code: 'CH', dial: '+41', ru: 'Швейцария', en: 'Switzerland', placeholder: '79 123 45 67', stripTrunkZero: true },
-    { code: 'BE', dial: '+32', ru: 'Бельгия', en: 'Belgium', placeholder: '470 12 34 56', stripTrunkZero: true },
-    { code: 'IE', dial: '+353', ru: 'Ирландия', en: 'Ireland', placeholder: '85 123 4567', stripTrunkZero: true },
-    { code: 'PT', dial: '+351', ru: 'Португалия', en: 'Portugal', placeholder: '912 345 678', stripTrunkZero: false },
-    { code: 'GR', dial: '+30', ru: 'Греция', en: 'Greece', placeholder: '691 234 5678', stripTrunkZero: false },
-    { code: 'CY', dial: '+357', ru: 'Кипр', en: 'Cyprus', placeholder: '96 123456', stripTrunkZero: false },
-    { code: 'BG', dial: '+359', ru: 'Болгария', en: 'Bulgaria', placeholder: '88 123 4567', stripTrunkZero: true },
-    { code: 'RO', dial: '+40', ru: 'Румыния', en: 'Romania', placeholder: '712 345 678', stripTrunkZero: true },
-    { code: 'HU', dial: '+36', ru: 'Венгрия', en: 'Hungary', placeholder: '20 123 4567', stripTrunkZero: true },
-    { code: 'HR', dial: '+385', ru: 'Хорватия', en: 'Croatia', placeholder: '91 234 5678', stripTrunkZero: true },
-    { code: 'SI', dial: '+386', ru: 'Словения', en: 'Slovenia', placeholder: '31 234 567', stripTrunkZero: true },
-    { code: 'RS', dial: '+381', ru: 'Сербия', en: 'Serbia', placeholder: '60 1234567', stripTrunkZero: true },
-    { code: 'ME', dial: '+382', ru: 'Черногория', en: 'Montenegro', placeholder: '67 123 456', stripTrunkZero: true },
-    { code: 'MD', dial: '+373', ru: 'Молдова', en: 'Moldova', placeholder: '68 123 456', stripTrunkZero: true },
-    { code: 'GE', dial: '+995', ru: 'Грузия', en: 'Georgia', placeholder: '555 12 34 56', stripTrunkZero: false },
-    { code: 'AM', dial: '+374', ru: 'Армения', en: 'Armenia', placeholder: '91 123456', stripTrunkZero: true },
-    { code: 'AZ', dial: '+994', ru: 'Азербайджан', en: 'Azerbaijan', placeholder: '50 123 45 67', stripTrunkZero: true },
-    { code: 'UZ', dial: '+998', ru: 'Узбекистан', en: 'Uzbekistan', placeholder: '90 123 45 67', stripTrunkZero: false },
-    { code: 'KG', dial: '+996', ru: 'Киргизия', en: 'Kyrgyzstan', placeholder: '700 123 456', stripTrunkZero: true },
-    { code: 'TJ', dial: '+992', ru: 'Таджикистан', en: 'Tajikistan', placeholder: '90 123 4567', stripTrunkZero: false },
-    { code: 'TR', dial: '+90', ru: 'Турция', en: 'Turkey', placeholder: '532 123 45 67', stripTrunkZero: true },
-    { code: 'IL', dial: '+972', ru: 'Израиль', en: 'Israel', placeholder: '50 123 4567', stripTrunkZero: true },
-    { code: 'AE', dial: '+971', ru: 'ОАЭ', en: 'United Arab Emirates', placeholder: '50 123 4567', stripTrunkZero: true },
-    { code: 'SA', dial: '+966', ru: 'Саудовская Аравия', en: 'Saudi Arabia', placeholder: '50 123 4567', stripTrunkZero: true },
-    { code: 'IN', dial: '+91', ru: 'Индия', en: 'India', placeholder: '98765 43210', stripTrunkZero: true },
-    { code: 'CN', dial: '+86', ru: 'Китай', en: 'China', placeholder: '138 0013 8000', stripTrunkZero: false },
-    { code: 'JP', dial: '+81', ru: 'Япония', en: 'Japan', placeholder: '90 1234 5678', stripTrunkZero: true },
-    { code: 'KR', dial: '+82', ru: 'Южная Корея', en: 'South Korea', placeholder: '10 1234 5678', stripTrunkZero: true },
-    { code: 'SG', dial: '+65', ru: 'Сингапур', en: 'Singapore', placeholder: '8123 4567', stripTrunkZero: false },
-    { code: 'TH', dial: '+66', ru: 'Таиланд', en: 'Thailand', placeholder: '81 234 5678', stripTrunkZero: true },
-    { code: 'AU', dial: '+61', ru: 'Австралия', en: 'Australia', placeholder: '412 345 678', stripTrunkZero: true },
-    { code: 'NZ', dial: '+64', ru: 'Новая Зеландия', en: 'New Zealand', placeholder: '21 123 4567', stripTrunkZero: true },
-    { code: 'BR', dial: '+55', ru: 'Бразилия', en: 'Brazil', placeholder: '11 91234 5678', stripTrunkZero: true },
-    { code: 'MX', dial: '+52', ru: 'Мексика', en: 'Mexico', placeholder: '55 1234 5678', stripTrunkZero: false },
-    { code: 'AR', dial: '+54', ru: 'Аргентина', en: 'Argentina', placeholder: '9 11 2345 6789', stripTrunkZero: true },
-    { code: 'ZA', dial: '+27', ru: 'ЮАР', en: 'South Africa', placeholder: '71 123 4567', stripTrunkZero: true },
-    { code: 'IS', dial: '+354', ru: 'Исландия', en: 'Iceland', placeholder: '611 1234', stripTrunkZero: false },
-    { code: 'LU', dial: '+352', ru: 'Люксембург', en: 'Luxembourg', placeholder: '628 123 456', stripTrunkZero: false },
-    { code: 'MT', dial: '+356', ru: 'Мальта', en: 'Malta', placeholder: '9912 3456', stripTrunkZero: false },
+    { code: 'EE', dial: '+372', ru: 'Эстония', en: 'Estonia', placeholder: '5555 1234', stripTrunkZero: false, minLen: 7, maxLen: 8 },
+    { code: 'LV', dial: '+371', ru: 'Латвия', en: 'Latvia', placeholder: '2123 4567', stripTrunkZero: false, minLen: 8, maxLen: 8 },
+    { code: 'LT', dial: '+370', ru: 'Литва', en: 'Lithuania', placeholder: '612 34567', stripTrunkZero: true, minLen: 8, maxLen: 8 },
+    { code: 'FI', dial: '+358', ru: 'Финляндия', en: 'Finland', placeholder: '40 123 4567', stripTrunkZero: true, minLen: 7, maxLen: 10 },
+    { code: 'RU', dial: '+7', ru: 'Россия', en: 'Russia', placeholder: '999 123 45 67', stripTrunkZero: false, trunkEight: true, minLen: 10, maxLen: 10 },
+    { code: 'UA', dial: '+380', ru: 'Украина', en: 'Ukraine', placeholder: '50 123 45 67', stripTrunkZero: true, minLen: 9, maxLen: 9 },
+    { code: 'BY', dial: '+375', ru: 'Беларусь', en: 'Belarus', placeholder: '29 123 45 67', stripTrunkZero: true, minLen: 9, maxLen: 9 },
+    { code: 'KZ', dial: '+7', ru: 'Казахстан', en: 'Kazakhstan', placeholder: '701 123 45 67', stripTrunkZero: false, trunkEight: true, minLen: 10, maxLen: 10 },
+    { code: 'DE', dial: '+49', ru: 'Германия', en: 'Germany', placeholder: '170 1234567', stripTrunkZero: true, minLen: 7, maxLen: 12 },
+    { code: 'PL', dial: '+48', ru: 'Польша', en: 'Poland', placeholder: '512 345 678', stripTrunkZero: false, minLen: 9, maxLen: 9 },
+    { code: 'GB', dial: '+44', ru: 'Великобритания', en: 'United Kingdom', placeholder: '7700 900123', stripTrunkZero: true, minLen: 9, maxLen: 10 },
+    { code: 'US', dial: '+1', ru: 'США', en: 'United States', placeholder: '415 555 2671', stripTrunkZero: false, minLen: 10, maxLen: 10 },
+    { code: 'CA', dial: '+1', ru: 'Канада', en: 'Canada', placeholder: '416 555 0199', stripTrunkZero: false, minLen: 10, maxLen: 10 },
+    { code: 'FR', dial: '+33', ru: 'Франция', en: 'France', placeholder: '6 12 34 56 78', stripTrunkZero: true, minLen: 9, maxLen: 9 },
+    { code: 'ES', dial: '+34', ru: 'Испания', en: 'Spain', placeholder: '612 34 56 78', stripTrunkZero: false, minLen: 9, maxLen: 9 },
+    { code: 'IT', dial: '+39', ru: 'Италия', en: 'Italy', placeholder: '312 345 6789', stripTrunkZero: false, minLen: 8, maxLen: 11 },
+    { code: 'NL', dial: '+31', ru: 'Нидерланды', en: 'Netherlands', placeholder: '6 12345678', stripTrunkZero: true, minLen: 9, maxLen: 9 },
+    { code: 'SE', dial: '+46', ru: 'Швеция', en: 'Sweden', placeholder: '70 123 45 67', stripTrunkZero: true, minLen: 7, maxLen: 10 },
+    { code: 'NO', dial: '+47', ru: 'Норвегия', en: 'Norway', placeholder: '412 34 567', stripTrunkZero: false, minLen: 8, maxLen: 8 },
+    { code: 'DK', dial: '+45', ru: 'Дания', en: 'Denmark', placeholder: '20 12 34 56', stripTrunkZero: false, minLen: 8, maxLen: 8 },
+    { code: 'CZ', dial: '+420', ru: 'Чехия', en: 'Czechia', placeholder: '601 123 456', stripTrunkZero: false, minLen: 9, maxLen: 9 },
+    { code: 'SK', dial: '+421', ru: 'Словакия', en: 'Slovakia', placeholder: '905 123 456', stripTrunkZero: true, minLen: 9, maxLen: 9 },
+    { code: 'AT', dial: '+43', ru: 'Австрия', en: 'Austria', placeholder: '664 123456', stripTrunkZero: true, minLen: 7, maxLen: 12 },
+    { code: 'CH', dial: '+41', ru: 'Швейцария', en: 'Switzerland', placeholder: '79 123 45 67', stripTrunkZero: true, minLen: 9, maxLen: 9 },
+    { code: 'BE', dial: '+32', ru: 'Бельгия', en: 'Belgium', placeholder: '470 12 34 56', stripTrunkZero: true, minLen: 8, maxLen: 9 },
+    { code: 'IE', dial: '+353', ru: 'Ирландия', en: 'Ireland', placeholder: '85 123 4567', stripTrunkZero: true, minLen: 7, maxLen: 9 },
+    { code: 'PT', dial: '+351', ru: 'Португалия', en: 'Portugal', placeholder: '912 345 678', stripTrunkZero: false, minLen: 9, maxLen: 9 },
+    { code: 'GR', dial: '+30', ru: 'Греция', en: 'Greece', placeholder: '691 234 5678', stripTrunkZero: false, minLen: 10, maxLen: 10 },
+    { code: 'CY', dial: '+357', ru: 'Кипр', en: 'Cyprus', placeholder: '96 123456', stripTrunkZero: false, minLen: 8, maxLen: 8 },
+    { code: 'BG', dial: '+359', ru: 'Болгария', en: 'Bulgaria', placeholder: '88 123 4567', stripTrunkZero: true, minLen: 8, maxLen: 9 },
+    { code: 'RO', dial: '+40', ru: 'Румыния', en: 'Romania', placeholder: '712 345 678', stripTrunkZero: true, minLen: 9, maxLen: 9 },
+    { code: 'HU', dial: '+36', ru: 'Венгрия', en: 'Hungary', placeholder: '20 123 4567', stripTrunkZero: true, minLen: 8, maxLen: 9 },
+    { code: 'HR', dial: '+385', ru: 'Хорватия', en: 'Croatia', placeholder: '91 234 5678', stripTrunkZero: true, minLen: 8, maxLen: 9 },
+    { code: 'SI', dial: '+386', ru: 'Словения', en: 'Slovenia', placeholder: '31 234 567', stripTrunkZero: true, minLen: 8, maxLen: 8 },
+    { code: 'RS', dial: '+381', ru: 'Сербия', en: 'Serbia', placeholder: '60 1234567', stripTrunkZero: true, minLen: 8, maxLen: 9 },
+    { code: 'ME', dial: '+382', ru: 'Черногория', en: 'Montenegro', placeholder: '67 123 456', stripTrunkZero: true, minLen: 8, maxLen: 8 },
+    { code: 'MD', dial: '+373', ru: 'Молдова', en: 'Moldova', placeholder: '68 123 456', stripTrunkZero: true, minLen: 8, maxLen: 8 },
+    { code: 'GE', dial: '+995', ru: 'Грузия', en: 'Georgia', placeholder: '555 12 34 56', stripTrunkZero: false, minLen: 9, maxLen: 9 },
+    { code: 'AM', dial: '+374', ru: 'Армения', en: 'Armenia', placeholder: '91 123456', stripTrunkZero: true, minLen: 8, maxLen: 8 },
+    { code: 'AZ', dial: '+994', ru: 'Азербайджан', en: 'Azerbaijan', placeholder: '50 123 45 67', stripTrunkZero: true, minLen: 9, maxLen: 9 },
+    { code: 'UZ', dial: '+998', ru: 'Узбекистан', en: 'Uzbekistan', placeholder: '90 123 45 67', stripTrunkZero: false, minLen: 9, maxLen: 9 },
+    { code: 'KG', dial: '+996', ru: 'Киргизия', en: 'Kyrgyzstan', placeholder: '700 123 456', stripTrunkZero: true, minLen: 9, maxLen: 9 },
+    { code: 'TJ', dial: '+992', ru: 'Таджикистан', en: 'Tajikistan', placeholder: '90 123 4567', stripTrunkZero: false, minLen: 9, maxLen: 9 },
+    { code: 'TR', dial: '+90', ru: 'Турция', en: 'Turkey', placeholder: '532 123 45 67', stripTrunkZero: true, minLen: 10, maxLen: 10 },
+    { code: 'IL', dial: '+972', ru: 'Израиль', en: 'Israel', placeholder: '50 123 4567', stripTrunkZero: true, minLen: 8, maxLen: 9 },
+    { code: 'AE', dial: '+971', ru: 'ОАЭ', en: 'United Arab Emirates', placeholder: '50 123 4567', stripTrunkZero: true, minLen: 8, maxLen: 9 },
+    { code: 'SA', dial: '+966', ru: 'Саудовская Аравия', en: 'Saudi Arabia', placeholder: '50 123 4567', stripTrunkZero: true, minLen: 9, maxLen: 9 },
+    { code: 'IN', dial: '+91', ru: 'Индия', en: 'India', placeholder: '98765 43210', stripTrunkZero: true, minLen: 10, maxLen: 10 },
+    { code: 'CN', dial: '+86', ru: 'Китай', en: 'China', placeholder: '138 0013 8000', stripTrunkZero: false, minLen: 10, maxLen: 11 },
+    { code: 'JP', dial: '+81', ru: 'Япония', en: 'Japan', placeholder: '90 1234 5678', stripTrunkZero: true, minLen: 9, maxLen: 10 },
+    { code: 'KR', dial: '+82', ru: 'Южная Корея', en: 'South Korea', placeholder: '10 1234 5678', stripTrunkZero: true, minLen: 9, maxLen: 10 },
+    { code: 'SG', dial: '+65', ru: 'Сингапур', en: 'Singapore', placeholder: '8123 4567', stripTrunkZero: false, minLen: 8, maxLen: 8 },
+    { code: 'TH', dial: '+66', ru: 'Таиланд', en: 'Thailand', placeholder: '81 234 5678', stripTrunkZero: true, minLen: 8, maxLen: 9 },
+    { code: 'AU', dial: '+61', ru: 'Австралия', en: 'Australia', placeholder: '412 345 678', stripTrunkZero: true, minLen: 9, maxLen: 9 },
+    { code: 'NZ', dial: '+64', ru: 'Новая Зеландия', en: 'New Zealand', placeholder: '21 123 4567', stripTrunkZero: true, minLen: 8, maxLen: 10 },
+    { code: 'BR', dial: '+55', ru: 'Бразилия', en: 'Brazil', placeholder: '11 91234 5678', stripTrunkZero: true, minLen: 10, maxLen: 11 },
+    { code: 'MX', dial: '+52', ru: 'Мексика', en: 'Mexico', placeholder: '55 1234 5678', stripTrunkZero: false, minLen: 10, maxLen: 10 },
+    { code: 'AR', dial: '+54', ru: 'Аргентина', en: 'Argentina', placeholder: '9 11 2345 6789', stripTrunkZero: true, minLen: 10, maxLen: 11 },
+    { code: 'ZA', dial: '+27', ru: 'ЮАР', en: 'South Africa', placeholder: '71 123 4567', stripTrunkZero: true, minLen: 9, maxLen: 9 },
+    { code: 'IS', dial: '+354', ru: 'Исландия', en: 'Iceland', placeholder: '611 1234', stripTrunkZero: false, minLen: 7, maxLen: 7 },
+    { code: 'LU', dial: '+352', ru: 'Люксембург', en: 'Luxembourg', placeholder: '628 123 456', stripTrunkZero: false, minLen: 6, maxLen: 11 },
+    { code: 'MT', dial: '+356', ru: 'Мальта', en: 'Malta', placeholder: '9912 3456', stripTrunkZero: false, minLen: 8, maxLen: 8 },
 ];
 
 const E164_REGEX = /^\+[1-9]\d{6,14}$/;
@@ -79,12 +79,12 @@ export function findPhoneCountry(code) {
     return PHONE_COUNTRIES.find((c) => c.code === upper) || null;
 }
 
-export function getDefaultPhoneCountry(preferredIso, lang) {
+export function getDefaultPhoneCountry(preferredIso) {
     if (preferredIso) {
         const match = findPhoneCountry(preferredIso);
         if (match) return match.code;
     }
-    return lang === 'en' ? 'EE' : 'EE';
+    return 'EE';
 }
 
 export function isValidE164(phone) {
@@ -94,6 +94,26 @@ export function isValidE164(phone) {
 export function phoneDigitsKey(str) {
     if (!str) return '';
     return String(str).replace(/\D+/g, '');
+}
+
+function isValidLocalLength(country, localDigits) {
+    if (!localDigits) return false;
+    if (country && country.minLen && country.maxLen) {
+        return localDigits.length >= country.minLen && localDigits.length <= country.maxLen;
+    }
+    return localDigits.length >= 6 && localDigits.length <= 14;
+}
+
+function validateInternationalCandidate(candidate) {
+    if (!E164_REGEX.test(candidate)) return null;
+    const parsed = splitPhone(candidate);
+    if (parsed.matched) {
+        const matchedCountry = findPhoneCountry(parsed.code);
+        if (matchedCountry && !isValidLocalLength(matchedCountry, parsed.local)) {
+            return null;
+        }
+    }
+    return candidate;
 }
 
 /**
@@ -107,15 +127,13 @@ export function normalizePhone(countryOrDial, localRaw) {
     // Full international format pasted directly: "+372 5555-1234"
     if (raw.startsWith('+')) {
         const digits = raw.replace(/\D+/g, '');
-        const candidate = `+${digits}`;
-        return E164_REGEX.test(candidate) ? candidate : null;
+        return validateInternationalCandidate(`+${digits}`);
     }
 
     // European international prefix "00..."
     if (raw.startsWith('00')) {
         const digits = raw.slice(2).replace(/\D+/g, '');
-        const candidate = `+${digits}`;
-        return E164_REGEX.test(candidate) ? candidate : null;
+        return validateInternationalCandidate(`+${digits}`);
     }
 
     let country = null;
@@ -137,38 +155,50 @@ export function normalizePhone(countryOrDial, localRaw) {
         localDigits = localDigits.slice(1);
     } else if (country?.trunkEight && localDigits.length === 11 && localDigits.startsWith('7')) {
         localDigits = localDigits.slice(1);
-    } else if (country?.stripTrunkZero && localDigits.startsWith('0') && localDigits.length >= 8) {
-        localDigits = localDigits.slice(1);
+    } else if (
+        dialDigits &&
+        localDigits.startsWith(dialDigits) &&
+        !isValidLocalLength(country, localDigits) &&
+        isValidLocalLength(country, localDigits.slice(dialDigits.length))
+    ) {
+        // Prevent accidental duplicate country code (e.g. "372 5555 1234" while "+372" is selected)
+        localDigits = localDigits.slice(dialDigits.length);
+    } else if (country?.stripTrunkZero && localDigits.startsWith('0') && localDigits.length >= (country.minLen || 8)) {
+        const withoutZero = localDigits.slice(1);
+        if (isValidLocalLength(country, withoutZero)) {
+            localDigits = withoutZero;
+        }
     }
 
     if (!dialDigits) {
-        const candidate = `+${localDigits}`;
-        return E164_REGEX.test(candidate) ? candidate : null;
+        return validateInternationalCandidate(`+${localDigits}`);
     }
+
+    if (!isValidLocalLength(country, localDigits)) return null;
 
     const candidate = `+${dialDigits}${localDigits}`;
     return E164_REGEX.test(candidate) ? candidate : null;
 }
 
 /**
- * Splits an E.164 phone number into { code, dial, local }.
+ * Splits an E.164 phone number into { code, dial, local, matched }.
  */
 export function splitPhone(e164, fallbackCode = 'EE') {
     const clean = String(e164 || '').trim();
     if (!clean) {
         const fb = findPhoneCountry(fallbackCode) || PHONE_COUNTRIES[0];
-        return { code: fb.code, dial: fb.dial, local: '' };
+        return { code: fb.code, dial: fb.dial, local: '', matched: false };
     }
 
-    const normalized = clean.startsWith('+') ? `+${clean.replace(/\D+/g, '')}` : `+${clean.replace(/\D+/g, '')}`;
+    const normalized = `+${clean.replace(/\D+/g, '')}`;
 
     // Special disambiguation for +7 (Kazakhstan starts with +76 or +77)
     if (normalized.startsWith('+7') && normalized.length >= 4) {
         const nextDigit = normalized[2];
         if (nextDigit === '6' || nextDigit === '7') {
-            return { code: 'KZ', dial: '+7', local: normalized.slice(2) };
+            return { code: 'KZ', dial: '+7', local: normalized.slice(2), matched: true };
         }
-        return { code: 'RU', dial: '+7', local: normalized.slice(2) };
+        return { code: 'RU', dial: '+7', local: normalized.slice(2), matched: true };
     }
 
     for (const c of DIAL_PREFIX_SORTED) {
@@ -176,13 +206,14 @@ export function splitPhone(e164, fallbackCode = 'EE') {
             return {
                 code: c.code,
                 dial: c.dial,
-                local: normalized.slice(c.dial.length)
+                local: normalized.slice(c.dial.length),
+                matched: true
             };
         }
     }
 
     const fb = findPhoneCountry(fallbackCode) || PHONE_COUNTRIES[0];
-    return { code: fb.code, dial: fb.dial, local: normalized.replace(/^\+/, '') };
+    return { code: fb.code, dial: fb.dial, local: normalized.replace(/^\+/, ''), matched: false };
 }
 
 /**
@@ -309,19 +340,76 @@ export function wirePhoneInputPair(selectEl, inputEl, opts = {}) {
         if (typeof opts.onChange === 'function') opts.onChange();
     });
 
+    const tryApplyInternational = (rawText, { isPaste = false } = {}) => {
+        const trimmed = String(rawText || '').trim();
+        let internationalDigits = '';
+
+        if (trimmed.startsWith('+')) {
+            internationalDigits = trimmed.replace(/\D+/g, '');
+        } else if (trimmed.startsWith('00')) {
+            internationalDigits = trimmed.slice(2).replace(/\D+/g, '');
+        } else if (isPaste) {
+            // Handle pasting national number with selected country's dial code (no "+"), e.g. "372 5555 1234"
+            const digits = trimmed.replace(/\D+/g, '');
+            const curCountry = findPhoneCountry(selectEl.value);
+            const curDial = curCountry ? curCountry.dial.replace(/\D+/g, '') : '';
+            if (
+                curCountry &&
+                curDial &&
+                digits.startsWith(curDial) &&
+                !isValidLocalLength(curCountry, digits) &&
+                isValidLocalLength(curCountry, digits.slice(curDial.length))
+            ) {
+                inputEl.value = digits.slice(curDial.length);
+                return true;
+            }
+            if (curCountry?.trunkEight && digits.length === 11 && (digits.startsWith('8') || digits.startsWith('7'))) {
+                inputEl.value = digits.slice(1);
+                return true;
+            }
+            return false;
+        } else {
+            return false;
+        }
+
+        if (!internationalDigits) return false;
+
+        const parsed = splitPhone(`+${internationalDigits}`, selectEl.value);
+        if (!parsed.matched) return false;
+
+        const matchedCountry = findPhoneCountry(parsed.code);
+        if (!matchedCountry) return false;
+
+        const minRequired = isPaste ? 4 : (matchedCountry.minLen || 7);
+        if (parsed.local.length < minRequired) return false;
+
+        selectEl.value = parsed.code;
+        inputEl.value = parsed.local;
+        updatePlaceholder();
+        syncCustomSelect();
+        return true;
+    };
+
+    inputEl.addEventListener('paste', (e) => {
+        const pasted = e.clipboardData?.getData('text');
+        if (!pasted) return;
+        const trimmed = pasted.trim();
+        if (trimmed.startsWith('+') || trimmed.startsWith('00') || /^\d[\d\s\-()]{6,}$/.test(trimmed)) {
+            if (tryApplyInternational(trimmed, { isPaste: true })) {
+                e.preventDefault();
+                if (typeof opts.onInput === 'function') opts.onInput();
+            }
+        }
+    });
+
     inputEl.addEventListener('input', () => {
         const raw = inputEl.value;
-        // Allow user to type/paste international "+..." and auto-detect country code
-        if (raw.trim().startsWith('+')) {
-            const digits = raw.replace(/\D+/g, '');
-            if (digits.length >= 6) {
-                const parsed = splitPhone(`+${digits}`, selectEl.value);
-                if (parsed.code && findPhoneCountry(parsed.code)) {
-                    selectEl.value = parsed.code;
-                    inputEl.value = parsed.local;
-                    updatePlaceholder();
-                    syncCustomSelect();
-                }
+        const trimmed = raw.trim();
+        // Auto-detect full international numbers from browser autofill or pasted "+..." / "00..."
+        if (trimmed.startsWith('+') || trimmed.startsWith('00')) {
+            if (!tryApplyInternational(trimmed, { isPaste: false })) {
+                const cleaned = raw.replace(/[^\d\s\-()+]/g, '');
+                if (cleaned !== raw) inputEl.value = cleaned;
             }
         } else {
             const cleaned = raw.replace(/[^\d\s\-()+]/g, '');

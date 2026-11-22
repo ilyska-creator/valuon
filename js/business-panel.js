@@ -187,6 +187,38 @@ async function initBusinessPanel() {
         }
     }
 
+    function highlightPhoneMatch(rawPhone, query) {
+        const text = rawPhone == null ? '' : String(rawPhone);
+        const q = (query || '').trim();
+        if (!q) return escapeHtml(text);
+        if (text.toLowerCase().includes(q.toLowerCase())) {
+            return highlightMatch(text, q);
+        }
+        const qDigits = q.replace(/\D/g, '');
+        if (qDigits.length < 2) return escapeHtml(text);
+        const digitIndices = [];
+        let digitsOnly = '';
+        for (let i = 0; i < text.length; i++) {
+            const ch = text[i];
+            if (ch >= '0' && ch <= '9') {
+                digitIndices.push(i);
+                digitsOnly += ch;
+            }
+        }
+        const matchPos = digitsOnly.indexOf(qDigits);
+        if (matchPos === -1) return escapeHtml(text);
+        let startIdx = digitIndices[matchPos];
+        const endIdx = digitIndices[matchPos + qDigits.length - 1] + 1;
+        if (q.startsWith('+') && startIdx > 0 && text[startIdx - 1] === '+') {
+            startIdx -= 1;
+        }
+        return (
+            escapeHtml(text.slice(0, startIdx)) +
+            `<mark class="search-hit">${escapeHtml(text.slice(startIdx, endIdx))}</mark>` +
+            escapeHtml(text.slice(endIdx))
+        );
+    }
+
     function updateExportMenuState(filteredCount, totalCount, t) {
         const exportBtn = document.getElementById('export-receipts-btn');
         const xlsxBtn = document.getElementById('export-receipts-xlsx-btn');
@@ -530,9 +562,9 @@ async function initBusinessPanel() {
             const customerPhoneDisplay = r.customer_phone ? formatPhoneDisplay(r.customer_phone) : '';
             const customerContactHtml = customerEmail
                 ? `<span class="ledger-customer-email" title="${escapeHtml(customerEmail)}">${highlightMatch(customerEmail, searchQueryTrimmed)}</span>` +
-                (customerPhoneDisplay ? `<span class="ledger-customer-phone" title="${escapeHtml(customerPhoneDisplay)}">${highlightMatch(customerPhoneDisplay, searchQueryTrimmed)}</span>` : '')
+                (customerPhoneDisplay ? `<span class="ledger-customer-phone" title="${escapeHtml(customerPhoneDisplay)}">${highlightPhoneMatch(customerPhoneDisplay, searchQueryTrimmed)}</span>` : '')
                 : (customerPhoneDisplay
-                    ? `<span class="ledger-customer-email" title="${escapeHtml(customerPhoneDisplay)}"><i class="fa-solid fa-phone" aria-hidden="true" style="font-size:0.75em;margin-right:4px;opacity:0.7;"></i>${highlightMatch(customerPhoneDisplay, searchQueryTrimmed)}</span>`
+                    ? `<span class="ledger-customer-email" title="${escapeHtml(customerPhoneDisplay)}"><i class="fa-solid fa-phone" aria-hidden="true" style="font-size:0.75em;margin-right:4px;opacity:0.7;"></i>${highlightPhoneMatch(customerPhoneDisplay, searchQueryTrimmed)}</span>`
                     : `<span class="ledger-customer-email">—</span>`);
 
             return `
@@ -761,9 +793,9 @@ async function initBusinessPanel() {
             }));
         return {
             contact_mode: contactMode,
-            email: fd.querySelector('[name="customer_email"]')?.value.trim() || '',
+            email: contactMode === 'email' ? (fd.querySelector('[name="customer_email"]')?.value.trim() || '') : '',
             phone_country: phoneCountrySelect?.value || '',
-            phone_local: phoneInput?.value.trim() || '',
+            phone_local: contactMode === 'phone' ? (phoneInput?.value.trim() || '') : '',
             payment: fd.querySelector('[name="payment_method"]').value || 'card',
             purchase_date: fd.querySelector('[name="purchase_date"]').value || '',
             pos_terminal_id: fd.querySelector('[name="pos_terminal_id"]')?.value || '',
@@ -1357,29 +1389,29 @@ async function initBusinessPanel() {
         if (matches.length === 0) { hideAutocomplete(); return; }
         phoneAutocompleteEl.innerHTML = matches.map((c) => {
             const label = formatPhoneDisplay(c.phone);
+            const subEmail = c.email ? `<span class="autocomplete-sub">${escapeHtml(c.email)}</span>` : '';
             return `<li role="option" data-phone="${escapeHtml(c.phone)}">
                 <i class="fa-solid fa-phone" aria-hidden="true"></i>
-                <span>${escapeHtml(label)}</span>
+                <span class="autocomplete-main">
+                    <span class="autocomplete-primary">${escapeHtml(label)}</span>
+                    ${subEmail}
+                </span>
                 ${c.status === 'verified' ? '<i class="fa-solid fa-circle-check autocomplete-verified" aria-hidden="true"></i>' : ''}
             </li>`;
         }).join('');
         phoneAutocompleteEl.classList.remove('is-hidden');
     }
 
-    autocompleteEl?.addEventListener('mousedown', (e) => {
-        const item = e.target.closest('[data-email]');
+    function selectEmailAutocompleteItem(item) {
         if (!item || !emailInput) return;
-        e.preventDefault();
         emailInput.value = item.dataset.email;
         hideAutocomplete();
         validateCustomerContactField(false);
         emailInput.focus();
-    });
+    }
 
-    phoneAutocompleteEl?.addEventListener('mousedown', (e) => {
-        const item = e.target.closest('[data-phone]');
+    function selectPhoneAutocompleteItem(item) {
         if (!item || !phoneInput) return;
-        e.preventDefault();
         const parts = splitPhone(item.dataset.phone, getDefaultBizCountry());
         if (phoneCountrySelect && parts.code) {
             phoneCountrySelect.value = parts.code;
@@ -1392,7 +1424,54 @@ async function initBusinessPanel() {
         hideAutocomplete();
         validateCustomerContactField(false);
         phoneInput.focus();
+    }
+
+    function attachAutocompleteKeyboard(inputEl, listEl, onSelect) {
+        if (!inputEl || !listEl) return;
+        inputEl.addEventListener('keydown', (e) => {
+            if (listEl.classList.contains('is-hidden')) return;
+            const items = Array.from(listEl.querySelectorAll('li[role="option"]'));
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const currentIdx = items.findIndex((li) => li.classList.contains('is-active'));
+                const delta = e.key === 'ArrowDown' ? 1 : -1;
+                const nextIdx = currentIdx === -1
+                    ? (delta > 0 ? 0 : items.length - 1)
+                    : (currentIdx + delta + items.length) % items.length;
+                items.forEach((li, idx) => li.classList.toggle('is-active', idx === nextIdx));
+                items[nextIdx].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'Enter') {
+                const activeItem = listEl.querySelector('li[role="option"].is-active');
+                if (activeItem) {
+                    e.preventDefault();
+                    onSelect(activeItem);
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                hideAutocomplete();
+            }
+        });
+    }
+
+    autocompleteEl?.addEventListener('mousedown', (e) => {
+        const item = e.target.closest('[data-email]');
+        if (!item) return;
+        e.preventDefault();
+        selectEmailAutocompleteItem(item);
     });
+
+    phoneAutocompleteEl?.addEventListener('mousedown', (e) => {
+        const item = e.target.closest('[data-phone]');
+        if (!item) return;
+        e.preventDefault();
+        selectPhoneAutocompleteItem(item);
+    });
+
+    attachAutocompleteKeyboard(emailInput, autocompleteEl, selectEmailAutocompleteItem);
+    attachAutocompleteKeyboard(phoneInput, phoneAutocompleteEl, selectPhoneAutocompleteItem);
 
     document.addEventListener('click', (e) => {
         const emailOpen = autocompleteEl && !autocompleteEl.classList.contains('is-hidden');
@@ -3121,7 +3200,9 @@ async function initBusinessPanel() {
 
     function sanitizeCsvCell(value) {
         let str = value == null ? '' : String(value);
-        if (/^[=+\-@\t\r]/.test(str) && !/^-\d+(\.\d+)?$/.test(str)) {
+        const isSafeNumber = /^-\d+(\.\d+)?$/.test(str);
+        const isSafePhone = /^\+\d[\d\s]+$/.test(str);
+        if (/^[=+\-@\t\r]/.test(str) && !isSafeNumber && !isSafePhone) {
             str = `'${str}`;
         }
         if (/[",\r\n;]/.test(str)) {

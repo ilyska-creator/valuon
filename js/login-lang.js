@@ -37,6 +37,7 @@ const translations = {
 
         forgot_title: "Восстановление пароля",
         forgot_desc: "Введите email, привязанный к аккаунту. Мы отправим ссылку для сброса пароля.",
+        forgot_phone_hint: "Восстановление пароля доступно только по email, привязанному к вашему аккаунту.",
         btn_send_link: "Отправить ссылку",
         forgot_success_title: "Письмо отправлено!",
         forgot_success_desc: "Проверьте почту и перейдите по ссылке в письме для сброса пароля. Ссылка действительна 1 час.",
@@ -109,6 +110,7 @@ const translations = {
 
         forgot_title: "Reset Password",
         forgot_desc: "Enter the email linked to your account. We'll send a password reset link.",
+        forgot_phone_hint: "Password recovery is available only via the email linked to your account.",
         btn_send_link: "Send Link",
         forgot_success_title: "Email Sent!",
         forgot_success_desc: "Check your inbox and click the link to reset your password. The link is valid for 1 hour.",

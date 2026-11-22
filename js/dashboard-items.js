@@ -199,7 +199,7 @@ async function openLinkedPersonalReceipt(itemId, btn) {
 }
 
 async function downloadVerifiedReceiptPDF(receiptId, btn) {
-    if (!receiptId || !currentClient || !currentUserEmail) return;
+    if (!receiptId || !currentClient || (!currentUserId && !currentUserEmail)) return;
     const lang = localStorage.getItem('valuon-lang') || 'ru';
     const originalHTML = btn.innerHTML;
     btn.disabled = true;

@@ -42,13 +42,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    if (await waitForTurnstile()) {
+    waitForTurnstile().then((ready) => {
+        if (!ready) return;
         registerWidgetId = turnstile.render('#register-turnstile', {
             sitekey: '0x4AAAAAADxC9yNLOh3uKLe-',
             theme: 'auto'
         });
         document.getElementById('register-turnstile-skel')?.classList.add('loaded');
-    }
+    });
 
     initPasswordStrength('password', { getLang });
 
@@ -203,6 +204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             p_phone: normalizedPhone
                         });
                         if (!availErr && isAvailable === false) {
+                            scrollToField(phoneEl);
                             throw new Error(lang === 'ru'
                                 ? 'Этот номер телефона уже привязан к другому аккаунту'
                                 : 'This phone number is already linked to another account');
@@ -253,6 +255,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Graceful fallback if phone column isn't migrated yet (42703) or unique conflict (23505)
                     if (profileError && (profileError.code === '42703' || profileError.code === '23505')) {
                         if (profileError.code === '23505') {
+                            await supabase.auth.updateUser({ data: { phone: null } }).catch(() => { });
                             showToast(
                                 lang === 'ru'
                                     ? 'Этот номер телефона уже занят — вы сможете указать другой в настройках'

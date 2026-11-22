@@ -39,21 +39,29 @@ function showToast(message, type = 'error', duration = 4000) {
 
     toast.querySelector('.toast-close').addEventListener('click', () => removeToast(toast));
 
+    const MAX_TOASTS = 4;
+    const activeToasts = Array.from(container.querySelectorAll('.toast:not(.removing)'));
+    while (activeToasts.length >= MAX_TOASTS) {
+        const oldest = activeToasts.shift();
+        removeToast(oldest);
+    }
+
     container.appendChild(toast);
 
-    const startTime = Date.now();
+    let lastResumeTime = Date.now();
     let remaining = duration;
     let timer = setTimeout(() => removeToast(toast), duration);
 
     toast.addEventListener('pointerenter', (e) => {
         if (e.pointerType !== 'mouse') return;
         clearTimeout(timer);
-        remaining = Math.max(0, duration - (Date.now() - startTime));
+        remaining = Math.max(0, remaining - (Date.now() - lastResumeTime));
         toast.querySelector('.toast-progress').style.animationPlayState = 'paused';
     });
 
     toast.addEventListener('pointerleave', (e) => {
         if (e.pointerType !== 'mouse') return;
+        lastResumeTime = Date.now();
         toast.querySelector('.toast-progress').style.animationPlayState = 'running';
         timer = setTimeout(() => removeToast(toast), remaining);
     });

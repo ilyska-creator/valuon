@@ -2548,6 +2548,21 @@ html {
     color: var(--error, #ef4444);
 }
 
+.btn-icon-danger.is-confirming {
+    background: var(--error, #ef4444);
+    border-color: var(--error, #ef4444);
+    color: #fff;
+    padding: 12px 14px !important;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.btn-icon-danger.is-confirming:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #fff;
+}
+
 .settings-phone-pair {
     display: grid;
     grid-template-columns: 112px minmax(0, 1fr);

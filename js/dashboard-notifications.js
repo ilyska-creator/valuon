@@ -293,6 +293,18 @@ window.addEventListener('lang-changed', async () => {
     }
 });
 
+window.addEventListener('phone-changed', async () => {
+    if (notifInitialized && cachedUserId && cachedClient) {
+        try {
+            await loadNotifications(cachedUserId, cachedUserEmail, cachedClient);
+        } catch (e) {
+            logError('notif:reloadPhone', e);
+        }
+    } else {
+        refreshNotifBadge();
+    }
+});
+
 (async function initNotifBadge() {
     try {
         const auth = await requireAuth();

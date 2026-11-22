@@ -342,7 +342,7 @@ function buildBusinessGridHTML(receipts, t, lang) {
             <div class="empty-state" data-animate="zoom">
                 <div class="empty-icon"><i class="fa-solid fa-store"></i></div>
                 <h3 data-i18n="no_business_receipts">${t.no_business_receipts || (lang === 'ru' ? 'Пока нет чеков от партнёров' : 'No business receipts yet')}</h3>
-                <p data-i18n="business_empty_desc">${t.business_empty_desc || (lang === 'ru' ? 'Как только магазин-партнёр Valuon выпишет чек на ваш email, он появится здесь автоматически.' : 'Once a Valuon partner store issues a receipt to your email, it will appear here automatically.')}</p>
+                <p data-i18n="business_empty_desc">${t.business_empty_desc || (lang === 'ru' ? 'Как только магазин-партнёр Valuon выпишет чек на ваш email или телефон, он появится здесь автоматически.' : 'Once a Valuon partner store issues a receipt to your email or phone, it will appear here automatically.')}</p>
             </div>`;
     }
 

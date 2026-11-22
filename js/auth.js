@@ -41,13 +41,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     let loginWidgetId = null;
-    if (await waitForTurnstile()) {
+    waitForTurnstile().then((ready) => {
+        if (!ready) return;
         loginWidgetId = turnstile.render('#login-turnstile', {
             sitekey: '0x4AAAAAADxC9yNLOh3uKLe-',
             theme: 'auto'
         });
         document.getElementById('login-turnstile-skel')?.classList.add('loaded');
-    }
+    });
 
     const currentLang = localStorage.getItem('valuon-lang') || 'ru';
     const emailGroup = document.getElementById('login-email-group');
@@ -281,6 +282,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const forgotClose = forgotModal?.querySelector('.forgot-close');
     const forgotForm = document.getElementById('forgot-form');
     const forgotEmailInput = document.getElementById('forgot-email');
+    const forgotPhoneHint = document.getElementById('forgot-phone-hint');
     const stepEmail = document.getElementById('forgot-step-email');
     const stepSuccess = document.getElementById('forgot-step-success');
     const backToLoginBtn = forgotModal?.querySelector('.forgot-back-login');
@@ -295,6 +297,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             : (localStorage.getItem('valuon-remember-email') || '');
         if (mainEmail && forgotEmailInput) {
             forgotEmailInput.value = mainEmail;
+        }
+
+        if (forgotPhoneHint) {
+            forgotPhoneHint.classList.toggle('hidden', loginMode !== 'phone');
         }
 
         stepEmail?.classList.remove('hidden');
