@@ -4,6 +4,7 @@ import { downloadICS } from './calendar-export.js';
 import { refreshNotifBadge } from './dashboard-notifications.js';
 import { attachModalA11y } from './modal-a11y.js';
 import { calculateDaysLeft } from './warranty-utils.js';
+import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
 
 let currentClient = null;
 let currentUserId = null;
@@ -81,6 +82,10 @@ async function initDashboardItems() {
     setupItemsSort();
     await loadItems(auth.user.id, auth.client);
     await loadVerifiedItems(auth.user.email, auth.client);
+    window.addEventListener('phone-changed', () => {
+        verifiedReceiptPdfCache.clear();
+        loadVerifiedItems(auth.user.email, auth.client);
+    });
     setupModal(auth.client);
     setupEditModal(auth.client, auth.user.id);
     setupDeleteItemModal(auth.client, auth.user.id);
@@ -230,14 +235,30 @@ async function downloadVerifiedReceiptPDF(receiptId, btn) {
         let receipt = verifiedReceiptPdfCache.get(String(receiptId));
 
         if (!receipt) {
-            const { data, error } = await currentClient
-                .from('business_receipts')
-                .select('*, receipt_items(*)')
-                .eq('id', receiptId)
-                .eq('customer_email', currentUserEmail)
-                .order('sort_order', { referencedTable: 'receipt_items', ascending: true })
-                .single();
+            const userPhone = await fetchCurrentUserPhone(currentClient, currentUserId);
+            const buyerOrFilter = buildBuyerReceiptOrFilter({ userId: currentUserId, email: currentUserEmail, phone: userPhone });
 
+            let pdfRes = buyerOrFilter
+                ? await currentClient
+                    .from('business_receipts')
+                    .select('*, receipt_items(*)')
+                    .eq('id', receiptId)
+                    .or(buyerOrFilter)
+                    .order('sort_order', { referencedTable: 'receipt_items', ascending: true })
+                    .single()
+                : { data: null, error: new Error('Receipt not found') };
+
+            if (pdfRes.error && pdfRes.error.code === '42703' && currentUserEmail) {
+                pdfRes = await currentClient
+                    .from('business_receipts')
+                    .select('*, receipt_items(*)')
+                    .eq('id', receiptId)
+                    .eq('customer_email', currentUserEmail)
+                    .order('sort_order', { referencedTable: 'receipt_items', ascending: true })
+                    .single();
+            }
+
+            const { data, error } = pdfRes;
             if (error || !data) throw error || new Error('Receipt not found');
             receipt = data;
 
@@ -776,13 +797,26 @@ async function loadVerifiedItems(userEmail, client) {
         ], { interval: 800 });
     }
 
-    let res = await client
-        .from('business_receipts')
-        .select('id, lifecycle_status, purchase_date, shop_name, receipt_items(id, item_name, qty, refunded_qty, gross_total, currency, warranty_months, warranty_end_date, category)')
-        .eq('customer_email', userEmail)
-        .order('purchase_date', { ascending: false });
+    const userPhone = await fetchCurrentUserPhone(client, currentUserId);
+    const buyerOrFilter = buildBuyerReceiptOrFilter({ userId: currentUserId, email: userEmail, phone: userPhone });
 
-    if (res.error && res.error.code === '42703') {
+    let res = buyerOrFilter
+        ? await client
+            .from('business_receipts')
+            .select('id, lifecycle_status, purchase_date, shop_name, receipt_items(id, item_name, qty, refunded_qty, gross_total, currency, warranty_months, warranty_end_date, category)')
+            .or(buyerOrFilter)
+            .order('purchase_date', { ascending: false })
+        : { data: [], error: null };
+
+    if (res.error && res.error.code === '42703' && userEmail) {
+        res = await client
+            .from('business_receipts')
+            .select('id, lifecycle_status, purchase_date, shop_name, receipt_items(id, item_name, qty, refunded_qty, gross_total, currency, warranty_months, warranty_end_date, category)')
+            .eq('customer_email', userEmail)
+            .order('purchase_date', { ascending: false });
+    }
+
+    if (res.error && res.error.code === '42703' && userEmail) {
         res = await client
             .from('business_receipts')
             .select('id, purchase_date, shop_name, receipt_items(id, item_name, qty, gross_total, currency, warranty_months, warranty_end_date, category)')

@@ -11,7 +11,13 @@ const translations = {
 
         auth_title: "С возвращением!",
         auth_subtitle: "Введите данные для входа в аккаунт",
+        mode_email: "Email",
+        mode_phone: "Телефон",
         label_email: "Email",
+        label_phone: "Номер телефона",
+        label_optional: "(необязательно)",
+        phone_country_search: "Поиск страны или кода...",
+        phone_register_hint: "Для входа по номеру и автоматического получения чеков от партнёров",
         label_password: "Пароль",
         btn_login: "Войти",
         login_remember: "Запомнить меня",
@@ -77,7 +83,13 @@ const translations = {
 
         auth_title: "Welcome back!",
         auth_subtitle: "Enter your credentials to access your account",
+        mode_email: "Email",
+        mode_phone: "Phone",
         label_email: "Email",
+        label_phone: "Phone Number",
+        label_optional: "(optional)",
+        phone_country_search: "Search country or code...",
+        phone_register_hint: "Sign in with your phone and automatically receive partner receipts",
         label_password: "Password",
         btn_login: "Sign In",
         login_remember: "Remember me",
@@ -192,7 +204,7 @@ window.authTranslations = translations;
         container.appendChild(error);
 
         form.addEventListener('submit', (e) => {
-            if (form.id === 'register-form') return;
+            if (form.id === 'register-form' || form.id === 'login-form') return;
             const lang = localStorage.getItem('valuon-lang') || 'ru';
             const msg = lang === 'en' ? 'Please fill out this field' : 'Заполните это поле';
             el.setCustomValidity('');

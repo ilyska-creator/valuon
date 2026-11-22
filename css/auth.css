@@ -1128,3 +1128,124 @@
 #forgot-modal:not(.active) .forgot-modal-content {
     transform: translateY(24px) scale(0.97);
 }
+
+/* Email / Phone mode switcher & international phone input */
+.auth-mode-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 4px;
+    background: rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 2px;
+}
+
+[data-theme="dark"] .auth-mode-switch {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.auth-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-mode-btn:hover {
+    color: var(--text-main);
+}
+
+.auth-mode-btn.active {
+    background: var(--light, #ffffff);
+    color: var(--text-main);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="dark"] .auth-mode-btn.active {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
+}
+
+.label-optional {
+    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    margin-left: 4px;
+}
+
+.phone-input-group {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 8px;
+    align-items: stretch;
+}
+
+.phone-input-group .custom-select-wrapper {
+    width: 100%;
+    min-width: 0;
+}
+
+.phone-input-group .custom-select-trigger {
+    height: 100%;
+    min-height: 46px;
+    padding: 0 10px 0 12px;
+    border-radius: var(--radius-md);
+    font-size: 0.92rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.phone-input-group input[type="tel"] {
+    width: 100%;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 1rem;
+    background: var(--card-bg);
+    color: var(--text-main);
+    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+[data-theme="dark"] .phone-input-group input[type="tel"] {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.phone-input-group input[type="tel"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+@media (max-width: 420px) {
+    .phone-input-group {
+        grid-template-columns: 102px minmax(0, 1fr);
+        gap: 6px;
+    }
+
+    .phone-input-group .custom-select-trigger {
+        min-height: 42px;
+        padding: 0 8px 0 10px;
+        font-size: 0.85rem;
+    }
+
+    .phone-input-group input[type="tel"] {
+        padding: 10px 12px;
+        font-size: 0.95rem;
+    }
+}

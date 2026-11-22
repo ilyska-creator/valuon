@@ -3,6 +3,16 @@ import { downloadReceiptPDF } from './receipt-generator.js';
 import { escapeHtml, logError } from './security.js';
 import { attachModalA11y } from './modal-a11y.js';
 import { buildXlsxBlob } from './xlsx-export.js';
+import {
+    normalizePhone,
+    splitPhone,
+    formatPhoneDisplay,
+    phoneDigitsKey,
+    getDefaultPhoneCountry,
+    populateDialCodeSelect,
+    wirePhoneInputPair,
+    getCustomerContactSummary
+} from './phone-utils.js';
 
 let currentClient = null;
 let currentShop = null;
@@ -104,16 +114,24 @@ async function initBusinessPanel() {
         const itemNames = Array.isArray(r.receipt_items)
             ? r.receipt_items.map(it => it.item_name || '').join(' ')
             : '';
+        const phoneFormatted = r.customer_phone ? formatPhoneDisplay(r.customer_phone) : '';
         const haystack = [
             receiptNum,
             r.customer_email || '',
+            r.customer_phone || '',
+            phoneFormatted,
             r.pos_serial || '',
             payRaw,
             payLocalized,
             r.status_reason || '',
             itemNames
         ].join(' ').toLowerCase();
-        return haystack.includes(q);
+        if (haystack.includes(q)) return true;
+        const qDigits = phoneDigitsKey(q);
+        if (qDigits.length >= 3 && r.customer_phone) {
+            return phoneDigitsKey(r.customer_phone).includes(qDigits);
+        }
+        return false;
     }
 
     function filterReceiptsList(receiptsList, payMethodMap) {
@@ -508,6 +526,15 @@ async function initBusinessPanel() {
 
             const animDelayStyle = animateRows && rowIdx < 12 ? ` style="--row-delay:${rowIdx * 18}ms"` : '';
 
+            const customerEmail = (r.customer_email || '').trim();
+            const customerPhoneDisplay = r.customer_phone ? formatPhoneDisplay(r.customer_phone) : '';
+            const customerContactHtml = customerEmail
+                ? `<span class="ledger-customer-email" title="${escapeHtml(customerEmail)}">${highlightMatch(customerEmail, searchQueryTrimmed)}</span>` +
+                (customerPhoneDisplay ? `<span class="ledger-customer-phone" title="${escapeHtml(customerPhoneDisplay)}">${highlightMatch(customerPhoneDisplay, searchQueryTrimmed)}</span>` : '')
+                : (customerPhoneDisplay
+                    ? `<span class="ledger-customer-email" title="${escapeHtml(customerPhoneDisplay)}"><i class="fa-solid fa-phone" aria-hidden="true" style="font-size:0.75em;margin-right:4px;opacity:0.7;"></i>${highlightMatch(customerPhoneDisplay, searchQueryTrimmed)}</span>`
+                    : `<span class="ledger-customer-email">—</span>`);
+
             return `
             <div class="receipt-ledger-item status-${escapeHtml(r.status)} lifecycle-${escapeHtml(lc)}${isExpanded ? ' is-expanded' : ''}${animateRows ? ' is-row-enter' : ''}"${animDelayStyle}
                  data-receipt-id="${escapeHtml(r.id)}"
@@ -519,7 +546,7 @@ async function initBusinessPanel() {
                         <span class="ledger-chevron" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></span>
                         <div class="ledger-receipt-text">
                             <span class="ledger-receipt-num" title="${escapeHtml(receiptNum)}">${highlightMatch(receiptNum, searchQueryTrimmed)}</span>
-                            <span class="ledger-customer-email" title="${escapeHtml(r.customer_email)}">${highlightMatch(r.customer_email, searchQueryTrimmed)}</span>
+                            ${customerContactHtml}
                         </div>
                     </div>
                     <div class="ledger-col-meta">
@@ -596,6 +623,13 @@ async function initBusinessPanel() {
     const emailGroup = document.getElementById('customer-email-group');
     const emailErrorEl = document.getElementById('customer-email-error');
     const autocompleteEl = document.getElementById('customer-autocomplete');
+    const contactLabelEl = document.getElementById('customer-contact-label');
+    const emailWrap = document.getElementById('customer-email-wrap');
+    const phoneWrap = document.getElementById('customer-phone-wrap');
+    const phoneCountrySelect = document.getElementById('customer-phone-country');
+    const phoneInput = document.getElementById('customer-phone');
+    const phoneAutocompleteEl = document.getElementById('customer-phone-autocomplete');
+    const contactModeBtns = [...document.querySelectorAll('.contact-mode-switch [data-contact-mode]')];
     const modalBody = document.getElementById('receipt-modal-body');
     const successScreen = document.getElementById('receipt-success-screen');
     const submitBtn = document.getElementById('issue-receipt-submit-btn');
@@ -610,6 +644,84 @@ async function initBusinessPanel() {
     let customerHistory = null;
     let customerHistoryPromise = null;
     let currentTerminals = [];
+    let contactMode = 'email';
+    let bizPhonePair = null;
+
+    function getDefaultBizCountry() {
+        return getDefaultPhoneCountry(currentShop?.country, bizLang());
+    }
+
+    function ensureBizPhoneSelect(selectedCode) {
+        if (!phoneCountrySelect) return;
+        const lang = bizLang();
+        const code = selectedCode || phoneCountrySelect.value || getDefaultBizCountry();
+        populateDialCodeSelect(phoneCountrySelect, lang, code);
+        if (selectedCode && Array.from(phoneCountrySelect.options).some((o) => o.value === selectedCode)) {
+            phoneCountrySelect.value = selectedCode;
+        }
+        if (!bizPhonePair && phoneInput) {
+            bizPhonePair = wirePhoneInputPair(phoneCountrySelect, phoneInput, {
+                defaultCode: code,
+                lang,
+                onInput: () => {
+                    if (emailGroup?.classList.contains('is-invalid')) validateCustomerContactField(true);
+                    renderPhoneAutocomplete();
+                }
+            });
+        } else {
+            if (typeof CustomSelect !== 'undefined' && phoneCountrySelect._cs) {
+                phoneCountrySelect._cs.refresh();
+            }
+            bizPhonePair?.updatePlaceholder();
+        }
+    }
+
+    function setContactMode(mode, { focus = false } = {}) {
+        contactMode = mode === 'phone' ? 'phone' : 'email';
+        const isPhone = contactMode === 'phone';
+        const t = bizT();
+
+        contactModeBtns.forEach((btn) => {
+            const active = btn.dataset.contactMode === contactMode;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-selected', String(active));
+        });
+
+        emailWrap?.classList.toggle('is-hidden', isPhone);
+        phoneWrap?.classList.toggle('is-hidden', !isPhone);
+
+        if (emailInput) emailInput.required = !isPhone;
+        if (phoneInput) phoneInput.required = isPhone;
+
+        if (contactLabelEl) {
+            contactLabelEl.setAttribute('for', isPhone ? 'customer-phone' : 'customer-email');
+            contactLabelEl.setAttribute('data-i18n', isPhone ? 'customer_phone_label' : 'customer_email_label');
+            contactLabelEl.textContent = isPhone
+                ? (t.customer_phone_label || (bizLang() === 'en' ? 'Customer Phone' : 'Телефон покупателя'))
+                : (t.customer_email_label || (bizLang() === 'en' ? 'Customer Email' : 'Email покупателя'));
+        }
+
+        if (isPhone) ensureBizPhoneSelect();
+        hideAutocomplete();
+        setFieldError(emailGroup, emailErrorEl, '');
+
+        if (focus) {
+            if (isPhone) phoneInput?.focus();
+            else {
+                emailInput?.removeAttribute('readonly');
+                emailInput?.focus();
+            }
+        }
+    }
+
+    contactModeBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            if (btn.dataset.contactMode === contactMode) return;
+            setContactMode(btn.dataset.contactMode, { focus: true });
+        });
+    });
+
+    ensureBizPhoneSelect();
 
     function fmtMoney(v) {
         const lang = localStorage.getItem('valuon-lang') || 'ru';
@@ -648,7 +760,10 @@ async function initBusinessPanel() {
                 category: it.category
             }));
         return {
-            email: fd.querySelector('[name="customer_email"]').value.trim(),
+            contact_mode: contactMode,
+            email: fd.querySelector('[name="customer_email"]')?.value.trim() || '',
+            phone_country: phoneCountrySelect?.value || '',
+            phone_local: phoneInput?.value.trim() || '',
             payment: fd.querySelector('[name="payment_method"]').value || 'card',
             purchase_date: fd.querySelector('[name="purchase_date"]').value || '',
             pos_terminal_id: fd.querySelector('[name="pos_terminal_id"]')?.value || '',
@@ -657,7 +772,10 @@ async function initBusinessPanel() {
     }
 
     function draftEquals(a, b) {
+        if ((a.contact_mode || 'email') !== (b.contact_mode || 'email')) return false;
         if ((a.email || '') !== (b.email || '')) return false;
+        if ((a.phone_local || '') !== (b.phone_local || '')) return false;
+        if ((a.phone_local || b.phone_local) && (a.phone_country || '') !== (b.phone_country || '')) return false;
         if ((a.payment || 'card') !== (b.payment || 'card')) return false;
         if ((a.pos_terminal_id || '') !== (b.pos_terminal_id || '')) return false;
         if ((a.purchase_date || '') && (a.purchase_date || '') !== (b.purchase_date || '')) return false;
@@ -683,6 +801,7 @@ async function initBusinessPanel() {
         if (saved) return !draftEquals(saved, d);
         return !!(
             d.email ||
+            d.phone_local ||
             d.payment !== 'card' ||
             (d.pos_terminal_id || '') !== (baselinePosTerminalId || '') ||
             (d.purchase_date && d.purchase_date !== baselineDate) ||
@@ -720,6 +839,7 @@ async function initBusinessPanel() {
     function draftHasContent(d) {
         if (!d) return false;
         if (d.email) return true;
+        if (d.phone_local) return true;
         if (d.payment && d.payment !== 'card') return true;
         if (d.pos_terminal_id) return true;
         if (d.purchase_date && d.purchase_date !== defaultDateString()) return true;
@@ -734,8 +854,15 @@ async function initBusinessPanel() {
 
     function applyDraft(d) {
         if (!forms.receipt || !d) return;
-        if (d.email) {
-            forms.receipt.querySelector('[name="customer_email"]').value = d.email;
+        const mode = d.contact_mode === 'phone' ? 'phone' : 'email';
+        if (d.phone_country) ensureBizPhoneSelect(d.phone_country);
+        else ensureBizPhoneSelect(getDefaultBizCountry());
+        setContactMode(mode);
+        if (d.email && emailInput) {
+            emailInput.value = d.email;
+        }
+        if (d.phone_local && phoneInput) {
+            phoneInput.value = d.phone_local;
         }
         if (d.payment) {
             forms.receipt.querySelector('[name="payment_method"]').value = d.payment;
@@ -1018,10 +1145,25 @@ async function initBusinessPanel() {
         }
     }
 
-    function validateEmailField(showError) {
+    function validateCustomerContactField(showError) {
+        const t = bizT();
+        if (contactMode === 'phone') {
+            const raw = phoneInput?.value.trim() || '';
+            if (!raw) {
+                if (showError) setFieldError(emailGroup, emailErrorEl, t.error_phone_required || (bizLang() === 'en' ? 'Enter customer phone number' : 'Введите номер телефона покупателя'));
+                return false;
+            }
+            const normalized = normalizePhone(phoneCountrySelect?.value, raw);
+            if (!normalized) {
+                if (showError) setFieldError(emailGroup, emailErrorEl, t.error_phone_invalid || (bizLang() === 'en' ? 'Invalid phone number format' : 'Некорректный формат номера телефона'));
+                return false;
+            }
+            setFieldError(emailGroup, emailErrorEl, '');
+            return true;
+        }
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const value = emailInput?.value.trim() || '';
-        const t = bizT();
         if (!value) {
             if (showError) setFieldError(emailGroup, emailErrorEl, t.error_email_required || (bizLang() === 'en' ? 'Enter customer email' : 'Введите email покупателя'));
             return false;
@@ -1032,6 +1174,10 @@ async function initBusinessPanel() {
         }
         setFieldError(emailGroup, emailErrorEl, '');
         return true;
+    }
+
+    function validateEmailField(showError) {
+        return validateCustomerContactField(showError);
     }
 
     function validateItemRow(row, showError) {
@@ -1080,11 +1226,11 @@ async function initBusinessPanel() {
     }
 
     emailInput?.addEventListener('blur', () => {
-        validateEmailField(true);
+        if (contactMode === 'email') validateCustomerContactField(true);
         setTimeout(hideAutocomplete, 120);
     });
     emailInput?.addEventListener('input', () => {
-        if (emailGroup?.classList.contains('is-invalid')) validateEmailField(true);
+        if (emailGroup?.classList.contains('is-invalid')) validateCustomerContactField(true);
         renderAutocomplete();
     });
     emailInput?.addEventListener('focus', () => {
@@ -1096,6 +1242,14 @@ async function initBusinessPanel() {
     });
     emailInput?.addEventListener('mousedown', () => {
         if (emailInput.hasAttribute('readonly')) emailInput.removeAttribute('readonly');
+    });
+
+    phoneInput?.addEventListener('blur', () => {
+        if (contactMode === 'phone') validateCustomerContactField(true);
+        setTimeout(hideAutocomplete, 120);
+    });
+    phoneInput?.addEventListener('focus', () => {
+        renderPhoneAutocomplete();
     });
 
     itemsList?.addEventListener('focusout', (e) => {
@@ -1111,46 +1265,68 @@ async function initBusinessPanel() {
     // --- Автокомплит клиента ---------------------------------------
 
     async function loadCustomerHistory() {
-        if (!currentShop) return [];
+        if (!currentShop) return { emails: [], phones: [] };
         if (customerHistory) return customerHistory;
         if (customerHistoryPromise) return customerHistoryPromise;
-        customerHistoryPromise = client
-            .from('business_receipts')
-            .select('customer_email, status')
-            .eq('shop_id', currentShop.id)
-            .order('created_at', { ascending: false })
-            .limit(200)
-            .then(({ data, error }) => {
-                if (error || !data) {
-                    customerHistory = [];
-                    return customerHistory;
-                }
-                const seen = new Map();
-                data.forEach((r) => {
-                    if (r.customer_email && !seen.has(r.customer_email)) {
-                        seen.set(r.customer_email, r.status);
-                    }
-                });
-                customerHistory = [...seen.entries()].map(([email, status]) => ({ email, status }));
+        customerHistoryPromise = (async () => {
+            let res = await client
+                .from('business_receipts')
+                .select('customer_email, customer_phone, status')
+                .eq('shop_id', currentShop.id)
+                .order('created_at', { ascending: false })
+                .limit(200);
+            if (res.error && res.error.code === '42703') {
+                res = await client
+                    .from('business_receipts')
+                    .select('customer_email, status')
+                    .eq('shop_id', currentShop.id)
+                    .order('created_at', { ascending: false })
+                    .limit(200);
+            }
+            if (res.error || !res.data) {
+                customerHistory = { emails: [], phones: [] };
                 return customerHistory;
-            })
-            .catch(() => { customerHistory = []; return customerHistory; });
+            }
+            const seenEmails = new Map();
+            const seenPhones = new Map();
+            res.data.forEach((r) => {
+                if (r.customer_email && !seenEmails.has(r.customer_email)) {
+                    seenEmails.set(r.customer_email, r.status);
+                }
+                if (r.customer_phone && !seenPhones.has(r.customer_phone)) {
+                    seenPhones.set(r.customer_phone, { status: r.status, email: r.customer_email || '' });
+                }
+            });
+            customerHistory = {
+                emails: [...seenEmails.entries()].map(([email, status]) => ({ email, status })),
+                phones: [...seenPhones.entries()].map(([phone, meta]) => ({ phone, status: meta.status, email: meta.email }))
+            };
+            return customerHistory;
+        })().catch(() => {
+            customerHistory = { emails: [], phones: [] };
+            return customerHistory;
+        });
         return customerHistoryPromise;
     }
 
     function hideAutocomplete() {
-        if (!autocompleteEl) return;
-        autocompleteEl.classList.add('is-hidden');
-        autocompleteEl.innerHTML = '';
+        if (autocompleteEl) {
+            autocompleteEl.classList.add('is-hidden');
+            autocompleteEl.innerHTML = '';
+        }
+        if (phoneAutocompleteEl) {
+            phoneAutocompleteEl.classList.add('is-hidden');
+            phoneAutocompleteEl.innerHTML = '';
+        }
     }
 
     async function renderAutocomplete() {
-        if (!autocompleteEl || !emailInput) return;
+        if (!autocompleteEl || !emailInput || contactMode !== 'email') return;
         const query = emailInput.value.trim().toLowerCase();
         if (!query) { hideAutocomplete(); return; }
         const history = await loadCustomerHistory();
         if (emailInput.value.trim().toLowerCase() !== query) return;
-        const matches = (history || [])
+        const matches = (history?.emails || [])
             .filter((c) => c.email.toLowerCase().includes(query) && c.email.toLowerCase() !== query)
             .slice(0, 5);
         if (matches.length === 0) { hideAutocomplete(); return; }
@@ -1164,19 +1340,70 @@ async function initBusinessPanel() {
         autocompleteEl.classList.remove('is-hidden');
     }
 
+    async function renderPhoneAutocomplete() {
+        if (!phoneAutocompleteEl || !phoneInput || contactMode !== 'phone') return;
+        const raw = phoneInput.value.trim();
+        const digits = phoneDigitsKey(raw);
+        if (digits.length < 2) { hideAutocomplete(); return; }
+        const history = await loadCustomerHistory();
+        if (phoneInput.value.trim() !== raw) return;
+        const currentNorm = normalizePhone(phoneCountrySelect?.value, raw);
+        const matches = (history?.phones || [])
+            .filter((c) => {
+                if (currentNorm && c.phone === currentNorm) return false;
+                return phoneDigitsKey(c.phone).includes(digits);
+            })
+            .slice(0, 5);
+        if (matches.length === 0) { hideAutocomplete(); return; }
+        phoneAutocompleteEl.innerHTML = matches.map((c) => {
+            const label = formatPhoneDisplay(c.phone);
+            return `<li role="option" data-phone="${escapeHtml(c.phone)}">
+                <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                <span>${escapeHtml(label)}</span>
+                ${c.status === 'verified' ? '<i class="fa-solid fa-circle-check autocomplete-verified" aria-hidden="true"></i>' : ''}
+            </li>`;
+        }).join('');
+        phoneAutocompleteEl.classList.remove('is-hidden');
+    }
+
     autocompleteEl?.addEventListener('mousedown', (e) => {
         const item = e.target.closest('[data-email]');
         if (!item || !emailInput) return;
         e.preventDefault();
         emailInput.value = item.dataset.email;
         hideAutocomplete();
-        validateEmailField(false);
+        validateCustomerContactField(false);
         emailInput.focus();
     });
 
+    phoneAutocompleteEl?.addEventListener('mousedown', (e) => {
+        const item = e.target.closest('[data-phone]');
+        if (!item || !phoneInput) return;
+        e.preventDefault();
+        const parts = splitPhone(item.dataset.phone, getDefaultBizCountry());
+        if (phoneCountrySelect && parts.code) {
+            phoneCountrySelect.value = parts.code;
+            if (typeof CustomSelect !== 'undefined' && phoneCountrySelect._cs) {
+                phoneCountrySelect._cs.refresh();
+            }
+            bizPhonePair?.updatePlaceholder();
+        }
+        phoneInput.value = parts.local;
+        hideAutocomplete();
+        validateCustomerContactField(false);
+        phoneInput.focus();
+    });
+
     document.addEventListener('click', (e) => {
-        if (!autocompleteEl || autocompleteEl.classList.contains('is-hidden')) return;
-        if (e.target === emailInput || autocompleteEl.contains(e.target)) return;
+        const emailOpen = autocompleteEl && !autocompleteEl.classList.contains('is-hidden');
+        const phoneOpen = phoneAutocompleteEl && !phoneAutocompleteEl.classList.contains('is-hidden');
+        if (!emailOpen && !phoneOpen) return;
+        if (
+            e.target === emailInput ||
+            e.target === phoneInput ||
+            autocompleteEl?.contains(e.target) ||
+            phoneAutocompleteEl?.contains(e.target)
+        ) return;
         hideAutocomplete();
     });
 
@@ -1200,7 +1427,7 @@ async function initBusinessPanel() {
         const statusEl = document.getElementById('receipt-success-status');
         const totalEl = document.getElementById('receipt-success-total');
         if (numEl) numEl.textContent = receiptData.receipt_number ? `#RCP-${receiptData.receipt_number}` : `#${String(receiptData.id).slice(0, 8).toUpperCase()}`;
-        if (emailEl) emailEl.textContent = receiptData.customer_email || '';
+        if (emailEl) emailEl.textContent = getCustomerContactSummary(receiptData) || '';
         if (statusEl) {
             statusEl.textContent = receiptData.status === 'verified'
                 ? (t.status_verified || (bizLang() === 'en' ? 'Linked to Customer' : 'Привязан к клиенту'))
@@ -1248,6 +1475,9 @@ async function initBusinessPanel() {
             clearAllValidationState();
             forms.receipt?.reset();
             resetItemRows();
+            if (phoneInput) phoneInput.value = '';
+            ensureBizPhoneSelect(getDefaultBizCountry());
+            setContactMode('email');
             emailInput?.setAttribute('readonly', '');
             const dateInput = forms.receipt?.querySelector('[name="purchase_date"]');
             if (dateInput) {
@@ -1280,6 +1510,8 @@ async function initBusinessPanel() {
         updateSubmitLabel();
         renderTerminalsWidget();
         renderPosSelect();
+        ensureBizPhoneSelect(phoneCountrySelect?.value || getDefaultBizCountry());
+        setContactMode(contactMode);
     });
 
     const stats = {
@@ -1987,6 +2219,8 @@ async function initBusinessPanel() {
             baselineDate = '';
             forms.receipt?.reset();
             resetItemRows();
+            if (phoneInput) phoneInput.value = '';
+            setContactMode('email');
             clearAllValidationState();
             hideAutocomplete();
             hideSuccessScreen();
@@ -1999,6 +2233,7 @@ async function initBusinessPanel() {
             if (typeof CustomSelect !== 'undefined') {
                 const pay = modal.el?.querySelector('[name="payment_method"]');
                 if (pay && pay._cs) pay._cs.refresh();
+                if (phoneCountrySelect && phoneCountrySelect._cs) phoneCountrySelect._cs.refresh();
             }
         }, 250);
     }
@@ -2036,8 +2271,13 @@ async function initBusinessPanel() {
             hideAutocomplete();
             loadCustomerHistory();
             const draft = readDraft();
-            if (draft) applyDraft(draft);
-            else resetItemRows();
+            if (draft) {
+                applyDraft(draft);
+            } else {
+                ensureBizPhoneSelect(getDefaultBizCountry());
+                setContactMode('email');
+                resetItemRows();
+            }
 
             const dateInput = forms.receipt?.querySelector('[name="purchase_date"]');
             if (!draft?.purchase_date && dateInput) {
@@ -2117,11 +2357,12 @@ async function initBusinessPanel() {
 
             if (btn.disabled) return;
 
-            const emailValid = validateEmailField(true);
+            const contactValid = validateCustomerContactField(true);
             const itemsValid = validateAllItemRows(true);
-            if (!emailValid || !itemsValid) {
-                if (!emailValid) {
-                    emailInput?.focus();
+            if (!contactValid || !itemsValid) {
+                if (!contactValid) {
+                    if (contactMode === 'phone') phoneInput?.focus();
+                    else emailInput?.focus();
                 } else {
                     const firstInvalidRow = itemsList?.querySelector('[data-item-row].is-invalid');
                     firstInvalidRow?.querySelector('[data-field="item_name"]')?.focus();
@@ -2138,13 +2379,23 @@ async function initBusinessPanel() {
                 if (!currentShop) return;
 
                 const fd = new FormData(e.target);
-                const email = fd.get('customer_email').toLowerCase().trim();
                 const valLang = localStorage.getItem('valuon-lang') || 'ru';
+                let email = null;
+                let normalizedPhone = null;
 
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(email)) {
-                    window.showToast(valLang === 'en' ? 'Enter a valid customer email' : 'Введите корректный email покупателя', 'warning');
-                    return;
+                if (contactMode === 'phone') {
+                    normalizedPhone = normalizePhone(phoneCountrySelect?.value, phoneInput?.value || '');
+                    if (!normalizedPhone) {
+                        window.showToast(valLang === 'en' ? 'Enter a valid customer phone number' : 'Введите корректный номер телефона покупателя', 'warning');
+                        return;
+                    }
+                } else {
+                    email = String(fd.get('customer_email') || '').toLowerCase().trim();
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(email)) {
+                        window.showToast(valLang === 'en' ? 'Enter a valid customer email' : 'Введите корректный email покупателя', 'warning');
+                        return;
+                    }
                 }
 
                 const items = readItemRows();
@@ -2161,27 +2412,30 @@ async function initBusinessPanel() {
                 const fdPosId = fd.get('pos_terminal_id');
                 const posTerm = currentTerminals.find((x) => x.id === fdPosId && x.is_active) || null;
 
-                // Signing, totals, email-registered check and the receipt/items
-                // write all happen server-side (Edge Function issue-receipt):
-                // the shop's private key is read only inside that function, by
-                // a service_role client, and never touches the browser.
+                const invokeBody = {
+                    shop_id: currentShop.id,
+                    purchase_date: fd.get('purchase_date'),
+                    payment_method: fd.get('payment_method'),
+                    pos_terminal_id: posTerm ? posTerm.id : null,
+                    items: items.map((it) => ({
+                        item_name: it.itemName,
+                        qty: it.qty,
+                        unit_price: it.unitPrice,
+                        vat_rate: it.vatRate,
+                        warranty_months: it.warrantyMonths,
+                        discount: it.discount,
+                        category: it.category,
+                    })),
+                };
+                if (email) invokeBody.customer_email = email;
+                if (normalizedPhone) invokeBody.customer_phone = normalizedPhone;
+
+                // Signing, totals, customer lookup and the receipt/items write all
+                // happen server-side (Edge Function issue-receipt): the shop's
+                // private key is read only inside that function, by a service_role
+                // client, and never touches the browser.
                 const { data: issued, error: issueError } = await client.functions.invoke('issue-receipt', {
-                    body: {
-                        shop_id: currentShop.id,
-                        customer_email: email,
-                        purchase_date: fd.get('purchase_date'),
-                        payment_method: fd.get('payment_method'),
-                        pos_terminal_id: posTerm ? posTerm.id : null,
-                        items: items.map((it) => ({
-                            item_name: it.itemName,
-                            qty: it.qty,
-                            unit_price: it.unitPrice,
-                            vat_rate: it.vatRate,
-                            warranty_months: it.warrantyMonths,
-                            discount: it.discount,
-                            category: it.category,
-                        })),
-                    },
+                    body: invokeBody,
                 });
 
                 if (issueError || !issued?.id) {
@@ -2198,15 +2452,25 @@ async function initBusinessPanel() {
                 window.showToast(succLang === 'en' ? `Receipt${receiptLabel} issued!` : `Чек${receiptLabel} выписан!`, 'success');
                 clearDraft();
 
+                const resolvedEmail = issued.customer_email || email || null;
+                const resolvedPhone = issued.customer_phone || normalizedPhone || null;
+
                 if (customerHistory) {
-                    customerHistory = customerHistory.filter((c) => c.email !== email);
-                    customerHistory.unshift({ email, status: issued.status });
+                    if (resolvedEmail) {
+                        customerHistory.emails = customerHistory.emails.filter((c) => c.email !== resolvedEmail);
+                        customerHistory.emails.unshift({ email: resolvedEmail, status: issued.status });
+                    }
+                    if (resolvedPhone) {
+                        customerHistory.phones = customerHistory.phones.filter((c) => c.phone !== resolvedPhone);
+                        customerHistory.phones.unshift({ phone: resolvedPhone, status: issued.status, email: resolvedEmail || '' });
+                    }
                 }
 
                 showSuccessScreen({
                     id: issued.id,
                     receipt_number: issued.receipt_number,
-                    customer_email: email,
+                    customer_email: resolvedEmail,
+                    customer_phone: resolvedPhone,
                     payment_method: fd.get('payment_method'),
                     purchase_date: fd.get('purchase_date'),
                     status: issued.status,
@@ -2481,7 +2745,8 @@ async function initBusinessPanel() {
 
         const receiptNum = receipt.receipt_number ? `#RCP-${receipt.receipt_number}` : `#${String(receipt.id).slice(0, 8).toUpperCase()}`;
         if (lcSubtitle) {
-            lcSubtitle.textContent = `${receiptNum} · ${receipt.customer_email || ''}`;
+            const contactStr = getCustomerContactSummary(receipt);
+            lcSubtitle.textContent = contactStr ? `${receiptNum} · ${contactStr}` : receiptNum;
         }
         if (lcReasonInput) {
             lcReasonInput.value = '';
@@ -2927,10 +3192,12 @@ async function initBusinessPanel() {
             const netRevenueVal = Math.round(getNetReceiptRevenue(r) * 100) / 100;
             const totalUnits = lineItems.reduce((sum, it) => sum + Math.max(1, parseInt(it.qty, 10) || 1), 0);
 
+            const phoneExport = r.customer_phone ? formatPhoneDisplay(r.customer_phone) : '';
             receiptRows.push([
                 receiptNum,
                 dateIso,
                 r.customer_email || '',
+                phoneExport,
                 binding,
                 lcLabelMap[lc] || lc,
                 payLabel,
@@ -2965,6 +3232,7 @@ async function initBusinessPanel() {
                     receiptNum,
                     dateIso,
                     r.customer_email || '',
+                    phoneExport,
                     it.item_name || '',
                     qty,
                     refQty,
@@ -2987,6 +3255,7 @@ async function initBusinessPanel() {
                     { header: t.csv_col_number || 'Receipt #', minWidth: 16 },
                     { header: t.csv_col_date || 'Date', minWidth: 13 },
                     { header: t.csv_col_email || 'Customer Email', minWidth: 24 },
+                    { header: t.csv_col_phone || 'Customer Phone', minWidth: 18 },
                     { header: t.csv_col_binding || 'Binding', minWidth: 14 },
                     { header: t.csv_col_lifecycle || 'Receipt Status', minWidth: 18 },
                     { header: t.csv_col_payment || 'Payment', minWidth: 12 },
@@ -3008,6 +3277,7 @@ async function initBusinessPanel() {
                     { header: t.csv_col_number || 'Receipt #', minWidth: 16 },
                     { header: t.csv_col_date || 'Date', minWidth: 13 },
                     { header: t.csv_col_email || 'Customer Email', minWidth: 24 },
+                    { header: t.csv_col_phone || 'Customer Phone', minWidth: 18 },
                     { header: t.xlsx_item_col_name || 'Product', minWidth: 26 },
                     { header: t.xlsx_item_col_qty || 'Qty', type: 'int', minWidth: 10 },
                     { header: t.xlsx_item_col_refunded_qty || 'Refunded Qty', type: 'int', minWidth: 14 },
@@ -3042,6 +3312,7 @@ async function initBusinessPanel() {
             t.csv_col_number || 'Receipt #',
             t.csv_col_date || 'Date',
             t.csv_col_email || 'Customer Email',
+            t.csv_col_phone || 'Customer Phone',
             t.csv_col_binding || 'Binding',
             t.csv_col_lifecycle || 'Receipt Status',
             t.csv_col_payment || 'Payment',
@@ -3080,11 +3351,13 @@ async function initBusinessPanel() {
                 : Math.max(0, grossNum - vatNum);
             const refundedNum = parseFloat(r.refunded_amount) || 0;
             const netRevenueNum = getNetReceiptRevenue(r);
+            const phoneExport = r.customer_phone ? formatPhoneDisplay(r.customer_phone) : '';
 
             return [
                 receiptNum,
                 dateIso,
                 r.customer_email || '',
+                phoneExport,
                 binding,
                 lcLabelMap[lc] || lc,
                 payLabel,
@@ -3209,11 +3482,19 @@ async function initBusinessPanel() {
         try {
             const receiptsSel = async () => {
                 const fullRes = await client.from('business_receipts')
-                    .select('id, receipt_number, status, lifecycle_status, status_changed_at, status_reason, refunded_amount, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order, refunded_qty)')
+                    .select('id, receipt_number, status, lifecycle_status, status_changed_at, status_reason, refunded_amount, purchase_date, customer_email, customer_phone, customer_user_id, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order, refunded_qty)')
                     .eq('shop_id', shopId)
                     .order('created_at', { ascending: false })
                     .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
                 if (!fullRes.error || fullRes.error.code !== '42703') return fullRes;
+
+                // Fallback 0: phone/user_id columns not yet migrated, lifecycle + pos present
+                const noPhoneRes = await client.from('business_receipts')
+                    .select('id, receipt_number, status, lifecycle_status, status_changed_at, status_reason, refunded_amount, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order, refunded_qty)')
+                    .eq('shop_id', shopId)
+                    .order('created_at', { ascending: false })
+                    .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
+                if (!noPhoneRes.error || noPhoneRes.error.code !== '42703') return noPhoneRes;
 
                 // Fallback 1: lifecycle columns not yet migrated, pos_* present
                 const noLcRes = await client.from('business_receipts')

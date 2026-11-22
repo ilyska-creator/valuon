@@ -45,6 +45,22 @@
                     </div>
                 </div>
 
+                <div class="input-group" id="register-phone-group" data-animate>
+                    <label for="register-phone">
+                        <span data-i18n="label_phone">Номер телефона</span>
+                        <span class="label-optional" data-i18n="label_optional">(необязательно)</span>
+                    </label>
+                    <div class="phone-input-group">
+                        <select id="register-phone-country" class="custom-select phone-country-select" data-searchable
+                            data-dropdown-min-width="270" data-search-placeholder="phone_country_search"
+                            data-search-empty="currency_search_empty" aria-label="Код страны"></select>
+                        <input type="tel" id="register-phone" name="phone" inputmode="tel" placeholder="5555 1234"
+                            autocomplete="tel-national">
+                    </div>
+                    <span class="field-hint" data-i18n="phone_register_hint">Для входа по номеру и автоматического
+                        получения чеков от партнёров</span>
+                </div>
+
                 <div class="input-row" data-animate>
                     <div class="input-group">
                         <label for="first-name" data-i18n="label_first_name">Имя</label>
@@ -68,8 +84,7 @@
                     <label for="currency" data-i18n="currency_label">Валюта</label>
                     <select id="currency" name="currency" class="custom-select" data-searchable required
                         data-placeholder-i18n="currency_placeholder"
-                        data-search-placeholder="currency_search_placeholder"
-                        data-search-empty="currency_search_empty">
+                        data-search-placeholder="currency_search_placeholder" data-search-empty="currency_search_empty">
                     </select>
                     <span class="field-hint" data-i18n="currency_hint">Валюта по умолчанию для ваших вещей и
                         чеков — можно сменить позже в настройках</span>
@@ -168,9 +183,9 @@
             onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
     </div>
     <script src="js/cookie-banner.js"></script>
-<script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-</script>
-<script defer src="/_vercel/insights/script.js"></script>
+    <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
 </body>
 
 </html>

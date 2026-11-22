@@ -1,6 +1,7 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
 import { attachModalA11y } from './modal-a11y.js';
+import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
 
 let pendingDeleteId = null;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -236,13 +237,28 @@ async function loadAllReceipts(userEmail, userId, client) {
     });
 
     try {
-        const { data: businessData, error: bizError } = await client
-            .from('business_receipts')
-            .select('*, receipt_items(*)')
-            .eq('customer_email', userEmail)
-            .order('purchase_date', { ascending: false })
-            .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
+        const userPhone = await fetchCurrentUserPhone(client, userId);
+        const buyerOrFilter = buildBuyerReceiptOrFilter({ userId, email: userEmail, phone: userPhone });
 
+        let bizRes = buyerOrFilter
+            ? await client
+                .from('business_receipts')
+                .select('*, receipt_items(*)')
+                .or(buyerOrFilter)
+                .order('purchase_date', { ascending: false })
+                .order('sort_order', { referencedTable: 'receipt_items', ascending: true })
+            : { data: [], error: null };
+
+        if (bizRes.error && bizRes.error.code === '42703' && userEmail) {
+            bizRes = await client
+                .from('business_receipts')
+                .select('*, receipt_items(*)')
+                .eq('customer_email', userEmail)
+                .order('purchase_date', { ascending: false })
+                .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
+        }
+
+        const { data: businessData, error: bizError } = bizRes;
         if (bizError) logError('receipts:loadBiz', bizError);
 
         const { data: personalData, error: personalError } = await client
@@ -727,13 +743,29 @@ function restoreListeners(client, userId) {
                     });
                 }
                 const { downloadReceiptPDF } = await import('./receipt-generator.js');
-                let { data: receipt, error } = await client
-                    .from('business_receipts')
-                    .select('*, receipt_items(*)')
-                    .eq('id', btn.dataset.receiptId)
-                    .eq('customer_email', currentUserEmail)
-                    .order('sort_order', { referencedTable: 'receipt_items', ascending: true })
-                    .single();
+                const userPhoneForPdf = await fetchCurrentUserPhone(client, userId);
+                const pdfOrFilter = buildBuyerReceiptOrFilter({ userId, email: currentUserEmail, phone: userPhoneForPdf });
+                let pdfRes = pdfOrFilter
+                    ? await client
+                        .from('business_receipts')
+                        .select('*, receipt_items(*)')
+                        .eq('id', btn.dataset.receiptId)
+                        .or(pdfOrFilter)
+                        .order('sort_order', { referencedTable: 'receipt_items', ascending: true })
+                        .single()
+                    : { data: null, error: new Error('Receipt not found') };
+
+                if (pdfRes.error && pdfRes.error.code === '42703' && currentUserEmail) {
+                    pdfRes = await client
+                        .from('business_receipts')
+                        .select('*, receipt_items(*)')
+                        .eq('id', btn.dataset.receiptId)
+                        .eq('customer_email', currentUserEmail)
+                        .order('sort_order', { referencedTable: 'receipt_items', ascending: true })
+                        .single();
+                }
+
+                const { data: receipt, error } = pdfRes;
 
                 if (error || !receipt) throw error || new Error('Receipt not found');
 

@@ -5,6 +5,8 @@
 // are in different trust domains (a shop's item/store name ends up
 // rendered in a *buyer's* browser when they download their receipt).
 
+import { getCustomerContactLines } from './phone-utils.js';
+
 const FONTS_LINK_ID = 'valuon-receipt-fonts';
 const CARD_WIDTH = 800; // css px — the layout units below assume this width
 
@@ -231,7 +233,30 @@ function buildTopBlock(receipt, shop, opts) {
 
     const grid = el('div', { display: 'flex', padding: '26px 0' });
     grid.appendChild(metaCol('Date', formatDate(receipt.purchase_date), { padding: '0 20px 0 0' }));
-    grid.appendChild(metaCol('Customer', receipt.customer_email || '—', { border: true }));
+
+    const contactLines = getCustomerContactLines(receipt);
+    const customerCol = el('div', { padding: '0 20px', minWidth: '0', borderLeft: `1px solid ${COLORS.divider}` });
+    customerCol.appendChild(el('div', {
+        fontFamily: FONT_MONO, fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase',
+        color: COLORS.muted, marginBottom: '7px',
+    }, { text: 'Customer' }));
+    if (contactLines.length === 0) {
+        customerCol.appendChild(el('div', {
+            fontSize: '14.5px', fontWeight: '500', overflowWrap: 'break-word', minWidth: '0',
+        }, { text: '—' }));
+    } else {
+        customerCol.appendChild(el('div', {
+            fontSize: '14.5px', fontWeight: '500', overflowWrap: 'break-word', minWidth: '0',
+        }, { text: contactLines[0] }));
+        if (contactLines[1]) {
+            customerCol.appendChild(el('div', {
+                fontFamily: FONT_MONO, fontSize: '12px', fontWeight: '400', color: COLORS.secondary,
+                marginTop: '4px', overflowWrap: 'break-word', minWidth: '0',
+            }, { text: contactLines[1] }));
+        }
+    }
+    grid.appendChild(customerCol);
+
     grid.appendChild(metaCol('Payment', formatPayment(receipt.payment_method), { border: true, padding: '0 0 0 20px' }));
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = '0.7fr 1.75fr 0.55fr';

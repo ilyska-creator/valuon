@@ -2272,6 +2272,116 @@
     flex-shrink: 0;
 }
 
+.contact-mode-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.contact-mode-header label {
+    margin-bottom: 0 !important;
+}
+
+.contact-mode-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px;
+    background: rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+[data-theme="dark"] .contact-mode-switch {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.contact-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.contact-mode-btn:hover {
+    color: var(--text-main);
+}
+
+.contact-mode-btn.active {
+    background: var(--card-bg, #ffffff);
+    color: var(--text-main);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+}
+
+[data-theme="dark"] .contact-mode-btn.active {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+}
+
+#customer-email-wrap.is-hidden,
+#customer-phone-wrap.is-hidden {
+    display: none;
+}
+
+.biz-phone-input-group {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 8px;
+    align-items: stretch;
+}
+
+.biz-phone-input-group .custom-select-wrapper {
+    width: 100%;
+    min-width: 0;
+}
+
+.biz-phone-input-group .custom-select-trigger {
+    height: 100%;
+    min-height: 44px;
+    padding: 0 10px 0 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.biz-phone-anchor {
+    display: block;
+    width: 100%;
+    min-width: 0;
+}
+
+.biz-phone-anchor input[type="tel"] {
+    width: 100%;
+    min-width: 0;
+}
+
+.ledger-customer-phone {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.ledger-customer-phone i {
+    font-size: 0.7rem;
+    opacity: 0.75;
+}
+
 .modal-guard {
     position: absolute;
     inset: 0;

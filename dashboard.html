@@ -174,6 +174,20 @@
 
                     <div class="profile-fields">
                         <div class="profile-field">
+                            <label for="settings-user-id" data-i18n="label_user_id">ID пользователя</label>
+                            <div class="email-row user-id-row">
+                                <input type="text" id="settings-user-id" class="user-id-input" readonly>
+                                <button type="button" class="btn btn-outline btn-sm" id="copy-user-id-btn"
+                                    aria-label="Скопировать ID">
+                                    <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                                    <span data-i18n="btn_copy_id">Копировать</span>
+                                </button>
+                            </div>
+                            <p class="setting-desc" data-i18n="user_id_hint">Уникальный идентификатор аккаунта — чеки
+                                привязываются к нему постоянно</p>
+                        </div>
+
+                        <div class="profile-field">
                             <label data-i18n="label_email">Email</label>
                             <div class="email-row" id="email-display-row">
                                 <input type="email" id="settings-email" readonly>
@@ -197,6 +211,50 @@
                             </div>
                             <p class="setting-desc email-hint" data-i18n="email_change_hint">
                                 На новый адрес придёт ссылка для подтверждения
+                            </p>
+                        </div>
+
+                        <div class="profile-field">
+                            <label for="settings-phone" data-i18n="label_phone">Номер телефона</label>
+                            <div class="email-row phone-display-row" id="phone-display-row">
+                                <input type="text" id="settings-phone" readonly data-i18n-placeholder="phone_not_set"
+                                    placeholder="Не указан">
+                                <button type="button" class="btn btn-outline btn-sm" id="change-phone-btn"
+                                    data-i18n="btn_add_phone">Добавить</button>
+                                <button type="button" class="btn btn-outline btn-sm btn-icon-danger hidden"
+                                    id="remove-phone-btn" aria-label="Удалить номер" data-i18n-title="btn_remove_phone"
+                                    title="Удалить номер">
+                                    <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <p class="setting-desc" data-i18n="phone_settings_hint">Используется для входа по номеру и
+                                автоматического получения чеков</p>
+                        </div>
+
+                        <div class="profile-field hidden" id="change-phone-form">
+                            <label for="new-phone-input" data-i18n="label_new_phone">Новый номер телефона</label>
+                            <div class="email-change-form phone-change-form">
+                                <div class="settings-phone-pair">
+                                    <select id="settings-phone-country" class="custom-select phone-country-select"
+                                        data-searchable data-dropdown-min-width="270"
+                                        data-search-placeholder="phone_country_search"
+                                        data-search-empty="currency_search_empty" aria-label="Код страны"></select>
+                                    <input type="tel" id="new-phone-input" inputmode="tel" placeholder="5555 1234"
+                                        autocomplete="tel-national">
+                                </div>
+                                <div class="email-change-actions">
+                                    <button type="button" class="btn btn-primary btn-sm" id="confirm-phone-change"
+                                        aria-label="Сохранить номер">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline btn-sm" id="cancel-phone-change"
+                                        aria-label="Отмена">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="setting-desc email-hint" data-i18n="phone_change_hint">
+                                При смене номера все ранее полученные чеки останутся в вашем аккаунте
                             </p>
                         </div>
 

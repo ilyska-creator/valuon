@@ -208,15 +208,16 @@ class CustomSelect {
         const opt = this.select.querySelector('option:checked');
         const el = this.trigger.querySelector('.custom-select-value');
         const iconHTML = opt ? opt.getAttribute('data-icon') : '';
+        const displayLabel = opt ? (opt.getAttribute('data-short-label') || opt.textContent) : '';
         if (iconHTML && opt) {
             el.textContent = '';
             const icon = document.createElement('span');
             icon.className = 'cs-value-icon';
             icon.innerHTML = iconHTML;
             el.appendChild(icon);
-            el.appendChild(document.createTextNode(' ' + opt.textContent));
+            el.appendChild(document.createTextNode(' ' + displayLabel));
         } else {
-            el.textContent = opt ? opt.textContent : '';
+            el.textContent = displayLabel;
         }
         if (this.search && !this.isOpen) {
             this.search.value = opt && opt.value ? opt.textContent : '';
@@ -383,8 +384,12 @@ class CustomSelect {
             origin = 'bottom';
         }
 
-        this.dropdown.style.left = trigRect.left + 'px';
-        this.dropdown.style.width = trigRect.width + 'px';
+        const minW = parseInt(this.select.getAttribute('data-dropdown-min-width') || '0', 10) || 0;
+        const width = Math.min(Math.max(trigRect.width, minW), window.innerWidth - 16);
+        const left = Math.max(8, Math.min(trigRect.left, window.innerWidth - width - 8));
+
+        this.dropdown.style.left = left + 'px';
+        this.dropdown.style.width = width + 'px';
         this.dropdown.style.top = top + 'px';
         this.dropdown.style.transformOrigin = origin;
     }

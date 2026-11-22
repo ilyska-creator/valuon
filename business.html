@@ -367,18 +367,55 @@
                             <span class="receipt-section-label" data-i18n="section_client">Клиент</span>
                             <div class="receipt-layout">
                                 <div class="input-group" id="customer-email-group">
-                                    <label for="customer-email" data-i18n="customer_email_label">Email
-                                        покупателя</label>
-                                    <span class="input-affix autocomplete-anchor">
-                                        <i class="fa-regular fa-envelope" aria-hidden="true"></i>
-                                        <input type="text" id="customer-email" name="customer_email" inputmode="email"
-                                            data-i18n-placeholder="customer_email_placeholder"
-                                            placeholder="client@example.com" autocomplete="off" autocorrect="off"
-                                            autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore
-                                            data-bwignore="true" data-form-type="other" readonly required>
-                                        <ul class="customer-autocomplete is-hidden" id="customer-autocomplete"
-                                            role="listbox" aria-label="Клиенты"></ul>
-                                    </span>
+                                    <div class="contact-mode-header">
+                                        <label for="customer-email" id="customer-contact-label"
+                                            data-i18n="customer_email_label">Email покупателя</label>
+                                        <div class="contact-mode-switch" role="tablist" aria-label="Контакт клиента">
+                                            <button type="button" class="contact-mode-btn active" role="tab"
+                                                aria-selected="true" data-contact-mode="email">
+                                                <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                                                <span data-i18n="customer_mode_email">Email</span>
+                                            </button>
+                                            <button type="button" class="contact-mode-btn" role="tab"
+                                                aria-selected="false" data-contact-mode="phone">
+                                                <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                                                <span data-i18n="customer_mode_phone">Телефон</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="customer-email-wrap">
+                                        <span class="input-affix autocomplete-anchor">
+                                            <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                                            <input type="text" id="customer-email" name="customer_email"
+                                                inputmode="email" data-i18n-placeholder="customer_email_placeholder"
+                                                placeholder="client@example.com" autocomplete="off" autocorrect="off"
+                                                autocapitalize="off" spellcheck="false" data-lpignore="true"
+                                                data-1p-ignore data-bwignore="true" data-form-type="other" readonly
+                                                required>
+                                            <ul class="customer-autocomplete is-hidden" id="customer-autocomplete"
+                                                role="listbox" aria-label="Клиенты"></ul>
+                                        </span>
+                                    </div>
+                                    <div id="customer-phone-wrap" class="is-hidden">
+                                        <div class="biz-phone-input-group">
+                                            <select id="customer-phone-country"
+                                                class="custom-select phone-country-select" data-searchable
+                                                data-dropdown-min-width="270"
+                                                data-search-placeholder="phone_country_search"
+                                                data-search-empty="country_search_empty"
+                                                aria-label="Код страны"></select>
+                                            <span class="autocomplete-anchor biz-phone-anchor">
+                                                <input type="tel" id="customer-phone" name="customer_phone"
+                                                    inputmode="tel" placeholder="5555 1234" autocomplete="off"
+                                                    autocorrect="off" autocapitalize="off" spellcheck="false"
+                                                    data-lpignore="true" data-1p-ignore data-bwignore="true"
+                                                    data-form-type="other">
+                                                <ul class="customer-autocomplete is-hidden"
+                                                    id="customer-phone-autocomplete" role="listbox"
+                                                    aria-label="Телефоны клиентов"></ul>
+                                            </span>
+                                        </div>
+                                    </div>
                                     <small class="field-hint" data-i18n="customer_email_hint">Если клиент
                                         зарегистрирован, чек
                                         привяжется автоматически</small>

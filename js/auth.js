@@ -1,6 +1,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
 import { checkLoginRateLimit, setLoadingButton, resetLoadingButton, isValidEmail, logError } from './security.js';
+import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
 
 function getSupabaseClient(rememberMe) {
     return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -48,13 +49,73 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('login-turnstile-skel')?.classList.add('loaded');
     }
 
-    const savedEmail = localStorage.getItem('valuon-remember-email');
+    const currentLang = localStorage.getItem('valuon-lang') || 'ru';
+    const emailGroup = document.getElementById('login-email-group');
+    const phoneGroup = document.getElementById('login-phone-group');
     const emailInput = document.getElementById('email');
+    const phoneCountryEl = document.getElementById('login-phone-country');
+    const phoneInput = document.getElementById('login-phone');
     const rememberCheckbox = document.getElementById('remember');
+    const modeButtons = document.querySelectorAll('[data-login-mode]');
 
-    if (savedEmail && emailInput) {
-        emailInput.value = savedEmail;
-        if (rememberCheckbox) rememberCheckbox.checked = true;
+    let loginMode = 'email';
+    let phonePair = null;
+
+    if (phoneCountryEl && phoneInput) {
+        populateDialCodeSelect(phoneCountryEl, currentLang, getDefaultPhoneCountry(null, currentLang));
+        if (typeof CustomSelect !== 'undefined') CustomSelect.init(phoneGroup);
+        phonePair = wirePhoneInputPair(phoneCountryEl, phoneInput);
+    }
+
+    function setLoginMode(mode, shouldFocus = false) {
+        loginMode = mode === 'phone' ? 'phone' : 'email';
+        modeButtons.forEach((btn) => {
+            const isActive = btn.dataset.loginMode === loginMode;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        if (emailGroup) emailGroup.classList.toggle('hidden', loginMode !== 'email');
+        if (phoneGroup) phoneGroup.classList.toggle('hidden', loginMode !== 'phone');
+        if (emailInput) emailInput.required = loginMode === 'email';
+        if (phoneInput) phoneInput.required = loginMode === 'phone';
+        if (loginMode === 'phone') {
+            phonePair?.syncTrigger();
+            if (shouldFocus) phoneInput?.focus();
+        } else if (shouldFocus) {
+            emailInput?.focus();
+        }
+    }
+
+    modeButtons.forEach((btn) => {
+        btn.addEventListener('click', () => setLoginMode(btn.dataset.loginMode, true));
+    });
+
+    // Restore remembered login (supports both new unified JSON key and legacy email key)
+    let restored = false;
+    try {
+        const rawSaved = localStorage.getItem('valuon-remember-login');
+        if (rawSaved) {
+            const parsed = JSON.parse(rawSaved);
+            if (parsed?.mode === 'phone' && parsed?.value && phonePair) {
+                setLoginMode('phone', false);
+                phonePair.setFromE164(parsed.value);
+                if (rememberCheckbox) rememberCheckbox.checked = true;
+                restored = true;
+            } else if (parsed?.mode === 'email' && parsed?.value && emailInput) {
+                setLoginMode('email', false);
+                emailInput.value = parsed.value;
+                if (rememberCheckbox) rememberCheckbox.checked = true;
+                restored = true;
+            }
+        }
+    } catch (_) { /* ignore malformed storage */ }
+
+    if (!restored) {
+        const savedEmail = localStorage.getItem('valuon-remember-email');
+        if (savedEmail && emailInput) {
+            emailInput.value = savedEmail;
+            if (rememberCheckbox) rememberCheckbox.checked = true;
+        }
     }
 
     const toggleBtn = document.querySelector('.toggle-password');
@@ -75,41 +136,70 @@ document.addEventListener('DOMContentLoaded', async () => {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = loginForm.querySelector('button[type="submit"]');
-            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const rememberMe = document.getElementById('remember')?.checked;
             const originalText = btn.innerHTML;
-            const subLang = localStorage.getItem('valuon-lang') === 'ru';
+            const lang = localStorage.getItem('valuon-lang') || 'ru';
+            const isRu = lang === 'ru';
 
-            if (!email && !password) {
-                showToast(subLang ? 'Введите email и пароль' : 'Enter your email and password', 'warning');
-                document.getElementById('email').focus();
-                return;
-            }
-            if (!email) {
-                showToast(subLang ? 'Введите email' : 'Enter your email', 'warning');
-                document.getElementById('email').focus();
-                return;
-            }
-            if (!password) {
-                showToast(subLang ? 'Введите пароль' : 'Enter your password', 'warning');
-                document.getElementById('password').focus();
-                return;
+            let email = '';
+            let normalizedPhone = '';
+            let rateLimitKey = '';
+
+            if (loginMode === 'phone') {
+                const hasPhone = phonePair ? phonePair.hasInput() : Boolean(phoneInput?.value.trim());
+                if (!hasPhone && !password) {
+                    showToast(isRu ? 'Введите номер телефона и пароль' : 'Enter your phone number and password', 'warning');
+                    phoneInput?.focus();
+                    return;
+                }
+                if (!hasPhone) {
+                    showToast(isRu ? 'Введите номер телефона' : 'Enter your phone number', 'warning');
+                    phoneInput?.focus();
+                    return;
+                }
+                normalizedPhone = phonePair ? phonePair.getNormalized() : null;
+                if (!normalizedPhone) {
+                    showToast(isRu ? 'Введите корректный номер телефона' : 'Enter a valid phone number', 'warning');
+                    phoneInput?.focus();
+                    return;
+                }
+                if (!password) {
+                    showToast(isRu ? 'Введите пароль' : 'Enter your password', 'warning');
+                    passwordInput?.focus();
+                    return;
+                }
+                rateLimitKey = normalizedPhone;
+            } else {
+                email = emailInput.value.trim();
+                if (!email && !password) {
+                    showToast(isRu ? 'Введите email и пароль' : 'Enter your email and password', 'warning');
+                    emailInput?.focus();
+                    return;
+                }
+                if (!email) {
+                    showToast(isRu ? 'Введите email' : 'Enter your email', 'warning');
+                    emailInput?.focus();
+                    return;
+                }
+                if (!password) {
+                    showToast(isRu ? 'Введите пароль' : 'Enter your password', 'warning');
+                    passwordInput?.focus();
+                    return;
+                }
+                rateLimitKey = email;
             }
 
             const captchaToken = (typeof turnstile !== 'undefined' && loginWidgetId !== null)
                 ? turnstile.getResponse(loginWidgetId)
                 : null;
             if (!captchaToken) {
-                const lang = localStorage.getItem('valuon-lang') === 'ru';
-                showToast(lang ? 'Подтвердите, что вы не робот' : 'Please complete the captcha', 'warning');
+                showToast(isRu ? 'Подтвердите, что вы не робот' : 'Please complete the captcha', 'warning');
                 return;
             }
 
-            const lang = localStorage.getItem('valuon-lang') || 'ru';
-            const rateLimitCheck = checkLoginRateLimit(email, lang);
+            const rateLimitCheck = checkLoginRateLimit(rateLimitKey, lang);
             if (!rateLimitCheck.allowed) {
-                const isRu = lang === 'ru';
                 showToast(isRu
                     ? `Слишком много попыток входа. Попробуйте через ${rateLimitCheck.resetIn}`
                     : `Too many login attempts. Try again in ${rateLimitCheck.resetIn}`);
@@ -120,22 +210,53 @@ document.addEventListener('DOMContentLoaded', async () => {
                 setLoadingButton(btn);
 
                 const client = getSupabaseClient(rememberMe);
+                let activeSession = null;
 
-                if (rememberMe) {
-                    localStorage.setItem('valuon-remember-email', email);
+                if (loginMode === 'phone') {
+                    const { data, error } = await client.functions.invoke('phone-login', {
+                        body: {
+                            phone: normalizedPhone,
+                            password,
+                            captchaToken
+                        }
+                    });
+
+                    if (error || !data?.session?.access_token || !data?.session?.refresh_token) {
+                        throw error || new Error('Invalid credentials');
+                    }
+
+                    const { data: sessionData, error: sessionErr } = await client.auth.setSession({
+                        access_token: data.session.access_token,
+                        refresh_token: data.session.refresh_token
+                    });
+                    if (sessionErr) throw sessionErr;
+                    activeSession = sessionData?.session || data.session;
+
+                    if (rememberMe) {
+                        localStorage.setItem('valuon-remember-login', JSON.stringify({ mode: 'phone', value: normalizedPhone }));
+                    } else {
+                        localStorage.removeItem('valuon-remember-login');
+                    }
                 } else {
-                    localStorage.removeItem('valuon-remember-email');
+                    if (rememberMe) {
+                        localStorage.setItem('valuon-remember-email', email);
+                        localStorage.setItem('valuon-remember-login', JSON.stringify({ mode: 'email', value: email }));
+                    } else {
+                        localStorage.removeItem('valuon-remember-email');
+                        localStorage.removeItem('valuon-remember-login');
+                    }
+
+                    const { data, error } = await client.auth.signInWithPassword({
+                        email,
+                        password,
+                        options: { captchaToken }
+                    });
+
+                    if (error) throw error;
+                    activeSession = data.session;
                 }
 
-                const { data, error } = await client.auth.signInWithPassword({
-                    email,
-                    password,
-                    options: { captchaToken }
-                });
-
-                if (error) throw error;
-
-                if (data.session) {
+                if (activeSession) {
                     const card = loginForm.closest('.auth-card');
                     btn.innerHTML = '<i class="fa-solid fa-circle-check" style="font-size:1.25rem;animation:checkPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;color:var(--success);"></i>';
                     await new Promise(r => setTimeout(r, 800));
@@ -145,10 +266,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             } catch (err) {
                 logError('auth:login', err);
-                const lang = localStorage.getItem('valuon-lang') === 'ru';
-                const msg = lang
-                    ? 'Неверный email или пароль'
-                    : 'Invalid email or password';
+                const msg = loginMode === 'phone'
+                    ? (isRu ? 'Неверный номер телефона или пароль' : 'Invalid phone number or password')
+                    : (isRu ? 'Неверный email или пароль' : 'Invalid email or password');
                 showToast(msg);
                 resetLoadingButton(btn, originalText);
                 if (typeof turnstile !== 'undefined' && loginWidgetId !== null) turnstile.reset(loginWidgetId);
@@ -170,7 +290,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     function openForgotModal() {
         if (!forgotModal) return;
 
-        const mainEmail = document.getElementById('email')?.value.trim();
+        const mainEmail = loginMode === 'email'
+            ? (emailInput?.value.trim() || '')
+            : (localStorage.getItem('valuon-remember-email') || '');
         if (mainEmail && forgotEmailInput) {
             forgotEmailInput.value = mainEmail;
         }

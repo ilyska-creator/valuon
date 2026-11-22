@@ -15,6 +15,7 @@
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/custom-select.css">
     <link rel="stylesheet" href="css/toast.css">
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script>
@@ -34,12 +35,36 @@
             <p class="auth-subtitle" data-i18n="auth_subtitle" data-animate>Введите данные для входа в аккаунт</p>
 
             <form id="login-form" class="auth-form no-required-mark" action="#" novalidate>
-                <div class="input-group" data-animate>
+                <div class="auth-mode-switch" role="tablist" aria-label="Способ входа" data-animate>
+                    <button type="button" class="auth-mode-btn active" role="tab" aria-selected="true"
+                        data-login-mode="email">
+                        <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                        <span data-i18n="mode_email">Email</span>
+                    </button>
+                    <button type="button" class="auth-mode-btn" role="tab" aria-selected="false"
+                        data-login-mode="phone">
+                        <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                        <span data-i18n="mode_phone">Телефон</span>
+                    </button>
+                </div>
+
+                <div class="input-group" id="login-email-group" data-animate>
                     <label for="email" data-i18n="label_email">Email</label>
                     <div class="input-wrap">
                         <span class="input-icon"><i class="fa-regular fa-envelope"></i></span>
                         <input type="email" id="email" name="email" required placeholder="name@example.com"
                             autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="input-group hidden" id="login-phone-group">
+                    <label for="login-phone" data-i18n="label_phone">Номер телефона</label>
+                    <div class="phone-input-group">
+                        <select id="login-phone-country" class="custom-select phone-country-select" data-searchable
+                            data-dropdown-min-width="270" data-search-placeholder="phone_country_search"
+                            data-search-empty="currency_search_empty" aria-label="Код страны"></select>
+                        <input type="tel" id="login-phone" name="phone" inputmode="tel" placeholder="5555 1234"
+                            autocomplete="tel-national">
                     </div>
                 </div>
 
@@ -124,6 +149,7 @@
         </div>
     </div>
 
+    <script src="js/custom-select.js"></script>
     <script src="js/login-lang.js"></script>
     <script src="js/toast.js"></script>
     <script type="module" src="js/auth.js"></script>
@@ -152,9 +178,9 @@
             onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
     </div>
     <script src="js/cookie-banner.js"></script>
-<script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-</script>
-<script defer src="/_vercel/insights/script.js"></script>
+    <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
 </body>
 
 </html>

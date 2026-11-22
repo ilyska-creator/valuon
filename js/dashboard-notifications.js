@@ -1,6 +1,7 @@
 import { requireAuth } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
 import { calculateDaysLeft } from './warranty-utils.js';
+import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
 
 function getNotifLang() {
     return localStorage.getItem('valuon-lang') || 'ru';
@@ -30,17 +31,33 @@ function updateNotifBadge(count) {
     });
 }
 
-async function fetchRecentLifecycleReceipts(userEmail, client) {
-    if (!userEmail) return [];
+async function fetchRecentLifecycleReceipts(userId, userEmail, client) {
+    if (!userId && !userEmail) return [];
     const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
-    const { data, error } = await client
-        .from('business_receipts')
-        .select('id, receipt_number, shop_name, lifecycle_status, status_changed_at, status_reason, refunded_amount, gross_total, currency')
-        .eq('customer_email', userEmail)
-        .in('lifecycle_status', ['voided', 'refunded', 'partially_refunded'])
-        .gte('status_changed_at', cutoff)
-        .order('status_changed_at', { ascending: false });
+    const userPhone = await fetchCurrentUserPhone(client, userId);
+    const buyerOrFilter = buildBuyerReceiptOrFilter({ userId, email: userEmail, phone: userPhone });
 
+    let res = buyerOrFilter
+        ? await client
+            .from('business_receipts')
+            .select('id, receipt_number, shop_name, lifecycle_status, status_changed_at, status_reason, refunded_amount, gross_total, currency')
+            .or(buyerOrFilter)
+            .in('lifecycle_status', ['voided', 'refunded', 'partially_refunded'])
+            .gte('status_changed_at', cutoff)
+            .order('status_changed_at', { ascending: false })
+        : { data: [], error: null };
+
+    if (res.error && res.error.code === '42703' && userEmail) {
+        res = await client
+            .from('business_receipts')
+            .select('id, receipt_number, shop_name, lifecycle_status, status_changed_at, status_reason, refunded_amount, gross_total, currency')
+            .eq('customer_email', userEmail)
+            .in('lifecycle_status', ['voided', 'refunded', 'partially_refunded'])
+            .gte('status_changed_at', cutoff)
+            .order('status_changed_at', { ascending: false });
+    }
+
+    const { data, error } = res;
     if (error) {
         // 42703: lifecycle columns not migrated yet — fail gracefully without breaking notifications
         if (error.code !== '42703') logError('notif:lifecycleReceipts', error);
@@ -107,7 +124,7 @@ function buildLifecycleNotifications(receipts, t) {
 async function computeActiveAlertsCount(userId, userEmail, client) {
     const [profileRes, lifecycleReceipts] = await Promise.all([
         client.from('profiles').select('expiry_alerts').eq('id', userId).single(),
-        fetchRecentLifecycleReceipts(userEmail, client)
+        fetchRecentLifecycleReceipts(userId, userEmail, client)
     ]);
 
     let count = lifecycleReceipts.length;
@@ -151,7 +168,7 @@ async function loadNotifications(userId, userEmail, client) {
     const [profileRes, itemsRes, lifecycleReceipts] = await Promise.all([
         client.from('profiles').select('expiry_alerts').eq('id', userId).single(),
         client.from('items').select('name, purchase_date, warranty_end_date').eq('user_id', userId).order('purchase_date', { ascending: false }),
-        fetchRecentLifecycleReceipts(userEmail, client)
+        fetchRecentLifecycleReceipts(userId, userEmail, client)
     ]);
 
     const t = getNotifT();

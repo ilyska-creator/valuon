@@ -3,12 +3,18 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
 import { checkSignupRateLimit, logError } from './security.js';
 import { initPasswordStrength, checkPasswordStrength } from './password-strength.js';
 import { getAuthSession } from './dashboard-auth.js';
+import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const getLang = () => localStorage.getItem('valuon-lang') || 'ru';
 
 if (typeof window.renderCurrencyOptions === 'function') {
     window.renderCurrencyOptions(document.getElementById('currency'), getLang());
+}
+
+const regPhoneCountryEl = document.getElementById('register-phone-country');
+if (regPhoneCountryEl) {
+    populateDialCodeSelect(regPhoneCountryEl, getLang(), getDefaultPhoneCountry(null, getLang()));
 }
 
 function waitForTurnstile(timeoutMs = 5000) {
@@ -45,6 +51,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     initPasswordStrength('password', { getLang });
+
+    const regPhoneInput = document.getElementById('register-phone');
+    const regPhonePair = (regPhoneCountryEl && regPhoneInput)
+        ? wirePhoneInputPair(regPhoneCountryEl, regPhoneInput)
+        : null;
 
     const setupPasswordToggle = (btnClass, inputId) => {
         const toggleBtn = document.querySelector(btnClass);
@@ -95,6 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             var emailEl = document.getElementById('email');
+            var phoneEl = document.getElementById('register-phone');
             var passwordEl = document.getElementById('password');
             var confirmEl = document.getElementById('confirm-password');
             var firstNameEl = document.getElementById('first-name');
@@ -104,6 +116,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             var termsEl = document.getElementById('terms');
 
             var email = emailEl.value.trim().toLowerCase();
+            var hasPhone = regPhonePair ? regPhonePair.hasInput() : false;
+            var normalizedPhone = hasPhone ? regPhonePair.getNormalized() : null;
             var password = passwordEl.value;
             var confirmPassword = confirmEl.value;
             var firstName = firstNameEl.value.trim();
@@ -112,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             var currency = currencyEl?.value || '';
 
             if (check(!email, lang === 'ru' ? 'Введите email' : 'Enter your email', emailEl)) { }
+            else if (check(hasPhone && !normalizedPhone, lang === 'ru' ? 'Введите корректный номер телефона' : 'Enter a valid phone number', phoneEl)) { }
             else if (check(!firstName, lang === 'ru' ? 'Введите ваше имя' : 'Please enter your first name', firstNameEl)) { }
             else if (check(!lastName, lang === 'ru' ? 'Введите вашу фамилию' : 'Please enter your last name', lastNameEl)) { }
             else if (check(!birthdate, lang === 'ru' ? 'Укажите дату рождения' : 'Please enter your date of birth', birthdateEl)) { }
@@ -181,6 +196,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const displayName = `${firstName} ${lastName}`;
 
+                // Pre-check phone availability before creating the auth account (gracefully skipped if RPC not deployed yet)
+                if (normalizedPhone) {
+                    try {
+                        const { data: isAvailable, error: availErr } = await supabase.rpc('check_phone_available', {
+                            p_phone: normalizedPhone
+                        });
+                        if (!availErr && isAvailable === false) {
+                            throw new Error(lang === 'ru'
+                                ? 'Этот номер телефона уже привязан к другому аккаунту'
+                                : 'This phone number is already linked to another account');
+                        }
+                    } catch (availCatch) {
+                        if (availCatch?.message?.includes('уже привязан') || availCatch?.message?.includes('already linked')) {
+                            throw availCatch;
+                        }
+                    }
+                }
 
                 const { data, error } = await supabase.auth.signUp({
                     email,
@@ -191,6 +223,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             display_name: displayName,
                             first_name: firstName,
                             last_name: lastName,
+                            phone: normalizedPhone || null,
                             birthdate: birthdate,
                             currency: currency,
                             created_at: new Date().toISOString()
@@ -201,15 +234,35 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (error) throw error;
 
                 if (data.user) {
-
-                    const { error: profileError } = await supabase.from('profiles').upsert({
+                    const baseProfile = {
                         id: data.user.id,
                         email: email.toLowerCase().trim(),
                         first_name: firstName,
                         last_name: lastName,
                         birthdate: birthdate,
                         currency: currency
-                    }, { onConflict: 'id' });
+                    };
+                    const profilePayload = normalizedPhone
+                        ? { ...baseProfile, phone: normalizedPhone }
+                        : baseProfile;
+
+                    let { error: profileError } = await supabase
+                        .from('profiles')
+                        .upsert(profilePayload, { onConflict: 'id' });
+
+                    // Graceful fallback if phone column isn't migrated yet (42703) or unique conflict (23505)
+                    if (profileError && (profileError.code === '42703' || profileError.code === '23505')) {
+                        if (profileError.code === '23505') {
+                            showToast(
+                                lang === 'ru'
+                                    ? 'Этот номер телефона уже занят — вы сможете указать другой в настройках'
+                                    : 'This phone number is already in use — you can add another one in Settings',
+                                'warning'
+                            );
+                        }
+                        const retry = await supabase.from('profiles').upsert(baseProfile, { onConflict: 'id' });
+                        profileError = retry.error;
+                    }
 
                     if (profileError) {
                         logError('reg:saveProfile', profileError);

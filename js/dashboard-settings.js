@@ -1,6 +1,12 @@
 import { requireAuth } from './dashboard-auth.js';
 import { logError } from './security.js';
 import { refreshNotifBadge } from './dashboard-notifications.js';
+import {
+    populateDialCodeSelect,
+    wirePhoneInputPair,
+    formatPhoneDisplay,
+    getDefaultPhoneCountry
+} from './phone-utils.js';
 
 function getSettingsLang() {
     return localStorage.getItem('valuon-lang') || 'ru';
@@ -16,6 +22,67 @@ async function initSettings() {
     if (!auth) return;
 
     const { user, client } = auth;
+
+    const userIdInput = document.getElementById('settings-user-id');
+    const copyUserIdBtn = document.getElementById('copy-user-id-btn');
+    const phoneDisplayInput = document.getElementById('settings-phone');
+    const changePhoneBtn = document.getElementById('change-phone-btn');
+    const removePhoneBtn = document.getElementById('remove-phone-btn');
+    const changePhoneForm = document.getElementById('change-phone-form');
+    const phoneCountrySelect = document.getElementById('settings-phone-country');
+    const newPhoneInput = document.getElementById('new-phone-input');
+    const confirmPhoneChange = document.getElementById('confirm-phone-change');
+    const cancelPhoneChange = document.getElementById('cancel-phone-change');
+
+    let currentPhoneE164 = null;
+    let phonePair = null;
+
+    if (userIdInput) userIdInput.value = user.id || '';
+
+    if (copyUserIdBtn && user.id) {
+        copyUserIdBtn.addEventListener('click', async () => {
+            const t = getSettingsT();
+            try {
+                await navigator.clipboard.writeText(user.id);
+                const iconEl = copyUserIdBtn.querySelector('i');
+                const spanEl = copyUserIdBtn.querySelector('span');
+                copyUserIdBtn.classList.add('is-copied');
+                if (iconEl) iconEl.className = 'fa-solid fa-check';
+                if (spanEl) spanEl.textContent = t.btn_copied_id || 'Скопировано';
+                showToast(t.msg_user_id_copied || 'ID пользователя скопирован', 'success');
+                setTimeout(() => {
+                    copyUserIdBtn.classList.remove('is-copied');
+                    if (iconEl) iconEl.className = 'fa-regular fa-copy';
+                    const tNow = getSettingsT();
+                    if (spanEl) spanEl.textContent = tNow.btn_copy_id || 'Копировать';
+                }, 1800);
+            } catch (err) {
+                logError('settings:copyUserId', err);
+            }
+        });
+    }
+
+    function syncPhoneDisplayUI() {
+        const t = getSettingsT();
+        if (phoneDisplayInput) {
+            phoneDisplayInput.value = currentPhoneE164 ? formatPhoneDisplay(currentPhoneE164) : '';
+            phoneDisplayInput.placeholder = t.phone_not_set || 'Не указан';
+        }
+        if (changePhoneBtn) {
+            const key = currentPhoneE164 ? 'btn_change_phone' : 'btn_add_phone';
+            changePhoneBtn.setAttribute('data-i18n', key);
+            changePhoneBtn.textContent = t[key] || (currentPhoneE164 ? 'Изменить' : 'Добавить');
+        }
+        if (removePhoneBtn) {
+            removePhoneBtn.classList.toggle('hidden', !currentPhoneE164);
+        }
+    }
+
+    if (phoneCountrySelect && newPhoneInput) {
+        populateDialCodeSelect(phoneCountrySelect, getSettingsLang(), getDefaultPhoneCountry(null, getSettingsLang()));
+        if (typeof CustomSelect !== 'undefined') CustomSelect.init(changePhoneForm);
+        phonePair = wirePhoneInputPair(phoneCountrySelect, newPhoneInput);
+    }
 
     async function loadProfile() {
         const emailInput = document.getElementById('settings-email');
@@ -53,13 +120,16 @@ async function initSettings() {
             if (currencySelect) currencySelect.value = data.currency || 'EUR';
             if (toggleExpiry) toggleExpiry.checked = data.expiry_alerts ?? true;
             if (toggleDigest) toggleDigest.checked = data.weekly_digest ?? false;
+            currentPhoneE164 = data.phone || null;
         } else {
             const metaFirstName = user.user_metadata?.first_name || '';
             const metaLastName = user.user_metadata?.last_name || '';
             const metaBirthdate = user.user_metadata?.birthdate || null;
+            const metaPhone = user.user_metadata?.phone || null;
 
-            await client.from('profiles').insert({
+            const baseInsert = {
                 id: user.id,
+                email: user.email || null,
                 first_name: metaFirstName,
                 last_name: metaLastName,
                 display_name: `${metaFirstName} ${metaLastName}`.trim(),
@@ -67,7 +137,13 @@ async function initSettings() {
                 expiry_alerts: true,
                 weekly_digest: false,
                 updated_at: new Date().toISOString()
-            });
+            };
+            const { error: insErr } = await client
+                .from('profiles')
+                .insert(metaPhone ? { ...baseInsert, phone: metaPhone } : baseInsert);
+            if (insErr && insErr.code === '42703') {
+                await client.from('profiles').insert(baseInsert);
+            }
 
             if (firstNameInput) firstNameInput.value = metaFirstName;
             if (lastNameInput) lastNameInput.value = metaLastName;
@@ -75,7 +151,10 @@ async function initSettings() {
                 birthdateInput.value = metaBirthdate;
                 if (birthdateInput._cdp) birthdateInput._cdp.syncDisplay();
             }
+            currentPhoneE164 = metaPhone;
         }
+
+        syncPhoneDisplayUI();
 
         if (birthdateInput && !birthdateInput.value) {
             const { data: { user: freshUser } } = await client.auth.getUser();
@@ -118,8 +197,14 @@ async function initSettings() {
     if (currencySelect) currencySelect.addEventListener('change', updateSaveButtonState);
 
     window.addEventListener('lang-changed', (e) => {
-        if (!currencySelect || typeof window.renderCurrencyOptions !== 'function') return;
-        window.renderCurrencyOptions(currencySelect, e.detail?.lang || getSettingsLang());
+        const nextLang = e.detail?.lang || getSettingsLang();
+        if (currencySelect && typeof window.renderCurrencyOptions === 'function') {
+            window.renderCurrencyOptions(currencySelect, nextLang);
+        }
+        if (phoneCountrySelect) {
+            populateDialCodeSelect(phoneCountrySelect, nextLang, phoneCountrySelect.value || getDefaultPhoneCountry(null, nextLang));
+        }
+        syncPhoneDisplayUI();
         if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
     });
 
@@ -296,6 +381,139 @@ async function initSettings() {
                 showToast(msg, 'error');
                 confirmEmailChange.innerHTML = originalHTML;
                 confirmEmailChange.disabled = false;
+            }
+        });
+    }
+
+    function resetPhoneForm() {
+        changePhoneForm?.classList.add('hidden');
+        changePhoneBtn?.classList.remove('hidden');
+        if (removePhoneBtn) removePhoneBtn.classList.toggle('hidden', !currentPhoneE164);
+        if (newPhoneInput) newPhoneInput.value = '';
+        if (confirmPhoneChange) {
+            confirmPhoneChange.innerHTML = '<i class="fa-solid fa-check"></i>';
+            confirmPhoneChange.disabled = false;
+        }
+    }
+
+    if (changePhoneBtn && changePhoneForm) {
+        changePhoneBtn.addEventListener('click', () => {
+            changePhoneForm.classList.remove('hidden');
+            changePhoneBtn.classList.add('hidden');
+            removePhoneBtn?.classList.add('hidden');
+            if (currentPhoneE164 && phonePair) {
+                phonePair.setFromE164(currentPhoneE164);
+            } else {
+                phonePair?.syncTrigger();
+            }
+            newPhoneInput?.focus();
+        });
+
+        cancelPhoneChange?.addEventListener('click', resetPhoneForm);
+
+        confirmPhoneChange?.addEventListener('click', async () => {
+            const t = getSettingsT();
+            const normalized = phonePair ? phonePair.getNormalized() : null;
+
+            if (!normalized) {
+                showToast(t.msg_valid_phone || 'Введите корректный номер телефона', 'warning');
+                newPhoneInput?.focus();
+                return;
+            }
+
+            if (normalized === currentPhoneE164) {
+                showToast(t.msg_same_phone || 'Это ваш текущий номер телефона', 'warning');
+                return;
+            }
+
+            confirmPhoneChange.disabled = true;
+            const originalHTML = confirmPhoneChange.innerHTML;
+            confirmPhoneChange.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            try {
+                const { error: updErr } = await client
+                    .from('profiles')
+                    .update({
+                        phone: normalized,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', user.id);
+
+                if (updErr) throw updErr;
+
+                await client.auth.updateUser({ data: { phone: normalized } }).catch(() => { });
+
+                currentPhoneE164 = normalized;
+                syncPhoneDisplayUI();
+
+                let boundCount = 0;
+                try {
+                    const { data: bindRes } = await client.rpc('bind_pending_receipts');
+                    if (typeof bindRes === 'number') boundCount = bindRes;
+                } catch (bindErr) {
+                    logError('settings:bindAfterPhone', bindErr);
+                }
+
+                window.dispatchEvent(new CustomEvent('phone-changed', {
+                    detail: { phone: normalized, boundCount }
+                }));
+
+                confirmPhoneChange.innerHTML = '<i class="fa-solid fa-check"></i>';
+                setTimeout(() => {
+                    resetPhoneForm();
+                    const tSuccess = getSettingsT();
+                    if (boundCount > 0) {
+                        const tpl = tSuccess.msg_phone_saved_bound || 'Номер сохранён! Привязано новых чеков: {count}';
+                        showToast(tpl.replace('{count}', String(boundCount)), 'success');
+                    } else {
+                        showToast(tSuccess.msg_phone_saved || 'Номер телефона сохранён', 'success');
+                    }
+                    refreshNotifBadge();
+                }, 600);
+            } catch (err) {
+                logError('settings:phoneChange', err);
+                const tErr = getSettingsT();
+                if (err?.code === '23505') {
+                    showToast(tErr.msg_phone_in_use || 'Этот номер телефона уже привязан к другому аккаунту', 'error');
+                } else {
+                    showToast((tErr.msg_save_error || 'Ошибка сохранения') + (err?.message ? ': ' + err.message : ''), 'error');
+                }
+                confirmPhoneChange.innerHTML = originalHTML;
+                confirmPhoneChange.disabled = false;
+            }
+        });
+    }
+
+    if (removePhoneBtn) {
+        removePhoneBtn.addEventListener('click', async () => {
+            if (!currentPhoneE164) return;
+            const t = getSettingsT();
+            removePhoneBtn.disabled = true;
+            const prevHtml = removePhoneBtn.innerHTML;
+            removePhoneBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            try {
+                const { error } = await client
+                    .from('profiles')
+                    .update({
+                        phone: null,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', user.id);
+                if (error) throw error;
+
+                await client.auth.updateUser({ data: { phone: null } }).catch(() => { });
+
+                currentPhoneE164 = null;
+                syncPhoneDisplayUI();
+                showToast(t.msg_phone_removed || 'Номер телефона удалён. Все ваши чеки остались в аккаунте.', 'success');
+                window.dispatchEvent(new CustomEvent('phone-changed', { detail: { phone: null, boundCount: 0 } }));
+            } catch (err) {
+                logError('settings:phoneRemove', err);
+                showToast(t.msg_save_error || 'Ошибка сохранения', 'error');
+            } finally {
+                removePhoneBtn.innerHTML = prevHtml;
+                removePhoneBtn.disabled = false;
             }
         });
     }
