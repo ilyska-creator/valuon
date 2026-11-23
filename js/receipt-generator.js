@@ -58,7 +58,7 @@ async function fetchLogoDataUrl(shop) {
     }
 }
 
-function getVerifyBaseUrl() {
+export function getVerifyBaseUrl() {
     if (typeof window !== 'undefined' && window.location?.origin) {
         const origin = window.location.origin;
         if (origin && !origin.startsWith('file:') && origin !== 'null' && !origin.includes('localhost') && !origin.includes('127.0.0.1')) {
@@ -68,7 +68,7 @@ function getVerifyBaseUrl() {
     return 'https://valuon.app';
 }
 
-function buildQrPayload(receipt) {
+export function buildQrPayload(receipt) {
     const purchaseDate = new Date(receipt.purchase_date);
     const qrDate = Number.isNaN(purchaseDate.getTime()) ? '' : purchaseDate.toISOString();
     const receiptSerial = receipt.receipt_number

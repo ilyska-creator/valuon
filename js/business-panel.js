@@ -1,5 +1,5 @@
 import { requireAuth } from './dashboard-auth.js';
-import { downloadReceiptPDF } from './receipt-generator.js';
+import { downloadReceiptPDF, generateQRDataURL, buildQrPayload } from './receipt-generator.js';
 import { escapeHtml, logError } from './security.js';
 import { attachModalA11y } from './modal-a11y.js';
 import { buildXlsxBlob } from './xlsx-export.js';
@@ -1553,10 +1553,27 @@ async function initBusinessPanel() {
         const t = bizT();
         const numEl = document.getElementById('receipt-success-number');
         const emailEl = document.getElementById('receipt-success-email');
+        const paymentEl = document.getElementById('receipt-success-payment');
+        const itemsCountEl = document.getElementById('receipt-success-items-count');
         const statusEl = document.getElementById('receipt-success-status');
         const totalEl = document.getElementById('receipt-success-total');
+        const qrImg = document.getElementById('receipt-success-qr-img');
+        const copyBtn = document.getElementById('success-copy-url-btn');
+        const openBtn = document.getElementById('success-open-url-btn');
+
         if (numEl) numEl.textContent = receiptData.receipt_number ? `#RCP-${receiptData.receipt_number}` : `#${String(receiptData.id).slice(0, 8).toUpperCase()}`;
-        if (emailEl) emailEl.textContent = getCustomerContactSummary(receiptData) || '';
+        if (emailEl) emailEl.textContent = getCustomerContactSummary(receiptData) || (bizLang() === 'en' ? 'Not specified' : 'Не указан');
+        if (paymentEl) {
+            const payMethod = receiptData.payment_method === 'cash'
+                ? (t.payment_cash || (bizLang() === 'en' ? 'Cash' : 'Наличные'))
+                : (t.payment_card || (bizLang() === 'en' ? 'Card' : 'Карта'));
+            paymentEl.textContent = payMethod;
+        }
+        if (itemsCountEl) {
+            const items = receiptData.receipt_items || [];
+            const count = Array.isArray(items) ? items.length : 1;
+            itemsCountEl.textContent = bizLang() === 'en' ? `${count} items` : `${count} шт.`;
+        }
         if (statusEl) {
             statusEl.textContent = receiptData.status === 'verified'
                 ? (t.status_verified || (bizLang() === 'en' ? 'Linked to Customer' : 'Привязан к клиенту'))
@@ -1564,6 +1581,51 @@ async function initBusinessPanel() {
             statusEl.className = 'receipt-success-status-value ' + (receiptData.status === 'verified' ? 'status-ok' : 'status-wait');
         }
         if (totalEl) totalEl.textContent = fmtMoney(receiptData.gross_total || 0);
+
+        try {
+            const { data: qrData } = buildQrPayload({
+                ...receiptData,
+                tax_id: currentShop?.tax_id,
+                shop_id: receiptData.shop_id || currentShop?.id
+            });
+
+            if (qrImg && qrData) {
+                const qrDataUrl = generateQRDataURL(qrData, 220);
+                if (qrDataUrl) {
+                    qrImg.src = qrDataUrl;
+                }
+            }
+
+            let verifyUrl = qrData && qrData.startsWith('http') ? qrData : null;
+            if (!verifyUrl && receiptData.fiscal_hash) {
+                const origin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : 'https://valuon.app';
+                verifyUrl = `${origin}/verify.html?sig=${encodeURIComponent(receiptData.fiscal_hash)}`;
+            }
+
+            if (openBtn) {
+                if (verifyUrl) {
+                    let openUrl = verifyUrl;
+                    if (typeof window !== 'undefined' && window.location?.origin && receiptData.fiscal_hash) {
+                        openUrl = `${window.location.origin}/verify.html?sig=${encodeURIComponent(receiptData.fiscal_hash)}`;
+                    }
+                    openBtn.href = openUrl;
+                    openBtn.classList.remove('is-hidden');
+                } else {
+                    openBtn.classList.add('is-hidden');
+                }
+            }
+
+            if (copyBtn) {
+                if (verifyUrl) {
+                    copyBtn.classList.remove('is-hidden');
+                    copyBtn.dataset.url = verifyUrl;
+                } else {
+                    copyBtn.classList.add('is-hidden');
+                }
+            }
+        } catch (qrErr) {
+            logError(qrErr, 'biz:showSuccessScreen:qr');
+        }
 
         if (modalBody) modalBody.classList.add('is-hidden');
         successScreen?.classList.remove('is-hidden');
@@ -1581,7 +1643,60 @@ async function initBusinessPanel() {
         successScreen?.classList.add('is-hidden');
         successScreen?.classList.remove('is-visible');
         modalBody?.classList.remove('is-hidden');
+
+        const qrImg = document.getElementById('receipt-success-qr-img');
+        if (qrImg) qrImg.removeAttribute('src');
+
+        const copyBtn = document.getElementById('success-copy-url-btn');
+        if (copyBtn) {
+            delete copyBtn.dataset.url;
+            copyBtn.classList.remove('copied');
+            const labelEl = document.getElementById('success-copy-url-label');
+            const iconEl = copyBtn.querySelector('i');
+            const t = bizT();
+            if (labelEl) labelEl.textContent = t.success_copy_link || (bizLang() === 'en' ? 'Copy' : 'Копировать');
+            if (iconEl) iconEl.className = 'fa-solid fa-copy';
+        }
+
+        const openBtn = document.getElementById('success-open-url-btn');
+        if (openBtn) openBtn.href = '#';
     }
+
+    document.getElementById('success-copy-url-btn')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const url = btn.dataset.url;
+        if (!url) return;
+        try {
+            await navigator.clipboard.writeText(url);
+            const labelEl = document.getElementById('success-copy-url-label');
+            const iconEl = btn.querySelector('i');
+            const originalText = labelEl ? labelEl.textContent : '';
+            const t = bizT();
+            const copiedText = t.success_link_copied || (bizLang() === 'en' ? 'Copied!' : 'Скопировано!');
+            if (labelEl) labelEl.textContent = copiedText;
+            if (iconEl) iconEl.className = 'fa-solid fa-check';
+            btn.classList.add('copied');
+
+            if (typeof window.showToast === 'function') {
+                window.showToast(bizLang() === 'en' ? 'Receipt link copied!' : 'Ссылка на чек скопирована!', 'success');
+            }
+
+            setTimeout(() => {
+                if (labelEl) labelEl.textContent = originalText;
+                if (iconEl) iconEl.className = 'fa-solid fa-copy';
+                btn.classList.remove('copied');
+            }, 2000);
+        } catch (err) {
+            logError(err, 'biz:copyVerifyUrl');
+        }
+    });
+
+    document.getElementById('receipt-success-qr-box')?.addEventListener('click', () => {
+        const openBtn = document.getElementById('success-open-url-btn');
+        if (openBtn && openBtn.href && openBtn.href !== '#' && !openBtn.classList.contains('is-hidden')) {
+            window.open(openBtn.href, '_blank', 'noopener,noreferrer');
+        }
+    });
 
     document.getElementById('success-download-btn')?.addEventListener('click', async () => {
         if (!lastIssuedReceipt || !currentShop) return;

@@ -588,18 +588,51 @@
                     <h3 data-i18n="success_title">Чек выписан!</h3>
                     <p class="receipt-success-number" id="receipt-success-number"></p>
 
-                    <div class="receipt-success-card">
-                        <div class="receipt-success-row">
-                            <span data-i18n="success_client_label">Клиент</span>
-                            <strong id="receipt-success-email"></strong>
+                    <div class="receipt-success-grid">
+                        <div class="receipt-success-qr-card">
+                            <div class="receipt-success-qr-header">
+                                <span class="receipt-qr-badge">
+                                    <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                                    <span data-i18n="success_qr_title">QR для покупателя</span>
+                                </span>
+                            </div>
+                            <div class="receipt-success-qr-box" id="receipt-success-qr-box" title="Нажмите, чтобы открыть чек">
+                                <img id="receipt-success-qr-img" class="receipt-success-qr-img" alt="QR Code" width="150" height="150" />
+                            </div>
+                            <p class="receipt-success-qr-hint" data-i18n="success_qr_hint">Наведите камеру смартфона, чтобы открыть и сохранить чек</p>
+                            <div class="receipt-success-qr-tools">
+                                <button type="button" class="btn-qr-action" id="success-copy-url-btn" title="Скопировать ссылку для отправки">
+                                    <i class="fa-solid fa-copy" aria-hidden="true"></i>
+                                    <span id="success-copy-url-label" data-i18n="success_copy_link">Копировать</span>
+                                </button>
+                                <a href="#" target="_blank" rel="noopener noreferrer" class="btn-qr-action" id="success-open-url-btn" title="Открыть чек в новой вкладке">
+                                    <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                                    <span data-i18n="success_open_receipt">Открыть</span>
+                                </a>
+                            </div>
                         </div>
-                        <div class="receipt-success-row">
-                            <span data-i18n="success_status_label">Статус</span>
-                            <strong id="receipt-success-status"></strong>
-                        </div>
-                        <div class="receipt-success-row receipt-success-total">
-                            <span data-i18n="total_label">Итого:</span>
-                            <strong id="receipt-success-total"></strong>
+
+                        <div class="receipt-success-card">
+                            <div class="receipt-success-row">
+                                <span data-i18n="success_client_label">Клиент</span>
+                                <strong id="receipt-success-email"></strong>
+                            </div>
+                            <div class="receipt-success-row">
+                                <span data-i18n="payment_method_label">Оплата</span>
+                                <strong id="receipt-success-payment"></strong>
+                            </div>
+                            <div class="receipt-success-row">
+                                <span data-i18n="items_count_label">Позиции</span>
+                                <strong id="receipt-success-items-count"></strong>
+                            </div>
+                            <div class="receipt-success-row">
+                                <span data-i18n="success_status_label">Статус</span>
+                                <strong id="receipt-success-status"></strong>
+                            </div>
+                            <div class="receipt-success-row receipt-success-total">
+                                <span data-i18n="total_label">Итого:</span>
+                                <strong id="receipt-success-total"></strong>
+                            </div>
                         </div>
                     </div>
 
