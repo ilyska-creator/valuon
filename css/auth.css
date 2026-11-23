@@ -423,6 +423,86 @@
         box-shadow: none;
     }
 
+    #forgot-modal {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .forgot-modal-content {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 22px 22px 0 0;
+        padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0));
+        max-height: calc(100dvh - 25px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        transform: translateY(100%);
+    }
+
+    .forgot-modal-content::before {
+        content: '';
+        display: block;
+        width: 38px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.22);
+        border-radius: 2px;
+        margin: -0.35rem auto 0.75rem;
+        flex-shrink: 0;
+    }
+
+    [data-theme="light"] .forgot-modal-content::before,
+    :not([data-theme="dark"]) .forgot-modal-content::before {
+        background: rgba(0, 0, 0, 0.18);
+    }
+
+    #forgot-modal.active .forgot-modal-content {
+        transform: translateY(0);
+    }
+
+    #forgot-modal.closing .forgot-modal-content {
+        transform: translateY(100%);
+        transition: transform 0.25s ease;
+    }
+
+    .forgot-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+        margin: 0 auto 10px;
+    }
+
+    .forgot-modal-content h3 {
+        font-size: 1.15rem;
+        margin-bottom: 6px;
+    }
+
+    .forgot-desc {
+        font-size: 0.85rem;
+        margin-bottom: 14px;
+        line-height: 1.4;
+    }
+
+    .forgot-modal-content .input-group input {
+        font-size: 16px !important;
+        padding: 11px 14px;
+    }
+
+    .forgot-modal-content .auth-btn {
+        min-height: 48px;
+        font-size: 0.95rem;
+    }
+
+    .forgot-modal-content .btn-close {
+        top: 14px;
+        right: 14px;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
     [data-theme="dark"] .auth-card {
         box-shadow: none;
     }

@@ -1720,6 +1720,78 @@
     margin-bottom: 1.25rem;
 }
 
+.receipt-client-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.22);
+    border-radius: 12px;
+    margin-bottom: 0.85rem;
+    animation: fadeIn 0.2s ease;
+}
+
+[data-theme="dark"] .receipt-client-chip {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.28);
+}
+
+.receipt-client-chip.is-hidden {
+    display: none;
+}
+
+.client-chip-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.client-chip-info i {
+    color: var(--success);
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.client-chip-info span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.client-chip-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.client-chip-edit-btn:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--primary);
+}
+
+.receipt-client-expanded.is-collapsed {
+    display: none;
+}
+
 .receipt-meta-col {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -3103,19 +3175,72 @@
         gap: 1rem;
     }
 
-    #create-receipt-modal.modal-overlay {
+    #create-receipt-modal.modal-overlay,
+    #receipt-lifecycle-modal.modal-overlay,
+    #terminals-modal.modal-overlay,
+    #terminal-form-modal.modal-overlay,
+    #delete-terminal-modal.modal-overlay {
         padding: 0;
         align-items: flex-end;
     }
 
-    #create-receipt-modal .modal-content {
+    #create-receipt-modal .modal-content,
+    #receipt-lifecycle-modal .modal-content,
+    #terminals-modal .modal-content,
+    #terminal-form-modal .modal-content,
+    #delete-terminal-modal .modal-content {
         width: 100%;
         max-width: 100%;
         max-height: calc(100dvh - env(safe-area-inset-bottom, 0));
         border-radius: 22px 22px 0 0;
         padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0));
         transform: translateY(0);
-        animation: sheetRise 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        animation: sheetRise 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-content::before {
+        content: '';
+        display: block;
+        width: 38px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.22);
+        border-radius: 2px;
+        margin: -0.35rem auto 0.75rem;
+        flex-shrink: 0;
+    }
+
+    [data-theme="light"] .modal-content::before,
+    :not([data-theme="dark"]) .modal-content::before {
+        background: rgba(0, 0, 0, 0.18);
+    }
+
+    .btn-close {
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+    }
+
+    .modal-overlay.keyboard-active .modal-heading-icon,
+    .modal-content.keyboard-active .modal-heading-icon {
+        display: none !important;
+    }
+
+    .modal-overlay.keyboard-active .modal-heading-text p,
+    .modal-content.keyboard-active .modal-heading-text p {
+        display: none !important;
+    }
+
+    .modal-overlay.keyboard-active .modal-header,
+    .modal-content.keyboard-active .modal-header {
+        margin-bottom: 0.35rem !important;
+    }
+
+    .modal-overlay.keyboard-active .modal-heading-text h2,
+    .modal-content.keyboard-active .modal-heading-text h2 {
+        font-size: 0.98rem !important;
     }
 
     @keyframes sheetRise {
@@ -3129,17 +3254,84 @@
     }
 
     #create-receipt-modal.modal-overlay.is-hidden .modal-content,
-    #create-receipt-modal.modal-overlay.closing .modal-content {
+    #create-receipt-modal.modal-overlay.closing .modal-content,
+    #receipt-lifecycle-modal.modal-overlay.is-hidden .modal-content,
+    #receipt-lifecycle-modal.modal-overlay.closing .modal-content,
+    #terminals-modal.modal-overlay.is-hidden .modal-content,
+    #terminals-modal.modal-overlay.closing .modal-content,
+    #terminal-form-modal.modal-overlay.is-hidden .modal-content,
+    #terminal-form-modal.modal-overlay.closing .modal-content,
+    #delete-terminal-modal.modal-overlay.is-hidden .modal-content,
+    #delete-terminal-modal.modal-overlay.closing .modal-content {
         transform: translateY(100%);
         opacity: 1;
         animation: none;
     }
 
     #create-receipt-modal .receipt-footer {
-        background: var(--card-bg);
+        background: transparent;
         border-top: 1px solid var(--border);
-        padding-top: 0.85rem;
-        margin-top: 1rem;
+        padding-top: 1rem;
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));
+        margin-top: 1.25rem;
+    }
+
+    #receipt-lifecycle-modal .modal-content {
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100dvh - env(safe-area-inset-bottom, 0) - 15px);
+    }
+
+    #receipt-lifecycle-modal .lifecycle-modal-form {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+    #receipt-lifecycle-modal .modal-actions.confirm-actions {
+        border-top: 1px solid var(--border);
+        padding: 1rem 0 calc(0.5rem + env(safe-area-inset-bottom, 0));
+        margin-top: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+    }
+
+    #receipt-lifecycle-modal .modal-actions.confirm-actions .btn-danger {
+        order: 1;
+        min-height: 48px;
+    }
+
+    #receipt-lifecycle-modal .modal-actions.confirm-actions .btn-outline {
+        order: 2;
+        min-height: 44px;
+    }
+
+    #delete-terminal-modal .modal-content {
+        border-radius: 24px 24px 0 0;
+        padding: 1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom, 0));
+        text-align: center;
+    }
+
+    #delete-terminal-modal .modal-actions.confirm-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        margin-top: 1.25rem;
+    }
+
+    #delete-terminal-modal .modal-actions.confirm-actions .btn-danger {
+        order: 1;
+        min-height: 48px;
+        font-size: 0.98rem;
+        font-weight: 700;
+    }
+
+    #delete-terminal-modal .modal-actions.confirm-actions .btn-outline {
+        order: 2;
+        min-height: 44px;
     }
 
     #create-receipt-modal .modal-guard {
@@ -3194,20 +3386,47 @@
     #create-receipt-modal .receipt-total-preview {
         padding: 0.75rem 0.9rem;
     }
+
+    #create-receipt-modal .item-fields {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.45rem 0.6rem;
+    }
+
+    #create-receipt-modal .item-category {
+        grid-column: 1 / -1;
+    }
+
+    #create-receipt-modal .receipt-item-row {
+        padding: 0.75rem 0.85rem;
+        border-radius: 14px;
+        margin-bottom: 0.65rem;
+    }
+
+    #create-receipt-modal .receipt-item-row .input-group label {
+        font-size: 0.75rem;
+        margin-bottom: 0.2rem;
+        color: var(--text-muted);
+    }
+
+    #create-receipt-modal .receipt-item-row .input-group input,
+    #create-receipt-modal .receipt-item-row .input-group .custom-select-trigger,
+    .modal-content input,
+    .modal-content select,
+    .modal-content textarea {
+        font-size: 16px !important;
+    }
+
+    #create-receipt-modal .receipt-item-row .input-group input,
+    #create-receipt-modal .receipt-item-row .input-group .custom-select-trigger {
+        padding: 0.45rem 0.6rem;
+        min-height: 40px;
+    }
 }
 
 @media (max-width: 560px) {
     #create-receipt-modal .receipt-meta-col {
         grid-template-columns: 1fr;
-    }
-
-    #create-receipt-modal .item-fields {
-        grid-template-columns: 1fr;
-    }
-
-    #create-receipt-modal .receipt-item-row .input-group input {
-        font-size: 1rem;
-        padding: 0.6rem 0.7rem;
     }
 
     #create-receipt-modal .receipt-success-card {

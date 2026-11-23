@@ -671,6 +671,41 @@ async function initBusinessPanel() {
     const submitBtn = document.getElementById('issue-receipt-submit-btn');
     const submitLabelEl = document.getElementById('issue-receipt-submit-label');
 
+    const clientChipEl = document.getElementById('receipt-client-chip');
+    const clientChipText = document.getElementById('client-chip-text');
+    const clientChipEditBtn = document.getElementById('client-chip-edit-btn');
+    const clientExpandedEl = document.getElementById('receipt-client-expanded');
+
+    function collapseClientSectionIfFilled() {
+        if (window.innerWidth > 640 || !clientChipEl || !clientExpandedEl) return;
+        const contactVal = contactMode === 'phone' ? phoneInput?.value.trim() : emailInput?.value.trim();
+        if (contactVal && contactVal.length >= 3) {
+            const payMethodSelect = forms.receipt?.querySelector('[name="payment_method"]');
+            const t = bizT();
+            const payText = payMethodSelect?.value === 'cash'
+                ? (t.payment_cash || (bizLang() === 'en' ? 'Cash' : 'Наличные'))
+                : (t.payment_card || (bizLang() === 'en' ? 'Card' : 'Карта'));
+            if (clientChipText) clientChipText.textContent = `${contactVal} · ${payText}`;
+            clientChipEl.classList.remove('is-hidden');
+            clientExpandedEl.classList.add('is-collapsed');
+        }
+    }
+
+    function expandClientSection() {
+        if (!clientChipEl || !clientExpandedEl) return;
+        clientChipEl.classList.add('is-hidden');
+        clientExpandedEl.classList.remove('is-collapsed');
+    }
+
+    clientChipEditBtn?.addEventListener('click', () => {
+        expandClientSection();
+        if (contactMode === 'phone') {
+            phoneInput?.focus();
+        } else {
+            emailInput?.focus();
+        }
+    });
+
     const contactModeIndicator = createSegmentedIndicator(contactModeSwitchEl, contactModeIndicatorEl, {
         itemSelector: '[data-contact-mode]',
         activeClass: 'active'
@@ -896,6 +931,7 @@ async function initBusinessPanel() {
     function clearDraft() {
         try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) { }
         syncDraftButton();
+        expandClientSection();
     }
 
     function saveDraft() {
@@ -1145,7 +1181,13 @@ async function initBusinessPanel() {
     }
 
     itemsList?.addEventListener('input', updateTotalPreview);
-    addItemBtn?.addEventListener('click', () => addItemRow(true));
+    itemsList?.addEventListener('focusin', () => {
+        collapseClientSectionIfFilled();
+    });
+    addItemBtn?.addEventListener('click', () => {
+        addItemRow(true);
+        collapseClientSectionIfFilled();
+    });
     itemsList?.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return;
         const row = e.target.closest('[data-item-row]');
@@ -1643,6 +1685,7 @@ async function initBusinessPanel() {
         successScreen?.classList.add('is-hidden');
         successScreen?.classList.remove('is-visible');
         modalBody?.classList.remove('is-hidden');
+        expandClientSection();
 
         const qrImg = document.getElementById('receipt-success-qr-img');
         if (qrImg) qrImg.removeAttribute('src');

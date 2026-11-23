@@ -373,9 +373,20 @@
 
                 <div class="modal-body" id="receipt-modal-body">
                     <form id="issue-receipt-form" class="modal-form" action="#" novalidate>
-                        <div class="receipt-section">
-                            <span class="receipt-section-label" data-i18n="section_client">Клиент</span>
-                            <div class="receipt-layout">
+                        <div class="receipt-section" id="receipt-client-section">
+                            <div class="receipt-client-chip is-hidden" id="receipt-client-chip" role="region" aria-label="Контакт клиента">
+                                <div class="client-chip-info">
+                                    <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                                    <span id="client-chip-text"></span>
+                                </div>
+                                <button type="button" class="client-chip-edit-btn" id="client-chip-edit-btn" aria-label="Изменить данные клиента">
+                                    <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                                    <span data-i18n="edit_btn">Изменить</span>
+                                </button>
+                            </div>
+                            <div class="receipt-client-expanded" id="receipt-client-expanded">
+                                <span class="receipt-section-label" data-i18n="section_client">Клиент</span>
+                                <div class="receipt-layout">
                                 <div class="input-group" id="customer-email-group">
                                     <div class="contact-mode-header">
                                         <label for="customer-email" id="customer-contact-label"
@@ -461,8 +472,9 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="receipt-items">
+                    <div class="receipt-items">
                             <div class="receipt-items-bar">
                                 <span class="receipt-section-label" data-i18n="section_items">Позиции</span>
                                 <span class="items-count-pill" id="receipt-items-count" aria-hidden="true">1</span>
@@ -550,7 +562,6 @@
                         </div>
 
                         <div class="receipt-footer">
-                            <span class="receipt-section-label" data-i18n="section_summary">Итог</span>
                             <div class="receipt-total-preview">
                                 <div class="receipt-total-left">
                                     <span class="receipt-total-label" data-i18n="total_label">Итого:</span>

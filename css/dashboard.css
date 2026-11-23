@@ -1617,6 +1617,58 @@ html {
         padding: 0 var(--space-6);
     }
 
+    .modal-content::before {
+        content: '';
+        display: block;
+        width: 38px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.22);
+        border-radius: 2px;
+        margin: -0.35rem auto 0.75rem;
+        flex-shrink: 0;
+    }
+
+    [data-theme="light"] .modal-content::before,
+    :not([data-theme="dark"]) .modal-content::before {
+        background: rgba(0, 0, 0, 0.18);
+    }
+
+    .btn-close {
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+    }
+
+    .modal-overlay.keyboard-active .modal-heading-icon,
+    .modal-content.keyboard-active .modal-heading-icon {
+        display: none !important;
+    }
+
+    .modal-overlay.keyboard-active .modal-heading-text p,
+    .modal-content.keyboard-active .modal-heading-text p {
+        display: none !important;
+    }
+
+    .modal-overlay.keyboard-active .modal-header,
+    .modal-content.keyboard-active .modal-header {
+        margin-bottom: 0.35rem !important;
+    }
+
+    .modal-overlay.keyboard-active .modal-heading-text h2,
+    .modal-content.keyboard-active .modal-heading-text h2 {
+        font-size: 0.98rem !important;
+    }
+
+    .modal-content input,
+    .modal-content select,
+    .modal-content textarea,
+    .modal-content .custom-select-trigger {
+        font-size: 16px !important;
+    }
+
     /* На мобильном кнопки формы складываются в столбец на всю ширину,
        основное действие (submit) — сверху, как на странице "Для бизнеса". */
     .modal-actions {
@@ -1633,7 +1685,9 @@ html {
        как #create-receipt-modal на странице "Для бизнеса". */
     #add-modal.modal-overlay,
     #edit-modal.modal-overlay,
-    #upload-modal.modal-overlay {
+    #upload-modal.modal-overlay,
+    #delete-item-modal.modal-overlay,
+    #delete-receipt-modal.modal-overlay {
         align-items: flex-end;
         padding: 0;
     }
@@ -1643,12 +1697,75 @@ html {
     #upload-modal .modal-content {
         width: 100%;
         max-width: 100%;
-        max-height: calc(100dvh - env(safe-area-inset-bottom, 0));
+        max-height: calc(100dvh - env(safe-area-inset-bottom, 0) - 15px);
         margin: 0;
         padding: var(--space-6) var(--space-6) calc(var(--space-6) + env(safe-area-inset-bottom, 0));
         border-radius: 22px 22px 0 0;
         transform: translateY(100%);
         opacity: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #add-modal .modal-form,
+    #edit-modal .modal-form,
+    #upload-modal .modal-form {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+    #add-modal .modal-actions,
+    #edit-modal .modal-actions,
+    #upload-modal .modal-actions {
+        border-top: 1px solid var(--border);
+        padding: 1rem 0 calc(0.5rem + env(safe-area-inset-bottom, 0));
+        margin-top: 1.25rem;
+    }
+
+    #delete-item-modal .modal-content,
+    #delete-receipt-modal .modal-content {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 24px 24px 0 0;
+        padding: 1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom, 0));
+        text-align: center;
+        transform: translateY(100%);
+        opacity: 1;
+        margin: 0;
+    }
+
+    #delete-item-modal.modal-overlay.active .modal-content,
+    #delete-receipt-modal.modal-overlay.active .modal-content {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    #delete-item-modal.modal-overlay.closing .modal-content,
+    #delete-receipt-modal.modal-overlay.closing .modal-content {
+        transform: translateY(100%);
+        opacity: 1;
+    }
+
+    .modal-actions.confirm-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        margin-top: 1.25rem;
+    }
+
+    .modal-actions.confirm-actions .btn-danger {
+        order: 1;
+        min-height: 48px;
+        font-size: 0.98rem;
+        font-weight: 700;
+    }
+
+    .modal-actions.confirm-actions .btn-outline {
+        order: 2;
+        min-height: 44px;
     }
 
     #add-modal.modal-overlay.active .modal-content,

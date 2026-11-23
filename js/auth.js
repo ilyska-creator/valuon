@@ -3,6 +3,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
 import { checkLoginRateLimit, setLoadingButton, resetLoadingButton, isValidEmail, logError } from './security.js';
 import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
 import { createSegmentedIndicator, prefersReducedMotion } from './segmented-indicator.js';
+import { attachModalA11y } from './modal-a11y.js';
 
 function getSupabaseClient(rememberMe) {
     return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -378,6 +379,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (forgotModal) {
+        attachModalA11y(forgotModal, { mode: 'active', onClose: closeForgotModal });
         forgotModal.addEventListener('click', (e) => {
             if (e.target === forgotModal) closeForgotModal();
         });
