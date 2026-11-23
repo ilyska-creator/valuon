@@ -1,6 +1,10 @@
 import { requireAuth } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
-import { calculateDaysLeft } from './warranty-utils.js';
+import {
+    calculateDaysLeft,
+    isNoWarranty,
+    extractActivePartnerWarrantyItems
+} from './warranty-utils.js';
 import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
 
 function getNotifLang() {
@@ -13,9 +17,11 @@ function getNotifT() {
 }
 
 function formatDate(dateStr) {
+    if (!dateStr) return '';
     const lang = getNotifLang();
     const locale = lang === 'ru' ? 'ru-RU' : 'en-US';
     const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return '';
     return date.toLocaleDateString(locale, { day: 'numeric', month: 'numeric', year: 'numeric' });
 }
 
@@ -31,39 +37,57 @@ function updateNotifBadge(count) {
     });
 }
 
-async function fetchRecentLifecycleReceipts(userId, userEmail, client) {
+async function fetchBuyerPartnerReceipts(userId, userEmail, client) {
     if (!userId && !userEmail) return [];
-    const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
     const userPhone = await fetchCurrentUserPhone(client, userId);
     const buyerOrFilter = buildBuyerReceiptOrFilter({ userId, email: userEmail, phone: userPhone });
+
+    const fullSelect = 'id, receipt_number, shop_name, purchase_date, lifecycle_status, status_changed_at, status_reason, refunded_amount, gross_total, currency, receipt_items(id, item_name, qty, refunded_qty, warranty_months, warranty_end_date)';
+    const legacySelect = 'id, receipt_number, shop_name, purchase_date, gross_total, currency, receipt_items(id, item_name, qty, warranty_months, warranty_end_date)';
 
     let res = buyerOrFilter
         ? await client
             .from('business_receipts')
-            .select('id, receipt_number, shop_name, lifecycle_status, status_changed_at, status_reason, refunded_amount, gross_total, currency')
+            .select(fullSelect)
             .or(buyerOrFilter)
-            .in('lifecycle_status', ['voided', 'refunded', 'partially_refunded'])
-            .gte('status_changed_at', cutoff)
-            .order('status_changed_at', { ascending: false })
+            .order('purchase_date', { ascending: false })
         : { data: [], error: null };
 
     if (res.error && res.error.code === '42703' && userEmail) {
         res = await client
             .from('business_receipts')
-            .select('id, receipt_number, shop_name, lifecycle_status, status_changed_at, status_reason, refunded_amount, gross_total, currency')
+            .select(fullSelect)
             .eq('customer_email', userEmail)
-            .in('lifecycle_status', ['voided', 'refunded', 'partially_refunded'])
-            .gte('status_changed_at', cutoff)
-            .order('status_changed_at', { ascending: false });
+            .order('purchase_date', { ascending: false });
+    }
+
+    if (res.error && res.error.code === '42703' && userEmail) {
+        res = await client
+            .from('business_receipts')
+            .select(legacySelect)
+            .eq('customer_email', userEmail)
+            .order('purchase_date', { ascending: false });
     }
 
     const { data, error } = res;
     if (error) {
-        // 42703: lifecycle columns not migrated yet — fail gracefully without breaking notifications
-        if (error.code !== '42703') logError('notif:lifecycleReceipts', error);
+        if (error.code !== '42703') logError('notif:partnerReceipts', error);
         return [];
     }
     return data || [];
+}
+
+function filterRecentLifecycleReceipts(receipts) {
+    const cutoffMs = Date.now() - 30 * 86400000;
+    const validStatuses = new Set(['voided', 'refunded', 'partially_refunded']);
+    return (receipts || [])
+        .filter(r => {
+            if (!validStatuses.has(r.lifecycle_status)) return false;
+            if (!r.status_changed_at) return false;
+            const ts = new Date(r.status_changed_at).getTime();
+            return Number.isFinite(ts) && ts >= cutoffMs;
+        })
+        .sort((a, b) => new Date(b.status_changed_at).getTime() - new Date(a.status_changed_at).getTime());
 }
 
 function buildLifecycleNotifications(receipts, t) {
@@ -121,25 +145,80 @@ function buildLifecycleNotifications(receipts, t) {
     });
 }
 
+function buildWarrantyNotifications(personalItems, partnerItems, t) {
+    const expiring = [];
+    const expired = [];
+
+    const processItem = (item, isPartner) => {
+        if (isNoWarranty(item)) return;
+        const daysLeft = calculateDaysLeft(item.warranty_end_date);
+        if (daysLeft > 30) return;
+
+        const baseName = item.name || t.item_name_unknown || 'Товар';
+        const displayName = isPartner && item.active_qty > 1
+            ? `${baseName} ×${item.active_qty}`
+            : baseName;
+        const shopMeta = isPartner && item.shop_name ? escapeHtml(item.shop_name) : '';
+
+        if (daysLeft > 0) {
+            const datePart = formatDate(new Date().toISOString());
+            expiring.push({
+                daysLeft,
+                type: 'warning',
+                icon: 'fa-triangle-exclamation',
+                title: (t.notif_expiring_title || 'Warranty for "{name}" is expiring').replace('{name}', () => escapeHtml(displayName)),
+                text: (t.notif_expiring_text || '{count} days left. Check device condition.').replace('{count}', String(daysLeft)),
+                date: shopMeta && datePart ? `${shopMeta} · ${datePart}` : (shopMeta || datePart)
+            });
+        } else {
+            const absDays = Math.abs(daysLeft);
+            const datePart = formatDate(item.purchase_date);
+            expired.push({
+                daysLeft,
+                type: 'expired',
+                icon: 'fa-circle-xmark',
+                title: (t.notif_expired_title || 'Warranty for "{name}" has expired').replace('{name}', () => escapeHtml(displayName)),
+                text: (t.notif_expired_text || 'Expired {count} days ago.').replace('{count}', String(absDays)),
+                date: shopMeta && datePart ? `${shopMeta} · ${datePart}` : (shopMeta || datePart)
+            });
+        }
+    };
+
+    (personalItems || []).forEach(item => processItem(item, false));
+    (partnerItems || []).forEach(item => processItem(item, true));
+
+    expiring.sort((a, b) => a.daysLeft - b.daysLeft);
+    expired.sort((a, b) => b.daysLeft - a.daysLeft);
+
+    return [...expiring, ...expired];
+}
+
 async function computeActiveAlertsCount(userId, userEmail, client) {
-    const [profileRes, lifecycleReceipts] = await Promise.all([
+    const [profileRes, partnerReceipts] = await Promise.all([
         client.from('profiles').select('expiry_alerts').eq('id', userId).single(),
-        fetchRecentLifecycleReceipts(userId, userEmail, client)
+        fetchBuyerPartnerReceipts(userId, userEmail, client)
     ]);
 
+    const lifecycleReceipts = filterRecentLifecycleReceipts(partnerReceipts);
     let count = lifecycleReceipts.length;
     const expiryAlertsEnabled = profileRes.data?.expiry_alerts ?? true;
     if (!expiryAlertsEnabled) return count;
 
     const { data: items, error } = await client
         .from('items')
-        .select('warranty_end_date')
+        .select('purchase_date, warranty_months, warranty_end_date')
         .eq('user_id', userId);
 
-    if (error || !items) return count;
+    if (!error && Array.isArray(items)) {
+        items.forEach(item => {
+            if (isNoWarranty(item)) return;
+            const daysLeft = calculateDaysLeft(item.warranty_end_date);
+            if (daysLeft <= 30) count++;
+        });
+    }
 
-    items.forEach(item => {
-        if (!item.warranty_end_date) return;
+    const partnerWarrantyItems = extractActivePartnerWarrantyItems(partnerReceipts);
+    partnerWarrantyItems.forEach(item => {
         const daysLeft = calculateDaysLeft(item.warranty_end_date);
         if (daysLeft <= 30) count++;
     });
@@ -165,10 +244,10 @@ async function loadNotifications(userId, userEmail, client) {
     const checkingText = window.dashboardTranslations?.[localStorage.getItem('valuon-lang') || 'ru']?.notif_checking || 'Проверка статусов...';
     container.innerHTML = `<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> ${checkingText}</div>`;
 
-    const [profileRes, itemsRes, lifecycleReceipts] = await Promise.all([
+    const [profileRes, itemsRes, partnerReceipts] = await Promise.all([
         client.from('profiles').select('expiry_alerts').eq('id', userId).single(),
-        client.from('items').select('name, purchase_date, warranty_end_date').eq('user_id', userId).order('purchase_date', { ascending: false }),
-        fetchRecentLifecycleReceipts(userId, userEmail, client)
+        client.from('items').select('name, purchase_date, warranty_months, warranty_end_date').eq('user_id', userId).order('purchase_date', { ascending: false }),
+        fetchBuyerPartnerReceipts(userId, userEmail, client)
     ]);
 
     const t = getNotifT();
@@ -181,33 +260,15 @@ async function loadNotifications(userId, userEmail, client) {
         return;
     }
 
+    const lifecycleReceipts = filterRecentLifecycleReceipts(partnerReceipts);
+    const partnerWarrantyItems = extractActivePartnerWarrantyItems(partnerReceipts);
     const notifications = buildLifecycleNotifications(lifecycleReceipts, t);
 
-    if (expiryAlertsEnabled && items.length > 0) {
-        items.forEach(item => {
-            if (!item.warranty_end_date) return;
-            const daysLeft = calculateDaysLeft(item.warranty_end_date);
-
-            if (daysLeft > 0 && daysLeft <= 30) {
-                notifications.push({
-                    type: 'warning',
-                    icon: 'fa-triangle-exclamation',
-                    title: (t.notif_expiring_title || 'Warranty for "{name}" is expiring').replace('{name}', () => escapeHtml(item.name)),
-                    text: (t.notif_expiring_text || '{count} days left. Check device condition.').replace('{count}', daysLeft),
-                    date: formatDate(new Date().toISOString())
-                });
-            } else if (daysLeft <= 0) {
-                const absDays = Math.abs(daysLeft);
-                notifications.push({
-                    type: 'expired',
-                    icon: 'fa-circle-xmark',
-                    title: (t.notif_expired_title || 'Warranty for "{name}" has expired').replace('{name}', () => escapeHtml(item.name)),
-                    text: (t.notif_expired_text || 'Expired {count} days ago.').replace('{count}', absDays),
-                    date: formatDate(item.purchase_date)
-                });
-            }
-        });
+    if (expiryAlertsEnabled) {
+        notifications.push(...buildWarrantyNotifications(items, partnerWarrantyItems, t));
     }
+
+    const totalTrackedCount = items.length + partnerWarrantyItems.length;
 
     if (notifications.length === 0) {
         if (!expiryAlertsEnabled) {
@@ -219,7 +280,7 @@ async function loadNotifications(userId, userEmail, client) {
                         <p>${t.notif_disabled_desc || 'Enable warranty reminders in Settings to see alerts here.'}</p>
                     </div>
                 </div>`;
-        } else if (items.length === 0) {
+        } else if (totalTrackedCount === 0) {
             container.innerHTML = `
                 <div class="notification-card info">
                     <div class="notif-icon"><i class="fa-solid fa-database"></i></div>
@@ -234,7 +295,7 @@ async function loadNotifications(userId, userEmail, client) {
                     <div class="notif-icon"><i class="fa-solid fa-check-circle"></i></div>
                     <div class="notif-content">
                         <h4>${t.notif_all_good_title || 'All good!'}</h4>
-                        <p>${(t.notif_all_good_text || 'You have {count} items and none expire within 30 days.').replace('{count}', items.length)}</p>
+                        <p>${(t.notif_all_good_text || 'You have {count} items and none expire within 30 days.').replace('{count}', totalTrackedCount)}</p>
                     </div>
                 </div>`;
         }

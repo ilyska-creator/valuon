@@ -1,5 +1,8 @@
 class RotatingTextLoader {
     constructor(container, phrases, options = {}) {
+        if (container && container._rotatingLoader) {
+            container._rotatingLoader.destroy();
+        }
         this.container = container;
         this.phrases = phrases;
         this.interval = options.interval || 5000;
@@ -37,6 +40,10 @@ class RotatingTextLoader {
     }
 
     next() {
+        if (!this.container || !this.container.isConnected || !this.phraseEls?.length) {
+            this.destroy();
+            return;
+        }
         const prev = this.currentIndex;
         this.currentIndex = (this.currentIndex + 1) % this.phrases.length;
         this.phraseEls[prev].classList.remove('active');

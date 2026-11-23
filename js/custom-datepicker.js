@@ -352,14 +352,41 @@ class CustomDatePicker {
             return;
         }
 
+        if (this._navAnimating) return;
+
+        const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reducedMotion) {
+            this.viewDate.setMonth(this.viewDate.getMonth() + dir);
+            this.render();
+            return;
+        }
+
         const grid = this.panel.querySelector('.cal-days-grid');
+        if (!grid) {
+            this.viewDate.setMonth(this.viewDate.getMonth() + dir);
+            this.render();
+            return;
+        }
+
+        this._navAnimating = true;
         grid.classList.add(dir > 0 ? 'slide-out-left' : 'slide-out-right');
         setTimeout(() => {
+            if (!this.isOpen) {
+                this._navAnimating = false;
+                return;
+            }
             this.viewDate.setMonth(this.viewDate.getMonth() + dir);
             this.render();
             const g = this.panel.querySelector('.cal-days-grid');
+            if (!g) {
+                this._navAnimating = false;
+                return;
+            }
             g.classList.add(dir > 0 ? 'slide-in-left' : 'slide-in-right');
-            setTimeout(() => g.classList.remove('slide-in-left', 'slide-in-right'), 220);
+            setTimeout(() => {
+                g.classList.remove('slide-in-left', 'slide-in-right');
+                this._navAnimating = false;
+            }, 220);
         }, 150);
     }
 
@@ -404,10 +431,21 @@ class CustomDatePicker {
                 this.close();
             }
         };
-        this._scrollHandler = () => this.close();
+        this._scrollHandler = (e) => {
+            const target = e?.target;
+            if (target instanceof Node) {
+                if (this.panel.contains(target)) return;
+                if (target !== document && !target.contains(this.trigger)) return;
+            }
+            this.close();
+        };
         this._resizeHandler = () => this.position();
         this._keyHandler = (e) => {
-            if (e.key === 'Escape') this.close();
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.close();
+            }
             if (e.key === 'Tab') {
                 setTimeout(() => {
                     if (!this.panel.contains(document.activeElement)) this.close();
@@ -417,6 +455,7 @@ class CustomDatePicker {
 
         document.addEventListener('click', this._closeHandler);
         window.addEventListener('scroll', this._scrollHandler, { passive: true });
+        document.addEventListener('scroll', this._scrollHandler, { capture: true, passive: true });
         window.addEventListener('resize', this._resizeHandler, { passive: true });
         document.addEventListener('keydown', this._keyHandler);
     }
@@ -424,6 +463,7 @@ class CustomDatePicker {
     close() {
         if (!this.isOpen) return;
         this.isOpen = false;
+        this._navAnimating = false;
 
         if (window.__valuonActivePicker === this) {
             window.__valuonActivePicker = null;
@@ -436,6 +476,7 @@ class CustomDatePicker {
 
         document.removeEventListener('click', this._closeHandler);
         window.removeEventListener('scroll', this._scrollHandler);
+        document.removeEventListener('scroll', this._scrollHandler, true);
         window.removeEventListener('resize', this._resizeHandler);
         document.removeEventListener('keydown', this._keyHandler);
 
@@ -833,7 +874,11 @@ class CustomDatePicker {
                 this._commitInput(true, true);
             } else if (e.key === 'Escape') {
                 this._syncDisplay();
-                this.close();
+                if (this.isOpen) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.close();
+                }
             } else if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 this.open();
@@ -844,6 +889,7 @@ class CustomDatePicker {
             if (!this.isOpen) return;
             if (e.key === 'Escape') {
                 e.preventDefault();
+                e.stopPropagation();
                 this.close();
                 return;
             }

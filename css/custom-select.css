@@ -49,6 +49,22 @@ select.custom-select {
     background: var(--card-bg);
 }
 
+.custom-select-wrapper.is-disabled {
+    cursor: not-allowed;
+}
+
+.custom-select-trigger.is-disabled,
+.custom-select-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.custom-select-trigger.is-disabled:hover,
+.custom-select-trigger:disabled:hover {
+    border-color: var(--border);
+}
+
 .custom-select-arrow {
     position: absolute;
     right: 12px;

@@ -2462,9 +2462,25 @@ html {
     border-color: var(--primary);
 }
 
-.profile-field input[readonly] {
-    opacity: 0.6;
+.profile-field input[readonly],
+.profile-field input:disabled {
+    opacity: 0.65;
     cursor: not-allowed;
+    caret-color: transparent;
+    -webkit-text-fill-color: currentColor;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.profile-field input[readonly]:focus,
+.profile-field input:disabled:focus {
+    border-color: var(--border);
+    box-shadow: none;
+}
+
+[data-theme="dark"] .profile-field input[readonly]:focus,
+[data-theme="dark"] .profile-field input:disabled:focus {
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .email-row {
@@ -2520,9 +2536,7 @@ html {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
     font-size: 0.84rem !important;
     letter-spacing: 0.01em;
-    opacity: 0.85 !important;
-    cursor: text !important;
-    user-select: all;
+    opacity: 0.78 !important;
 }
 
 .user-id-row .btn-sm {

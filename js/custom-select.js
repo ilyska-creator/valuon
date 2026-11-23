@@ -66,6 +66,18 @@ class CustomSelect {
 
         this.render();
         this.sync();
+        this._syncDisabledState();
+    }
+
+    _syncDisabledState() {
+        const disabled = !!this.select.disabled;
+        this.wrapper.classList.toggle('is-disabled', disabled);
+        this.trigger.classList.toggle('is-disabled', disabled);
+        this.trigger.disabled = disabled;
+        this.trigger.setAttribute('aria-disabled', String(disabled));
+        if (disabled && this.isOpen) {
+            this.close();
+        }
     }
 
     render() {
@@ -259,7 +271,11 @@ class CustomSelect {
             e.preventDefault();
             const hl = this.dropdown.querySelector('.custom-select-option.highlighted');
             if (hl) this.setValue(hl.dataset.value);
-        } else if (e.key === 'Escape' || e.key === 'Tab') {
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            this.close();
+        } else if (e.key === 'Tab') {
             this.close();
         }
     }
@@ -309,7 +325,7 @@ class CustomSelect {
     }
 
     open() {
-        if (this.isOpen) return;
+        if (this.isOpen || this.select.disabled) return;
         if (this._closeTimer) {
             clearTimeout(this._closeTimer);
             this._closeTimer = null;
@@ -465,6 +481,7 @@ class CustomSelect {
 
     bind() {
         this.trigger.addEventListener('click', (e) => {
+            if (this.select.disabled) return;
             e.stopPropagation();
             this.isOpen ? this.close() : this.open();
         });
@@ -478,6 +495,7 @@ class CustomSelect {
         });
 
         this.trigger.addEventListener('keydown', (e) => {
+            if (this.select.disabled) return;
             const opts = this.visibleOptions;
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -492,7 +510,11 @@ class CustomSelect {
                 e.preventDefault();
                 this.open();
             } else if (e.key === 'Escape') {
-                this.close();
+                if (this.isOpen) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.close();
+                }
             } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
                 if (!this.isOpen) { this.open(); return; }
@@ -517,11 +539,17 @@ class CustomSelect {
                 li.classList.add('highlighted');
             }
         });
+        this._disabledObserver = new MutationObserver(() => this._syncDisabledState());
+        this._disabledObserver.observe(this.select, {
+            attributes: true,
+            attributeFilter: ['disabled']
+        });
     }
 
     refresh() {
         this.render();
         this.sync();
+        this._syncDisabledState();
     }
 
     static init(root) {

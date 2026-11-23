@@ -8,19 +8,27 @@ export function attachModalA11y(modal, { mode = 'active', onClose } = {}) {
     let lastFocused = null;
 
     function isOpen() {
+        if (modal.classList.contains('closing')) return false;
         return mode === 'hidden'
             ? !modal.classList.contains('is-hidden')
             : modal.classList.contains('active');
     }
 
+    let wasOpen = isOpen();
+
     function getFocusable() {
         return Array.from(modal.querySelectorAll(
-            'a[href], button:not([disabled]), textarea, input:not([type="hidden"]), select, [tabindex]:not([tabindex="-1"])'
-        )).filter(el => el.offsetParent !== null);
+            'a[href], button:not([disabled]), textarea:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )).filter(el =>
+            el.offsetParent !== null &&
+            !el.closest('[inert]') &&
+            !el.closest('[aria-hidden="true"]')
+        );
     }
 
     function handleKeydown(e) {
         if (e.key === 'Escape') {
+            if (e.defaultPrevented || window.__valuonActivePicker?.isOpen) return;
             e.preventDefault();
             onClose?.();
             return;
@@ -41,14 +49,23 @@ export function attachModalA11y(modal, { mode = 'active', onClose } = {}) {
     }
 
     const observer = new MutationObserver(() => {
-        if (isOpen()) {
-            lastFocused = document.activeElement;
+        const nowOpen = isOpen();
+        if (nowOpen === wasOpen) return;
+        wasOpen = nowOpen;
+
+        if (nowOpen) {
+            lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
             document.addEventListener('keydown', handleKeydown);
-            requestAnimationFrame(() => getFocusable()[0]?.focus());
+            requestAnimationFrame(() => {
+                if (isOpen()) getFocusable()[0]?.focus();
+            });
         } else {
             document.removeEventListener('keydown', handleKeydown);
-            lastFocused?.focus();
+            const target = lastFocused;
             lastFocused = null;
+            if (target && target.isConnected && !modal.contains(target)) {
+                target.focus({ preventScroll: true });
+            }
         }
     });
 

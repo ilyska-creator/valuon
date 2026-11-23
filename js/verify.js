@@ -41,6 +41,15 @@ const scanFileInput = document.getElementById('scan-file-input');
 const scanHint = document.getElementById('scan-hint');
 
 let scanLoader = null;
+let activePreviewObjectUrl = null;
+
+function revokePreviewObjectUrl() {
+    if (activePreviewObjectUrl) {
+        URL.revokeObjectURL(activePreviewObjectUrl);
+        activePreviewObjectUrl = null;
+    }
+}
+window.addEventListener('pagehide', revokePreviewObjectUrl);
 
 function setScanLoader(phrases) {
     clearScanLoader();
@@ -101,6 +110,8 @@ function resetAll() {
     if (panels[lastTab]) panels[lastTab].classList.add('active');
     uploadZone?.classList.remove('has-file');
     uploadPreview?.classList.remove('active');
+    revokePreviewObjectUrl();
+    previewImg?.removeAttribute('src');
     fileInput.value = '';
     scanFileInput.value = '';
     scanArea?.classList.remove('has-qr');
@@ -715,6 +726,7 @@ previewRemoveBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     fileInput.value = '';
     uploadPreview?.classList.remove('active');
+    revokePreviewObjectUrl();
     previewImg.removeAttribute('src');
     uploadZone?.classList.remove('has-file');
 });
@@ -836,6 +848,8 @@ fileInput?.addEventListener('change', async () => {
 
     uploadZone?.classList.add('has-file');
 
+    revokePreviewObjectUrl();
+
     if (file.type === 'application/pdf') {
         try {
             if (typeof pdfjsLib === 'undefined') {
@@ -857,7 +871,8 @@ fileInput?.addEventListener('change', async () => {
             previewImg.removeAttribute('src');
         }
     } else {
-        previewImg.src = URL.createObjectURL(file);
+        activePreviewObjectUrl = URL.createObjectURL(file);
+        previewImg.src = activePreviewObjectUrl;
     }
 
     uploadPreview?.classList.add('active');

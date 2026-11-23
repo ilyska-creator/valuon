@@ -59,6 +59,40 @@ const ALLOWED_RECEIPT_MIME_EXT = {
     'application/pdf': 'pdf'
 };
 
+function buildDownloadFilename(rawName, fileType, filePath, blobType) {
+    const cleanBase = String(rawName || 'receipt')
+        .replace(/[\\/:*?"<>|]+/g, '_')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/^\.+|\.+$/g, '') || 'receipt';
+
+    const mimeCandidates = [fileType, blobType]
+        .map(v => String(v || '').split(';')[0].trim().toLowerCase())
+        .filter(Boolean);
+
+    let ext = '';
+    for (const mime of mimeCandidates) {
+        if (Object.prototype.hasOwnProperty.call(ALLOWED_RECEIPT_MIME_EXT, mime)) {
+            ext = ALLOWED_RECEIPT_MIME_EXT[mime];
+            break;
+        }
+        if (mime === 'image/jpg') { ext = 'jpg'; break; }
+        if (mime === 'image/heic') { ext = 'heic'; break; }
+        if (mime === 'image/heif') { ext = 'heif'; break; }
+    }
+
+    if (!ext && filePath) {
+        const match = String(filePath).split('?')[0].match(/\.([a-zA-Z0-9]{2,5})$/);
+        if (match) ext = match[1].toLowerCase();
+    }
+
+    if (!ext) return cleanBase;
+
+    const lowerBase = cleanBase.toLowerCase();
+    const alreadyMatches = lowerBase.endsWith('.' + ext) || (ext === 'jpg' && lowerBase.endsWith('.jpeg'));
+    return alreadyMatches ? cleanBase : `${cleanBase}.${ext}`;
+}
+
 function validateReceiptFile(file) {
     if (!file) return false;
     const lang = getLang();
@@ -609,7 +643,10 @@ function renderPersonalCard(r, t) {
                     <span data-i18n="btn_view">${btnViewText}</span>
                 </button>
                 <button type="button" class="receipt-doc-btn is-secondary btn-download-receipt"
-                        data-url="${escapeHtml(r.file_url)}" data-name="${displayName}"
+                        data-url="${escapeHtml(r.file_url)}"
+                        data-name="${displayName}"
+                        data-file-type="${escapeHtml(r.file_type || '')}"
+                        data-file-path="${escapeHtml(r.file_path || '')}"
                         title="${btnDownloadText}">
                     <i class="fa-solid fa-download" aria-hidden="true"></i>
                     <span data-i18n="btn_download">${btnDownloadText}</span>
@@ -695,7 +732,7 @@ function restoreListeners(client, userId) {
                 const blobUrl = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = blobUrl;
-                a.download = name;
+                a.download = buildDownloadFilename(name, btn.dataset.fileType, btn.dataset.filePath, blob.type);
                 document.body.appendChild(a);
                 a.click();
                 setTimeout(() => {

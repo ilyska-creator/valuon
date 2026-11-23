@@ -3,7 +3,7 @@ import { escapeHtml, logError } from './security.js';
 import { downloadICS } from './calendar-export.js';
 import { refreshNotifBadge } from './dashboard-notifications.js';
 import { attachModalA11y } from './modal-a11y.js';
-import { calculateDaysLeft } from './warranty-utils.js';
+import { calculateDaysLeft, isNoWarranty } from './warranty-utils.js';
 import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
 
 let currentClient = null;
@@ -363,18 +363,6 @@ function getStatusInfo(daysLeft) {
     if (daysLeft > 30) return { class: 'active' };
     if (daysLeft > 0) return { class: 'warning' };
     return { class: 'expired' };
-}
-
-// В БД «нет гарантии» кодируется двумя способами: warranty_months = 0
-// либо (для старых/импортированных записей) дата окончания гарантии
-// совпадает с датой покупки — оба случая нужно отличать от «гарантия истекла».
-function isNoWarranty(item) {
-    if (!item.warranty_months || item.warranty_months <= 0) return true;
-    if (item.purchase_date && item.warranty_end_date
-        && item.purchase_date.slice(0, 10) === item.warranty_end_date.slice(0, 10)) {
-        return true;
-    }
-    return false;
 }
 
 function renderItems(items, opts = {}) {
@@ -1020,13 +1008,44 @@ function setupEditModal(client, userId) {
 
     if (!modal || !form) return;
 
+    let isSubmitting = false;
+    let successCloseTimer = null;
+    let pendingReload = false;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    let submitBtnOriginalHTML = submitBtn?.innerHTML || '';
+
+    function resetSubmitState() {
+        if (successCloseTimer) {
+            clearTimeout(successCloseTimer);
+            successCloseTimer = null;
+        }
+        if (submitBtn && submitBtnOriginalHTML) {
+            submitBtn.innerHTML = submitBtnOriginalHTML;
+            submitBtn.disabled = false;
+        }
+        isSubmitting = false;
+    }
+
+    function flushPendingReload() {
+        if (!pendingReload) return;
+        pendingReload = false;
+        loadItems(userId, client);
+        refreshNotifBadge();
+    }
+
     function closeModal() {
+        if (successCloseTimer) {
+            clearTimeout(successCloseTimer);
+            successCloseTimer = null;
+        }
         if (modal.classList.contains('closing')) return;
         modal.classList.add('closing');
         setTimeout(() => {
             modal.classList.remove('active', 'closing');
             form.reset();
             document.documentElement.classList.remove('modal-open');
+            resetSubmitState();
+            flushPendingReload();
         }, 250);
     }
 
@@ -1046,9 +1065,11 @@ function setupEditModal(client, userId) {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (isSubmitting) return;
+        isSubmitting = true;
 
-        const btn = form.querySelector('button[type="submit"]');
-        const originalHTML = btn.innerHTML;
+        const btn = submitBtn || form.querySelector('button[type="submit"]');
+        submitBtnOriginalHTML = btn.innerHTML;
         const lang = localStorage.getItem('valuon-lang') || 'ru';
         const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
@@ -1077,20 +1098,17 @@ function setupEditModal(client, userId) {
 
             btn.innerHTML = '<i class="fa-solid fa-check"></i>';
             showToast(t.msg_item_updated || 'Item updated', 'success');
+            pendingReload = true;
 
-            setTimeout(() => {
+            successCloseTimer = setTimeout(() => {
+                successCloseTimer = null;
                 closeModal();
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-                loadItems(userId, client);
-                refreshNotifBadge();
-            }, 800);
+            }, 350);
 
         } catch (err) {
             logError('items:update', err);
             showToast((t.msg_item_update_failed || 'Update failed') + ': ' + err.message, 'error');
-            btn.innerHTML = originalHTML;
-            btn.disabled = false;
+            resetSubmitState();
         }
     });
 }
@@ -1155,14 +1173,44 @@ function setupModal(client) {
     if (!addBtn || !modal) return;
 
     let isSubmitting = false;
+    let successCloseTimer = null;
+    let pendingReloadUserId = null;
+    const submitBtn = form?.querySelector('button[type="submit"]');
+    let submitBtnOriginalHTML = submitBtn?.innerHTML || '';
+
+    function resetSubmitState() {
+        if (successCloseTimer) {
+            clearTimeout(successCloseTimer);
+            successCloseTimer = null;
+        }
+        if (submitBtn && submitBtnOriginalHTML) {
+            submitBtn.innerHTML = submitBtnOriginalHTML;
+            submitBtn.disabled = false;
+        }
+        isSubmitting = false;
+    }
+
+    function flushPendingReload() {
+        if (!pendingReloadUserId) return;
+        const uid = pendingReloadUserId;
+        pendingReloadUserId = null;
+        loadItems(uid, client);
+        refreshNotifBadge();
+    }
 
     function closeAddModal() {
+        if (successCloseTimer) {
+            clearTimeout(successCloseTimer);
+            successCloseTimer = null;
+        }
         if (modal.classList.contains('closing')) return;
         modal.classList.add('closing');
         setTimeout(() => {
             modal.classList.remove('active', 'closing');
-            form.reset();
+            form?.reset();
             document.documentElement.classList.remove('modal-open');
+            resetSubmitState();
+            flushPendingReload();
         }, 250);
     }
 
@@ -1180,6 +1228,7 @@ function setupModal(client) {
     currencySelect?.addEventListener('change', updatePriceSuffix);
 
     addBtn.addEventListener('click', () => {
+        resetSubmitState();
         modal.classList.add('active');
         document.documentElement.classList.add('modal-open');
         const dateInput = form?.querySelector('[name="purchase_date"]');
@@ -1214,8 +1263,8 @@ function setupModal(client) {
         if (isSubmitting) return;
         isSubmitting = true;
 
-        const btn = form.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
+        const btn = submitBtn || form.querySelector('button[type="submit"]');
+        submitBtnOriginalHTML = btn.innerHTML;
 
         try {
             btn.disabled = true;
@@ -1254,21 +1303,12 @@ function setupModal(client) {
             const lang = localStorage.getItem('valuon-lang') || 'ru';
             const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
             showToast(t.msg_item_added || 'Товар добавлен', 'success');
+            pendingReloadUserId = user.id;
 
-            setTimeout(() => {
-                if (modal.classList.contains('closing')) return;
-                modal.classList.add('closing');
-                setTimeout(() => {
-                    modal.classList.remove('active', 'closing');
-                    form.reset();
-                    document.documentElement.classList.remove('modal-open');
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                    isSubmitting = false;
-                    loadItems(user.id, client);
-                    refreshNotifBadge();
-                }, 250);
-            }, 800);
+            successCloseTimer = setTimeout(() => {
+                successCloseTimer = null;
+                closeAddModal();
+            }, 350);
 
         } catch (err) {
             logError('items:warrantyUpdate', err);
@@ -1281,9 +1321,7 @@ function setupModal(client) {
                 showToast(t.msg_item_save_failed || (lang === 'ru' ? 'Ошибка сохранения. Попробуйте снова.' : 'Save failed. Try again.'), 'error');
             }
 
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            isSubmitting = false;
+            resetSubmitState();
         }
     });
 }

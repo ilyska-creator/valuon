@@ -176,7 +176,7 @@
                         <div class="profile-field">
                             <label for="settings-user-id" data-i18n="label_user_id">ID пользователя</label>
                             <div class="email-row user-id-row">
-                                <input type="text" id="settings-user-id" class="user-id-input" readonly>
+                                <input type="text" id="settings-user-id" class="user-id-input" readonly disabled>
                                 <button type="button" class="btn btn-outline btn-sm" id="copy-user-id-btn"
                                     aria-label="Скопировать ID">
                                     <i class="fa-regular fa-copy" aria-hidden="true"></i>
@@ -190,7 +190,7 @@
                         <div class="profile-field">
                             <label data-i18n="label_email">Email</label>
                             <div class="email-row" id="email-display-row">
-                                <input type="email" id="settings-email" readonly>
+                                <input type="email" id="settings-email" readonly disabled>
                                 <button class="btn btn-outline btn-sm" id="change-email-btn"
                                     data-i18n="btn_change_email">Изменить</button>
                             </div>
@@ -219,8 +219,8 @@
                         <div class="profile-field">
                             <label for="settings-phone" data-i18n="label_phone">Номер телефона</label>
                             <div class="email-row phone-display-row" id="phone-display-row">
-                                <input type="text" id="settings-phone" readonly data-i18n-placeholder="phone_not_set"
-                                    placeholder="Не указан">
+                                <input type="text" id="settings-phone" readonly disabled
+                                    data-i18n-placeholder="phone_not_set" placeholder="Не указан">
                                 <button type="button" class="btn btn-outline btn-sm" id="change-phone-btn"
                                     data-i18n="btn_add_phone">Добавить</button>
                                 <button type="button" class="btn btn-outline btn-sm btn-icon-danger hidden"
