@@ -2150,6 +2150,12 @@ async function initBusinessPanel() {
         resetLogoDrop();
     });
 
+    const filterBar = document.getElementById('receipt-filter-bar');
+    const filterIndicator = document.getElementById('receipt-filter-indicator');
+    const receiptFilterIndicator = createSegmentedIndicator(filterBar, filterIndicator, {
+        itemSelector: '.receipt-filter-btn',
+    });
+
     try {
         const { data: shop, error } = await client
             .from('shops')
@@ -3059,12 +3065,7 @@ async function initBusinessPanel() {
     });
 
     // Filter bar & card action delegation (bound once, survives language switches)
-    const filterBar = document.getElementById('receipt-filter-bar');
-    const filterIndicator = document.getElementById('receipt-filter-indicator');
     let filterFadeTimer = null;
-    const receiptFilterIndicator = createSegmentedIndicator(filterBar, filterIndicator, {
-        itemSelector: '.receipt-filter-btn',
-    });
 
     function updateReceiptFilterCounts(receipts) {
         const all = receipts || [];
