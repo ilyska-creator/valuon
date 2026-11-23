@@ -2,6 +2,7 @@ import { requireAuth, setupLogout } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
 import { attachModalA11y } from './modal-a11y.js';
 import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
+import { createSegmentedIndicator } from './segmented-indicator.js';
 
 let pendingDeleteId = null;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -224,25 +225,72 @@ function sortReceiptsArray(list, mode, isBusiness) {
 }
 
 async function attachFreshSignedUrls(receipts, client) {
-    return Promise.all(receipts.map(async (r) => {
-        if (!r.file_path) return r;
+    if (!Array.isArray(receipts) || receipts.length === 0) return [];
 
-        const msPerSecond = 1000;
-        const expiresAt = new Date(r.created_at).getTime() + SIGNED_URL_TTL * msPerSecond;
-        if (r.file_url && r.created_at && Date.now() < expiresAt) {
-            return { ...r, file_url: r.file_url };
-        }
+    const now = Date.now();
+    const msPerSecond = 1000;
+    const needsRefresh = new Set();
+    const uniquePaths = new Set();
 
+    receipts.forEach((r, idx) => {
+        if (!r?.file_path) return;
+        const expiresAt = r.created_at
+            ? new Date(r.created_at).getTime() + SIGNED_URL_TTL * msPerSecond
+            : 0;
+        if (r.file_url && Number.isFinite(expiresAt) && now < expiresAt) return;
+        needsRefresh.add(idx);
+        uniquePaths.add(r.file_path);
+    });
+
+    const pathsToSign = [...uniquePaths];
+    if (pathsToSign.length === 0) {
+        return receipts.map(r => (r?.file_url ? { ...r, file_url: r.file_url } : r));
+    }
+
+    const signedUrlByPath = new Map();
+
+    try {
         const { data, error } = await client.storage
             .from('receipts')
-            .createSignedUrl(r.file_path, SIGNED_URL_TTL);
+            .createSignedUrls(pathsToSign, SIGNED_URL_TTL);
 
-        if (error || !data) {
-            console.warn('Не удалось перевыпустить signed URL для', r.file_path, error);
-            return r;
+        if (!error && Array.isArray(data)) {
+            data.forEach((entry, i) => {
+                const pathKey = entry?.path || pathsToSign[i];
+                if (pathKey && entry?.signedUrl && !entry?.error) {
+                    signedUrlByPath.set(pathKey, entry.signedUrl);
+                }
+            });
+        } else if (error) {
+            console.warn('Не удалось пакетно перевыпустить signed URLs, используем fallback:', error);
         }
-        return { ...r, file_url: data.signedUrl };
-    }));
+    } catch (err) {
+        console.warn('Ошибка пакетного createSignedUrls, используем fallback:', err);
+    }
+
+    const missingPaths = pathsToSign.filter(p => !signedUrlByPath.has(p));
+    if (missingPaths.length > 0) {
+        await Promise.all(missingPaths.map(async (p) => {
+            try {
+                const { data, error } = await client.storage
+                    .from('receipts')
+                    .createSignedUrl(p, SIGNED_URL_TTL);
+                if (!error && data?.signedUrl) {
+                    signedUrlByPath.set(p, data.signedUrl);
+                } else {
+                    console.warn('Не удалось перевыпустить signed URL для', p, error);
+                }
+            } catch (err) {
+                console.warn('Не удалось перевыпустить signed URL для', p, err);
+            }
+        }));
+    }
+
+    return receipts.map((r, idx) => {
+        if (!needsRefresh.has(idx)) return r;
+        const freshUrl = signedUrlByPath.get(r.file_path);
+        return freshUrl ? { ...r, file_url: freshUrl } : r;
+    });
 }
 
 async function loadAllReceipts(userEmail, userId, client) {
@@ -414,14 +462,10 @@ function switchReceiptsGridTab(oldGrid, newGrid) {
 function setupReceiptsTabs() {
     const tabsWrap = document.getElementById('receipts-tabs');
     const tabs = document.querySelectorAll('#receipts-tabs .items-tab');
-    const indicator = document.getElementById('receipts-tab-indicator');
-
-    function moveIndicator() {
-        const active = document.querySelector('#receipts-tabs .items-tab.active');
-        if (!indicator || !active || active.offsetWidth === 0) return;
-        indicator.style.width = `${active.offsetWidth}px`;
-        indicator.style.transform = `translateX(${active.offsetLeft - 4}px)`;
-    }
+    const indicatorEl = document.getElementById('receipts-tab-indicator');
+    const receiptsTabsIndicator = createSegmentedIndicator(tabsWrap, indicatorEl, {
+        itemSelector: '.items-tab',
+    });
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -433,7 +477,7 @@ function setupReceiptsTabs() {
             });
             tab.classList.add('active');
             tab.setAttribute('aria-selected', 'true');
-            moveIndicator();
+            receiptsTabsIndicator.update();
 
             const target = tab.dataset.receiptsTab;
             sessionStorage.setItem('valuon-receipts-tab', target);
@@ -445,14 +489,7 @@ function setupReceiptsTabs() {
         });
     });
 
-    requestAnimationFrame(moveIndicator);
-    window.addEventListener('resize', moveIndicator);
-    window.addEventListener('lang-changed', () => requestAnimationFrame(moveIndicator));
-    if (typeof ResizeObserver !== 'undefined' && tabsWrap) {
-        const ro = new ResizeObserver(() => moveIndicator());
-        ro.observe(tabsWrap);
-        tabs.forEach(tab => ro.observe(tab));
-    }
+    window.addEventListener('lang-changed', () => receiptsTabsIndicator.update(true));
 }
 
 function renderBusinessCard(r, t) {
@@ -670,23 +707,31 @@ function setupUploadListeners(modal) {
     if (!dropZone) return;
 
     dropZone.addEventListener('click', modal.open);
-    ['dragenter', 'dragover'].forEach(evt => {
-        dropZone.addEventListener(evt, (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = 'var(--primary)';
-            dropZone.style.background = 'rgba(59, 130, 246, 0.05)';
-        });
+
+    let dragCounter = 0;
+
+    dropZone.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        dragCounter++;
+        dropZone.classList.add('drag-over');
     });
-    ['dragleave', 'drop'].forEach(evt => {
-        dropZone.addEventListener(evt, (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = '';
-            dropZone.style.background = '';
-        });
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragCounter = Math.max(0, dragCounter - 1);
+        if (dragCounter === 0) {
+            dropZone.classList.remove('drag-over');
+        }
     });
     dropZone.addEventListener('drop', (e) => {
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
+        e.preventDefault();
+        dragCounter = 0;
+        dropZone.classList.remove('drag-over');
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
             if (!validateReceiptFile(files[0])) return;
             modal.open();
             modal.setFile(files[0]);

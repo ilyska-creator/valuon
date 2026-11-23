@@ -158,7 +158,8 @@ window.authTranslations = translations;
 // мгновение видел русский текст из HTML, который потом подменялся на
 // английский. Убрали ожидание DOMContentLoaded — текст переводится сразу.
 (() => {
-    const currentLang = localStorage.getItem('valuon-lang') || 'ru';
+    const rawLang = localStorage.getItem('valuon-lang') || 'ru';
+    const currentLang = translations[rawLang] ? rawLang : 'ru';
     document.documentElement.lang = currentLang === 'en' ? 'en' : 'ru';
     const path = window.location.pathname;
 

@@ -1,13 +1,18 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
 import { logError } from './security.js';
+import { createSegmentedIndicator } from './segmented-indicator.js';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const verifyTabsWrap = document.querySelector('.verify-tabs');
+const verifyTabIndicatorEl = document.getElementById('verify-tab-indicator');
 const tabs = document.querySelectorAll('.verify-tab');
 const panels = {
     scan: document.getElementById('scan-panel'),
     upload: document.getElementById('upload-panel'),
 };
+const hashLoadingBlock = document.getElementById('hash-loading-block');
+const hashLoadingLoader = document.getElementById('hash-loading-loader');
 const resultBlock = document.getElementById('verify-result');
 const resultBlockWrapper = document.getElementById('result-block');
 const retryBtn = document.getElementById('verify-retry-btn');
@@ -41,6 +46,7 @@ const scanFileInput = document.getElementById('scan-file-input');
 const scanHint = document.getElementById('scan-hint');
 
 let scanLoader = null;
+let hashLoader = null;
 let activePreviewObjectUrl = null;
 
 function revokePreviewObjectUrl() {
@@ -64,11 +70,52 @@ function clearScanLoader() {
     scanLoader = null;
 }
 
+function setHashLoading(active) {
+    if (active) {
+        verifyTabsWrap?.classList.add('is-hidden');
+        Object.values(panels).forEach(p => p?.classList.add('done'));
+        resultBlockWrapper?.classList.remove('active');
+        hashLoadingBlock?.classList.add('active');
+        if (hashLoadingLoader) {
+            if (hashLoadingLoader._rotatingLoader) {
+                hashLoadingLoader._rotatingLoader.destroy();
+            }
+            if (typeof RotatingTextLoader !== 'undefined') {
+                hashLoader = new RotatingTextLoader(hashLoadingLoader, [
+                    window.t('checking_sig'),
+                    window.t('forming_result'),
+                ], { interval: 900 });
+            }
+        }
+    } else {
+        if (hashLoadingLoader && hashLoadingLoader._rotatingLoader) {
+            hashLoadingLoader._rotatingLoader.destroy();
+        }
+        hashLoader = null;
+        hashLoadingBlock?.classList.remove('active');
+        document.documentElement.classList.remove('verify-auto-hash');
+    }
+}
+
+const savedTab = sessionStorage.getItem('verify-active-tab');
+if (savedTab && savedTab !== 'scan' && panels[savedTab]) {
+    tabs.forEach(t => t.classList.remove('active'));
+    Object.values(panels).forEach(p => p?.classList.remove('active'));
+    const tab = [...tabs].find(t => t.dataset.tab === savedTab);
+    if (tab) tab.classList.add('active');
+    if (panels[savedTab]) panels[savedTab].classList.add('active');
+}
+
+const verifyTabsIndicator = createSegmentedIndicator(verifyTabsWrap, verifyTabIndicatorEl, {
+    itemSelector: '.verify-tab',
+});
+
 tabs.forEach(tab => {
     tab.addEventListener('click', () => {
         stopCamera();
         tabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
+        verifyTabsIndicator.update();
         Object.values(panels).forEach(p => {
             p?.classList.remove('active', 'done');
         });
@@ -81,17 +128,10 @@ tabs.forEach(tab => {
     });
 });
 
-const savedTab = sessionStorage.getItem('verify-active-tab');
-if (savedTab && savedTab !== 'scan' && panels[savedTab]) {
-    tabs.forEach(t => t.classList.remove('active'));
-    Object.values(panels).forEach(p => p?.classList.remove('active'));
-    const tab = [...tabs].find(t => t.dataset.tab === savedTab);
-    if (tab) tab.classList.add('active');
-    if (panels[savedTab]) panels[savedTab].classList.add('active');
-}
-
 function resetAll() {
     stopCamera();
+    setHashLoading(false);
+    verifyTabsWrap?.classList.remove('is-hidden');
     lastResultState = null;
     lastResultData = null;
     Object.values(panels).forEach(p => p?.classList.remove('done'));
@@ -108,6 +148,7 @@ function resetAll() {
     const tab = [...tabs].find(t => t.dataset.tab === lastTab);
     if (tab) tab.classList.add('active');
     if (panels[lastTab]) panels[lastTab].classList.add('active');
+    verifyTabsIndicator.update(true);
     uploadZone?.classList.remove('has-file');
     uploadPreview?.classList.remove('active');
     revokePreviewObjectUrl();
@@ -175,7 +216,7 @@ async function decodeQRFromImage(img, maxSize = 1024) {
     ctx.drawImage(img, 0, 0, w, h);
     const imageData = ctx.getImageData(0, 0, w, h);
     if (!window.jsQR) return null;
-    const code = window.jsQR(imageData.data, w, h, { inversionAttempts: 'dontInvert' });
+    const code = window.jsQR(imageData.data, w, h, { inversionAttempts: 'attemptBoth' });
     return code ? code.data : null;
 }
 
@@ -198,7 +239,7 @@ async function decodeQR(file) {
             await page.render({ canvasContext: ctx, viewport }).promise;
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             if (!window.jsQR) return null;
-            const code = window.jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' });
+            const code = window.jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'attemptBoth' });
             return code ? code.data : null;
         } catch (e) {
             logError('verify:pdfDecode', e);
@@ -305,6 +346,7 @@ function showResult(status, data) {
     if (!resultBlock) return;
     stopCamera();
     clearScanLoader();
+    setHashLoading(false);
 
     Object.values(panels).forEach(p => p?.classList.add('done'));
     resultBlockWrapper?.classList.add('active');
@@ -608,7 +650,7 @@ function startScanLoop() {
         canvas.height = sh;
         ctx.drawImage(video, 0, 0, sw, sh);
         const imageData = ctx.getImageData(0, 0, sw, sh);
-        const code = window.jsQR(imageData.data, sw, sh, { inversionAttempts: 'dontInvert' });
+        const code = window.jsQR(imageData.data, sw, sh, { inversionAttempts: 'attemptBoth' });
 
         if (code) {
             clearInterval(scanInterval);
@@ -908,6 +950,14 @@ document.getElementById('verify-upload-btn')?.addEventListener('click', async ()
 window.addEventListener('verify-lang-changed', () => {
     window.applyVerifyTranslations();
     updatePreviewRemoveLabel();
+    verifyTabsIndicator.update(true);
+    if (hashLoadingBlock?.classList.contains('active') && hashLoadingLoader && typeof RotatingTextLoader !== 'undefined') {
+        if (hashLoadingLoader._rotatingLoader) hashLoadingLoader._rotatingLoader.destroy();
+        hashLoader = new RotatingTextLoader(hashLoadingLoader, [
+            window.t('checking_sig'),
+            window.t('forming_result'),
+        ], { interval: 900 });
+    }
     if (scanBtn) {
         scanBtn.innerHTML = mediaStream
             ? '<i class="fa-solid fa-stop"></i> ' + window.t('scan_btn_stop')
@@ -956,6 +1006,7 @@ if (backBtn) {
 async function verifyReceiptByHash(fiscalHash) {
     if (!fiscalHash || verifying) return;
     verifying = true;
+    setHashLoading(true);
     try {
         const resp = await fetch(`${SUPABASE_URL}/functions/v1/verify-receipt`, {
             method: 'POST',
@@ -991,15 +1042,22 @@ async function verifyReceiptByHash(fiscalHash) {
         logError('verify:autoHash', err);
         showResult('error', window.t('internal_error'));
     } finally {
+        setHashLoading(false);
         verifying = false;
     }
 }
 
 (() => {
     const rawHash = window.location.hash || '';
-    if (!rawHash.startsWith('#sig=')) return;
+    if (!rawHash.startsWith('#sig=')) {
+        document.documentElement.classList.remove('verify-auto-hash');
+        return;
+    }
     const sig = decodeURIComponent(rawHash.slice(5)).trim();
-    if (!sig) return;
+    if (!sig) {
+        document.documentElement.classList.remove('verify-auto-hash');
+        return;
+    }
     try {
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
     } catch (_) { /* ignore */ }

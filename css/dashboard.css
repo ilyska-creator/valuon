@@ -2232,9 +2232,16 @@ html {
     margin-bottom: 24px;
 }
 
-.upload-zone:hover {
+.upload-zone:hover,
+.upload-zone.drag-over {
     border-color: var(--primary);
     background: rgba(59, 130, 246, 0.05);
+}
+
+[data-theme="dark"] .upload-zone:hover,
+[data-theme="dark"] .upload-zone.drag-over {
+    border-color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
 }
 
 .upload-zone i {
@@ -3316,8 +3323,9 @@ html {
     position: absolute;
     top: 4px;
     bottom: 4px;
-    left: 4px;
+    left: 0;
     width: 0;
+    opacity: 0;
     border-radius: var(--radius-sm, 8px);
     background: var(--card-bg);
     box-shadow: var(--shadow-sm);
@@ -4242,7 +4250,8 @@ html {
 @media (prefers-reduced-motion: reduce) {
 
     .receipt-doc-card,
-    .receipt-doc-btn {
+    .receipt-doc-btn,
+    .items-tab-indicator {
         transition: none;
     }
 }

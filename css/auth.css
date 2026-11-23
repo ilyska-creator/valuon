@@ -1343,9 +1343,15 @@
 
     .auth-mode-indicator,
     .auth-field-panel,
+    .auth-logo--unlock svg,
+    .auth-logo--unlock .lock-shackle,
     #forgot-modal,
     .turnstile-skel {
         transition: none !important;
+    }
+
+    .auth-logo--unlock svg {
+        opacity: 1 !important;
     }
 
     .auth-field-panel {

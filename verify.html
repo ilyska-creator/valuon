@@ -14,7 +14,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script>
-        (function () { const t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); })();
+        (function () {
+            const t = localStorage.getItem('valuon-theme');
+            if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            if (window.location.hash && window.location.hash.startsWith('#sig=') && window.location.hash.slice(5).trim()) {
+                document.documentElement.classList.add('verify-auto-hash');
+            }
+        })();
     </script>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
@@ -38,8 +44,12 @@
                 <a id="verify-back-btn" class="verify-back-link" href="index.html">
                     <i class="fa-solid fa-arrow-left"></i> <span data-i18n="back">Назад</span>
                 </a>
-                <button type="button" id="lang-toggle" class="icon-btn lang-toggle"
-                    aria-label="Switch language / Переключить язык">EN</button>
+                <div class="verify-top-actions">
+                    <button type="button" id="theme-toggle" class="icon-btn theme-toggle"
+                        aria-label="Toggle theme / Переключить тему"><i class="fa-solid fa-moon"></i></button>
+                    <button type="button" id="lang-toggle" class="icon-btn lang-toggle"
+                        aria-label="Switch language / Переключить язык">EN</button>
+                </div>
             </div>
             <div class="verify-logo" data-animate="zoom">
                 <div class="shield-icon">
@@ -57,6 +67,8 @@
             </p>
 
             <div class="verify-tabs" data-animate>
+                <span class="segmented-indicator verify-tab-indicator" id="verify-tab-indicator"
+                    aria-hidden="true"></span>
                 <button class="verify-tab active" data-tab="scan">
                     <i class="fa-solid fa-camera"></i>
                     <span data-i18n="tab_scan">Сканировать</span>
@@ -106,6 +118,13 @@
                 <button id="verify-upload-btn" class="btn btn-primary verify-auth-btn" data-animate>
                     <i class="fa-solid fa-qrcode"></i> <span data-i18n="upload_btn">Проверить</span>
                 </button>
+            </div>
+
+            <div id="hash-loading-block" class="verify-hash-loading" role="status" aria-live="polite">
+                <div id="hash-loading-loader" class="verify-hash-loader">
+                    <i class="fa-solid fa-circle-notch fa-spin rotating-loader-spinner" aria-hidden="true"></i>
+                    <span data-i18n="checking_sig">Проверяем подпись…</span>
+                </div>
             </div>
 
             <div id="result-block" class="verify-result-block">

@@ -3062,14 +3062,9 @@ async function initBusinessPanel() {
     const filterBar = document.getElementById('receipt-filter-bar');
     const filterIndicator = document.getElementById('receipt-filter-indicator');
     let filterFadeTimer = null;
-
-    function moveReceiptFilterIndicator() {
-        if (!filterBar || !filterIndicator) return;
-        const activeBtn = filterBar.querySelector('.receipt-filter-btn.active');
-        if (!activeBtn || activeBtn.offsetWidth === 0) return;
-        filterIndicator.style.width = `${activeBtn.offsetWidth}px`;
-        filterIndicator.style.transform = `translateX(${activeBtn.offsetLeft - 4}px)`;
-    }
+    const receiptFilterIndicator = createSegmentedIndicator(filterBar, filterIndicator, {
+        itemSelector: '.receipt-filter-btn',
+    });
 
     function updateReceiptFilterCounts(receipts) {
         const all = receipts || [];
@@ -3082,7 +3077,7 @@ async function initBusinessPanel() {
         setCnt('filter-count-all', all.length);
         setCnt('filter-count-active', activeCnt);
         setCnt('filter-count-closed', closedCnt);
-        requestAnimationFrame(moveReceiptFilterIndicator);
+        receiptFilterIndicator.update(true);
     }
 
     if (filterBar) {
@@ -3097,7 +3092,7 @@ async function initBusinessPanel() {
                 b.classList.toggle('active', active);
                 b.setAttribute('aria-selected', String(active));
             });
-            moveReceiptFilterIndicator();
+            receiptFilterIndicator.update();
 
             if (filterFadeTimer) clearTimeout(filterFadeTimer);
             if (nextFilter !== 'all' || receiptSearchQuery.trim()) {
@@ -3119,9 +3114,6 @@ async function initBusinessPanel() {
                 window.applyBusinessTranslations?.();
             }
         });
-
-        requestAnimationFrame(moveReceiptFilterIndicator);
-        window.addEventListener('resize', moveReceiptFilterIndicator);
     }
 
     // Search input wiring with debounce, height stabilization (no scroll jump), and smooth row enter
@@ -3143,7 +3135,7 @@ async function initBusinessPanel() {
                 b.classList.toggle('active', active);
                 b.setAttribute('aria-selected', String(active));
             });
-            moveReceiptFilterIndicator();
+            receiptFilterIndicator.update();
         }
         releaseReceiptsContainerHeight();
         renderReceiptCards(list, currentReceiptsList, { animateRows: true });
@@ -3692,7 +3684,7 @@ async function initBusinessPanel() {
 
             renderReceiptCards(listEl, receipts);
             window.applyBusinessTranslations?.();
-            requestAnimationFrame(moveReceiptFilterIndicator);
+            receiptFilterIndicator.update(true);
             updateChart();
         } catch (e) {
             logError('biz:refreshDashboard', e);
@@ -4159,7 +4151,7 @@ async function initBusinessPanel() {
         window.applyBusinessTranslations?.();
         syncDraftButton();
         requestAnimationFrame(() => {
-            moveReceiptFilterIndicator();
+            receiptFilterIndicator.update(true);
             chartPeriodIndicator.update(true);
             contactModeIndicator.update(true);
         });

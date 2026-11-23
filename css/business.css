@@ -3503,8 +3503,9 @@
     position: absolute;
     top: 4px;
     bottom: 4px;
-    left: 4px;
+    left: 0;
     width: 0;
+    opacity: 0;
     border-radius: var(--radius-sm, 8px);
     background: var(--card-bg);
     box-shadow: var(--shadow-sm);
@@ -5170,6 +5171,7 @@ mark.search-hit {
     .shop-export-caret,
     .chart-period-indicator,
     .contact-mode-indicator,
+    .receipt-filter-indicator,
     .biz-contact-panel {
         transition: none;
     }

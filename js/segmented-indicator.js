@@ -76,6 +76,9 @@ export function createSegmentedIndicator(container, indicator, options = {}) {
             applyPosition(true);
         });
         resizeObserver.observe(container);
+        container.querySelectorAll(itemSelector).forEach((item) => {
+            resizeObserver.observe(item);
+        });
     }
 
     if (document.fonts && document.fonts.ready) {
