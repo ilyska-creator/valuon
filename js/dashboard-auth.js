@@ -6,29 +6,66 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
 }
 
-export async function getAuthSession() {
-    let client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storage: localStorage } });
-    let { data: { session } } = await client.auth.getSession();
+let sharedClient = null;
+let authPromise = null;
 
-    if (!session) {
-        client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storage: sessionStorage } });
-        ({ data: { session } } = await client.auth.getSession());
+export async function getAuthSession() {
+    if (sharedClient) {
+        const { data: { session } } = await sharedClient.auth.getSession();
+        return { session, client: sharedClient };
     }
 
-    return { session, client };
+    if (!authPromise) {
+        authPromise = (async () => {
+            try {
+                let client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                    auth: {
+                        storage: localStorage,
+                        autoRefreshToken: true,
+                        persistSession: true
+                    }
+                });
+                let { data: { session } } = await client.auth.getSession();
+
+                if (!session) {
+                    client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                        auth: {
+                            storage: sessionStorage,
+                            autoRefreshToken: true,
+                            persistSession: true
+                        }
+                    });
+                    ({ data: { session } } = await client.auth.getSession());
+                }
+
+                sharedClient = client;
+                return { session, client: sharedClient };
+            } catch (err) {
+                authPromise = null;
+                throw err;
+            }
+        })();
+    }
+
+    return authPromise;
 }
 
 export function setupLogout(currentClient) {
     document.querySelectorAll('#logout-btn, #logout-btn-mobile').forEach(btn => {
         btn.addEventListener('click', async () => {
+            const clientToSignOut = currentClient || sharedClient;
             try {
-                await currentClient.auth.signOut();
+                if (clientToSignOut) await clientToSignOut.auth.signOut();
+                sharedClient = null;
+                authPromise = null;
                 localStorage.removeItem('valuon-remember-email');
                 localStorage.removeItem('valuon-remember-login');
                 sessionStorage.clear();
                 window.location.href = 'index.html';
             } catch (err) {
                 logError('auth:logout', err);
+                sharedClient = null;
+                authPromise = null;
                 localStorage.removeItem('valuon-remember-email');
                 localStorage.removeItem('valuon-remember-login');
                 sessionStorage.clear();
