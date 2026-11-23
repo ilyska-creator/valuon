@@ -1,4 +1,4 @@
-export function attachModalA11y(modal, { mode = 'active', onClose } = {}) {
+export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose } = {}) {
     if (!modal || modal.dataset.a11yBound) return;
     modal.dataset.a11yBound = '1';
 
@@ -31,6 +31,7 @@ export function attachModalA11y(modal, { mode = 'active', onClose } = {}) {
         if (e.key === 'Escape') {
             if (e.defaultPrevented || window.__valuonActivePicker?.isOpen) return;
             e.preventDefault();
+            if (typeof beforeClose === 'function' && !beforeClose()) return;
             onClose?.();
             return;
         }
@@ -128,6 +129,13 @@ export function attachModalA11y(modal, { mode = 'active', onClose } = {}) {
             contentEl.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
 
             if (diffY > 85 || (diffY > 40 && velocity > 0.45)) {
+                if (typeof beforeClose === 'function' && !beforeClose()) {
+                    contentEl.style.transform = '';
+                    setTimeout(() => {
+                        contentEl.style.transition = '';
+                    }, 280);
+                    return;
+                }
                 contentEl.style.transform = 'translateY(100%)';
                 setTimeout(() => {
                     contentEl.style.transform = '';
@@ -177,7 +185,13 @@ export function attachModalA11y(modal, { mode = 'active', onClose } = {}) {
             lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
             document.addEventListener('keydown', handleKeydown);
             requestAnimationFrame(() => {
-                if (isOpen()) getFocusable()[0]?.focus();
+                if (!isOpen()) return;
+                // Only autofocus first field on desktop keyboards (> 768px).
+                // On mobile devices, auto-focusing inputs forces the virtual
+                // keyboard to jump open unexpectedly and cover the screen.
+                if (window.innerWidth > 768) {
+                    getFocusable()[0]?.focus();
+                }
             });
         } else {
             document.removeEventListener('keydown', handleKeydown);

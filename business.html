@@ -202,8 +202,7 @@
                     <div class="meta-item"><i class="fa-solid fa-hashtag"></i> <span id="display-tax-id">—</span></div>
                     <div class="meta-item"><i class="fa-solid fa-globe"></i> <span id="display-country">—</span></div>
                     <div class="meta-item"><i class="fa-solid fa-coins"></i> <span id="display-currency">—</span></div>
-                    <div class="meta-item"><i class="fa-solid fa-location-dot"></i> <span id="display-address">—</span>
-                    </div>
+                    <div class="meta-item meta-item-address"><i class="fa-solid fa-location-dot"></i> <span id="display-address">—</span></div>
                 </div>
             </div>
 
@@ -367,8 +366,13 @@
                                 чека</p>
                         </div>
                     </div>
-                    <button id="close-receipt-modal" class="btn-close" aria-label="Закрыть"><i
-                            class="fa-solid fa-xmark"></i></button>
+                    <div class="modal-header-actions">
+                        <button type="button" id="header-save-draft-btn" class="btn-header-draft" data-i18n-title="draft_save" title="Сохранить черновик" aria-label="Сохранить черновик">
+                            <i class="fa-regular fa-bookmark" aria-hidden="true"></i>
+                        </button>
+                        <button id="close-receipt-modal" class="btn-close" aria-label="Закрыть"><i
+                                class="fa-solid fa-xmark"></i></button>
+                    </div>
                 </div>
 
                 <div class="modal-body" id="receipt-modal-body">
@@ -528,6 +532,12 @@
                                                     placeholder="12">
                                                 <span class="suffix-hint" data-i18n="months_suffix">мес.</span>
                                             </span>
+                                            <div class="warranty-presets" role="group" aria-label="Срок гарантии">
+                                                <button type="button" class="warranty-chip" data-months="0">0</button>
+                                                <button type="button" class="warranty-chip" data-months="12">12<span data-i18n="unit_m">м</span></button>
+                                                <button type="button" class="warranty-chip" data-months="24">24<span data-i18n="unit_m">м</span></button>
+                                                <button type="button" class="warranty-chip" data-months="36">36<span data-i18n="unit_m">м</span></button>
+                                            </div>
                                         </div>
                                         <div class="input-group item-discount">
                                             <label data-i18n="discount_label">Скидка</label>

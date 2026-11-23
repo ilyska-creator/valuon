@@ -112,6 +112,7 @@ const businessTranslations = {
         warranty_months_label: 'Гарантия, мес.',
         warranty_months_placeholder: '12',
         months_suffix: 'мес.',
+        unit_m: 'м',
         warranty_hint: '0 = нет гарантии',
         warranty_suffix: 'мес.',
         discount_label: 'Скидка',
@@ -145,6 +146,7 @@ const businessTranslations = {
         draft_save: 'Сохранить черновик',
         draft_discard: 'Не сохранять',
         draft_saved: 'Черновик сохранён',
+        draft_empty_hint: 'Заполните хотя бы одно поле для сохранения черновика',
 
 
         delete_receipt_title: 'Удалить чек?',
@@ -462,6 +464,7 @@ const businessTranslations = {
         warranty_months_label: 'Warranty, months',
         warranty_months_placeholder: '12',
         months_suffix: 'mo.',
+        unit_m: 'm',
         warranty_hint: '0 = no warranty',
         warranty_suffix: 'mo.',
         discount_label: 'Discount',
@@ -495,6 +498,7 @@ const businessTranslations = {
         draft_save: 'Save Draft',
         draft_discard: 'Discard',
         draft_saved: 'Draft saved',
+        draft_empty_hint: 'Fill in at least one field to save a draft',
 
         delete_receipt_title: 'Delete Receipt?',
         delete_receipt_desc: 'This action is irreversible. The receipt will be permanently deleted from the system.',

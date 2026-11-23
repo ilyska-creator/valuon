@@ -1505,6 +1505,64 @@ html {
     color: var(--text-main);
 }
 
+/* Quick Warranty Presets Chips */
+.warranty-presets {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.warranty-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 8px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    line-height: 1;
+    min-height: 22px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+[data-theme="dark"] .warranty-chip {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+.warranty-chip:hover {
+    border-color: var(--primary);
+    color: var(--text-main, var(--dark));
+    background: rgba(59, 130, 246, 0.1);
+}
+
+[data-theme="dark"] .warranty-chip:hover {
+    color: #ffffff;
+}
+
+.warranty-chip.is-selected {
+    border-color: var(--primary);
+    background: var(--primary) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(59, 130, 246, 0.25);
+}
+
+.btn:disabled:has(.fa-spin),
+.btn.is-loading {
+    opacity: 0.8 !important;
+    cursor: wait !important;
+}
+
 .modal-actions {
     display: flex;
     gap: var(--space-3);

@@ -260,14 +260,33 @@ function isFlagWindows() {
     }
 }
 
-function countryFlag(code) {
-    if (isFlagWindows() || !code || !/^[A-Z]{2}$/.test(code)) return '';
+function findCountry(input) {
+    if (!input || typeof input !== 'string') return null;
+    const clean = input.trim();
+    if (!clean) return null;
+    const upper = clean.toUpperCase();
+    const lower = clean.toLowerCase();
+    return COUNTRIES.find((x) =>
+        x.code === upper ||
+        x.ru.toLowerCase() === lower ||
+        x.en.toLowerCase() === lower
+    ) || null;
+}
+
+function countryFlag(codeOrName) {
+    if (isFlagWindows() || !codeOrName || typeof codeOrName !== 'string') return '';
+    let code = codeOrName.trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(code)) {
+        const found = findCountry(codeOrName);
+        if (found) code = found.code;
+        else return '';
+    }
     return code.split('').map((ch) => String.fromCodePoint(127397 + ch.charCodeAt(0))).join('');
 }
 
-function countryName(code, lang) {
-    const c = COUNTRIES.find((x) => x.code === code);
-    if (!c) return code || '';
+function countryName(codeOrName, lang) {
+    const c = findCountry(codeOrName);
+    if (!c) return codeOrName || '';
     return lang === 'ru' ? c.ru : c.en;
 }
 
@@ -320,6 +339,7 @@ function renderCountryOptions(select, lang) {
 }
 
 window.COUNTRIES = COUNTRIES;
+window.findCountry = findCountry;
 window.countryName = countryName;
 window.countryList = countryList;
 window.countryFlag = countryFlag;

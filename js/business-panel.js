@@ -820,7 +820,7 @@ async function initBusinessPanel() {
     contactModeBtns.forEach((btn) => {
         btn.addEventListener('click', () => {
             if (btn.dataset.contactMode === contactMode) return;
-            setContactMode(btn.dataset.contactMode, { focus: true });
+            setContactMode(btn.dataset.contactMode, { focus: false });
             saveShopContactMode(contactMode);
         });
     });
@@ -901,16 +901,7 @@ async function initBusinessPanel() {
     function isFormDirty() {
         const d = collectFormData();
         if (!d) return false;
-        const saved = readDraft();
-        if (saved) return !draftEquals(saved, d);
-        return !!(
-            d.email ||
-            d.phone_local ||
-            d.payment !== 'card' ||
-            (d.pos_terminal_id || '') !== (baselinePosTerminalId || '') ||
-            (d.purchase_date && d.purchase_date !== baselineDate) ||
-            d.items.length > 0
-        );
+        return draftHasContent(d);
     }
 
     function readDraft() {
@@ -996,7 +987,13 @@ async function initBusinessPanel() {
                 row.querySelector('[data-field="qty"]').value = it.qty || 1;
                 row.querySelector('[data-field="price"]').value = it.price ?? '';
                 row.querySelector('[data-field="vat_rate"]').value = it.vat_rate ?? '';
-                row.querySelector('[data-field="warranty_months"]').value = it.warranty_months ?? '';
+                const wMonths = it.warranty_months ?? '';
+                row.querySelector('[data-field="warranty_months"]').value = wMonths;
+                if (wMonths !== '') {
+                    row.querySelector('.item-warranty')?.querySelectorAll('.warranty-chip').forEach(c => {
+                        c.classList.toggle('is-selected', c.dataset.months === String(wMonths));
+                    });
+                }
                 row.querySelector('[data-field="discount"]').value = it.discount ?? '';
                 row.querySelector('[data-field="category"]').value = it.category || '';
             });
@@ -1027,7 +1024,7 @@ async function initBusinessPanel() {
         });
     }
 
-    function addItemRow(focusName) {
+    function addItemRow(focusName, { scroll = false } = {}) {
         if (!itemsList || !itemTemplate) return;
         const node = itemTemplate.content.firstElementChild.cloneNode(true);
         const priceSuffix = node.querySelector('.item-price .suffix-hint');
@@ -1039,7 +1036,18 @@ async function initBusinessPanel() {
         updateRemoveButtonsState();
         renumberRows();
         updateTotalPreview();
-        if (focusName) {
+
+        // Smoothly scroll the newly added item into view only when explicitly requested
+        if (scroll) {
+            requestAnimationFrame(() => {
+                node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                node.classList.add('item-row-flash');
+                setTimeout(() => node.classList.remove('item-row-flash'), 650);
+            });
+        }
+
+        // Focus first field only on desktop
+        if (focusName && window.innerWidth > 768) {
             const nameInput = node.querySelector('[data-field="item_name"]');
             if (nameInput) nameInput.focus();
         }
@@ -1185,7 +1193,7 @@ async function initBusinessPanel() {
         collapseClientSectionIfFilled();
     });
     addItemBtn?.addEventListener('click', () => {
-        addItemRow(true);
+        addItemRow(true, { scroll: true });
         collapseClientSectionIfFilled();
     });
     itemsList?.addEventListener('keydown', (e) => {
@@ -1193,13 +1201,27 @@ async function initBusinessPanel() {
         const row = e.target.closest('[data-item-row]');
         if (!row) return;
         e.preventDefault();
-        addItemRow();
+        addItemRow(true, { scroll: true });
         const rows = itemsList.querySelectorAll('[data-item-row]');
         const next = rows[rows.length - 1];
         const nameInput = next?.querySelector('[data-field="item_name"]');
         if (nameInput) nameInput.focus();
     });
     itemsList?.addEventListener('click', (e) => {
+        const chip = e.target.closest('.warranty-chip');
+        if (chip) {
+            e.preventDefault();
+            const group = chip.closest('.item-warranty') || chip.closest('.input-group');
+            const input = group?.querySelector('[data-field="warranty_months"]');
+            if (input) {
+                input.value = chip.dataset.months || '0';
+                group.querySelectorAll('.warranty-chip').forEach(c => c.classList.toggle('is-selected', c === chip));
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            return;
+        }
+
         const btn = e.target.closest('.btn-remove-item');
         if (!btn) return;
         const row = btn.closest('[data-item-row]');
@@ -1378,6 +1400,13 @@ async function initBusinessPanel() {
         if (row) validateItemRow(row, true);
     });
     itemsList?.addEventListener('input', (e) => {
+        if (e.target.matches('[data-field="warranty_months"]')) {
+            const group = e.target.closest('.item-warranty') || e.target.closest('.input-group');
+            const val = e.target.value.trim();
+            group?.querySelectorAll('.warranty-chip').forEach(c => {
+                c.classList.toggle('is-selected', c.dataset.months === val);
+            });
+        }
         const row = e.target.closest?.('[data-item-row]');
         if (row && row.classList.contains('is-invalid')) validateItemRow(row, true);
         updateSubmitLabel();
@@ -1779,10 +1808,12 @@ async function initBusinessPanel() {
 
         resetSubmitLabel();
         requestAnimationFrame(resetSubmitLabel);
-        if (contactMode === 'phone') {
-            phoneInput?.focus();
-        } else {
-            emailInput?.focus();
+        if (window.innerWidth > 768) {
+            if (contactMode === 'phone') {
+                phoneInput?.focus();
+            } else {
+                emailInput?.focus();
+            }
         }
     });
     document.getElementById('success-done-btn')?.addEventListener('click', () => {
@@ -1827,9 +1858,10 @@ async function initBusinessPanel() {
         if (vatEl) vatEl.textContent = shop.tax_id || '—';
         if (addrEl) addrEl.textContent = shop.address || '—';
         if (countryEl) {
-            const flag = window.countryFlag(shop.country);
+            const flag = typeof window.countryFlag === 'function' ? window.countryFlag(shop.country) : '';
+            const cName = typeof window.countryName === 'function' ? window.countryName(shop.country, uiLang) : (shop.country || '—');
             countryEl.textContent = shop.country
-                ? (flag ? flag + ' ' + countryName(shop.country, uiLang) : countryName(shop.country, uiLang))
+                ? (flag ? flag + ' ' + cName : cName)
                 : '—';
         }
         const currencyEl = document.getElementById('display-currency');
@@ -1987,6 +2019,7 @@ async function initBusinessPanel() {
 
     function closeTerminalsModal() {
         if (!terminalsModal || terminalsModal.classList.contains('closing')) return;
+        terminalsModal?.querySelector('.modal-content')?.classList.remove('is-stacked-behind');
         terminalsModal.classList.add('closing');
         setTimeout(() => {
             terminalsModal.classList.remove('closing');
@@ -2002,14 +2035,18 @@ async function initBusinessPanel() {
         terminalForm?.reset();
         terminalFormModal.querySelectorAll('.input-group').forEach((grp) => grp.classList.remove('is-invalid'));
         terminalFormModal.querySelectorAll('[data-terminal-error]').forEach((el) => { el.textContent = ''; });
+        terminalsModal?.querySelector('.modal-content')?.classList.add('is-stacked-behind');
         terminalFormModal.classList.remove('is-hidden');
         document.documentElement.classList.add('modal-open');
         const nameField = terminalForm?.querySelector('#terminal-name');
-        requestAnimationFrame(() => requestAnimationFrame(() => nameField?.focus()));
+        if (window.innerWidth > 768) {
+            requestAnimationFrame(() => requestAnimationFrame(() => nameField?.focus()));
+        }
     }
 
     function closeTerminalForm() {
         if (!terminalFormModal || terminalFormModal.classList.contains('closing')) return;
+        terminalsModal?.querySelector('.modal-content')?.classList.remove('is-stacked-behind');
         terminalFormModal.classList.add('closing');
         setTimeout(() => {
             terminalFormModal.classList.remove('closing');
@@ -2021,6 +2058,7 @@ async function initBusinessPanel() {
     }
 
     function closeDeleteTerminalModal() {
+        terminalsModal?.querySelector('.modal-content')?.classList.remove('is-stacked-behind');
         if (deleteTerminalModal?.classList.contains('is-hidden')) return;
         document.getElementById('cancel-delete-terminal-btn')?.click();
     }
@@ -2112,6 +2150,7 @@ async function initBusinessPanel() {
         const t = bizT();
         const confirmBtn = document.getElementById('confirm-delete-terminal-btn');
         const cancelBtn = document.getElementById('cancel-delete-terminal-btn');
+        terminalsModal?.querySelector('.modal-content')?.classList.add('is-stacked-behind');
         deleteTerminalModal.classList.remove('is-hidden');
         document.documentElement.classList.add('modal-open');
 
@@ -2168,6 +2207,7 @@ async function initBusinessPanel() {
         };
 
         const handleCancel = () => {
+            terminalsModal?.querySelector('.modal-content')?.classList.remove('is-stacked-behind');
             if (deleteTerminalModal.classList.contains('closing')) return;
             deleteTerminalModal.classList.add('closing');
             setTimeout(() => {
@@ -2553,7 +2593,7 @@ async function initBusinessPanel() {
         forceClose();
     }
 
-    function toggleModal(show) {
+    function toggleModal(show, { resumeDraft = false } = {}) {
         if (!modal.el) return;
 
         if (show) {
@@ -2568,13 +2608,17 @@ async function initBusinessPanel() {
             clearAllValidationState();
             hideAutocomplete();
             loadCustomerHistory();
-            const draft = readDraft();
+            const draft = resumeDraft ? readDraft() : null;
             if (draft) {
                 applyDraft(draft);
             } else {
+                forms.receipt?.reset();
+                resetItemRows();
+                if (phoneInput) phoneInput.value = '';
                 ensureBizPhoneSelect(getDefaultBizCountry());
                 setContactMode(getSavedShopContactMode(), { instant: true });
-                resetItemRows();
+                emailInput?.setAttribute('readonly', '');
+                expandClientSection();
             }
 
             const dateInput = forms.receipt?.querySelector('[name="purchase_date"]');
@@ -2605,6 +2649,15 @@ async function initBusinessPanel() {
             updateTotalPreview();
             requestAnimationFrame(() => contactModeIndicator.update(true));
 
+            // Ensure modal scroll starts strictly at the top so customer contact is immediately visible
+            if (modalBody) modalBody.scrollTop = 0;
+            const mContent = modal.el.querySelector('.modal-content');
+            if (mContent) mContent.scrollTop = 0;
+            requestAnimationFrame(() => {
+                if (modalBody) modalBody.scrollTop = 0;
+                if (mContent) mContent.scrollTop = 0;
+            });
+
             const headIcon = modal.el.querySelector('.modal-heading-icon');
             if (headIcon) {
                 headIcon.classList.remove('wave');
@@ -2616,10 +2669,39 @@ async function initBusinessPanel() {
         }
     }
 
-    attachModalA11y(modal.el, { mode: 'hidden', onClose: () => requestClose() });
+    function handleExplicitSaveDraft() {
+        const d = collectFormData();
+        const dl = localStorage.getItem('valuon-lang') || 'ru';
+        const t = window.businessTranslations?.[dl] || {};
+        if (!draftHasContent(d)) {
+            window.showToast(t.draft_empty_hint || (dl === 'en' ? 'Fill in at least one field to save a draft' : 'Заполните хотя бы одно поле для сохранения черновика'), 'warning');
+            return;
+        }
+        const res = saveDraft();
+        if (res === 'error') {
+            window.showToast(dl === 'en' ? 'Could not save the draft' : 'Не удалось сохранить черновик', 'error');
+            return;
+        }
+        window.showToast(t.draft_saved || 'Черновик сохранён', 'success');
+        hideGuard();
+        forceClose();
+    }
 
-    modal.openBtn?.addEventListener('click', () => toggleModal(true));
-    continueDraftBtn?.addEventListener('click', () => toggleModal(true));
+    attachModalA11y(modal.el, {
+        mode: 'hidden',
+        beforeClose: () => {
+            if (isFormDirty() && !guardVisible && (!successScreen || successScreen.classList.contains('is-hidden'))) {
+                showGuard();
+                return false;
+            }
+            return true;
+        },
+        onClose: () => requestClose()
+    });
+
+    modal.openBtn?.addEventListener('click', () => toggleModal(true, { resumeDraft: false }));
+    continueDraftBtn?.addEventListener('click', () => toggleModal(true, { resumeDraft: true }));
+    document.getElementById('header-save-draft-btn')?.addEventListener('click', handleExplicitSaveDraft);
     syncDraftButton();
     modal.closeBtn?.addEventListener('click', () => requestClose());
     modal.cancelBtn?.addEventListener('click', () => requestClose());
@@ -3366,8 +3448,11 @@ async function initBusinessPanel() {
         }
     }, { passive: true });
 
-    // Re-sync dynamic search counter, export scope & drawer labels when language toggles
+    // Re-sync dynamic search counter, export scope, shop info & drawer labels when language toggles
     window.addEventListener('business-lang-changed', () => {
+        if (currentShop) {
+            updateShopInfo(currentShop);
+        }
         if (currentReceiptsList && currentReceiptsList.length > 0) {
             renderReceiptCards(list, currentReceiptsList, { animateRows: false });
         }
@@ -4314,6 +4399,7 @@ async function initBusinessPanel() {
     window.addEventListener('business-lang-changed', () => {
         refreshItemCategorySelects();
         if (!currentShop) return;
+        updateShopInfo(currentShop);
         renderReceiptCards(list, currentReceiptsList);
         window.applyBusinessTranslations?.();
         syncDraftButton();

@@ -979,6 +979,7 @@ async function openEditModal(itemId, client, userId) {
     dateInput.value = item.purchase_date || '';
     if (dateInput._cdp) dateInput._cdp.syncDisplay();
     form.querySelector('[name="warranty_months"]').value = item.warranty_months ?? 12;
+    syncWarrantyChips(modal.querySelector('.warranty-presets'), item.warranty_months ?? 12);
     form.querySelector('[name="location"]').value = item.location || '';
 
     const currencySelect = form.querySelector('[name="currency"]');
@@ -1003,6 +1004,14 @@ function syncModalOpenClass() {
     if (!document.querySelector('.modal.active:not(.closing)')) {
         document.documentElement.classList.remove('modal-open');
     }
+}
+
+function syncWarrantyChips(presetsEl, val) {
+    if (!presetsEl) return;
+    const cleanVal = String(val ?? '').trim();
+    presetsEl.querySelectorAll('.warranty-chip').forEach(chip => {
+        chip.classList.toggle('is-selected', chip.dataset.months === cleanVal);
+    });
 }
 
 function setupEditModal(client, userId) {
@@ -1067,6 +1076,23 @@ function setupEditModal(client, userId) {
             priceSuffix.textContent = window.currencySymbol(currencySelect.value);
         }
     });
+
+    const editWarrantyPresets = modal.querySelector('.warranty-presets');
+    const editWarrantyInput = form.querySelector('[name="warranty_months"]');
+    if (editWarrantyPresets && editWarrantyInput) {
+        editWarrantyPresets.addEventListener('click', (e) => {
+            const chip = e.target.closest('.warranty-chip');
+            if (!chip) return;
+            e.preventDefault();
+            editWarrantyInput.value = chip.dataset.months || '0';
+            syncWarrantyChips(editWarrantyPresets, chip.dataset.months);
+            editWarrantyInput.dispatchEvent(new Event('input', { bubbles: true }));
+            editWarrantyInput.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        editWarrantyInput.addEventListener('input', () => {
+            syncWarrantyChips(editWarrantyPresets, editWarrantyInput.value);
+        });
+    }
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1232,10 +1258,28 @@ function setupModal(client, userId) {
 
     currencySelect?.addEventListener('change', updatePriceSuffix);
 
+    const addWarrantyPresets = modal.querySelector('.warranty-presets');
+    const addWarrantyInput = form?.querySelector('[name="warranty_months"]');
+    if (addWarrantyPresets && addWarrantyInput) {
+        addWarrantyPresets.addEventListener('click', (e) => {
+            const chip = e.target.closest('.warranty-chip');
+            if (!chip) return;
+            e.preventDefault();
+            addWarrantyInput.value = chip.dataset.months || '0';
+            syncWarrantyChips(addWarrantyPresets, chip.dataset.months);
+            addWarrantyInput.dispatchEvent(new Event('input', { bubbles: true }));
+            addWarrantyInput.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        addWarrantyInput.addEventListener('input', () => {
+            syncWarrantyChips(addWarrantyPresets, addWarrantyInput.value);
+        });
+    }
+
     addBtn.addEventListener('click', () => {
         resetSubmitState();
         modal.classList.add('active');
         document.documentElement.classList.add('modal-open');
+        syncWarrantyChips(addWarrantyPresets, addWarrantyInput?.value || '0');
         const dateInput = form?.querySelector('[name="purchase_date"]');
         if (dateInput) {
             const now = new Date();
