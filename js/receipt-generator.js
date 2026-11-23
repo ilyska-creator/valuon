@@ -58,6 +58,16 @@ async function fetchLogoDataUrl(shop) {
     }
 }
 
+function getVerifyBaseUrl() {
+    if (typeof window !== 'undefined' && window.location?.origin) {
+        const origin = window.location.origin;
+        if (origin && !origin.startsWith('file:') && origin !== 'null' && !origin.includes('localhost') && !origin.includes('127.0.0.1')) {
+            return origin;
+        }
+    }
+    return 'https://valuon.app';
+}
+
 function buildQrPayload(receipt) {
     const purchaseDate = new Date(receipt.purchase_date);
     const qrDate = Number.isNaN(purchaseDate.getTime()) ? '' : purchaseDate.toISOString();
@@ -68,9 +78,21 @@ function buildQrPayload(receipt) {
     const grossTotal = Number(receipt.gross_total) || 0;
 
     const esc = (v) => encodeURIComponent(String(v ?? ''));
+
+    // If the receipt has a cryptographic fiscal hash, encode a direct web URL
+    // so standard mobile cameras (iOS Camera, Google Lens) recognize a clickable
+    // link that opens the receipt verification page directly.
+    let qrData = '';
+    if (receipt.fiscal_hash) {
+        const baseUrl = getVerifyBaseUrl();
+        qrData = `${baseUrl}/verify.html?sig=${encodeURIComponent(receipt.fiscal_hash)}`;
+    } else {
+        qrData = `RECEIPT:${esc(receiptSerial)}|DATE:${esc(qrDate)}|TAX:${esc(vatAmount.toFixed(2))}|TOTAL:${esc(grossTotal.toFixed(2))}|SELLER:${esc(receipt.tax_id)}|SHOP_ID:${esc(receipt.shop_id)}`;
+    }
+
     return {
         receiptSerial,
-        data: `RECEIPT:${esc(receiptSerial)}|DATE:${esc(qrDate)}|TAX:${esc(vatAmount.toFixed(2))}|TOTAL:${esc(grossTotal.toFixed(2))}|SELLER:${esc(receipt.tax_id)}|SHOP_ID:${esc(receipt.shop_id)}|SIG:${esc(receipt.fiscal_hash)}`,
+        data: qrData,
     };
 }
 

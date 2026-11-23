@@ -182,14 +182,83 @@ function safeDecode(v) {
     try { return decodeURIComponent(v); } catch { return v; }
 }
 
-function parseQRData(text) {
-    const parts = text.split('|');
-    const map = {};
-    for (const part of parts) {
-        const idx = part.indexOf(':');
-        if (idx === -1) continue;
-        map[part.slice(0, idx)] = part.slice(idx + 1);
+function extractFiscalSignature(raw) {
+    if (!raw || typeof raw !== 'string') return '';
+    const text = raw.trim();
+    if (!text) return '';
+
+    // 1. URL format (e.g. https://valuon.app/verify.html?sig=... or ?seg=...)
+    if (text.includes('?') || text.includes('#') || text.startsWith('http://') || text.startsWith('https://')) {
+        try {
+            const url = (text.startsWith('http://') || text.startsWith('https://'))
+                ? new URL(text)
+                : new URL(text, 'https://valuon.app');
+
+            const querySig = url.searchParams.get('sig')
+                || url.searchParams.get('seg')
+                || url.searchParams.get('signature')
+                || url.searchParams.get('hash');
+            if (querySig) return decodeURIComponent(querySig).trim();
+
+            const rawHash = url.hash || '';
+            const hashMatch = rawHash.match(/#(?:sig|seg|signature|hash)=([^&]+)/i);
+            if (hashMatch && hashMatch[1]) {
+                return decodeURIComponent(hashMatch[1]).trim();
+            }
+        } catch (_) {
+            const m = text.match(/[?&#](?:sig|seg|signature|hash)=([^&#]+)/i);
+            if (m && m[1]) return decodeURIComponent(m[1]).trim();
+        }
     }
+
+    // 2. JSON format (e.g. {"fiscal_hash":"..."})
+    if (text.startsWith('{') && text.endsWith('}')) {
+        try {
+            const parsed = JSON.parse(text);
+            const val = parsed.fiscal_hash || parsed.sig || parsed.signature || parsed.hash;
+            if (val) return String(val).trim();
+        } catch (_) {}
+    }
+
+    // 3. Legacy pipe-delimited format (RECEIPT:...|SELLER:...|SIG:...)
+    if (text.includes('|') && /SIG:/i.test(text)) {
+        const parts = text.split('|');
+        for (const part of parts) {
+            const idx = part.indexOf(':');
+            if (idx === -1) continue;
+            const k = part.slice(0, idx).trim().toUpperCase();
+            if (k === 'SIG' || k === 'SIGNATURE') {
+                return safeDecode(part.slice(idx + 1)).trim();
+            }
+        }
+    }
+
+    // 4. Raw base64 Ed25519 signature
+    if (/^[A-Za-z0-9+/=_-]{40,128}$/.test(text)) {
+        return text;
+    }
+
+    return '';
+}
+
+function parseQRData(text) {
+    if (!text || typeof text !== 'string') {
+        return { serial: '', date: '', vat: 0, total: 0, taxId: '', shopId: '', signature: '' };
+    }
+    const clean = text.trim();
+    const signature = extractFiscalSignature(clean);
+
+    // Parse legacy fields for backward compatibility if present
+    const map = {};
+    if (clean.includes('|')) {
+        const parts = clean.split('|');
+        for (const part of parts) {
+            const idx = part.indexOf(':');
+            if (idx === -1) continue;
+            map[part.slice(0, idx).trim().toUpperCase()] = part.slice(idx + 1);
+        }
+    }
+
     return {
         serial: safeDecode(map['RECEIPT'] || ''),
         date: safeDecode(map['DATE'] || ''),
@@ -197,7 +266,7 @@ function parseQRData(text) {
         total: parseFloat(map['TOTAL']) || 0,
         taxId: safeDecode(map['SELLER'] || ''),
         shopId: safeDecode(map['SHOP_ID'] || ''),
-        signature: safeDecode(map['SIG'] || ''),
+        signature: signature || safeDecode(map['SIG'] || ''),
     };
 }
 
@@ -229,18 +298,26 @@ async function decodeQR(file) {
             }
             const buf = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-            const page = await pdf.getPage(1);
-            const scale = 2;
-            const viewport = page.getViewport({ scale });
-            const canvas = document.createElement('canvas');
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            await page.render({ canvasContext: ctx, viewport }).promise;
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            if (!window.jsQR) return null;
-            const code = window.jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'attemptBoth' });
-            return code ? code.data : null;
+            const pagesToScan = [];
+            for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
+                pagesToScan.push(i);
+            }
+            for (const pageNum of pagesToScan) {
+                const page = await pdf.getPage(pageNum);
+                const scale = 2;
+                const viewport = page.getViewport({ scale });
+                const canvas = document.createElement('canvas');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                await page.render({ canvasContext: ctx, viewport }).promise;
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                if (window.jsQR) {
+                    const code = window.jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'attemptBoth' });
+                    if (code && code.data) return code.data;
+                }
+            }
+            return null;
         } catch (e) {
             logError('verify:pdfDecode', e);
             return null;
@@ -513,57 +590,20 @@ function showResult(status, data) {
 
 async function verifyReceiptFromQRData(qrRaw) {
     if (verifying) return;
-    verifying = true;
     try {
         const parsed = parseQRData(qrRaw);
 
-        if (!parsed.signature || !parsed.taxId) {
-            showResult('invalid');
-            return;
-        }
-        const resp = await fetch(`${SUPABASE_URL}/functions/v1/verify-receipt`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fiscal_hash: parsed.signature }),
-        });
-        const data = await resp.json();
-        const error = resp.ok ? null : { message: `HTTP ${resp.status}` };
-
-        if (error) {
-            showResult('error', window.t('rpc_error') + ': ' + error.message);
-            return;
-        }
-
-        if (data?.error === 'not_found') {
-            showResult('not-found');
-            return;
-        }
-
-        if (data?.error === 'rate_limited') {
-            showResult('error', window.t('rate_limited'));
-            return;
-        }
-
-        if (data?.error === 'shop_key_missing') {
-            showResult('error', window.t('shop_not_found'));
-            return;
-        }
-
-        if (!data?.valid) {
-            logError('verify:signatureInvalid', data?.error || 'no error detail');
+        if (!parsed.signature) {
             showResult('invalid');
             return;
         }
 
-        showResult('success', {
-            receipt: data.receipt,
-            shop: data.shop || {},
-        });
+        // Delegate to unified verifyReceiptByHash, which manages loading states,
+        // performs the verification request and renders the result.
+        await verifyReceiptByHash(parsed.signature);
     } catch (err) {
         logError('verify:unexpected', err);
         showResult('error', window.t('internal_error'));
-    } finally {
-        verifying = false;
     }
 }
 
@@ -1049,11 +1089,10 @@ async function verifyReceiptByHash(fiscalHash) {
 
 (() => {
     const params = new URLSearchParams(window.location.search);
-    const querySig = params.get('sig') || params.get('seg');
+    const querySig = params.get('sig') || params.get('seg') || params.get('signature') || params.get('hash');
     const rawHash = window.location.hash || '';
-    const hashSig = (rawHash.startsWith('#sig=') || rawHash.startsWith('#seg='))
-        ? decodeURIComponent(rawHash.slice(5)).trim()
-        : null;
+    const hashMatch = rawHash.match(/#(?:sig|seg|signature|hash)=([^&]+)/i);
+    const hashSig = hashMatch ? decodeURIComponent(hashMatch[1]).trim() : null;
 
     const sig = (querySig ? querySig.trim() : null) || hashSig;
 

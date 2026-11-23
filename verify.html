@@ -17,7 +17,9 @@
         (function () {
             const t = localStorage.getItem('valuon-theme');
             if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-            if (window.location.hash && window.location.hash.startsWith('#sig=') && window.location.hash.slice(5).trim()) {
+            const h = window.location.hash || '';
+            const s = window.location.search || '';
+            if (/[?&#](?:sig|seg|signature|hash)=([^&#]+)/i.test(s + h)) {
                 document.documentElement.classList.add('verify-auto-hash');
             }
         })();
