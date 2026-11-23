@@ -316,6 +316,7 @@ async function loadNotifications(userId, userEmail, client) {
 }
 
 let notifInitialized = false;
+let currentNotifLang = getNotifLang();
 
 let cachedUserId = null;
 let cachedUserEmail = null;
@@ -330,6 +331,7 @@ async function ensureNotifLoaded() {
         cachedUserEmail = auth.user.email;
         cachedClient = auth.client;
         await loadNotifications(auth.user.id, auth.user.email, auth.client);
+        currentNotifLang = getNotifLang();
         notifInitialized = true;
     } catch (e) {
         logError('notif:load', e);
@@ -344,8 +346,10 @@ if (window.location.hash === '#view-notifications' || window.__targetView === 'v
     ensureNotifLoaded();
 }
 
-window.addEventListener('lang-changed', async () => {
-    if (notifInitialized && cachedUserId && cachedClient) {
+window.addEventListener('lang-changed', async (e) => {
+    const newLang = e.detail?.lang || getNotifLang();
+    if (notifInitialized && cachedUserId && cachedClient && newLang !== currentNotifLang) {
+        currentNotifLang = newLang;
         try {
             await loadNotifications(cachedUserId, cachedUserEmail, cachedClient);
         } catch (e) {

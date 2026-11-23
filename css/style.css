@@ -2689,6 +2689,14 @@ html.modal-open {
     }
 }
 
+@media (max-width: 900px) {
+    body:has(.bottom-nav) .cookie-banner,
+    .dashboard-body .cookie-banner,
+    .business-body .cookie-banner {
+        bottom: calc(72px + 12px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
 @supports not (backdrop-filter: blur(4px)) {
 
     .navbar,

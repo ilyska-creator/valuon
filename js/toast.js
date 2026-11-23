@@ -18,11 +18,12 @@ function showToast(message, type = 'error', duration = 4000) {
         info: 'fa-solid fa-circle-info'
     };
 
+    const isRu = (localStorage.getItem('valuon-lang') || 'ru') === 'ru';
     const titles = {
-        error: localStorage.getItem('valuon-lang') === 'ru' ? 'Ошибка' : 'Error',
-        success: localStorage.getItem('valuon-lang') === 'ru' ? 'Успешно' : 'Success',
-        warning: localStorage.getItem('valuon-lang') === 'ru' ? 'Внимание' : 'Warning',
-        info: localStorage.getItem('valuon-lang') === 'ru' ? 'Информация' : 'Info'
+        error: isRu ? 'Ошибка' : 'Error',
+        success: isRu ? 'Успешно' : 'Success',
+        warning: isRu ? 'Внимание' : 'Warning',
+        info: isRu ? 'Информация' : 'Info'
     };
 
     const toast = document.createElement('div');

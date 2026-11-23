@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const btn = forgotForm.querySelector('button[type="submit"]');
             const email = forgotEmailInput?.value.trim();
             const originalText = btn.innerHTML;
-            const lang = localStorage.getItem('valuon-lang') === 'ru';
+            const lang = (localStorage.getItem('valuon-lang') || 'ru') === 'ru';
 
 
             if (!email) {

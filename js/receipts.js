@@ -21,12 +21,16 @@ let receiptsLoaded = false;
 
 let uploadModal = null;
 
+let currentRenderedLang = localStorage.getItem('valuon-lang') || 'ru';
+
 window.addEventListener('lang-changed', (e) => {
+    const newLang = e.detail?.lang || getLang();
     const select = document.getElementById('upload-receipt-currency');
     if (select && typeof window.renderCurrencyOptions === 'function') {
-        window.renderCurrencyOptions(select, e.detail?.lang || getLang());
+        window.renderCurrencyOptions(select, newLang);
     }
-    if (receiptsLoaded && currentClient && currentUserId) {
+    if (receiptsLoaded && currentClient && currentUserId && newLang !== currentRenderedLang) {
+        currentRenderedLang = newLang;
         renderSplitReceipts(lastBusinessReceipts, lastPersonalReceipts, currentClient, currentUserId, { animateCounts: false, skipLangApply: true });
     }
     if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
@@ -384,10 +388,6 @@ function renderSplitReceipts(businessReceipts, personalReceipts, client, userId,
         });
     }
     restoreListeners(client, userId);
-
-    if (!opts.skipLangApply && typeof window.applyDashboardLang === 'function') {
-        window.applyDashboardLang(lang);
-    }
 }
 
 function buildPersonalGridHTML(receipts, t, lang) {

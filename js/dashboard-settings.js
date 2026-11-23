@@ -647,9 +647,11 @@ async function initSettings() {
 let settingsInitialized = false;
 
 function updateThemeLabelSync() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const icon = document.querySelector('#settings-theme-toggle i');
+    if (icon) icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
     const label = document.getElementById('settings-theme-label');
     if (!label) return;
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const lang = localStorage.getItem('valuon-lang') || 'ru';
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
     label.textContent = isDark ? (t.setting_light_theme || 'Светлая') : (t.setting_dark_theme || 'Тёмная');
@@ -657,6 +659,7 @@ function updateThemeLabelSync() {
 
 updateThemeLabelSync();
 window.addEventListener('lang-changed', updateThemeLabelSync);
+window.addEventListener('themeChange', updateThemeLabelSync);
 
 async function ensureSettingsLoaded() {
     if (settingsInitialized) return;
