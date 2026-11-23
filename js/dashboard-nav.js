@@ -17,7 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (bottomLink) bottomLink.classList.add('active');
 
         const view = document.getElementById(targetId);
-        if (view) view.classList.add('active');
+        if (view) {
+            view.classList.add('active');
+            if (targetId === 'view-settings') {
+                requestAnimationFrame(() => {
+                    view.querySelectorAll('[data-animate]').forEach(el => el.classList.add('is-visible'));
+                });
+            }
+        }
     }
 
     function handleNavClick(e, link) {

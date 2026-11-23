@@ -110,6 +110,17 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
+.tabular-nums,
+.stat-value,
+.mine-stat-value,
+.receipt-amount,
+.items-tab-count,
+.days-left-count,
+.notif-time,
+.custom-datepicker-time {
+    font-variant-numeric: tabular-nums;
+}
+
 .container {
     max-width: 1240px;
     margin: 0 auto;
@@ -144,20 +155,20 @@ ul {
 }
 
 .btn.btn-primary {
-    background: var(--primary);
+    background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
     color: var(--white);
-    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
 }
 
 .btn.btn-primary:hover {
-    background: var(--primary-dark);
+    background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
 }
 
 .btn.btn-primary:active {
-    transform: translateY(0) scale(0.97);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
 .btn-outline {
@@ -2634,29 +2645,35 @@ html.modal-open {
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    z-index: var(--z-cookie);
+    z-index: 100000;
     font-size: 0.85rem;
-    transition: transform 0.4s ease;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.4s ease, opacity 0.3s ease, visibility 0.3s ease;
     box-shadow: var(--shadow-lg);
     border-radius: 12px;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    will-change: transform;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    will-change: transform, opacity;
 }
 
 .cookie-banner.show {
     transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 [data-theme="light"] .cookie-banner,
 :not([data-theme="dark"]) .cookie-banner {
-    background: rgba(255, 255, 255, 0.85);
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="dark"] .cookie-banner {
-    background: rgba(0, 0, 0, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(17, 17, 17, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .cookie-banner p {
@@ -2674,26 +2691,24 @@ html.modal-open {
     flex-shrink: 0;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 900px) {
     .cookie-banner {
+        top: calc(12px + env(safe-area-inset-top, 0px));
+        bottom: auto;
+        transform: translateX(-50%) translateY(-150%);
+        width: calc(100% - 24px);
+        padding: 14px 16px;
         flex-direction: column;
         text-align: center;
         gap: 10px;
-        padding: 14px 16px;
-        bottom: 12px;
-        width: calc(100% - 24px);
+    }
+
+    .cookie-banner.show {
+        transform: translateX(-50%) translateY(0);
     }
 
     .cookie-banner .btn {
         width: 100%;
-    }
-}
-
-@media (max-width: 900px) {
-    body:has(.bottom-nav) .cookie-banner,
-    .dashboard-body .cookie-banner,
-    .business-body .cookie-banner {
-        bottom: calc(72px + 12px + env(safe-area-inset-bottom, 0px));
     }
 }
 

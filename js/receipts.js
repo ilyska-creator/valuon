@@ -387,7 +387,54 @@ function renderSplitReceipts(businessReceipts, personalReceipts, client, userId,
             window.animateCount(document.getElementById('receipts-count-business'), businessReceipts.length);
         });
     }
+    updateReceiptsSummary();
     restoreListeners(client, userId);
+}
+
+function updateReceiptsSummary() {
+    const summaryStrip = document.getElementById('receipts-summary-strip');
+    const totalEl = document.getElementById('receipts-summary-total');
+    const countEl = document.getElementById('receipts-summary-count');
+    if (!summaryStrip || !totalEl || !countEl) return;
+
+    const activeTab = sessionStorage.getItem('valuon-receipts-tab') || 'personal';
+    const receipts = activeTab === 'personal' ? lastPersonalReceipts : lastBusinessReceipts;
+
+    if (!receiptsLoaded || !receipts || receipts.length === 0) {
+        summaryStrip.classList.add('hidden');
+        return;
+    }
+
+    const lang = getLang();
+    const sumsByCurrency = new Map();
+    let validCount = 0;
+
+    receipts.forEach(r => {
+        const amt = Number(activeTab === 'personal' ? (r.items?.price ?? r.amount) : r.gross_total);
+        const cur = (activeTab === 'personal' ? (r.items?.currency ?? r.currency) : r.currency) || userDefaultCurrency || 'EUR';
+        if (Number.isFinite(amt) && amt > 0) {
+            sumsByCurrency.set(cur, (sumsByCurrency.get(cur) || 0) + amt);
+        }
+        validCount++;
+    });
+
+    if (sumsByCurrency.size === 0) {
+        summaryStrip.classList.add('hidden');
+        return;
+    }
+
+    const formattedTotals = Array.from(sumsByCurrency.entries())
+        .map(([cur, sum]) => (typeof window.formatCurrency === 'function')
+            ? window.formatCurrency(sum, cur, lang)
+            : `${sum.toFixed(2)} ${cur}`)
+        .join(' · ');
+
+    totalEl.textContent = formattedTotals;
+    const purchasesWord = lang === 'ru'
+        ? (validCount === 1 ? '1 чек' : (validCount > 1 && validCount < 5 ? `${validCount} чека` : `${validCount} чеков`))
+        : (validCount === 1 ? '1 receipt' : `${validCount} receipts`);
+    countEl.textContent = purchasesWord;
+    summaryStrip.classList.remove('hidden');
 }
 
 function buildPersonalGridHTML(receipts, t, lang) {
@@ -440,14 +487,34 @@ function switchReceiptsGridTab(oldGrid, newGrid) {
         clearTimeout(_receiptsTabTransitionTimer);
         _receiptsTabTransitionTimer = null;
     }
+
+    const container = oldGrid?.parentElement;
+    const oldHeight = oldGrid?.offsetHeight || 0;
+    if (container && oldHeight > 0) {
+        container.style.minHeight = `${oldHeight}px`;
+        container.style.transition = 'min-height 0.24s cubic-bezier(0.16, 1, 0.3, 1)';
+    }
+
     if (oldGrid) {
         oldGrid.classList.remove('fade-in', 'fade-out');
         oldGrid.classList.add('hidden');
     }
     newGrid.classList.remove('hidden', 'fade-out');
     newGrid.classList.add('fade-in');
+
+    if (container) {
+        const newHeight = newGrid.offsetHeight;
+        requestAnimationFrame(() => {
+            container.style.minHeight = `${newHeight}px`;
+        });
+    }
+
     _receiptsTabTransitionTimer = setTimeout(() => {
         newGrid.classList.remove('fade-in');
+        if (container) {
+            container.style.minHeight = '';
+            container.style.transition = '';
+        }
         _receiptsTabTransitionTimer = null;
     }, 250);
 }
@@ -479,6 +546,7 @@ function setupReceiptsTabs() {
             const oldGrid = target === 'personal' ? businessGrid : personalGrid;
             const newGrid = target === 'personal' ? personalGrid : businessGrid;
             switchReceiptsGridTab(oldGrid, newGrid);
+            updateReceiptsSummary();
         });
     });
 

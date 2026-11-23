@@ -849,14 +849,34 @@ function switchGridTab(oldGrid, newGrid) {
         clearTimeout(_tabTransitionTimer);
         _tabTransitionTimer = null;
     }
+
+    const container = oldGrid?.parentElement;
+    const oldHeight = oldGrid?.offsetHeight || 0;
+    if (container && oldHeight > 0) {
+        container.style.minHeight = `${oldHeight}px`;
+        container.style.transition = 'min-height 0.24s cubic-bezier(0.16, 1, 0.3, 1)';
+    }
+
     if (oldGrid) {
         oldGrid.classList.remove('fade-in', 'fade-out');
         oldGrid.classList.add('hidden');
     }
     newGrid.classList.remove('hidden', 'fade-out');
     newGrid.classList.add('fade-in');
+
+    if (container) {
+        const newHeight = newGrid.offsetHeight;
+        requestAnimationFrame(() => {
+            container.style.minHeight = `${newHeight}px`;
+        });
+    }
+
     _tabTransitionTimer = setTimeout(() => {
         newGrid.classList.remove('fade-in');
+        if (container) {
+            container.style.minHeight = '';
+            container.style.transition = '';
+        }
         _tabTransitionTimer = null;
     }, 250);
 }

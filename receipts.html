@@ -75,7 +75,14 @@
         <div class="upload-zone" id="drop-zone" data-animate>
             <i class="fa-solid fa-cloud-arrow-up"></i>
             <p data-i18n="upload_title">Перетащите фото чека сюда</p>
-            <span data-i18n="upload_hint">или нажмите для выбора файла • JPG, PNG, PDF • Макс. 10 МБ</span>
+            <span data-i18n="upload_hint">или нажмите для выбора файла</span>
+            <div class="upload-pills">
+                <span class="upload-pill">JPG</span>
+                <span class="upload-pill">PNG</span>
+                <span class="upload-pill">PDF</span>
+                <span class="upload-pill">WEBP</span>
+                <span class="upload-pill">10 МБ</span>
+            </div>
         </div>
 
         <section class="items-section" data-animate data-delay="120">
@@ -104,6 +111,15 @@
                             <option value="price_asc" data-i18n="sort_price_asc">По цене ↑</option>
                         </select>
                     </div>
+                </div>
+            </div>
+            <div class="receipts-summary-strip hidden" id="receipts-summary-strip">
+                <div class="receipts-summary-inner">
+                    <span class="summary-icon"><i class="fa-solid fa-wallet"></i></span>
+                    <span class="summary-label" data-i18n="receipts_total_spent">Всего по чекам:</span>
+                    <span class="summary-value" id="receipts-summary-total">0.00 €</span>
+                    <span class="summary-divider">•</span>
+                    <span class="summary-count" id="receipts-summary-count">0 чеков</span>
                 </div>
             </div>
             <div class="receipts-grid" id="receipts-grid-personal"></div>

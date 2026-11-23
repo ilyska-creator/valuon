@@ -1531,11 +1531,13 @@
 .chart-change-badge.up {
     background: rgba(16, 185, 129, 0.12);
     color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .chart-change-badge.down {
     background: rgba(239, 68, 68, 0.12);
     color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 [data-theme="dark"] .chart-change-badge.up {

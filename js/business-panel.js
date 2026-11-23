@@ -3946,10 +3946,10 @@ async function initBusinessPanel() {
                 datasets: [{
                     label: t.chart_label_receipts || (lang === 'en' ? 'Sales count' : 'Количество продаж'),
                     data: aggregated.data,
-                    backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.65)',
                     borderColor: '#3b82f6',
                     borderWidth: 1,
-                    borderRadius: 4,
+                    borderRadius: 6,
                     barPercentage: 0.5,
                     categoryPercentage: 0.7,
                 }]
@@ -3973,7 +3973,15 @@ async function initBusinessPanel() {
             label: t.revenue_chart_label || (lang === 'en' ? 'Revenue' : 'Выручка'),
             data: aggregated.data,
             borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+            backgroundColor: function (context) {
+                const chart = context.chart;
+                const { ctx, chartArea } = chart;
+                if (!chartArea) return 'rgba(16, 185, 129, 0.15)';
+                const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.28)');
+                gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+                return gradient;
+            },
             borderWidth: 2.5,
             pointRadius: 2.5,
             pointHoverRadius: 5,

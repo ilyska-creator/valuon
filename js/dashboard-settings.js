@@ -662,6 +662,9 @@ window.addEventListener('lang-changed', updateThemeLabelSync);
 window.addEventListener('themeChange', updateThemeLabelSync);
 
 async function ensureSettingsLoaded() {
+    requestAnimationFrame(() => {
+        document.querySelectorAll('#view-settings [data-animate]').forEach(el => el.classList.add('is-visible'));
+    });
     if (settingsInitialized) return;
     settingsInitialized = true;
     updateThemeLabelSync();

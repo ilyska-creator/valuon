@@ -862,12 +862,12 @@ html {
 }
 
 .mine-stat-label {
-    font-size: 0.64rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
     color: var(--secondary);
-    opacity: 0.85;
+    opacity: 0.9;
     margin-bottom: 2px;
 }
 
@@ -2224,30 +2224,121 @@ html {
 .upload-zone {
     border: 2px dashed var(--border);
     border-radius: 20px;
-    padding: 40px 20px;
+    padding: 36px 20px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     grid-column: 1 / -1;
+    margin-top: 36px;
     margin-bottom: 24px;
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .upload-zone:hover,
 .upload-zone.drag-over {
     border-color: var(--primary);
-    background: rgba(59, 130, 246, 0.05);
+    background: rgba(59, 130, 246, 0.06);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -4px rgba(59, 130, 246, 0.15);
 }
 
 [data-theme="dark"] .upload-zone:hover,
 [data-theme="dark"] .upload-zone.drag-over {
     border-color: var(--primary);
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(59, 130, 246, 0.12);
+    box-shadow: 0 8px 28px -4px rgba(59, 130, 246, 0.25);
 }
 
 .upload-zone i {
-    font-size: 2rem;
-    color: var(--secondary);
+    font-size: 2.2rem;
+    color: var(--primary);
     margin-bottom: 12px;
+    transition: transform 0.25s ease;
+}
+
+.upload-zone:hover i,
+.upload-zone.drag-over i {
+    transform: translateY(-4px) scale(1.08);
+}
+
+.upload-pills {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.upload-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    background: var(--light);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+[data-theme="dark"] .upload-pill {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+}
+
+.receipts-summary-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    margin-bottom: 20px;
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 0.88rem;
+    color: var(--text-main);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .receipts-summary-strip {
+    background: #11141c;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.receipts-summary-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.receipts-summary-inner .summary-icon {
+    color: var(--primary);
+    font-size: 0.95rem;
+}
+
+.receipts-summary-inner .summary-label {
+    color: var(--text-muted);
+}
+
+.receipts-summary-inner .summary-value {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-main);
+}
+
+.receipts-summary-inner .summary-divider {
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+.receipts-summary-inner .summary-count {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+}
 }
 
 .upload-zone p {

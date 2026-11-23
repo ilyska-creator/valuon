@@ -1048,12 +1048,15 @@ async function verifyReceiptByHash(fiscalHash) {
 }
 
 (() => {
+    const params = new URLSearchParams(window.location.search);
+    const querySig = params.get('sig') || params.get('seg');
     const rawHash = window.location.hash || '';
-    if (!rawHash.startsWith('#sig=')) {
-        document.documentElement.classList.remove('verify-auto-hash');
-        return;
-    }
-    const sig = decodeURIComponent(rawHash.slice(5)).trim();
+    const hashSig = (rawHash.startsWith('#sig=') || rawHash.startsWith('#seg='))
+        ? decodeURIComponent(rawHash.slice(5)).trim()
+        : null;
+
+    const sig = (querySig ? querySig.trim() : null) || hashSig;
+
     if (!sig) {
         document.documentElement.classList.remove('verify-auto-hash');
         return;

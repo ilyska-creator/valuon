@@ -99,7 +99,8 @@ const dashboardTranslations = {
         delete_receipt_desc: "Файл и запись будут удалены безвозвратно.",
         section_documents: "Ваши документы",
         upload_title: "Перетащите фото чека сюда",
-        upload_hint: "или нажмите для выбора файла • JPG, PNG, PDF • Макс. 10 МБ",
+        upload_hint: "или нажмите для выбора файла",
+        receipts_total_spent: "Всего по чекам:",
 
         settings_profile: "Профиль",
         label_user_id: "ID пользователя",
@@ -327,7 +328,8 @@ const dashboardTranslations = {
         delete_receipt_desc: "File and record will be permanently deleted.",
         section_documents: "Your Documents",
         upload_title: "Drag & drop receipt photo here",
-        upload_hint: "or click to select file • JPG, PNG, PDF • Max 10 MB",
+        upload_hint: "or click to select file",
+        receipts_total_spent: "Total spent:",
         btn_submit_upload: "Upload",
 
         settings_profile: "Profile",
