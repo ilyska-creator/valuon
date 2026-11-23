@@ -87,7 +87,7 @@ async function initDashboardItems() {
         verifiedReceiptPdfCache.clear();
         loadVerifiedItems(auth.user.email, auth.client);
     });
-    setupModal(auth.client);
+    setupModal(auth.client, auth.user.id);
     setupEditModal(auth.client, auth.user.id);
     setupDeleteItemModal(auth.client, auth.user.id);
     setupLogout(auth.client);
@@ -841,31 +841,24 @@ async function loadVerifiedItems(userEmail, client) {
     updateStats(lastMineItems);
 }
 
-let _switchingTab = false;
+let _tabTransitionTimer = null;
 
 function switchGridTab(oldGrid, newGrid) {
-    if (_switchingTab || !newGrid) return;
-    _switchingTab = true;
+    if (!newGrid || oldGrid === newGrid) return;
+    if (_tabTransitionTimer) {
+        clearTimeout(_tabTransitionTimer);
+        _tabTransitionTimer = null;
+    }
     if (oldGrid) {
-        oldGrid.classList.add('fade-out');
-        setTimeout(() => {
-            oldGrid.classList.add('hidden');
-            oldGrid.classList.remove('fade-out');
-            showNewGrid();
-        }, 180);
-    } else {
-        showNewGrid();
+        oldGrid.classList.remove('fade-in', 'fade-out');
+        oldGrid.classList.add('hidden');
     }
-    function showNewGrid() {
-        newGrid.classList.remove('hidden');
-        requestAnimationFrame(() => {
-            newGrid.classList.add('fade-in');
-            setTimeout(() => {
-                newGrid.classList.remove('fade-in');
-                _switchingTab = false;
-            }, 300);
-        });
-    }
+    newGrid.classList.remove('hidden', 'fade-out');
+    newGrid.classList.add('fade-in');
+    _tabTransitionTimer = setTimeout(() => {
+        newGrid.classList.remove('fade-in');
+        _tabTransitionTimer = null;
+    }, 250);
 }
 
 function setupItemsTabs(userId, userEmail, client) {
@@ -986,6 +979,12 @@ async function openEditModal(itemId, client, userId) {
     document.documentElement.classList.add('modal-open');
 }
 
+function syncModalOpenClass() {
+    if (!document.querySelector('.modal.active:not(.closing)')) {
+        document.documentElement.classList.remove('modal-open');
+    }
+}
+
 function setupEditModal(client, userId) {
     const modal = document.getElementById('edit-modal');
     const form = document.getElementById('edit-item-form');
@@ -1029,7 +1028,7 @@ function setupEditModal(client, userId) {
         setTimeout(() => {
             modal.classList.remove('active', 'closing');
             form.reset();
-            document.documentElement.classList.remove('modal-open');
+            syncModalOpenClass();
             resetSubmitState();
             flushPendingReload();
         }, 250);
@@ -1109,7 +1108,7 @@ function setupDeleteItemModal(client, userId) {
         modal?.classList.add('closing');
         setTimeout(() => {
             modal?.classList.remove('active', 'closing');
-            document.documentElement.classList.remove('modal-open');
+            syncModalOpenClass();
             pendingDeleteItemId = null;
         }, 250);
     }
@@ -1149,7 +1148,7 @@ function setupDeleteItemModal(client, userId) {
     });
 }
 
-function setupModal(client) {
+function setupModal(client, userId) {
     const addBtn = document.getElementById('add-item-btn');
     const modal = document.getElementById('add-modal');
     const closeBtn = document.getElementById('close-modal');
@@ -1194,7 +1193,7 @@ function setupModal(client) {
         setTimeout(() => {
             modal.classList.remove('active', 'closing');
             form?.reset();
-            document.documentElement.classList.remove('modal-open');
+            syncModalOpenClass();
             resetSubmitState();
             flushPendingReload();
         }, 250);
@@ -1251,12 +1250,18 @@ function setupModal(client) {
 
         const btn = submitBtn || form.querySelector('button[type="submit"]');
         submitBtnOriginalHTML = btn.innerHTML;
+        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
         try {
+            if (!userId) {
+                showToast(t.msg_session_expired || 'Session expired. Please log in again.', 'error');
+                resetSubmitState();
+                return;
+            }
+
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-            const { data: { user } } = await client.auth.getUser();
 
             const nameInput = form.querySelector('input[name="name"]');
             const typeSelect = form.querySelector('select[name="type"]');
@@ -1269,7 +1274,7 @@ function setupModal(client) {
             const storeInput = form.querySelector('input[name="store_name"]');
 
             const { error } = await client.from('items').insert([{
-                user_id: user.id,
+                user_id: userId,
                 name: nameInput.value.trim(),
                 type: typeSelect ? typeSelect.value : 'other',
                 brand: brandInput ? brandInput.value.trim() : '',
@@ -1286,10 +1291,8 @@ function setupModal(client) {
 
             btn.innerHTML = '<i class="fa-solid fa-check"></i>';
 
-            const lang = localStorage.getItem('valuon-lang') || 'ru';
-            const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
             showToast(t.msg_item_added || 'Товар добавлен', 'success');
-            pendingReloadUserId = user.id;
+            pendingReloadUserId = userId;
 
             successCloseTimer = setTimeout(() => {
                 successCloseTimer = null;
@@ -1298,8 +1301,6 @@ function setupModal(client) {
 
         } catch (err) {
             logError('items:warrantyUpdate', err);
-            const lang = localStorage.getItem('valuon-lang') || 'ru';
-            const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
             if (err.code === '23505') {
                 showToast(t.msg_item_exists || (lang === 'ru' ? 'Эта вещь уже добавлена!' : 'This item already exists!'), 'warning');

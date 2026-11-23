@@ -193,6 +193,10 @@ window.authTranslations = translations;
         }
     });
 
+    try {
+        window.dispatchEvent(new CustomEvent('lang-changed', { detail: { lang: currentLang } }));
+    } catch (_) { }
+
     document.querySelectorAll('input[required], select[required], textarea[required]').forEach(el => {
         const form = el.closest('form');
         if (!form) return;

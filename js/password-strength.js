@@ -163,11 +163,13 @@ export function initPasswordStrength(inputId, options = {}) {
 
     if (input.value) handler();
 
-    document.addEventListener('lang-changed', () => {
+    const onLangChanged = () => {
         if (container.classList.contains('ps-visible')) {
             updateStrengthUI(container, input.value, getLang());
         }
-    });
+    };
+    window.addEventListener('lang-changed', onLangChanged);
+    document.addEventListener('lang-changed', onLangChanged);
 
     return container;
 }

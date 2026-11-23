@@ -26,7 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetId = link.getAttribute('href').replace('#', '');
         activateView(targetId);
         sessionStorage.setItem('dashboard-view', targetId);
-        history.replaceState(null, '', '#' + targetId);
+        if (window.location.hash !== '#' + targetId) {
+            history.pushState(null, '', '#' + targetId);
+        }
 
         window.scrollTo({ top: 0, behavior: 'instant' });
     }
@@ -37,6 +39,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     bottomLinks.forEach(link => {
         link.addEventListener('click', (e) => handleNavClick(e, link));
+    });
+
+    window.addEventListener('popstate', () => {
+        const hash = window.location.hash.replace('#', '') || 'view-items';
+        if (document.getElementById(hash)) {
+            activateView(hash);
+            sessionStorage.setItem('dashboard-view', hash);
+        }
     });
 
     const targetView = sessionStorage.getItem('dashboard-view');

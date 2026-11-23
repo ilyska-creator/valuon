@@ -161,7 +161,7 @@ function buildWarrantyNotifications(personalItems, partnerItems, t) {
         const shopMeta = isPartner && item.shop_name ? escapeHtml(item.shop_name) : '';
 
         if (daysLeft > 0) {
-            const datePart = formatDate(new Date().toISOString());
+            const datePart = item.warranty_end_date ? formatDate(item.warranty_end_date) : '';
             expiring.push({
                 daysLeft,
                 type: 'warning',
@@ -172,7 +172,7 @@ function buildWarrantyNotifications(personalItems, partnerItems, t) {
             });
         } else {
             const absDays = Math.abs(daysLeft);
-            const datePart = formatDate(item.purchase_date);
+            const datePart = item.warranty_end_date ? formatDate(item.warranty_end_date) : formatDate(item.purchase_date);
             expired.push({
                 daysLeft,
                 type: 'expired',

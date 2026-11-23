@@ -34,6 +34,9 @@ export function attachModalA11y(modal, { mode = 'active', onClose } = {}) {
             return;
         }
         if (e.key === 'Tab') {
+            if (document.activeElement?.closest('.custom-select-dropdown, .custom-datepicker-panel')) {
+                return;
+            }
             const focusables = getFocusable();
             if (focusables.length === 0) return;
             const first = focusables[0];

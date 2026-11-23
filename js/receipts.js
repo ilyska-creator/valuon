@@ -432,31 +432,24 @@ function buildBusinessGridHTML(receipts, t, lang) {
     return sorted.map(r => renderBusinessCard(r, t)).join('');
 }
 
-let _switchingReceiptsTab = false;
+let _receiptsTabTransitionTimer = null;
 
 function switchReceiptsGridTab(oldGrid, newGrid) {
-    if (_switchingReceiptsTab || !newGrid) return;
-    _switchingReceiptsTab = true;
+    if (!newGrid || oldGrid === newGrid) return;
+    if (_receiptsTabTransitionTimer) {
+        clearTimeout(_receiptsTabTransitionTimer);
+        _receiptsTabTransitionTimer = null;
+    }
     if (oldGrid) {
-        oldGrid.classList.add('fade-out');
-        setTimeout(() => {
-            oldGrid.classList.add('hidden');
-            oldGrid.classList.remove('fade-out');
-            showNewGrid();
-        }, 180);
-    } else {
-        showNewGrid();
+        oldGrid.classList.remove('fade-in', 'fade-out');
+        oldGrid.classList.add('hidden');
     }
-    function showNewGrid() {
-        newGrid.classList.remove('hidden');
-        requestAnimationFrame(() => {
-            newGrid.classList.add('fade-in');
-            setTimeout(() => {
-                newGrid.classList.remove('fade-in');
-                _switchingReceiptsTab = false;
-            }, 300);
-        });
-    }
+    newGrid.classList.remove('hidden', 'fade-out');
+    newGrid.classList.add('fade-in');
+    _receiptsTabTransitionTimer = setTimeout(() => {
+        newGrid.classList.remove('fade-in');
+        _receiptsTabTransitionTimer = null;
+    }, 250);
 }
 
 function setupReceiptsTabs() {
@@ -926,6 +919,12 @@ async function populateItemSelect(userId, client) {
     }
 }
 
+function syncModalOpenClass() {
+    if (!document.querySelector('.modal.active:not(.closing)')) {
+        document.documentElement.classList.remove('modal-open');
+    }
+}
+
 function setupDeleteModal(client, userId) {
     const modal = document.getElementById('delete-receipt-modal');
     const confirmBtn = document.getElementById('confirm-delete-receipt');
@@ -936,7 +935,7 @@ function setupDeleteModal(client, userId) {
         modal?.classList.add('closing');
         setTimeout(() => {
             modal?.classList.remove('active', 'closing');
-            document.documentElement.classList.remove('modal-open');
+            syncModalOpenClass();
             pendingDeleteId = null;
         }, 250);
     }
@@ -1097,12 +1096,15 @@ function createUploadModal(client, userId) {
         updateAmountSuffix();
     }
 
+    let isSubmitting = false;
+
     function close() {
+        isSubmitting = false;
         if (modal.classList.contains('closing')) return;
         modal.classList.add('closing');
         setTimeout(() => {
             modal.classList.remove('active', 'closing');
-            document.documentElement.classList.remove('modal-open');
+            syncModalOpenClass();
             form.reset();
             miniDropZone?.classList.remove('has-file');
             setFieldsLocked(false);
@@ -1164,6 +1166,8 @@ function createUploadModal(client, userId) {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        if (isSubmitting) return;
+
         const btn = form.querySelector('button[type="submit"]');
         const originalHTML = btn.innerHTML;
         const lang = getLang();
@@ -1175,6 +1179,7 @@ function createUploadModal(client, userId) {
         const file = fileInput.files[0];
         if (!validateReceiptFile(file)) return;
 
+        isSubmitting = true;
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
@@ -1238,6 +1243,7 @@ function createUploadModal(client, userId) {
             logError('receipts:upload', err);
             showToast(lang === 'ru' ? `Ошибка: ${err.message}` : `Error: ${err.message}`, 'error');
         } finally {
+            isSubmitting = false;
             btn.innerHTML = originalHTML;
             btn.disabled = false;
         }

@@ -376,7 +376,7 @@ class CustomSelect {
             }
         };
         this._keyHandler = (e) => {
-            if (e.key === 'Escape') this.close();
+            if (e.key === 'Escape' || e.key === 'Tab') this.close();
         };
         document.addEventListener('click', this._closeHandler);
         document.addEventListener('keydown', this._keyHandler);
