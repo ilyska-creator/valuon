@@ -2,6 +2,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
 import { checkLoginRateLimit, setLoadingButton, resetLoadingButton, isValidEmail, logError } from './security.js';
 import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
+import { createSegmentedIndicator, prefersReducedMotion } from './segmented-indicator.js';
 
 function getSupabaseClient(rememberMe) {
     return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -57,7 +58,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const phoneCountryEl = document.getElementById('login-phone-country');
     const phoneInput = document.getElementById('login-phone');
     const rememberCheckbox = document.getElementById('remember');
+    const modeSwitchEl = document.querySelector('.auth-mode-switch');
+    const modeIndicatorEl = document.getElementById('auth-mode-indicator');
     const modeButtons = document.querySelectorAll('[data-login-mode]');
+    const modeIndicator = createSegmentedIndicator(modeSwitchEl, modeIndicatorEl, {
+        itemSelector: '[data-login-mode]',
+        activeClass: 'active'
+    });
 
     let loginMode = 'email';
     let phonePair = null;
@@ -68,27 +75,40 @@ document.addEventListener('DOMContentLoaded', async () => {
         phonePair = wirePhoneInputPair(phoneCountryEl, phoneInput);
     }
 
-    function setLoginMode(mode, shouldFocus = false) {
+    function setLoginMode(mode, { focus = false, instant = false } = {}) {
         loginMode = mode === 'phone' ? 'phone' : 'email';
+        const isPhone = loginMode === 'phone';
         modeButtons.forEach((btn) => {
             const isActive = btn.dataset.loginMode === loginMode;
             btn.classList.toggle('active', isActive);
             btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
         });
-        if (emailGroup) emailGroup.classList.toggle('hidden', loginMode !== 'email');
-        if (phoneGroup) phoneGroup.classList.toggle('hidden', loginMode !== 'phone');
-        if (emailInput) emailInput.required = loginMode === 'email';
-        if (phoneInput) phoneInput.required = loginMode === 'phone';
-        if (loginMode === 'phone') {
+        modeIndicator.update(instant);
+        if (emailGroup) {
+            emailGroup.classList.toggle('is-active', !isPhone);
+            emailGroup.setAttribute('aria-hidden', String(isPhone));
+            emailGroup.inert = isPhone;
+        }
+        if (phoneGroup) {
+            phoneGroup.classList.toggle('is-active', isPhone);
+            phoneGroup.setAttribute('aria-hidden', String(!isPhone));
+            phoneGroup.inert = !isPhone;
+        }
+        if (emailInput) emailInput.required = !isPhone;
+        if (phoneInput) phoneInput.required = isPhone;
+        if (isPhone) {
             phonePair?.syncTrigger();
-            if (shouldFocus) phoneInput?.focus();
-        } else if (shouldFocus) {
+            if (focus) phoneInput?.focus();
+        } else if (focus) {
             emailInput?.focus();
         }
     }
 
     modeButtons.forEach((btn) => {
-        btn.addEventListener('click', () => setLoginMode(btn.dataset.loginMode, true));
+        btn.addEventListener('click', () => {
+            if (btn.dataset.loginMode === loginMode) return;
+            setLoginMode(btn.dataset.loginMode, { focus: true });
+        });
     });
 
     // Restore remembered login (supports both new unified JSON key and legacy email key)
@@ -98,18 +118,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (rawSaved) {
             const parsed = JSON.parse(rawSaved);
             if (parsed?.mode === 'phone' && parsed?.value && phonePair) {
-                setLoginMode('phone', false);
+                setLoginMode('phone', { focus: false, instant: true });
                 phonePair.setFromE164(parsed.value);
                 if (rememberCheckbox) rememberCheckbox.checked = true;
                 restored = true;
             } else if (parsed?.mode === 'email' && parsed?.value && emailInput) {
-                setLoginMode('email', false);
+                setLoginMode('email', { focus: false, instant: true });
                 emailInput.value = parsed.value;
                 if (rememberCheckbox) rememberCheckbox.checked = true;
                 restored = true;
             }
         }
     } catch (_) { /* ignore malformed storage */ }
+
+    if (!restored) {
+        modeIndicator.update(true);
+    }
 
     if (!restored) {
         const savedEmail = localStorage.getItem('valuon-remember-email');
@@ -259,10 +283,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (activeSession) {
                     const card = loginForm.closest('.auth-card');
-                    btn.innerHTML = '<i class="fa-solid fa-circle-check" style="font-size:1.25rem;animation:checkPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;color:var(--success);"></i>';
-                    await new Promise(r => setTimeout(r, 800));
-                    if (card) card.classList.add('auth-card--leaving');
-                    await new Promise(r => setTimeout(r, 350));
+                    const reduced = prefersReducedMotion();
+                    btn.innerHTML = `<i class="fa-solid fa-circle-check" style="font-size:1.25rem;${reduced ? '' : 'animation:checkPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;'}color:var(--success);"></i>`;
+                    if (!reduced) {
+                        await new Promise(r => setTimeout(r, 800));
+                        if (card) card.classList.add('auth-card--leaving');
+                        await new Promise(r => setTimeout(r, 350));
+                    }
                     window.location.href = 'dashboard.html';
                 }
             } catch (err) {
@@ -324,9 +351,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         forgotModal?.classList.add('closing');
         forgotModal?.classList.remove('active');
         document.documentElement.classList.remove('modal-open');
+        const delay = prefersReducedMotion() ? 0 : 350;
         setTimeout(() => {
             forgotModal?.classList.remove('closing');
-        }, 350);
+        }, delay);
     }
 
     if (forgotLink) {

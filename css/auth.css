@@ -1148,6 +1148,7 @@
 
 /* Email / Phone mode switcher & international phone input */
 .auth-mode-switch {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 4px;
@@ -1156,6 +1157,7 @@
     border: 1px solid var(--border);
     border-radius: 12px;
     margin-bottom: 2px;
+    isolation: isolate;
 }
 
 [data-theme="dark"] .auth-mode-switch {
@@ -1163,7 +1165,29 @@
     border-color: rgba(255, 255, 255, 0.1);
 }
 
+.auth-mode-indicator {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 0;
+    border-radius: 9px;
+    background: var(--card-bg, #ffffff);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1), width 0.35s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.15s ease;
+    will-change: transform, width;
+}
+
+[data-theme="dark"] .auth-mode-indicator {
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
+}
+
 .auth-mode-btn {
+    position: relative;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1177,7 +1201,7 @@
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    transition: color 0.2s ease;
 }
 
 .auth-mode-btn:hover {
@@ -1185,15 +1209,36 @@
 }
 
 .auth-mode-btn.active {
-    background: var(--light, #ffffff);
+    background: transparent;
     color: var(--text-main);
-    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+    box-shadow: none;
 }
 
 [data-theme="dark"] .auth-mode-btn.active {
-    background: rgba(255, 255, 255, 0.12);
+    background: transparent;
     color: #ffffff;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
+    box-shadow: none;
+}
+
+.auth-contact-panels {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.auth-field-panel {
+    grid-area: 1 / 1;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(4px);
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.18s;
+}
+
+.auth-field-panel.is-active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
 }
 
 .label-optional {
@@ -1205,7 +1250,7 @@
 
 .phone-input-group {
     display: grid;
-    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-columns: 126px minmax(0, 1fr);
     gap: 8px;
     align-items: stretch;
 }
@@ -1218,11 +1263,16 @@
 .phone-input-group .custom-select-trigger {
     height: 100%;
     min-height: 46px;
-    padding: 0 10px 0 12px;
+    padding: 0 30px 0 10px;
     border-radius: var(--radius-md);
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
+}
+
+.phone-input-group .custom-select-arrow {
+    right: 9px;
 }
 
 .phone-input-group input[type="tel"] {
@@ -1233,6 +1283,7 @@
     border-radius: var(--radius-md);
     font-family: inherit;
     font-size: 1rem;
+    font-variant-numeric: tabular-nums;
     background: var(--card-bg);
     color: var(--text-main);
     transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
@@ -1251,18 +1302,53 @@
 
 @media (max-width: 420px) {
     .phone-input-group {
-        grid-template-columns: 102px minmax(0, 1fr);
+        grid-template-columns: 114px minmax(0, 1fr);
         gap: 6px;
     }
 
     .phone-input-group .custom-select-trigger {
         min-height: 42px;
-        padding: 0 8px 0 10px;
-        font-size: 0.85rem;
+        padding: 0 28px 0 8px;
+        font-size: 0.84rem;
+    }
+
+    .phone-input-group .custom-select-arrow {
+        right: 8px;
     }
 
     .phone-input-group input[type="tel"] {
         padding: 10px 12px;
         font-size: 0.95rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .auth-card,
+    .auth-card--leaving,
+    .auth-logo,
+    [data-animate],
+    .shake,
+    .anim-pop,
+    .turnstile-skel .skel-pulse,
+    #forgot-modal .forgot-modal-content {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    [data-animate] {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .auth-mode-indicator,
+    .auth-field-panel,
+    #forgot-modal,
+    .turnstile-skel {
+        transition: none !important;
+    }
+
+    .auth-field-panel {
+        transform: none !important;
     }
 }

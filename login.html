@@ -36,6 +36,8 @@
 
             <form id="login-form" class="auth-form no-required-mark" action="#" novalidate>
                 <div class="auth-mode-switch" role="tablist" aria-label="Способ входа" data-animate>
+                    <span class="segmented-indicator auth-mode-indicator" id="auth-mode-indicator"
+                        aria-hidden="true"></span>
                     <button type="button" class="auth-mode-btn active" role="tab" aria-selected="true"
                         data-login-mode="email">
                         <i class="fa-regular fa-envelope" aria-hidden="true"></i>
@@ -48,23 +50,25 @@
                     </button>
                 </div>
 
-                <div class="input-group" id="login-email-group" data-animate>
-                    <label for="email" data-i18n="label_email">Email</label>
-                    <div class="input-wrap">
-                        <span class="input-icon"><i class="fa-regular fa-envelope"></i></span>
-                        <input type="email" id="email" name="email" required placeholder="name@example.com"
-                            autocomplete="email">
+                <div class="auth-contact-panels" data-animate>
+                    <div class="input-group auth-field-panel is-active" id="login-email-group" aria-hidden="false">
+                        <label for="email" data-i18n="label_email">Email</label>
+                        <div class="input-wrap">
+                            <span class="input-icon"><i class="fa-regular fa-envelope"></i></span>
+                            <input type="email" id="email" name="email" required placeholder="name@example.com"
+                                autocomplete="email">
+                        </div>
                     </div>
-                </div>
 
-                <div class="input-group hidden" id="login-phone-group">
-                    <label for="login-phone" data-i18n="label_phone">Номер телефона</label>
-                    <div class="phone-input-group">
-                        <select id="login-phone-country" class="custom-select phone-country-select" data-searchable
-                            data-dropdown-min-width="270" data-search-placeholder="phone_country_search"
-                            data-search-empty="currency_search_empty" aria-label="Код страны"></select>
-                        <input type="tel" id="login-phone" name="phone" inputmode="tel" placeholder="5555 1234"
-                            autocomplete="tel-national">
+                    <div class="input-group auth-field-panel" id="login-phone-group" aria-hidden="true" inert>
+                        <label for="login-phone" data-i18n="label_phone">Номер телефона</label>
+                        <div class="phone-input-group">
+                            <select id="login-phone-country" class="custom-select phone-country-select" data-searchable
+                                data-dropdown-min-width="270" data-search-placeholder="phone_country_search"
+                                data-search-empty="currency_search_empty" aria-label="Код страны"></select>
+                            <input type="tel" id="login-phone" name="phone" inputmode="tel" placeholder="5555 1234"
+                                autocomplete="tel-national">
+                        </div>
                     </div>
                 </div>
 

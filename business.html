@@ -138,12 +138,18 @@
         <section id="shop-dashboard-view" class="view">
             <div class="content-header" data-animate>
                 <h1 data-i18n="my_shop">Мой магазин</h1>
-                <button id="open-create-receipt-btn" class="btn btn-primary" data-i18n="create_receipt_btn">
-                    <i class="fa-solid fa-plus"></i> Создать чек
-                </button>
-                <a href="verify.html?from=business.html" class="btn btn-outline verify-btn">
-                    <i class="fa-solid fa-qrcode"></i> <span data-i18n="verify_btn">Проверить чек</span>
-                </a>
+                <div class="content-header-actions">
+                    <button type="button" id="continue-draft-btn" class="btn btn-outline continue-draft-btn is-hidden">
+                        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                        <span data-i18n="continue_draft_btn">Продолжить черновик</span>
+                    </button>
+                    <button id="open-create-receipt-btn" class="btn btn-primary" data-i18n="create_receipt_btn">
+                        <i class="fa-solid fa-plus"></i> Создать чек
+                    </button>
+                    <a href="verify.html?from=business.html" class="btn btn-outline verify-btn">
+                        <i class="fa-solid fa-qrcode"></i> <span data-i18n="verify_btn">Проверить чек</span>
+                    </a>
+                </div>
             </div>
 
             <div class="shop-info-card mb-6" data-animate>
@@ -245,11 +251,15 @@
                 <div class="chart-header">
                     <h2 class="section-title"><span data-i18n="analytics_title">Аналитика</span> <span
                             class="chart-period-label" id="analytics-period"></span></h2>
-                    <div class="chart-controls">
-                        <button class="chart-period-btn active" data-period="week"
-                            data-i18n="chart_week">Неделя</button>
-                        <button class="chart-period-btn" data-period="month" data-i18n="chart_month">Месяц</button>
-                        <button class="chart-period-btn" data-period="year" data-i18n="chart_year">Год</button>
+                    <div class="chart-controls" role="tablist" aria-label="Период аналитики">
+                        <span class="segmented-indicator chart-period-indicator" id="chart-period-indicator"
+                            aria-hidden="true"></span>
+                        <button type="button" class="chart-period-btn active" role="tab" aria-selected="true"
+                            data-period="week" data-i18n="chart_week">Неделя</button>
+                        <button type="button" class="chart-period-btn" role="tab" aria-selected="false"
+                            data-period="month" data-i18n="chart_month">Месяц</button>
+                        <button type="button" class="chart-period-btn" role="tab" aria-selected="false"
+                            data-period="year" data-i18n="chart_year">Год</button>
                     </div>
                 </div>
                 <div class="chart-grid">
@@ -371,6 +381,8 @@
                                         <label for="customer-email" id="customer-contact-label"
                                             data-i18n="customer_email_label">Email покупателя</label>
                                         <div class="contact-mode-switch" role="tablist" aria-label="Контакт клиента">
+                                            <span class="segmented-indicator contact-mode-indicator"
+                                                id="contact-mode-indicator" aria-hidden="true"></span>
                                             <button type="button" class="contact-mode-btn active" role="tab"
                                                 aria-selected="true" data-contact-mode="email">
                                                 <i class="fa-regular fa-envelope" aria-hidden="true"></i>
@@ -383,37 +395,41 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <div id="customer-email-wrap">
-                                        <span class="input-affix autocomplete-anchor">
-                                            <i class="fa-regular fa-envelope" aria-hidden="true"></i>
-                                            <input type="text" id="customer-email" name="customer_email"
-                                                inputmode="email" data-i18n-placeholder="customer_email_placeholder"
-                                                placeholder="client@example.com" autocomplete="off" autocorrect="off"
-                                                autocapitalize="off" spellcheck="false" data-lpignore="true"
-                                                data-1p-ignore data-bwignore="true" data-form-type="other" readonly
-                                                required>
-                                            <ul class="customer-autocomplete is-hidden" id="customer-autocomplete"
-                                                role="listbox" aria-label="Клиенты"></ul>
-                                        </span>
-                                    </div>
-                                    <div id="customer-phone-wrap" class="is-hidden">
-                                        <div class="biz-phone-input-group">
-                                            <select id="customer-phone-country"
-                                                class="custom-select phone-country-select" data-searchable
-                                                data-dropdown-min-width="270"
-                                                data-search-placeholder="phone_country_search"
-                                                data-search-empty="country_search_empty"
-                                                aria-label="Код страны"></select>
-                                            <span class="autocomplete-anchor biz-phone-anchor">
-                                                <input type="tel" id="customer-phone" name="customer_phone"
-                                                    inputmode="tel" placeholder="5555 1234" autocomplete="off"
+                                    <div class="biz-contact-panels">
+                                        <div id="customer-email-wrap" class="biz-contact-panel is-active"
+                                            aria-hidden="false">
+                                            <span class="input-affix autocomplete-anchor">
+                                                <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                                                <input type="text" id="customer-email" name="customer_email"
+                                                    inputmode="email" data-i18n-placeholder="customer_email_placeholder"
+                                                    placeholder="client@example.com" autocomplete="off"
                                                     autocorrect="off" autocapitalize="off" spellcheck="false"
                                                     data-lpignore="true" data-1p-ignore data-bwignore="true"
-                                                    data-form-type="other">
-                                                <ul class="customer-autocomplete is-hidden"
-                                                    id="customer-phone-autocomplete" role="listbox"
-                                                    aria-label="Телефоны клиентов"></ul>
+                                                    data-form-type="other" readonly required>
+                                                <ul class="customer-autocomplete is-hidden" id="customer-autocomplete"
+                                                    role="listbox" aria-label="Клиенты"></ul>
                                             </span>
+                                        </div>
+                                        <div id="customer-phone-wrap" class="biz-contact-panel" aria-hidden="true"
+                                            inert>
+                                            <div class="biz-phone-input-group">
+                                                <select id="customer-phone-country"
+                                                    class="custom-select phone-country-select" data-searchable
+                                                    data-dropdown-min-width="270"
+                                                    data-search-placeholder="phone_country_search"
+                                                    data-search-empty="country_search_empty"
+                                                    aria-label="Код страны"></select>
+                                                <span class="autocomplete-anchor biz-phone-anchor">
+                                                    <input type="tel" id="customer-phone" name="customer_phone"
+                                                        inputmode="tel" placeholder="5555 1234" autocomplete="off"
+                                                        autocorrect="off" autocapitalize="off" spellcheck="false"
+                                                        data-lpignore="true" data-1p-ignore data-bwignore="true"
+                                                        data-form-type="other">
+                                                    <ul class="customer-autocomplete is-hidden"
+                                                        id="customer-phone-autocomplete" role="listbox"
+                                                        aria-label="Телефоны клиентов"></ul>
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                     <small class="field-hint" data-i18n="customer_email_hint">Если клиент

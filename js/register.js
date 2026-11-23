@@ -4,6 +4,7 @@ import { checkSignupRateLimit, logError } from './security.js';
 import { initPasswordStrength, checkPasswordStrength } from './password-strength.js';
 import { getAuthSession } from './dashboard-auth.js';
 import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
+import { prefersReducedMotion } from './segmented-indicator.js';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const getLang = () => localStorage.getItem('valuon-lang') || 'ru';
@@ -78,9 +79,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function scrollToField(el) {
         if (!el) return;
+        const reduced = prefersReducedMotion();
         var wrap = el.closest('.input-group') || el.closest('.form-options') || el.parentNode;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        if (wrap) {
+        window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+        if (wrap && !reduced) {
             wrap.classList.remove('shake');
             void wrap.offsetWidth;
             wrap.classList.add('shake');

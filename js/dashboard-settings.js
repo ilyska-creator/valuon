@@ -304,9 +304,16 @@ async function initSettings() {
     const cancelEmailChange = document.getElementById('cancel-email-change');
     let emailCheckTimeout = null;
 
+    function setExpandPanel(el, open) {
+        if (!el) return;
+        el.classList.toggle('is-open', open);
+        el.setAttribute('aria-hidden', String(!open));
+        el.inert = !open;
+    }
+
     function resetEmailForm() {
         clearTimeout(emailCheckTimeout);
-        changeEmailForm?.classList.add('hidden');
+        setExpandPanel(changeEmailForm, false);
         changeEmailBtn?.classList.remove('hidden');
         if (newEmailInput) newEmailInput.value = '';
         if (confirmEmailChange) {
@@ -342,7 +349,7 @@ async function initSettings() {
 
     if (changeEmailBtn && changeEmailForm && emailDisplayRow) {
         changeEmailBtn.addEventListener('click', () => {
-            changeEmailForm.classList.remove('hidden');
+            setExpandPanel(changeEmailForm, true);
             changeEmailBtn.classList.add('hidden');
             newEmailInput?.focus();
         });
@@ -413,7 +420,7 @@ async function initSettings() {
 
     function resetPhoneForm() {
         resetRemovePhoneConfirm();
-        changePhoneForm?.classList.add('hidden');
+        setExpandPanel(changePhoneForm, false);
         changePhoneBtn?.classList.remove('hidden');
         if (removePhoneBtn) removePhoneBtn.classList.toggle('hidden', !currentPhoneE164);
         if (newPhoneInput) newPhoneInput.value = '';
@@ -438,7 +445,7 @@ async function initSettings() {
     if (changePhoneBtn && changePhoneForm) {
         changePhoneBtn.addEventListener('click', () => {
             resetRemovePhoneConfirm();
-            changePhoneForm.classList.remove('hidden');
+            setExpandPanel(changePhoneForm, true);
             changePhoneBtn.classList.add('hidden');
             removePhoneBtn?.classList.add('hidden');
             if (currentPhoneE164 && phonePair) {
@@ -526,7 +533,8 @@ async function initSettings() {
 
     if (removePhoneBtn) {
         document.addEventListener('click', (e) => {
-            if (isConfirmingRemovePhone && !removePhoneBtn.contains(e.target)) {
+            const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+            if (isConfirmingRemovePhone && !removePhoneBtn.contains(e.target) && !path.includes(removePhoneBtn)) {
                 resetRemovePhoneConfirm();
             }
         });
@@ -535,7 +543,8 @@ async function initSettings() {
             if (isConfirmingRemovePhone) resetRemovePhoneConfirm();
         });
 
-        removePhoneBtn.addEventListener('click', async () => {
+        removePhoneBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
             if (!currentPhoneE164) return;
             const t = getSettingsT();
 

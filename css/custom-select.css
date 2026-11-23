@@ -114,6 +114,7 @@ select.custom-select {
         opacity: 0;
         transform: scaleY(0.85);
     }
+
     100% {
         opacity: 1;
         transform: scaleY(1);
@@ -125,6 +126,7 @@ select.custom-select {
         opacity: 1;
         transform: scaleY(1);
     }
+
     100% {
         opacity: 0;
         transform: scaleY(0.85);
@@ -201,6 +203,7 @@ select.custom-select {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
     .custom-select-dropdown.visible,
     .custom-select-dropdown.closing {
         animation: none;
@@ -285,6 +288,38 @@ select.custom-select {
 
 .custom-select-value .cs-value-icon i {
     font-size: 1em;
+}
+
+.cs-iso-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    vertical-align: middle;
+}
+
+.custom-select-value .cs-value-icon:has(.cs-iso-badge) {
+    margin-right: 4px;
+    font-size: 1em;
+    vertical-align: 0;
+}
+
+.cs-option-icon .cs-iso-badge {
+    min-width: 24px;
+    padding: 2px 5px;
+    border-radius: 5px;
+    background: rgba(15, 23, 42, 0.05);
+}
+
+[data-theme="dark"] .cs-option-icon .cs-iso-badge {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.68);
 }
 
 /* Полноэкранная шторка на мобильных для полей с поиском (валюта, страна,

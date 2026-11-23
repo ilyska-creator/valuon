@@ -43,6 +43,7 @@ const businessTranslations = {
 
 
         my_shop: 'Мой магазин',
+        continue_draft_btn: 'Продолжить черновик',
         create_receipt_btn: 'Создать чек',
         verify_btn: 'Проверить чек',
 
@@ -387,6 +388,7 @@ const businessTranslations = {
 
 
         my_shop: 'My Shop',
+        continue_draft_btn: 'Continue draft',
         create_receipt_btn: 'Create Receipt',
         verify_btn: 'Verify Receipt',
 

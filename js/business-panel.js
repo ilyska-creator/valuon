@@ -13,6 +13,7 @@ import {
     wirePhoneInputPair,
     getCustomerContactSummary
 } from './phone-utils.js';
+import { createSegmentedIndicator } from './segmented-indicator.js';
 
 let currentClient = null;
 let currentShop = null;
@@ -601,7 +602,7 @@ async function initBusinessPanel() {
                             </div>
                             ${drawerItemsHtml}
                             <div class="ledger-drawer-footer">
-                                <div class="ledger-drawer-footer-left">${lifecycleMetaHtml}</div>
+                                ${lifecycleMetaHtml ? `<div class="ledger-drawer-footer-left">${lifecycleMetaHtml}</div>` : ''}
                                 ${drawerSummaryHtml}
                             </div>
                         </div>
@@ -661,13 +662,22 @@ async function initBusinessPanel() {
     const phoneCountrySelect = document.getElementById('customer-phone-country');
     const phoneInput = document.getElementById('customer-phone');
     const phoneAutocompleteEl = document.getElementById('customer-phone-autocomplete');
+    const contactModeSwitchEl = document.querySelector('.contact-mode-switch');
+    const contactModeIndicatorEl = document.getElementById('contact-mode-indicator');
     const contactModeBtns = [...document.querySelectorAll('.contact-mode-switch [data-contact-mode]')];
+    const continueDraftBtn = document.getElementById('continue-draft-btn');
     const modalBody = document.getElementById('receipt-modal-body');
     const successScreen = document.getElementById('receipt-success-screen');
     const submitBtn = document.getElementById('issue-receipt-submit-btn');
     const submitLabelEl = document.getElementById('issue-receipt-submit-label');
 
+    const contactModeIndicator = createSegmentedIndicator(contactModeSwitchEl, contactModeIndicatorEl, {
+        itemSelector: '[data-contact-mode]',
+        activeClass: 'active'
+    });
+
     const DRAFT_KEY = 'biz-receipt-draft';
+    const CONTACT_MODE_STORAGE_PREFIX = 'valuon-biz-contact-mode:';
     let issuingClose = false;
     let guardVisible = false;
     let baselineDate = '';
@@ -678,6 +688,23 @@ async function initBusinessPanel() {
     let currentTerminals = [];
     let contactMode = 'email';
     let bizPhonePair = null;
+
+    function getSavedShopContactMode() {
+        if (!currentShop?.id) return 'email';
+        try {
+            const saved = localStorage.getItem(`${CONTACT_MODE_STORAGE_PREFIX}${currentShop.id}`);
+            return saved === 'phone' ? 'phone' : 'email';
+        } catch (_) {
+            return 'email';
+        }
+    }
+
+    function saveShopContactMode(mode) {
+        if (!currentShop?.id) return;
+        try {
+            localStorage.setItem(`${CONTACT_MODE_STORAGE_PREFIX}${currentShop.id}`, mode === 'phone' ? 'phone' : 'email');
+        } catch (_) { /* ignore storage restrictions */ }
+    }
 
     function getDefaultBizCountry() {
         return getDefaultPhoneCountry(currentShop?.country, bizLang());
@@ -708,7 +735,7 @@ async function initBusinessPanel() {
         }
     }
 
-    function setContactMode(mode, { focus = false } = {}) {
+    function setContactMode(mode, { focus = false, instant = false } = {}) {
         contactMode = mode === 'phone' ? 'phone' : 'email';
         const isPhone = contactMode === 'phone';
         const t = bizT();
@@ -718,9 +745,18 @@ async function initBusinessPanel() {
             btn.classList.toggle('active', active);
             btn.setAttribute('aria-selected', String(active));
         });
+        contactModeIndicator.update(instant);
 
-        emailWrap?.classList.toggle('is-hidden', isPhone);
-        phoneWrap?.classList.toggle('is-hidden', !isPhone);
+        if (emailWrap) {
+            emailWrap.classList.toggle('is-active', !isPhone);
+            emailWrap.setAttribute('aria-hidden', String(isPhone));
+            emailWrap.inert = isPhone;
+        }
+        if (phoneWrap) {
+            phoneWrap.classList.toggle('is-active', isPhone);
+            phoneWrap.setAttribute('aria-hidden', String(!isPhone));
+            phoneWrap.inert = !isPhone;
+        }
 
         if (emailInput) emailInput.required = !isPhone;
         if (phoneInput) phoneInput.required = isPhone;
@@ -750,6 +786,7 @@ async function initBusinessPanel() {
         btn.addEventListener('click', () => {
             if (btn.dataset.contactMode === contactMode) return;
             setContactMode(btn.dataset.contactMode, { focus: true });
+            saveShopContactMode(contactMode);
         });
     });
 
@@ -850,8 +887,15 @@ async function initBusinessPanel() {
         }
     }
 
+    function syncDraftButton() {
+        if (!continueDraftBtn) return;
+        const hasDraft = draftHasContent(readDraft());
+        continueDraftBtn.classList.toggle('is-hidden', !hasDraft);
+    }
+
     function clearDraft() {
         try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) { }
+        syncDraftButton();
     }
 
     function saveDraft() {
@@ -859,9 +903,11 @@ async function initBusinessPanel() {
             const d = collectFormData();
             if (!draftHasContent(d)) {
                 sessionStorage.removeItem(DRAFT_KEY);
+                syncDraftButton();
                 return 'empty';
             }
             sessionStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+            syncDraftButton();
             return 'saved';
         } catch (e) {
             return 'error';
@@ -889,12 +935,13 @@ async function initBusinessPanel() {
         const mode = d.contact_mode === 'phone' ? 'phone' : 'email';
         if (d.phone_country) ensureBizPhoneSelect(d.phone_country);
         else ensureBizPhoneSelect(getDefaultBizCountry());
-        setContactMode(mode);
+        setContactMode(mode, { instant: true });
         if (d.email && emailInput) {
             emailInput.value = d.email;
         }
         if (d.phone_local && phoneInput) {
             phoneInput.value = d.phone_local;
+            bizPhonePair?.formatCurrent();
         }
         if (d.payment) {
             forms.receipt.querySelector('[name="payment_method"]').value = d.payment;
@@ -1412,15 +1459,18 @@ async function initBusinessPanel() {
 
     function selectPhoneAutocompleteItem(item) {
         if (!item || !phoneInput) return;
-        const parts = splitPhone(item.dataset.phone, getDefaultBizCountry());
-        if (phoneCountrySelect && parts.code) {
-            phoneCountrySelect.value = parts.code;
-            if (typeof CustomSelect !== 'undefined' && phoneCountrySelect._cs) {
-                phoneCountrySelect._cs.refresh();
+        if (bizPhonePair) {
+            bizPhonePair.setFromE164(item.dataset.phone, getDefaultBizCountry());
+        } else {
+            const parts = splitPhone(item.dataset.phone, getDefaultBizCountry());
+            if (phoneCountrySelect && parts.code) {
+                phoneCountrySelect.value = parts.code;
+                if (typeof CustomSelect !== 'undefined' && phoneCountrySelect._cs) {
+                    phoneCountrySelect._cs.refresh();
+                }
             }
-            bizPhonePair?.updatePlaceholder();
+            phoneInput.value = parts.local;
         }
-        phoneInput.value = parts.local;
         hideAutocomplete();
         validateCustomerContactField(false);
         phoneInput.focus();
@@ -1556,7 +1606,7 @@ async function initBusinessPanel() {
             resetItemRows();
             if (phoneInput) phoneInput.value = '';
             ensureBizPhoneSelect(getDefaultBizCountry());
-            setContactMode('email');
+            setContactMode(getSavedShopContactMode(), { instant: true });
             emailInput?.setAttribute('readonly', '');
             const dateInput = forms.receipt?.querySelector('[name="purchase_date"]');
             if (dateInput) {
@@ -1571,7 +1621,11 @@ async function initBusinessPanel() {
 
         resetSubmitLabel();
         requestAnimationFrame(resetSubmitLabel);
-        emailInput?.focus();
+        if (contactMode === 'phone') {
+            phoneInput?.focus();
+        } else {
+            emailInput?.focus();
+        }
     });
     document.getElementById('success-done-btn')?.addEventListener('click', () => {
         // Раньше здесь сразу вызывался hideSuccessScreen() — экран успеха
@@ -1590,7 +1644,7 @@ async function initBusinessPanel() {
         renderTerminalsWidget();
         renderPosSelect();
         ensureBizPhoneSelect(phoneCountrySelect?.value || getDefaultBizCountry());
-        setContactMode(contactMode);
+        setContactMode(contactMode, { instant: true });
     });
 
     const stats = {
@@ -2299,7 +2353,8 @@ async function initBusinessPanel() {
             forms.receipt?.reset();
             resetItemRows();
             if (phoneInput) phoneInput.value = '';
-            setContactMode('email');
+            setContactMode(getSavedShopContactMode(), { instant: true });
+            syncDraftButton();
             clearAllValidationState();
             hideAutocomplete();
             hideSuccessScreen();
@@ -2354,7 +2409,7 @@ async function initBusinessPanel() {
                 applyDraft(draft);
             } else {
                 ensureBizPhoneSelect(getDefaultBizCountry());
-                setContactMode('email');
+                setContactMode(getSavedShopContactMode(), { instant: true });
                 resetItemRows();
             }
 
@@ -2384,6 +2439,7 @@ async function initBusinessPanel() {
             modal.el.classList.remove('is-hidden');
             document.documentElement.classList.add('modal-open');
             updateTotalPreview();
+            requestAnimationFrame(() => contactModeIndicator.update(true));
 
             const headIcon = modal.el.querySelector('.modal-heading-icon');
             if (headIcon) {
@@ -2399,6 +2455,8 @@ async function initBusinessPanel() {
     attachModalA11y(modal.el, { mode: 'hidden', onClose: () => requestClose() });
 
     modal.openBtn?.addEventListener('click', () => toggleModal(true));
+    continueDraftBtn?.addEventListener('click', () => toggleModal(true));
+    syncDraftButton();
     modal.closeBtn?.addEventListener('click', () => requestClose());
     modal.cancelBtn?.addEventListener('click', () => requestClose());
     modal.el?.addEventListener('click', (e) => {
@@ -2529,6 +2587,7 @@ async function initBusinessPanel() {
                 const succLang = localStorage.getItem('valuon-lang') || 'ru';
                 const receiptLabel = issued.receipt_number ? ` #RCP-${issued.receipt_number}` : '';
                 window.showToast(succLang === 'en' ? `Receipt${receiptLabel} issued!` : `Чек${receiptLabel} выписан!`, 'success');
+                saveShopContactMode(contactMode);
                 clearDraft();
 
                 const resolvedEmail = issued.customer_email || email || null;
@@ -4071,11 +4130,23 @@ async function initBusinessPanel() {
     }
 
 
+    const chartControlsEl = document.querySelector('.chart-controls');
+    const chartPeriodIndicatorEl = document.getElementById('chart-period-indicator');
+    const chartPeriodIndicator = createSegmentedIndicator(chartControlsEl, chartPeriodIndicatorEl, {
+        itemSelector: '.chart-period-btn',
+        activeClass: 'active'
+    });
+
     const periodBtns = document.querySelectorAll('.chart-period-btn');
     periodBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            periodBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            if (btn.dataset.period === chartPeriod && btn.classList.contains('active')) return;
+            periodBtns.forEach(b => {
+                const isActive = b === btn;
+                b.classList.toggle('active', isActive);
+                b.setAttribute('aria-selected', String(isActive));
+            });
+            chartPeriodIndicator.update(false);
             chartPeriod = btn.dataset.period;
             updateChart();
         });
@@ -4086,7 +4157,12 @@ async function initBusinessPanel() {
         if (!currentShop) return;
         renderReceiptCards(list, currentReceiptsList);
         window.applyBusinessTranslations?.();
-        requestAnimationFrame(moveReceiptFilterIndicator);
+        syncDraftButton();
+        requestAnimationFrame(() => {
+            moveReceiptFilterIndicator();
+            chartPeriodIndicator.update(true);
+            contactModeIndicator.update(true);
+        });
         if (lcReceipt && lcModal && !lcModal.classList.contains('is-hidden')) {
             renderLifecycleItems();
             updateLifecycleTabUI();

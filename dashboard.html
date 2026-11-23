@@ -194,24 +194,26 @@
                                 <button class="btn btn-outline btn-sm" id="change-email-btn"
                                     data-i18n="btn_change_email">Изменить</button>
                             </div>
-                        </div>
-
-                        <div class="profile-field hidden" id="change-email-form">
-                            <label data-i18n="label_new_email">Новый Email</label>
-                            <div class="email-change-form">
-                                <input type="email" id="new-email-input" placeholder="new@email.com">
-                                <div class="email-change-actions">
-                                    <button class="btn btn-primary btn-sm" id="confirm-email-change">
-                                        <i class="fa-solid fa-paper-plane"></i>
-                                    </button>
-                                    <button class="btn btn-outline btn-sm" id="cancel-email-change" aria-label="Отмена">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
+                            <div class="inline-expand-panel" id="change-email-form" aria-hidden="true" inert>
+                                <div class="inline-expand-inner">
+                                    <label data-i18n="label_new_email">Новый Email</label>
+                                    <div class="email-change-form">
+                                        <input type="email" id="new-email-input" placeholder="new@email.com">
+                                        <div class="email-change-actions">
+                                            <button class="btn btn-primary btn-sm" id="confirm-email-change">
+                                                <i class="fa-solid fa-paper-plane"></i>
+                                            </button>
+                                            <button class="btn btn-outline btn-sm" id="cancel-email-change"
+                                                aria-label="Отмена">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="setting-desc email-hint" data-i18n="email_change_hint">
+                                        На новый адрес придёт ссылка для подтверждения
+                                    </p>
                                 </div>
                             </div>
-                            <p class="setting-desc email-hint" data-i18n="email_change_hint">
-                                На новый адрес придёт ссылка для подтверждения
-                            </p>
                         </div>
 
                         <div class="profile-field">
@@ -229,33 +231,37 @@
                             </div>
                             <p class="setting-desc" data-i18n="phone_settings_hint">Используется для входа по номеру и
                                 автоматического получения чеков</p>
-                        </div>
-
-                        <div class="profile-field hidden" id="change-phone-form">
-                            <label for="new-phone-input" data-i18n="label_new_phone">Новый номер телефона</label>
-                            <div class="email-change-form phone-change-form">
-                                <div class="settings-phone-pair">
-                                    <select id="settings-phone-country" class="custom-select phone-country-select"
-                                        data-searchable data-dropdown-min-width="270"
-                                        data-search-placeholder="phone_country_search"
-                                        data-search-empty="currency_search_empty" aria-label="Код страны"></select>
-                                    <input type="tel" id="new-phone-input" inputmode="tel" placeholder="5555 1234"
-                                        autocomplete="tel-national">
-                                </div>
-                                <div class="email-change-actions">
-                                    <button type="button" class="btn btn-primary btn-sm" id="confirm-phone-change"
-                                        aria-label="Сохранить номер">
-                                        <i class="fa-solid fa-check"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-outline btn-sm" id="cancel-phone-change"
-                                        aria-label="Отмена">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
+                            <div class="inline-expand-panel" id="change-phone-form" aria-hidden="true" inert>
+                                <div class="inline-expand-inner">
+                                    <label for="new-phone-input" data-i18n="label_new_phone">Новый номер
+                                        телефона</label>
+                                    <div class="email-change-form phone-change-form">
+                                        <div class="settings-phone-pair">
+                                            <select id="settings-phone-country"
+                                                class="custom-select phone-country-select" data-searchable
+                                                data-dropdown-min-width="270"
+                                                data-search-placeholder="phone_country_search"
+                                                data-search-empty="currency_search_empty"
+                                                aria-label="Код страны"></select>
+                                            <input type="tel" id="new-phone-input" inputmode="tel"
+                                                placeholder="5555 1234" autocomplete="tel-national">
+                                        </div>
+                                        <div class="email-change-actions">
+                                            <button type="button" class="btn btn-primary btn-sm"
+                                                id="confirm-phone-change" aria-label="Сохранить номер">
+                                                <i class="fa-solid fa-check"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline btn-sm"
+                                                id="cancel-phone-change" aria-label="Отмена">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="setting-desc email-hint" data-i18n="phone_change_hint">
+                                        При смене номера все ранее полученные чеки останутся в вашем аккаунте
+                                    </p>
                                 </div>
                             </div>
-                            <p class="setting-desc email-hint" data-i18n="phone_change_hint">
-                                При смене номера все ранее полученные чеки останутся в вашем аккаунте
-                            </p>
                         </div>
 
                         <div class="profile-field">

@@ -257,6 +257,155 @@ export function formatPhoneDisplay(e164) {
     return `${dial} ${groups.join(' ')}`;
 }
 
+// Country-specific digit grouping templates for as-you-type local formatting
+const PHONE_GROUP_PATTERNS = {
+    EE: [4, 4],
+    LV: [4, 4],
+    SG: [4, 4],
+    MT: [4, 4],
+    LT: [3, 5],
+    FI: [2, 3, 4],
+    RU: [3, 3, 2, 2],
+    KZ: [3, 3, 2, 2],
+    TR: [3, 3, 2, 2],
+    UA: [2, 3, 2, 2],
+    BY: [2, 3, 2, 2],
+    SE: [2, 3, 2, 2],
+    CH: [2, 3, 2, 2],
+    AZ: [2, 3, 2, 2],
+    UZ: [2, 3, 2, 2],
+    US: [3, 3, 4],
+    CA: [3, 3, 4],
+    GR: [3, 3, 4],
+    IT: [3, 3, 4],
+    DE: [3, 4, 4],
+    CN: [3, 4, 4],
+    PL: [3, 3, 3],
+    CZ: [3, 3, 3],
+    SK: [3, 3, 3],
+    PT: [3, 3, 3],
+    RO: [3, 3, 3],
+    KG: [3, 3, 3],
+    AU: [3, 3, 3],
+    LU: [3, 3, 3],
+    GB: [4, 3, 3],
+    FR: [1, 2, 2, 2, 2],
+    ES: [3, 2, 2, 2],
+    BE: [3, 2, 2, 2],
+    GE: [3, 2, 2, 2],
+    NL: [1, 4, 4],
+    NO: [3, 2, 3],
+    DK: [2, 2, 2, 2],
+    IE: [2, 3, 4],
+    BG: [2, 3, 4],
+    HU: [2, 3, 4],
+    HR: [2, 3, 4],
+    IL: [2, 3, 4],
+    AE: [2, 3, 4],
+    SA: [2, 3, 4],
+    TH: [2, 3, 4],
+    NZ: [2, 3, 4],
+    ZA: [2, 3, 4],
+    TJ: [2, 3, 4],
+    SI: [2, 3, 3],
+    ME: [2, 3, 3],
+    MD: [2, 3, 3],
+    CY: [2, 3, 3],
+    AM: [2, 3, 3],
+    RS: [2, 3, 4],
+    AT: [3, 3, 4],
+    IS: [3, 4],
+    IN: [5, 5],
+    JP: [2, 4, 4],
+    KR: [2, 4, 4],
+    MX: [2, 4, 4],
+    BR: [2, 5, 4],
+    AR: [1, 2, 4, 4],
+};
+
+function resolvePhoneCountry(countryOrCode) {
+    if (!countryOrCode) return null;
+    if (typeof countryOrCode === 'object' && countryOrCode.code) return countryOrCode;
+    return findPhoneCountry(countryOrCode);
+}
+
+function getPhoneGroups(country) {
+    if (country && PHONE_GROUP_PATTERNS[country.code]) {
+        return PHONE_GROUP_PATTERNS[country.code];
+    }
+    if (country && country.placeholder) {
+        const derived = country.placeholder
+            .trim()
+            .split(/\s+/)
+            .map((part) => part.replace(/\D+/g, '').length)
+            .filter((len) => len > 0);
+        if (derived.length > 0) return derived;
+    }
+    return [3, 3, 4];
+}
+
+/**
+ * Formats a local phone digit string into spaced country groups as the user types.
+ * Example: formatLocalPhone('EE', '55551234') -> '5555 1234'
+ * Example: formatLocalPhone('RU', '9991234567') -> '999 123 45 67'
+ */
+export function formatLocalPhone(countryOrCode, rawValue) {
+    const digits = String(rawValue || '').replace(/\D+/g, '');
+    if (!digits) return '';
+
+    const country = resolvePhoneCountry(countryOrCode);
+    const pattern = getPhoneGroups(country);
+    const chunks = [];
+    let idx = 0;
+
+    for (const size of pattern) {
+        if (idx >= digits.length) break;
+        chunks.push(digits.slice(idx, idx + size));
+        idx += size;
+    }
+
+    // Any overflow digits beyond the country's primary template are grouped in clean 3-digit chunks
+    while (idx < digits.length) {
+        chunks.push(digits.slice(idx, idx + 3));
+        idx += 3;
+    }
+
+    return chunks.join(' ');
+}
+
+/**
+ * Formats a local phone string and maps the original caret position to the exact
+ * equivalent position in the formatted output.
+ */
+export function formatLocalPhoneWithCaret(countryOrCode, rawValue, caretPos) {
+    const str = String(rawValue || '');
+    const safeCaret = typeof caretPos === 'number' && caretPos >= 0
+        ? Math.min(caretPos, str.length)
+        : str.length;
+
+    let digitsBeforeCaret = 0;
+    for (let i = 0; i < safeCaret; i++) {
+        if (str[i] >= '0' && str[i] <= '9') digitsBeforeCaret++;
+    }
+
+    const formatted = formatLocalPhone(countryOrCode, str);
+    if (digitsBeforeCaret === 0) {
+        return { value: formatted, caret: 0 };
+    }
+
+    let seenDigits = 0;
+    for (let i = 0; i < formatted.length; i++) {
+        if (formatted[i] >= '0' && formatted[i] <= '9') {
+            seenDigits++;
+            if (seenDigits === digitsBeforeCaret) {
+                return { value: formatted, caret: i + 1 };
+            }
+        }
+    }
+
+    return { value: formatted, caret: formatted.length };
+}
+
 /**
  * Builds flag emoji safely (omits on Windows where regional indicators render as letters).
  */
@@ -292,11 +441,11 @@ export function populateDialCodeSelect(selectEl, lang = 'ru', selectedCode = 'EE
         opt.value = c.code;
         const name = isRu ? c.ru : c.en;
         const flag = safeFlag(c.code);
-        opt.textContent = `${c.code} ${c.dial} · ${name}`;
-        opt.setAttribute('data-short-label', flag ? c.dial : `${c.code} ${c.dial}`);
+        opt.textContent = `${c.dial} · ${name}`;
+        opt.setAttribute('data-short-label', c.dial);
         opt.setAttribute('data-dial', c.dial);
         opt.setAttribute('data-aliases', `${c.ru};${c.en};${c.code};${c.dial};${c.dial.slice(1)}`);
-        if (flag) opt.setAttribute('data-icon', flag);
+        opt.setAttribute('data-icon', flag || `<span class="cs-iso-badge">${c.code}</span>`);
         if (c.code === targetCode) opt.selected = true;
         selectEl.appendChild(opt);
     });
@@ -331,12 +480,36 @@ export function wirePhoneInputPair(selectEl, inputEl, opts = {}) {
         }
     };
 
+    const setCaretSafely = (pos) => {
+        try {
+            if (document.activeElement === inputEl && typeof inputEl.setSelectionRange === 'function') {
+                inputEl.setSelectionRange(pos, pos);
+            }
+        } catch (_) {
+            // Some input states disallow selection range updates
+        }
+    };
+
+    const formatCurrent = ({ preserveCaret = false } = {}) => {
+        const raw = inputEl.value;
+        const trimmed = raw.trim();
+        if (!trimmed || trimmed.startsWith('+') || trimmed.startsWith('00')) return;
+        const caret = preserveCaret ? inputEl.selectionStart : raw.length;
+        const res = formatLocalPhoneWithCaret(selectEl.value, raw, caret);
+        if (res.value !== raw) {
+            inputEl.value = res.value;
+            if (preserveCaret) setCaretSafely(res.caret);
+        }
+    };
+
     updatePlaceholder();
     syncCustomSelect();
+    formatCurrent();
 
     selectEl.addEventListener('change', () => {
         updatePlaceholder();
         syncCustomSelect();
+        formatCurrent();
         if (typeof opts.onChange === 'function') opts.onChange();
     });
 
@@ -360,11 +533,11 @@ export function wirePhoneInputPair(selectEl, inputEl, opts = {}) {
                 !isValidLocalLength(curCountry, digits) &&
                 isValidLocalLength(curCountry, digits.slice(curDial.length))
             ) {
-                inputEl.value = digits.slice(curDial.length);
+                inputEl.value = formatLocalPhone(selectEl.value, digits.slice(curDial.length));
                 return true;
             }
             if (curCountry?.trunkEight && digits.length === 11 && (digits.startsWith('8') || digits.startsWith('7'))) {
-                inputEl.value = digits.slice(1);
+                inputEl.value = formatLocalPhone(selectEl.value, digits.slice(1));
                 return true;
             }
             return false;
@@ -384,11 +557,37 @@ export function wirePhoneInputPair(selectEl, inputEl, opts = {}) {
         if (parsed.local.length < minRequired) return false;
 
         selectEl.value = parsed.code;
-        inputEl.value = parsed.local;
+        inputEl.value = formatLocalPhone(parsed.code, parsed.local);
         updatePlaceholder();
         syncCustomSelect();
+        setCaretSafely(inputEl.value.length);
         return true;
     };
+
+    inputEl.addEventListener('keydown', (e) => {
+        if (e.key !== 'Backspace' || e.ctrlKey || e.metaKey || e.altKey) return;
+        const start = inputEl.selectionStart;
+        const end = inputEl.selectionEnd;
+        if (typeof start !== 'number' || start !== end || start <= 0) return;
+
+        const val = inputEl.value;
+        const trimmed = val.trim();
+        if (trimmed.startsWith('+') || trimmed.startsWith('00')) return;
+
+        // If cursor sits immediately after a formatting space, delete the digit before the space(s)
+        if (val[start - 1] === ' ') {
+            let deleteIdx = start - 1;
+            while (deleteIdx >= 0 && val[deleteIdx] === ' ') deleteIdx--;
+            if (deleteIdx >= 0) {
+                e.preventDefault();
+                const nextRaw = val.slice(0, deleteIdx) + val.slice(start);
+                const res = formatLocalPhoneWithCaret(selectEl.value, nextRaw, deleteIdx);
+                inputEl.value = res.value;
+                setCaretSafely(res.caret);
+                if (typeof opts.onInput === 'function') opts.onInput();
+            }
+        }
+    });
 
     inputEl.addEventListener('paste', (e) => {
         const pasted = e.clipboardData?.getData('text');
@@ -412,8 +611,7 @@ export function wirePhoneInputPair(selectEl, inputEl, opts = {}) {
                 if (cleaned !== raw) inputEl.value = cleaned;
             }
         } else {
-            const cleaned = raw.replace(/[^\d\s\-()+]/g, '');
-            if (cleaned !== raw) inputEl.value = cleaned;
+            formatCurrent({ preserveCaret: true });
         }
         if (typeof opts.onInput === 'function') opts.onInput();
     });
@@ -424,10 +622,11 @@ export function wirePhoneInputPair(selectEl, inputEl, opts = {}) {
         setFromE164: (e164, fallbackCode) => {
             const parsed = splitPhone(e164, fallbackCode || selectEl.value || 'EE');
             selectEl.value = parsed.code;
-            inputEl.value = parsed.local;
+            inputEl.value = formatLocalPhone(parsed.code, parsed.local);
             updatePlaceholder();
             syncCustomSelect();
         },
+        formatCurrent,
         syncTrigger: syncCustomSelect,
         updatePlaceholder,
     };

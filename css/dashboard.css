@@ -2536,16 +2536,53 @@ html {
     color: var(--success, #10b981);
 }
 
+.inline-expand-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    margin-top: 0;
+    pointer-events: none;
+    transition: grid-template-rows 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.2s ease,
+        margin-top 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.inline-expand-panel.is-open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    margin-top: 14px;
+    pointer-events: auto;
+}
+
+.inline-expand-inner {
+    min-height: 0;
+    overflow: hidden;
+    padding: 3px;
+    margin: -3px;
+}
+
 .btn-icon-danger {
     color: var(--error, #ef4444);
     border-color: rgba(239, 68, 68, 0.25);
     padding: 12px 13px !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, padding 0.2s ease, transform 0.15s ease;
 }
 
 .btn-icon-danger:hover {
     background: rgba(239, 68, 68, 0.08);
     border-color: rgba(239, 68, 68, 0.5);
     color: var(--error, #ef4444);
+}
+
+[data-theme="dark"] .btn-icon-danger {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.3);
+}
+
+[data-theme="dark"] .btn-icon-danger:hover {
+    background: rgba(248, 113, 113, 0.14);
+    border-color: rgba(248, 113, 113, 0.55);
+    color: #fca5a5;
 }
 
 .btn-icon-danger.is-confirming {
@@ -2563,9 +2600,20 @@ html {
     color: #fff;
 }
 
+[data-theme="dark"] .btn-icon-danger.is-confirming {
+    background: #dc2626;
+    border-color: #ef4444;
+    color: #fff;
+}
+
+[data-theme="dark"] .btn-icon-danger.is-confirming:hover {
+    background: #b91c1c;
+    border-color: #dc2626;
+}
+
 .settings-phone-pair {
     display: grid;
-    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-columns: 126px minmax(0, 1fr);
     gap: 8px;
     flex: 1;
     min-width: 0;
@@ -2580,11 +2628,20 @@ html {
 .settings-phone-pair .custom-select-trigger {
     height: 100%;
     min-height: 44px;
-    padding: 0 10px 0 12px;
+    padding: 0 30px 0 10px;
     border-radius: 12px;
     font-size: 0.9rem;
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
+}
+
+.settings-phone-pair .custom-select-arrow {
+    right: 9px;
+}
+
+.settings-phone-pair input[type="tel"] {
+    font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 560px) {
@@ -2595,7 +2652,24 @@ html {
     .settings-phone-pair {
         width: 100%;
         flex-basis: 100%;
-        grid-template-columns: 102px minmax(0, 1fr);
+        grid-template-columns: 114px minmax(0, 1fr);
+    }
+
+    .settings-phone-pair .custom-select-trigger {
+        padding: 0 28px 0 8px;
+        font-size: 0.85rem;
+    }
+
+    .settings-phone-pair .custom-select-arrow {
+        right: 8px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .inline-expand-panel,
+    .btn-icon-danger {
+        transition: none !important;
     }
 }
 
