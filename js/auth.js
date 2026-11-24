@@ -1,19 +1,8 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/+esm';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
+import { supabase, setSessionOnly } from './supabase-client.js';
 import { checkLoginRateLimit, setLoadingButton, resetLoadingButton, isValidEmail, logError } from './security.js';
 import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
 import { createSegmentedIndicator, prefersReducedMotion } from './segmented-indicator.js';
 import { attachModalA11y } from './modal-a11y.js';
-
-function getSupabaseClient(rememberMe) {
-    return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: {
-            storage: rememberMe ? localStorage : sessionStorage,
-            autoRefreshToken: true,
-            persistSession: true
-        }
-    });
-}
 
 function waitForTurnstile(timeoutMs = 5000) {
     return new Promise((resolve) => {
@@ -32,10 +21,7 @@ function waitForTurnstile(timeoutMs = 5000) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let { data: { session } } = await getSupabaseClient(true).auth.getSession();
-    if (!session) {
-        ({ data: { session } } = await getSupabaseClient(false).auth.getSession());
-    }
+    const { data: { session } } = await supabase.auth.getSession();
 
     if (session) {
         window.location.href = 'dashboard.html';
@@ -235,7 +221,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 setLoadingButton(btn);
 
-                const client = getSupabaseClient(rememberMe);
+                setSessionOnly(!rememberMe);
+                const client = supabase;
                 let activeSession = null;
 
                 if (loginMode === 'phone') {
@@ -433,8 +420,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 setLoadingButton(btn);
 
-                const client = getSupabaseClient(false);
-                const { error } = await client.auth.resetPasswordForEmail(email, {
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
                     redirectTo: `${window.location.origin}/reset-password.html`,
                     captchaToken
                 });

@@ -1,11 +1,9 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/+esm';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
+import { supabase } from './supabase-client.js';
 import { checkSignupRateLimit, logError } from './security.js';
 import { initPasswordStrength, checkPasswordStrength } from './password-strength.js';
 import { getAuthSession } from './dashboard-auth.js';
 import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
 import { prefersReducedMotion } from './segmented-indicator.js';
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const getLang = () => localStorage.getItem('valuon-lang') || 'ru';
 

@@ -1,8 +1,6 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/+esm';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-client.js';
+import { supabase } from './supabase-client.js';
 import { logError } from './security.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const verifyTabsWrap = document.querySelector('.verify-tabs');
 const verifyTabIndicatorEl = document.getElementById('verify-tab-indicator');
