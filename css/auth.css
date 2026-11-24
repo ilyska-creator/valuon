@@ -27,32 +27,32 @@ html.modal-open:has(.auth-body) {
 
 :not([data-theme="dark"]) .auth-body {
     background-image:
-        radial-gradient(640px circle at 6% 4%, rgba(200, 244, 0, 0.32), transparent 55%),
-        radial-gradient(680px circle at 96% 10%, rgba(0, 245, 212, 0.28), transparent 52%),
-        radial-gradient(760px circle at 50% 108%, rgba(0, 194, 255, 0.26), transparent 50%);
+        radial-gradient(640px circle at 6% 4%, rgba(59, 130, 246, 0.16), transparent 55%),
+        radial-gradient(680px circle at 96% 10%, rgba(99, 102, 241, 0.14), transparent 52%),
+        radial-gradient(760px circle at 50% 108%, rgba(14, 165, 233, 0.14), transparent 50%);
 }
 
 @media (max-width: 700px) {
     :not([data-theme="dark"]) .auth-body {
         background-image:
-            radial-gradient(420px circle at 10% 0%, rgba(200, 244, 0, 0.30), transparent 55%),
-            radial-gradient(460px circle at 100% 100%, rgba(0, 194, 255, 0.28), transparent 55%);
+            radial-gradient(420px circle at 10% 0%, rgba(59, 130, 246, 0.16), transparent 55%),
+            radial-gradient(460px circle at 100% 100%, rgba(99, 102, 241, 0.14), transparent 55%);
     }
 }
 
 [data-theme="dark"] .auth-body {
     background-color: #0a0a0a;
     background-image:
-        radial-gradient(640px circle at 6% 4%, rgba(200, 244, 0, 0.16), transparent 62%),
-        radial-gradient(680px circle at 96% 10%, rgba(0, 245, 212, 0.13), transparent 60%),
-        radial-gradient(760px circle at 50% 108%, rgba(0, 194, 255, 0.12), transparent 58%);
+        radial-gradient(640px circle at 6% 4%, rgba(59, 130, 246, 0.16), transparent 62%),
+        radial-gradient(680px circle at 96% 10%, rgba(99, 102, 241, 0.13), transparent 60%),
+        radial-gradient(760px circle at 50% 108%, rgba(14, 165, 233, 0.12), transparent 58%);
 }
 
 @media (max-width: 700px) {
     [data-theme="dark"] .auth-body {
         background-image:
-            radial-gradient(420px circle at 10% 0%, rgba(200, 244, 0, 0.14), transparent 60%),
-            radial-gradient(460px circle at 100% 100%, rgba(0, 194, 255, 0.13), transparent 60%);
+            radial-gradient(420px circle at 10% 0%, rgba(59, 130, 246, 0.15), transparent 60%),
+            radial-gradient(460px circle at 100% 100%, rgba(99, 102, 241, 0.13), transparent 60%);
     }
 }
 
@@ -90,6 +90,32 @@ html.modal-open:has(.auth-body) {
     width: 100%;
     max-width: 420px;
     margin-top: var(--space-16);
+}
+
+.auth-container--register {
+    max-width: 580px;
+    margin-top: 0;
+}
+
+.auth-container--register .auth-card {
+    padding: 24px 32px;
+}
+
+.auth-container--register .auth-logo {
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.auth-container--register .auth-subtitle {
+    margin-bottom: 16px;
+}
+
+.auth-container--register .auth-form {
+    gap: 12px;
+}
+
+.auth-container--register .auth-footer {
+    margin-top: 12px;
 }
 
 .auth-card {
@@ -446,12 +472,14 @@ html.modal-open:has(.auth-body) {
         font-size: 0.85rem;
     }
 
-    .auth-container {
+    .auth-container,
+    .auth-container--register {
         max-width: none;
         margin-top: 0;
     }
 
-    .auth-card {
+    .auth-card,
+    .auth-container--register .auth-card {
         padding: 56px 24px 32px;
         border-radius: 0;
         border-left: none;
@@ -717,7 +745,8 @@ html.modal-open:has(.auth-body) {
 .auth-form .input-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 12px;
+    align-items: start;
 }
 
 .auth-form .input-row .input-group {
@@ -732,10 +761,10 @@ html.modal-open:has(.auth-body) {
     grid-column: 1 / -1;
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
     .auth-form .input-row {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 14px;
     }
 }
 

@@ -1,7 +1,5 @@
 (function() {
-    var toggleSelector = document.getElementById('lang-toggle-business')
-        ? '#lang-toggle, #lang-toggle-business'
-        : '#lang-toggle';
+    var toggleSelector = '#lang-toggle, #lang-toggle-business, #settings-lang-toggle';
 
     function updateBannerText() {
         var l = localStorage.getItem('valuon-lang');
@@ -22,6 +20,10 @@
     document.addEventListener('click', function(e) {
         if (e.target.closest(toggleSelector) && !localStorage.getItem('cookie-consent'))
             setTimeout(updateBannerText, 50);
+    });
+
+    ['lang-changed', 'verify-lang-changed', 'business-lang-changed'].forEach(function(evt) {
+        window.addEventListener(evt, updateBannerText);
     });
 
     if (!localStorage.getItem('cookie-consent')) {

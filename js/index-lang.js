@@ -28,7 +28,7 @@ const translations = {
         demo_qr_verified: "Чек подлинный",
         demo_processing: "Проверяем подпись...",
         demo_signature_verified: "Подпись Ed25519 подтверждена",
-        demo_store: "TechStore Tallinn · €284.50",
+        demo_store: "TechStore Tallinn · €1,597",
         demo_item1: "MacBook Air M2",
         demo_item2: "Magic Cover",
         demo_item3: "AppleCare+",
@@ -43,7 +43,7 @@ const translations = {
         feat_1_title: "Облачный архив чеков", feat_1_desc: "Загружайте фото чеков для надёжного хранения. Данные вводятся вручную, автозаполнение — в разработке.",
         feat_2_title: "Подпись, которую нельзя подделать", feat_2_desc: "Ed25519 цифровая подпись на каждом чеке. Проверить подлинность может любой — за секунду, без регистрации.",
         feat_3_title: "Гарантия — бесплатным бонусом",
-        feat_3_desc: "Раз чек уже хранится у нас, Valuon заодно сам считает сроки гарантии и напоминает за 30, 7 и 1 день до окончания.",
+        feat_3_desc: "Раз чек уже хранится у нас, Valuon заодно сам считает сроки гарантии, предупреждает в кабинете за 30 дней до окончания и позволяет сохранить напоминание в календарь.",
         biz_title: "Valuon для бизнеса",
         biz_desc: "Цифровые чеки с криптографической защитой. Превратите обычные продажи в доверие покупателей.",
         biz_1_title: "Криптографические чеки",
@@ -67,8 +67,8 @@ const translations = {
         ver_btn: "Проверить чек",
         proc_title: "Путь чека — от кассы до вашего кабинета",
         proc_1_title: "Чек выпускается",
-        proc_1_desc: "Магазин оформляет цифровой чек на ваш email — с подписью Ed25519, подделать его или незаметно изменить данные невозможно.",
-        proc_2_title: "Чек появляется в кабинете", proc_2_desc: "Если вы зарегистрированы в Valuon с этим email, чек сам попадает в личный кабинет — без сканирования QR и лишних действий.",
+        proc_1_desc: "Магазин оформляет цифровой чек на ваш email или номер телефона — с подписью Ed25519, подделать его или незаметно изменить данные невозможно.",
+        proc_2_title: "Чек появляется в кабинете", proc_2_desc: "Если вы зарегистрированы в Valuon с этим email или телефоном, чек сам попадает в личный кабинет — без сканирования QR и лишних действий.",
         proc_3_title: "Гарантия отслеживается сама", proc_3_desc: "Срок гарантии считается автоматически, а чек хранится в профиле — ничего не нужно запоминать или считать вручную.",
         vision_title: "Единая система электронных чеков — что дальше?",
         vision_desc: "Единая платформа, где каждый чек подписан цифровой подписью, а гарантия отслеживается автоматически. Сейчас — работающий MVP. Дальше — международные рынки, интеграция с кассами и доверие между покупателем и магазином.",
@@ -106,7 +106,7 @@ const translations = {
         feat_1_title: "Cloud Receipt Archive", feat_1_desc: "Upload receipt photos for secure storage. Data entry is manual; auto-fill is coming soon.",
         feat_2_title: "A signature that can't be forged", feat_2_desc: "Ed25519 digital signature on every receipt. Anyone can verify authenticity — in seconds, without registration.",
         feat_3_title: "Warranty, as a free bonus",
-        feat_3_desc: "Since your receipt is already stored with us, Valuon automatically calculates warranty periods and reminds you 30, 7 and 1 day before expiry.",
+        feat_3_desc: "Since your receipt is already stored with us, Valuon automatically calculates warranty periods, alerts you in your dashboard starting 30 days before expiry, and lets you export a calendar reminder.",
         biz_title: "Valuon for Business",
         biz_desc: "Digital receipts with cryptographic protection. Turn ordinary sales into customer trust.",
         biz_1_title: "Cryptographic Receipts",
@@ -130,8 +130,8 @@ const translations = {
         ver_btn: "Verify Receipt",
         proc_title: "The life of a receipt — from checkout to your account",
         proc_1_title: "Receipt is issued",
-        proc_1_desc: "The store issues a digital receipt to your email — signed with Ed25519, so it can't be forged or quietly altered.",
-        proc_2_title: "It lands in your account", proc_2_desc: "If you're registered with Valuon under that email, the receipt appears in your account automatically — no QR scanning, no extra steps.",
+        proc_1_desc: "The store issues a digital receipt to your email or phone number — signed with Ed25519, so it can't be forged or quietly altered.",
+        proc_2_title: "It lands in your account", proc_2_desc: "If you're registered with Valuon under that email or phone, the receipt appears in your account automatically — no QR scanning, no extra steps.",
         proc_3_title: "Warranty tracks itself", proc_3_desc: "The warranty period is calculated automatically and the receipt stays in your profile — nothing to remember or track by hand.",
         vision_title: "A unified system for digital receipts — what's next?",
         vision_desc: "A unified platform where every receipt is cryptographically signed and every warranty is tracked automatically. Today — a working MVP. Next — international markets, POS integrations, and trust between buyers and stores.",
@@ -172,7 +172,12 @@ function applyTranslations() {
     });
 
     const langToggle = document.getElementById('lang-toggle');
-    if (langToggle) langToggle.textContent = currentLang.toUpperCase();
+    if (langToggle) {
+        langToggle.textContent = currentLang.toUpperCase();
+        langToggle.title = currentLang === 'ru'
+            ? 'Текущий язык: Русский (нажмите для EN)'
+            : 'Current language: English (click for RU)';
+    }
 
     if (qrDemoLoader) qrDemoLoader.setPhrases(getDemoLoaderPhrases());
 }

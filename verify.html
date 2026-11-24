@@ -52,7 +52,8 @@
                     <button type="button" id="theme-toggle" class="icon-btn theme-toggle"
                         aria-label="Toggle theme / Переключить тему"><i class="fa-solid fa-moon"></i></button>
                     <button type="button" id="lang-toggle" class="icon-btn lang-toggle"
-                        aria-label="Switch language / Переключить язык">EN</button>
+                        title="Текущий язык: Русский (нажмите для EN)"
+                        aria-label="Switch language / Переключить язык">RU</button>
                 </div>
             </div>
             <div class="verify-logo" data-animate="zoom">
@@ -134,9 +135,9 @@
             <div id="result-block" class="verify-result-block">
                 <div id="verify-result" class="verify-result">
                     <i id="result-icon" class="fa-solid fa-circle-check"></i>
-                    <h3 id="result-title">Чек верифицирован</h3>
-                    <p id="result-desc">Данные чека совпадают с записью в реестре.</p>
-                    <div id="result-badge" class="verify-badge verified">Подлинный</div>
+                    <h3 id="result-title" data-i18n="result_success_title">Чек верифицирован</h3>
+                    <p id="result-desc" data-i18n="result_success_desc">Подпись чека действительна. Данные не были изменены.</p>
+                    <div id="result-badge" class="verify-badge verified" data-i18n="result_success_badge">Подлинный</div>
                     <dl id="result-details" class="result-details">
                         <dt id="result-lifecycle-dt" data-i18n="detail_lifecycle_status" style="display:none">Статус
                             чека</dt>

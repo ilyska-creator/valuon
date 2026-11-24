@@ -33,7 +33,7 @@
             aria-label="Switch language / Переключить язык">RU</button>
     </div>
 
-    <div class="auth-container">
+    <div class="auth-container auth-container--register">
         <div class="auth-card" data-animate-group data-animate-step="70">
             <div class="auth-logo auth-logo--draw" data-animate>
                 <div class="auth-wordmark">VALUON</div>
@@ -78,22 +78,25 @@
                         <input type="text" id="last-name" name="lastName" required data-i18n-placeholder="ph_last_name"
                             autocomplete="family-name">
                     </div>
+                </div>
+
+                <div class="input-row" data-animate>
                     <div class="input-group">
                         <label for="birthdate" data-i18n="label_birthdate">Дата рождения</label>
                         <input type="date" id="birthdate" name="birthdate" class="custom-datepicker" required
                             autocomplete="bday">
                         <span class="field-hint" data-i18n="birthdate_warning">Нельзя изменить после регистрации</span>
                     </div>
-                </div>
 
-                <div class="input-group" data-animate>
-                    <label for="currency" data-i18n="currency_label">Валюта</label>
-                    <select id="currency" name="currency" class="custom-select" data-searchable required
-                        data-placeholder-i18n="currency_placeholder"
-                        data-search-placeholder="currency_search_placeholder" data-search-empty="currency_search_empty">
-                    </select>
-                    <span class="field-hint" data-i18n="currency_hint">Валюта по умолчанию для ваших вещей и
-                        чеков — можно сменить позже в настройках</span>
+                    <div class="input-group">
+                        <label for="currency" data-i18n="currency_label">Валюта</label>
+                        <select id="currency" name="currency" class="custom-select" data-searchable required
+                            data-placeholder-i18n="currency_placeholder"
+                            data-search-placeholder="currency_search_placeholder" data-search-empty="currency_search_empty">
+                        </select>
+                        <span class="field-hint" data-i18n="currency_hint">Валюта по умолчанию для ваших вещей и
+                            чеков — можно сменить позже в настройках</span>
+                    </div>
                 </div>
 
                 <div class="input-group" data-animate>

@@ -65,8 +65,8 @@
                             data-i18n="nav_mission">Миссия</span></a></li>
 
                 <li class="controls">
-                    <button type="button" id="lang-toggle" class="icon-btn" title="Switch Language"
-                        aria-label="Switch language / Переключить язык">EN</button>
+                    <button type="button" id="lang-toggle" class="icon-btn" title="Текущий язык: Русский (нажмите для EN)"
+                        aria-label="Switch language / Переключить язык">RU</button>
                     <button type="button" id="theme-toggle" class="icon-btn" title="Toggle Theme"
                         aria-label="Toggle theme / Переключить тему"><i class="fa-solid fa-moon"></i></button>
                     <a href="login.html" class="btn btn-primary small" data-i18n="nav_login">Вход</a>
@@ -205,18 +205,24 @@
 
                         <div class="qr-demo-arrow"><i class="fa-solid fa-chevron-down"></i></div>
 
-                        <div class="qr-demo-processing" id="qr-demo-loader-wrap">
-                            <div class="rotating-loader rotating-loader--inline" id="qr-demo-loader"></div>
-                        </div>
-
-                        <div class="qr-demo-result">
-                            <div class="qr-result-header">
-                                <div class="qr-result-icon"><i class="fa-solid fa-circle-check"></i></div>
-                                <div class="qr-result-text">
-                                    <strong data-i18n="demo_qr_verified">Чек подлинный</strong>
-                                    <span class="result-store" data-i18n="demo_store">TechStore Tallinn · €284.50</span>
+                        <div class="qr-demo-stage">
+                            <div class="qr-demo-processing" id="qr-demo-loader-wrap">
+                                <div class="rotating-loader rotating-loader--inline" id="qr-demo-loader"></div>
+                                <div class="qr-demo-skel" aria-hidden="true">
+                                    <div class="qr-skel-line is-mid"></div>
+                                    <div class="qr-skel-line"></div>
+                                    <div class="qr-skel-line is-short"></div>
                                 </div>
                             </div>
+
+                            <div class="qr-demo-result">
+                                <div class="qr-result-header">
+                                    <div class="qr-result-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                    <div class="qr-result-text">
+                                        <strong data-i18n="demo_qr_verified">Чек подлинный</strong>
+                                        <span class="result-store" data-i18n="demo_store">TechStore Tallinn · €1,597</span>
+                                    </div>
+                                </div>
                             <div class="qr-signature-badge">
                                 <i class="fa-solid fa-lock"></i> <span data-i18n="demo_signature_verified">Подпись
                                     Ed25519
@@ -241,6 +247,7 @@
                                 <span data-i18n="demo_total_label">Итого:</span>
                                 <span class="total-amount">€1,597</span>
                             </div>
+                        </div>
                         </div>
                     </div>
                     <div class="iphone-home-bar"></div>
@@ -272,10 +279,10 @@
                         любой — за секунду, без регистрации.</p>
                 </div>
                 <div class="feature-item" data-animate>
-                    <div class="f-icon"><i class="fa-solid fa-gift"></i></div>
+                    <div class="f-icon"><i class="fa-solid fa-calendar-check"></i></div>
                     <h3 data-i18n="feat_3_title">Гарантия отслеживается автоматически</h3>
-                    <p data-i18n="feat_3_desc">Пока вы храните чеки, Valuon сам считает сроки гарантии и
-                        напоминает за 30, 7 и 1 день до окончания.</p>
+                    <p data-i18n="feat_3_desc">Пока вы храните чеки, Valuon сам считает сроки гарантии, предупреждает в
+                        кабинете за 30 дней до окончания и позволяет сохранить напоминание в календарь.</p>
                 </div>
             </div>
         </div>
@@ -373,7 +380,7 @@
                     <div class="t-number">1</div>
                     <div class="t-content">
                         <h3 data-i18n="proc_1_title">Чек выпускается</h3>
-                        <p data-i18n="proc_1_desc">Магазин оформляет цифровой чек на ваш email — с подписью Ed25519,
+                        <p data-i18n="proc_1_desc">Магазин оформляет цифровой чек на ваш email или номер телефона — с подписью Ed25519,
                             подделать его или незаметно изменить данные невозможно.</p>
                     </div>
                 </div>
@@ -381,7 +388,7 @@
                     <div class="t-number">2</div>
                     <div class="t-content">
                         <h3 data-i18n="proc_2_title">Чек появляется в кабинете</h3>
-                        <p data-i18n="proc_2_desc">Если вы зарегистрированы в Valuon с этим email, чек сам попадает в
+                        <p data-i18n="proc_2_desc">Если вы зарегистрированы в Valuon с этим email или телефоном, чек сам попадает в
                             личный кабинет — без сканирования QR и лишних действий.</p>
                     </div>
                 </div>

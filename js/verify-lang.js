@@ -178,6 +178,7 @@ function getVerifyLocale() {
 }
 
 function applyStaticTranslations() {
+    document.documentElement.lang = verifyLang === 'en' ? 'en' : 'ru';
     document.title = t('page_title');
     const desc = document.querySelector('meta[name="description"]');
     if (desc) desc.content = t('meta_description');
@@ -205,6 +206,9 @@ function updateLangToggle() {
     const toggle = document.getElementById('lang-toggle');
     if (toggle) {
         toggle.textContent = verifyLang === 'ru' ? 'RU' : 'EN';
+        toggle.title = verifyLang === 'ru'
+            ? 'Текущий язык: Русский (нажмите для EN)'
+            : 'Current language: English (click for RU)';
     }
 }
 

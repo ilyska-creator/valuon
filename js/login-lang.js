@@ -203,7 +203,12 @@ window.authTranslations = translations;
         });
 
         const langToggle = document.getElementById('lang-toggle');
-        if (langToggle) langToggle.textContent = currentLang.toUpperCase();
+        if (langToggle) {
+            langToggle.textContent = currentLang.toUpperCase();
+            langToggle.title = currentLang === 'ru'
+                ? 'Текущий язык: Русский (нажмите для EN)'
+                : 'Current language: English (click for RU)';
+        }
 
         try {
             window.dispatchEvent(new CustomEvent('lang-changed', { detail: { lang: currentLang } }));
