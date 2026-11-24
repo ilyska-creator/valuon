@@ -176,6 +176,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     emailInput?.focus();
                     return;
                 }
+                if (!isValidEmail(email)) {
+                    showToast(isRu ? 'Введите корректный email' : 'Enter a valid email', 'warning');
+                    emailInput?.focus();
+                    return;
+                }
                 if (!password) {
                     showToast(isRu ? 'Введите пароль' : 'Enter your password', 'warning');
                     passwordInput?.focus();

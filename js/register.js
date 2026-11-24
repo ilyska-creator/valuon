@@ -1,11 +1,61 @@
 import { supabase, setSessionOnly } from './supabase-client.js';
-import { checkSignupRateLimit, logError, mountTurnstile } from './security.js';
+import { checkSignupRateLimit, isValidEmail, logError, mountTurnstile } from './security.js';
 import { initPasswordStrength, checkPasswordStrength } from './password-strength.js';
 import { getAuthSession } from './dashboard-auth.js';
 import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
 import { prefersReducedMotion } from './segmented-indicator.js';
 
 const getLang = () => localStorage.getItem('valuon-lang') || 'ru';
+
+function parseLocalIsoDate(iso) {
+    if (typeof iso !== 'string') return null;
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+        return null;
+    }
+    return date;
+}
+
+function localizedError(message) {
+    const err = new Error(message);
+    err.isLocalized = true;
+    return err;
+}
+
+function formatSignupError(err, lang) {
+    if (err?.isLocalized && err.message) return err.message;
+    const isRu = lang === 'ru';
+    const code = String(err?.code || '').toLowerCase();
+    const msg = String(err?.message || '').toLowerCase();
+
+    if (code === 'user_already_exists' || msg.includes('user already registered') || msg.includes('already been registered')) {
+        return isRu ? 'Этот email уже зарегистрирован' : 'This email is already registered';
+    }
+    if (code === 'email_address_invalid' || msg.includes('unable to validate email') || msg.includes('invalid format') || msg.includes('is invalid')) {
+        return isRu ? 'Введите корректный email' : 'Enter a valid email';
+    }
+    if (code === 'weak_password' || msg.includes('password should be') || msg.includes('known to be weak')) {
+        return isRu ? 'Пароль не соответствует требованиям безопасности' : 'Password does not meet security requirements';
+    }
+    if (code === 'over_email_send_rate_limit' || err?.status === 429 || msg.includes('rate limit') || msg.includes('only request this after')) {
+        return isRu ? 'Слишком много попыток. Попробуйте через минуту' : 'Too many attempts. Please try again in a minute';
+    }
+    if (msg.includes('captcha')) {
+        return isRu ? 'Ошибка проверки капчи. Попробуйте ещё раз' : 'Captcha verification failed. Please try again';
+    }
+    if (code === 'signup_disabled' || msg.includes('signups not allowed')) {
+        return isRu ? 'Регистрация временно недоступна' : 'Signups are temporarily unavailable';
+    }
+    if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed')) {
+        return isRu ? 'Ошибка сети. Проверьте подключение к интернету' : 'Network error. Check your internet connection';
+    }
+    return isRu ? 'Ошибка регистрации. Попробуйте позже' : 'Registration error. Please try again later';
+}
 
 if (typeof window.renderCurrencyOptions === 'function') {
     window.renderCurrencyOptions(document.getElementById('currency'), getLang());
@@ -111,6 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             var currency = currencyEl?.value || '';
 
             if (check(!email, lang === 'ru' ? 'Введите email' : 'Enter your email', emailEl)) { }
+            else if (check(!isValidEmail(email), lang === 'ru' ? 'Введите корректный email' : 'Enter a valid email', emailEl)) { }
             else if (check(hasPhone && !normalizedPhone, lang === 'ru' ? 'Введите корректный номер телефона' : 'Enter a valid phone number', phoneEl)) { }
             else if (check(!firstName, lang === 'ru' ? 'Введите ваше имя' : 'Please enter your first name', firstNameEl)) { }
             else if (check(!lastName, lang === 'ru' ? 'Введите вашу фамилию' : 'Please enter your last name', lastNameEl)) { }
@@ -135,7 +186,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            const birthDateObj = new Date(birthdate);
+            const birthDateObj = parseLocalIsoDate(birthdate);
+
+            if (!birthDateObj) {
+                scrollToField(birthdateEl);
+                showToast(lang === 'ru' ? 'Проверьте корректность даты рождения' : 'Please check the birth date', 'warning');
+                return;
+            }
 
             if (birthDateObj > today) {
                 scrollToField(birthdateEl);
@@ -167,7 +224,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const rateLimitCheck = checkSignupRateLimit(email);
                 if (!rateLimitCheck.allowed) {
-                    throw new Error(lang === 'ru'
+                    throw localizedError(lang === 'ru'
                         ? 'Слишком много попыток регистрации с этого email. Попробуйте позже.'
                         : 'Too many signup attempts from this email. Try again later.');
                 }
@@ -176,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ? turnstile.getResponse(registerWidgetId)
                     : null;
                 if (!captchaToken) {
-                    throw new Error(lang === 'ru' ? 'Подтвердите, что вы не робот' : 'Please complete the captcha');
+                    throw localizedError(lang === 'ru' ? 'Подтвердите, что вы не робот' : 'Please complete the captcha');
                 }
 
                 const displayName = `${firstName} ${lastName}`;
@@ -189,12 +246,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         });
                         if (!availErr && isAvailable === false) {
                             scrollToField(phoneEl);
-                            throw new Error(lang === 'ru'
+                            throw localizedError(lang === 'ru'
                                 ? 'Этот номер телефона уже привязан к другому аккаунту'
                                 : 'This phone number is already linked to another account');
                         }
                     } catch (availCatch) {
-                        if (availCatch?.message?.includes('уже привязан') || availCatch?.message?.includes('already linked')) {
+                        if (availCatch?.isLocalized) {
                             throw availCatch;
                         }
                     }
@@ -276,11 +333,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             } catch (err) {
                 logError('reg:signup', err);
-                let errorMsg = err.message;
-                if (err.message.includes('User already registered')) {
-                    errorMsg = lang === 'ru' ? 'Этот email уже зарегистрирован' : 'This email is already registered';
-                }
-                showToast(errorMsg, 'error');
+                showToast(formatSignupError(err, lang), 'error');
                 btn.innerHTML = originalText;
                 btn.disabled = false;
                 if (typeof turnstile !== 'undefined' && registerWidgetId !== null) turnstile.reset(registerWidgetId);
