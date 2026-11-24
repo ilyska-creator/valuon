@@ -190,9 +190,11 @@ function getDateTimestamp(primary, fallback) {
 }
 
 function getEffectiveBusinessAmount(r) {
-    const gross = parseFloat(r.gross_total);
+    const lc = r?.lifecycle_status;
+    if (lc === 'voided' || lc === 'refunded') return null;
+    const gross = parseFloat(r?.gross_total);
     if (!Number.isFinite(gross) || gross <= 0) return null;
-    if (r.lifecycle_status === 'partially_refunded') {
+    if (lc === 'partially_refunded') {
         const ref = parseFloat(r.refunded_amount) || 0;
         return Math.max(0, Math.round((gross - ref) * 100) / 100);
     }
@@ -410,12 +412,15 @@ function updateReceiptsSummary() {
     let validCount = 0;
 
     receipts.forEach(r => {
-        const amt = Number(activeTab === 'personal' ? (r.items?.price ?? r.amount) : r.gross_total);
-        const cur = (activeTab === 'personal' ? (r.items?.currency ?? r.currency) : r.currency) || userDefaultCurrency || 'EUR';
+        const isPersonal = activeTab === 'personal';
+        const amt = isPersonal
+            ? Number(r.items?.price ?? r.amount)
+            : getEffectiveBusinessAmount(r);
+        const cur = (isPersonal ? (r.items?.currency ?? r.currency) : r.currency) || userDefaultCurrency || 'EUR';
         if (Number.isFinite(amt) && amt > 0) {
             sumsByCurrency.set(cur, (sumsByCurrency.get(cur) || 0) + amt);
+            validCount++;
         }
-        validCount++;
     });
 
     if (sumsByCurrency.size === 0) {
