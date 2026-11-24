@@ -22,9 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function unlockScroll() {
-        document.documentElement.classList.remove('scroll-locked');
-        window.scrollTo(0, scrollPos);
+    function unlockScroll(restorePosition = true) {
+        const root = document.documentElement;
+        if (!root.classList.contains('scroll-locked')) return;
+        root.classList.remove('scroll-locked');
+        if (restorePosition) window.scrollTo(0, scrollPos);
     }
 
     const mobileMenu = document.getElementById('mobile-menu');
@@ -57,17 +59,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 navList.classList.remove('active');
                 navbar?.classList.remove('nav-open');
                 mobileMenu?.classList.remove('is-active');
-                unlockScroll();
+                unlockScroll(false);
             }
 
+            const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             const targetId = this.getAttribute('href');
-            if (targetId === '#') return;
+            if (targetId === '#') {
+                window.scrollTo({
+                    top: 0,
+                    behavior: reduced ? 'auto' : 'smooth'
+                });
+                return;
+            }
 
             const target = document.querySelector(targetId);
             if (target) {
                 window.scrollTo({
                     top: target.offsetTop - 80,
-                    behavior: 'smooth'
+                    behavior: reduced ? 'auto' : 'smooth'
                 });
             }
         });
@@ -87,15 +96,30 @@ async function checkAuthOnHome() {
     const { session } = await getAuthSession();
 
     if (session) {
-        // Обновляем ВСЕ ссылки на логин/регистрацию (и в навбаре, и в hero),
-        // а не только первое совпадение — иначе большая кнопка в hero
-        // остаётся href="login.html" и гоняет залогиненного через страницу
-        // логина (которая сама редиректит на дашборд).
-        const heroAction = document.querySelector('.hero-actions');
-        const links = heroAction
-            ? document.querySelectorAll('.hero-actions a[href="login.html"], .hero-actions a[href="register.html"], .nav-list a[href="login.html"], .nav-list a[href="register.html"]')
-            : document.querySelectorAll('a[href="login.html"], a[href="register.html"]');
-        links.forEach(link => { link.href = 'dashboard.html'; });
+        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const isEn = lang === 'en';
+
+        document.querySelectorAll('.nav-list a[href="login.html"], .nav-list a[href="register.html"]').forEach(link => {
+            link.href = 'dashboard.html';
+            link.setAttribute('data-i18n', 'nav_dashboard');
+            link.textContent = isEn ? 'Dashboard' : 'В кабинет';
+        });
+
+        document.querySelectorAll('.hero-actions a[href="register.html"]').forEach(link => {
+            link.href = 'dashboard.html';
+            const labelEl = link.querySelector('[data-i18n]') || link;
+            labelEl.setAttribute('data-i18n', 'hero_btn_dashboard');
+            labelEl.textContent = isEn ? 'Go to Dashboard' : 'Перейти в кабинет';
+        });
+
+        document.querySelectorAll('.hero-actions a[href="login.html"]').forEach(link => {
+            link.hidden = true;
+            link.style.display = 'none';
+        });
+
+        if (typeof window.applyIndexTranslations === 'function') {
+            window.applyIndexTranslations();
+        }
     }
 }
 

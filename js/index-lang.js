@@ -15,12 +15,13 @@
 const translations = {
     ru: {
         page_title: "Valuon — Главная",
-        nav_features: "Возможности", nav_business: "Для бизнеса", nav_how: "Как это работает", nav_mission: "Миссия", nav_login: "Вход", nav_verify: "Проверить чек",
+        nav_features: "Возможности", nav_business: "Для бизнеса", nav_how: "Как это работает", nav_mission: "Миссия", nav_login: "Вход", nav_dashboard: "В кабинет", nav_verify: "Проверить чек",
         hero_badge: "Альфа доступ открыт",
         hero_title: 'Единая система <br>электронных чеков',
         hero_desc: "Каждый чек подписан криптографически и проверяется за секунду. Подделать — невозможно, потерять — тоже.",
 
         hero_btn_start: "Начать бесплатно",
+        hero_btn_dashboard: "Перейти в кабинет",
         hero_btn_login: "Войти в аккаунт",
         hero_btn_verify: "Проверить чек",
         hero_subtext_social: "Мы только начинаем — ваш голос повлияет на то, каким Valuon станет",
@@ -78,12 +79,13 @@ const translations = {
     },
     en: {
         page_title: "Valuon — Home",
-        nav_features: "Features", nav_business: "For Business", nav_how: "How it works", nav_mission: "Mission", nav_login: "Login", nav_verify: "Verify Receipt",
+        nav_features: "Features", nav_business: "For Business", nav_how: "How it works", nav_mission: "Mission", nav_login: "Login", nav_dashboard: "Dashboard", nav_verify: "Verify Receipt",
         hero_badge: "Alpha Access Open",
         hero_title: 'A unified system <br>for digital receipts',
         hero_desc: "Every receipt is cryptographically signed and verifiable in seconds. Impossible to forge, impossible to lose.",
 
         hero_btn_start: "Get Started Free",
+        hero_btn_dashboard: "Go to Dashboard",
         hero_btn_login: "Sign In",
         hero_btn_verify: "Verify Receipt",
         hero_subtext_social: "We're just getting started — your feedback will shape what Valuon becomes",
@@ -180,6 +182,7 @@ if (qrDemoEl && typeof RotatingTextLoader !== 'undefined') {
     qrDemoLoader = new RotatingTextLoader(qrDemoEl, getDemoLoaderPhrases(), { interval: 800 });
 }
 
+window.applyIndexTranslations = applyTranslations;
 applyTranslations();
 
 const langToggle = document.getElementById('lang-toggle');

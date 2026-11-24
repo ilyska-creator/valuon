@@ -753,7 +753,7 @@ uploadZone?.addEventListener('click', () => {
     }
 });
 
-if (uploadZone && !('ontouchstart' in window)) {
+if (uploadZone) {
     let dragCounter = 0;
 
     uploadZone.addEventListener('dragenter', () => {
@@ -1017,13 +1017,15 @@ document.addEventListener('visibilitychange', () => {
 
 const backBtn = document.getElementById('verify-back-btn');
 if (backBtn) {
-    const allowedPaths = ['/dashboard.html', '/business.html', '/receipts.html', '/index.html'];
+    const allowedRoots = new Set(['/dashboard', '/business', '/receipts', '/index', '/']);
     const resolveSafeBackPath = (rawUrl) => {
         try {
             const parsed = new URL(rawUrl, window.location.origin);
             if (parsed.origin !== window.location.origin) return null;
-            const normalizedPath = parsed.pathname === '/' ? '/index.html' : parsed.pathname;
-            return allowedPaths.includes(normalizedPath) ? normalizedPath : null;
+            const trimmed = parsed.pathname.replace(/\/+$/, '') || '/';
+            const canonical = trimmed === '/' ? '/' : trimmed.replace(/\.html$/i, '');
+            if (!allowedRoots.has(canonical)) return null;
+            return trimmed === '/' ? 'index.html' : trimmed;
         } catch (_) {
             return null;
         }
@@ -1051,11 +1053,24 @@ async function verifyReceiptByHash(fiscalHash) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fiscal_hash: fiscalHash }),
         });
-        const data = await resp.json();
         if (!resp.ok) {
+            const errData = await resp.json().catch(() => null);
+            if (errData?.error === 'not_found') {
+                showResult('not-found');
+                return;
+            }
+            if (errData?.error === 'rate_limited') {
+                showResult('error', window.t('rate_limited'));
+                return;
+            }
+            if (errData?.error === 'shop_key_missing') {
+                showResult('error', window.t('shop_not_found'));
+                return;
+            }
             showResult('error', window.t('rpc_error') + ': HTTP ' + resp.status);
             return;
         }
+        const data = await resp.json();
         if (data?.error === 'not_found') {
             showResult('not-found');
             return;
