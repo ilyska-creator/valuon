@@ -70,6 +70,8 @@ const translations = {
         currency_hint: "Валюта по умолчанию для ваших вещей и чеков — можно сменить позже в настройках",
 
         turnstile_checking: "Проверка...",
+        turnstile_error: "Не удалось загрузить проверку. Отключите блокировщик или повторите",
+        turnstile_retry: "Повторить",
 
     },
     en: {
@@ -143,6 +145,8 @@ const translations = {
         currency_hint: "Default currency for your items and receipts — can be changed later in settings",
 
         turnstile_checking: "Verifying...",
+        turnstile_error: "Verification failed to load. Disable ad blocker or retry",
+        turnstile_retry: "Retry",
     }
 };
 

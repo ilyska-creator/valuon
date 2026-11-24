@@ -1,24 +1,8 @@
 import { supabase, setSessionOnly } from './supabase-client.js';
-import { checkLoginRateLimit, setLoadingButton, resetLoadingButton, isValidEmail, logError } from './security.js';
+import { checkLoginRateLimit, setLoadingButton, resetLoadingButton, isValidEmail, logError, mountTurnstile } from './security.js';
 import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
 import { createSegmentedIndicator, prefersReducedMotion } from './segmented-indicator.js';
 import { attachModalA11y } from './modal-a11y.js';
-
-function waitForTurnstile(timeoutMs = 5000) {
-    return new Promise((resolve) => {
-        if (typeof turnstile !== 'undefined') return resolve(true);
-        const start = Date.now();
-        const check = setInterval(() => {
-            if (typeof turnstile !== 'undefined') {
-                clearInterval(check);
-                resolve(true);
-            } else if (Date.now() - start > timeoutMs) {
-                clearInterval(check);
-                resolve(false);
-            }
-        }, 50);
-    });
-}
 
 document.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -29,13 +13,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     let loginWidgetId = null;
-    waitForTurnstile().then((ready) => {
-        if (!ready) return;
-        loginWidgetId = turnstile.render('#login-turnstile', {
-            sitekey: '0x4AAAAAADxC9yNLOh3uKLe-',
-            theme: 'auto'
-        });
-        document.getElementById('login-turnstile-skel')?.classList.add('loaded');
+    mountTurnstile({
+        containerId: 'login-turnstile',
+        skeletonId: 'login-turnstile-skel',
+        sitekey: '0x4AAAAAADxC9yNLOh3uKLe-',
+        onRender: (id) => { loginWidgetId = id; },
     });
 
     const currentLang = localStorage.getItem('valuon-lang') || 'ru';
@@ -281,6 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     window.location.href = 'dashboard.html';
                 }
             } catch (err) {
+                setSessionOnly(false);
                 logError('auth:login', err);
                 const msg = loginMode === 'phone'
                     ? (isRu ? 'Неверный номер телефона или пароль' : 'Invalid phone number or password')
@@ -326,10 +309,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Рендерим виджет только сейчас, когда контейнер уже видим —
         // Turnstile не умеет авто-рендериться в display:none элементах.
-        if (forgotWidgetId === null && typeof turnstile !== 'undefined') {
-            forgotWidgetId = turnstile.render('#forgot-turnstile', {
+        if (forgotWidgetId === null && !forgotModal.dataset.turnstileMounted) {
+            forgotModal.dataset.turnstileMounted = '1';
+            mountTurnstile({
+                containerId: 'forgot-turnstile',
+                skeletonId: 'forgot-turnstile-skel',
                 sitekey: '0x4AAAAAADxC9yNLOh3uKLe-',
-                theme: 'auto'
+                onRender: (id) => { forgotWidgetId = id; },
             });
         }
     }
@@ -419,6 +405,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             try {
                 setLoadingButton(btn);
+                setSessionOnly(false);
 
                 const { error } = await supabase.auth.resetPasswordForEmail(email, {
                     redirectTo: `${window.location.origin}/reset-password.html`,

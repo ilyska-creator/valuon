@@ -18,6 +18,7 @@ export function setupLogout(currentClient) {
                 await clientToSignOut.auth.signOut();
             } catch (err) {
                 logError('auth:logout', err);
+                await clientToSignOut.auth.signOut({ scope: 'local' }).catch(() => {});
             } finally {
                 localStorage.removeItem('valuon-remember-email');
                 localStorage.removeItem('valuon-remember-login');

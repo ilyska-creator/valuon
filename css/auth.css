@@ -1153,11 +1153,13 @@
     gap: 0;
 }
 
-#forgot-form>.input-group+#forgot-turnstile {
+#forgot-form>.input-group+#forgot-turnstile,
+#forgot-form>.input-group+.turnstile-wrap {
     margin-top: 8px;
 }
 
-#forgot-form>#forgot-turnstile+.auth-btn {
+#forgot-form>#forgot-turnstile+.auth-btn,
+#forgot-form>.turnstile-wrap+.auth-btn {
     margin-top: 16px;
 }
 
@@ -1176,16 +1178,103 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
+    padding: 0 12px;
     font-size: 0.78rem;
     color: var(--text-muted);
-    transition: opacity 0.25s ease;
+    transition: opacity 0.25s ease, border-color 0.2s ease, background-color 0.2s ease;
     z-index: 1;
     opacity: 1;
+    overflow: hidden;
+}
+
+.turnstile-skel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.35) 50%, transparent 100%);
+    transform: translateX(-100%);
+    animation: skelShimmer 1.6s ease-in-out infinite;
+    pointer-events: none;
 }
 
 [data-theme="dark"] .turnstile-skel {
     background: rgba(255, 255, 255, 0.03);
     border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .turnstile-skel::after {
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.06) 50%, transparent 100%);
+}
+
+.turnstile-skel.is-error {
+    justify-content: space-between;
+    gap: 10px;
+    background: rgba(239, 68, 68, 0.05);
+    border-color: rgba(239, 68, 68, 0.28);
+    color: var(--text-primary, #1f2937);
+}
+
+[data-theme="dark"] .turnstile-skel.is-error {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.32);
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.turnstile-skel.is-error::after {
+    animation: none;
+    display: none;
+}
+
+.turnstile-error-msg {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.76rem;
+    line-height: 1.3;
+    text-align: left;
+    min-width: 0;
+}
+
+.turnstile-error-msg i {
+    color: #ef4444;
+    font-size: 0.88rem;
+    flex-shrink: 0;
+}
+
+.turnstile-retry-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 11px;
+    border-radius: var(--radius-sm, 6px);
+    border: 1px solid var(--border);
+    background: var(--white, #ffffff);
+    color: var(--text-primary, #111827);
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.turnstile-retry-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.turnstile-retry-btn:active {
+    transform: scale(0.97);
+}
+
+[data-theme="dark"] .turnstile-retry-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #f3f4f6;
+}
+
+[data-theme="dark"] .turnstile-retry-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 .turnstile-skel .skel-pulse {
@@ -1194,10 +1283,17 @@
     border-radius: 50%;
     background: var(--border);
     animation: skelPulse 1.2s ease-in-out infinite;
+    flex-shrink: 0;
 }
 
 .turnstile-skel.loaded {
     display: none;
+}
+
+@keyframes skelShimmer {
+    100% {
+        transform: translateX(100%);
+    }
 }
 
 @keyframes skelPulse {
@@ -1411,6 +1507,7 @@
     .shake,
     .anim-pop,
     .turnstile-skel .skel-pulse,
+    .turnstile-skel::after,
     #forgot-modal .forgot-modal-content {
         animation: none !important;
         transition: none !important;

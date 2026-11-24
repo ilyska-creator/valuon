@@ -137,7 +137,13 @@
                         <input type="email" id="forgot-email" name="forgotEmail" placeholder="name@example.com"
                             autocomplete="email">
                     </div>
-                    <div id="forgot-turnstile"></div>
+                    <div class="turnstile-wrap" id="forgot-turnstile-wrap">
+                        <div class="turnstile-skel" id="forgot-turnstile-skel">
+                            <span class="skel-pulse"></span>
+                            <span data-i18n="turnstile_checking">Проверка...</span>
+                        </div>
+                        <div id="forgot-turnstile"></div>
+                    </div>
 
                     <button type="submit" class="btn btn-primary auth-btn" data-i18n="btn_send_link">Отправить
                         ссылку</button>

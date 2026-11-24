@@ -1,5 +1,5 @@
-import { supabase } from './supabase-client.js';
-import { checkSignupRateLimit, logError } from './security.js';
+import { supabase, setSessionOnly } from './supabase-client.js';
+import { checkSignupRateLimit, logError, mountTurnstile } from './security.js';
 import { initPasswordStrength, checkPasswordStrength } from './password-strength.js';
 import { getAuthSession } from './dashboard-auth.js';
 import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
@@ -16,22 +16,6 @@ if (regPhoneCountryEl) {
     populateDialCodeSelect(regPhoneCountryEl, getLang(), getDefaultPhoneCountry(null, getLang()));
 }
 
-function waitForTurnstile(timeoutMs = 5000) {
-    return new Promise((resolve) => {
-        if (typeof turnstile !== 'undefined') return resolve(true);
-        const start = Date.now();
-        const check = setInterval(() => {
-            if (typeof turnstile !== 'undefined') {
-                clearInterval(check);
-                resolve(true);
-            } else if (Date.now() - start > timeoutMs) {
-                clearInterval(check);
-                resolve(false);
-            }
-        }, 50);
-    });
-}
-
 let registerWidgetId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -41,13 +25,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    waitForTurnstile().then((ready) => {
-        if (!ready) return;
-        registerWidgetId = turnstile.render('#register-turnstile', {
-            sitekey: '0x4AAAAAADxC9yNLOh3uKLe-',
-            theme: 'auto'
-        });
-        document.getElementById('register-turnstile-skel')?.classList.add('loaded');
+    mountTurnstile({
+        containerId: 'register-turnstile',
+        skeletonId: 'register-turnstile-skel',
+        sitekey: '0x4AAAAAADxC9yNLOh3uKLe-',
+        onRender: (id) => { registerWidgetId = id; },
     });
 
     initPasswordStrength('password', { getLang });
@@ -216,6 +198,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
 
+                setSessionOnly(false);
                 const { data, error } = await supabase.auth.signUp({
                     email,
                     password,
