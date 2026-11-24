@@ -54,7 +54,6 @@ const CURRENCIES = [
     { code: 'GYD', symbol: '$', ru: 'Гайанский доллар', en: 'Guyanaese Dollar' },
     { code: 'HKD', symbol: 'HK$', ru: 'Гонконгский доллар', en: 'Hong Kong Dollar' },
     { code: 'HNL', symbol: 'L', ru: 'Гондурасская лемпира', en: 'Honduran Lempira' },
-    { code: 'HRK', symbol: 'kn', ru: 'Хорватская куна', en: 'Croatian Kuna' },
     { code: 'HTG', symbol: 'G', ru: 'Гаитянский гурд', en: 'Haitian Gourde' },
     { code: 'HUF', symbol: 'Ft', ru: 'Венгерский форинт', en: 'Hungarian Forint' },
     { code: 'IDR', symbol: 'Rp', ru: 'Индонезийская рупия', en: 'Indonesian Rupiah' },
@@ -153,7 +152,7 @@ const CURRENCIES = [
     { code: 'YER', symbol: '﷼', ru: 'Йеменский риал', en: 'Yemeni Rial' },
     { code: 'ZAR', symbol: 'R', ru: 'Южноафриканский рэнд', en: 'South African Rand' },
     { code: 'ZMW', symbol: 'ZK', ru: 'Замбийская квача', en: 'Zambian Kwacha' },
-    { code: 'ZWL', symbol: 'Z$', ru: 'Зимбабвийский доллар', en: 'Zimbabwean Dollar' }
+    { code: 'ZWG', symbol: 'ZiG', ru: 'Зимбабвийский золотой', en: 'Zimbabwe Gold' }
 ];
 
 function currencySymbol(code) {

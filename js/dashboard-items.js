@@ -817,7 +817,8 @@ async function loadVerifiedItems(userEmail, client) {
 
     if (error) {
         logError('items:loadVerified', error);
-        grid.innerHTML = '<p class="empty-state error">Ошибка загрузки данных.</p>';
+        const loadLang = localStorage.getItem('valuon-lang') || 'ru';
+        grid.innerHTML = `<p class="empty-state error">${loadLang === 'en' ? 'Data load error.' : 'Ошибка загрузки данных.'}</p>`;
         return;
     }
 

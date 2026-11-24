@@ -106,6 +106,18 @@ export function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
+/**
+ * Selects the Russian plural form (one/few/many) for integer n.
+ */
+export function pluralRu(n, one, few, many) {
+    const abs = Math.abs(Math.trunc(Number(n) || 0));
+    const m10 = abs % 10;
+    const m100 = abs % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+    return many;
+}
+
 let cleanupInterval = null;
 
 export function cleanupOldAttempts() {

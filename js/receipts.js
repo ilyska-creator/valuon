@@ -1,5 +1,5 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
-import { escapeHtml, logError } from './security.js';
+import { escapeHtml, logError, pluralRu } from './security.js';
 import { attachModalA11y } from './modal-a11y.js';
 import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
@@ -59,7 +59,6 @@ function applySavedReceiptsTab() {
 const ALLOWED_RECEIPT_MIME_EXT = {
     'image/jpeg': 'jpg',
     'image/png': 'png',
-    'image/gif': 'gif',
     'image/webp': 'webp',
     'application/pdf': 'pdf'
 };
@@ -113,8 +112,8 @@ function validateReceiptFile(file) {
     if (!Object.prototype.hasOwnProperty.call(ALLOWED_RECEIPT_MIME_EXT, file.type)) {
         showToast(
             lang === 'ru'
-                ? 'Неподдерживаемый тип файла. Загрузите изображение (JPG, PNG, GIF, WebP) или PDF.'
-                : 'Unsupported file type. Please upload an image (JPG, PNG, GIF, WebP) or PDF.',
+                ? 'Неподдерживаемый тип файла. Загрузите изображение (JPG, PNG, WebP) или PDF.'
+                : 'Unsupported file type. Please upload an image (JPG, PNG, WebP) or PDF.',
             'error'
         );
         return false;
@@ -366,7 +365,8 @@ async function loadAllReceipts(userEmail, userId, client) {
         renderSplitReceipts(lastBusinessReceipts, lastPersonalReceipts, client, userId);
     } catch (e) {
         logError('receipts:load', e);
-        const errorHtml = '<p class="empty-state error">Ошибка загрузки данных.</p>';
+        const errLang = getLang();
+        const errorHtml = `<p class="empty-state error">${errLang === 'en' ? 'Data load error.' : 'Ошибка загрузки данных.'}</p>`;
         personalGrid.innerHTML = errorHtml;
         businessGrid.innerHTML = errorHtml;
     }
@@ -436,8 +436,8 @@ function updateReceiptsSummary() {
 
     totalEl.textContent = formattedTotals;
     const purchasesWord = lang === 'ru'
-        ? (validCount === 1 ? '1 чек' : (validCount > 1 && validCount < 5 ? `${validCount} чека` : `${validCount} чеков`))
-        : (validCount === 1 ? '1 receipt' : `${validCount} receipts`);
+        ? `${validCount} ${pluralRu(validCount, 'чек', 'чека', 'чеков')}`
+        : `${validCount} ${validCount === 1 ? 'receipt' : 'receipts'}`;
     countEl.textContent = purchasesWord;
     summaryStrip.classList.remove('hidden');
 }
@@ -993,7 +993,7 @@ async function populateItemSelect(userId, client) {
 }
 
 function syncModalOpenClass() {
-    if (!document.querySelector('.modal.active:not(.closing)')) {
+    if (!document.querySelector('.modal-overlay.active:not(.closing), .modal.active:not(.closing)')) {
         document.documentElement.classList.remove('modal-open');
     }
 }

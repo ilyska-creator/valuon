@@ -1,6 +1,6 @@
 import { requireAuth } from './dashboard-auth.js';
 import { downloadReceiptPDF, generateQRDataURL, buildQrPayload } from './receipt-generator.js';
-import { escapeHtml, logError } from './security.js';
+import { escapeHtml, logError, pluralRu } from './security.js';
 import { attachModalA11y } from './modal-a11y.js';
 import { buildXlsxBlob } from './xlsx-export.js';
 import {
@@ -830,13 +830,6 @@ async function initBusinessPanel() {
     function fmtMoney(v) {
         const lang = localStorage.getItem('valuon-lang') || 'ru';
         return window.formatCurrency(v, currentShop?.currency || 'EUR', lang);
-    }
-
-    function pluralRu(n, one, few, many) {
-        const m10 = n % 10, m100 = n % 100;
-        if (m10 === 1 && m100 !== 11) return one;
-        if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
-        return many;
     }
 
     function defaultDateString() {
@@ -1695,7 +1688,7 @@ async function initBusinessPanel() {
                 }
             }
         } catch (qrErr) {
-            logError(qrErr, 'biz:showSuccessScreen:qr');
+            logError('biz:showSuccessScreen:qr', qrErr);
         }
 
         if (modalBody) modalBody.classList.add('is-hidden');
@@ -1759,7 +1752,7 @@ async function initBusinessPanel() {
                 btn.classList.remove('copied');
             }, 2000);
         } catch (err) {
-            logError(err, 'biz:copyVerifyUrl');
+            logError('biz:copyVerifyUrl', err);
         }
     });
 
