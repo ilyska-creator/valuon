@@ -232,12 +232,15 @@ ul {
     transition: var(--transition-base);
     font-size: 0.9rem;
     padding: 0;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.icon-btn:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    background: rgba(59, 130, 246, 0.05);
+@media (hover: hover) and (pointer: fine) {
+    .icon-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: rgba(59, 130, 246, 0.05);
+    }
 }
 
 .icon-btn:active {
@@ -383,120 +386,6 @@ html.scroll-locked {
     gap: 60px;
     align-items: center;
 }
-
-.badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 16px;
-    background: #eff6ff;
-    color: var(--primary);
-    border-radius: 30px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    margin-bottom: 24px;
-}
-
-.badge-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--success);
-    flex-shrink: 0;
-    position: relative;
-}
-
-.badge-dot::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: var(--success);
-    animation: badgePulse 2s ease-out infinite;
-}
-
-@keyframes badgePulse {
-    0% {
-        opacity: 0.6;
-        transform: scale(1);
-    }
-
-    100% {
-        opacity: 0;
-        transform: scale(2.8);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .badge-dot::after {
-        animation: none;
-        display: none;
-    }
-}
-
-[data-theme="dark"] .badge {
-    background: rgba(59, 130, 246, 0.15);
-}
-
-@keyframes neonPulse {
-
-    0%,
-    100% {
-        text-shadow:
-            0 0 4px rgba(59, 130, 246, 0.25),
-            0 0 12px rgba(59, 130, 246, 0.10),
-            0 0 24px rgba(59, 130, 246, 0.05);
-    }
-
-    50% {
-        text-shadow:
-            0 0 8px rgba(59, 130, 246, 0.45),
-            0 0 20px rgba(59, 130, 246, 0.20),
-            0 0 40px rgba(59, 130, 246, 0.08);
-    }
-}
-
-@keyframes neonPulseDark {
-
-    0%,
-    100% {
-        text-shadow:
-            0 0 4px rgba(96, 165, 250, 0.30),
-            0 0 12px rgba(96, 165, 250, 0.15),
-            0 0 24px rgba(96, 165, 250, 0.08);
-    }
-
-    50% {
-        text-shadow:
-            0 0 8px rgba(96, 165, 250, 0.50),
-            0 0 20px rgba(96, 165, 250, 0.25),
-            0 0 40px rgba(96, 165, 250, 0.12);
-    }
-}
-
-.neon-glow {
-    animation: neonPulse 2s ease-in-out infinite;
-}
-
-[data-theme="dark"] .neon-glow {
-    animation: neonPulseDark 2s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .neon-glow {
-        animation: none;
-        text-shadow:
-            0 0 4px rgba(59, 130, 246, 0.25),
-            0 0 12px rgba(59, 130, 246, 0.10);
-    }
-
-    [data-theme="dark"] .neon-glow {
-        text-shadow:
-            0 0 4px rgba(96, 165, 250, 0.30),
-            0 0 12px rgba(96, 165, 250, 0.15);
-    }
-}
-
 
 .hero-blob {
     position: absolute;
@@ -1256,15 +1145,20 @@ select:-webkit-autofill:focus {
     flex: 1;
 }
 
-@media (max-width: 968px) {
+@media (max-width: 1024px) {
     .hero-section {
-        padding: 120px 0 40px;
+        padding: 132px 0 72px;
     }
 
     .hero-grid {
         grid-template-columns: 1fr;
-        gap: 32px;
+        gap: 0;
         text-align: center;
+    }
+
+    .hero-text {
+        max-width: 680px;
+        margin: 0 auto;
     }
 
     .hero-text p {
@@ -1281,10 +1175,11 @@ select:-webkit-autofill:focus {
     }
 
     .hero-visual {
-        max-width: 450px;
-        margin: 0 auto;
+        display: none;
     }
+}
 
+@media (max-width: 968px) {
     .timeline {
         flex-direction: column;
         gap: 40px;
@@ -1327,7 +1222,7 @@ select:-webkit-autofill:focus {
     }
 
     .hero-section {
-        padding: 100px 0 20px;
+        padding: 104px 0 56px;
     }
 
     .hero-text h1 {
@@ -2231,6 +2126,73 @@ select:-webkit-autofill:focus {
 
 .rotating-loader--inline .rotating-loader-dots {
     display: none;
+}
+
+.qr-demo-processing .rotating-loader-phrase,
+.qr-demo-processing .rotating-loader-phrase.active {
+    opacity: 0;
+    transition: none;
+}
+
+.qr-demo-processing .rotating-loader-phrase:nth-child(1) {
+    animation: qrPhrase1 5.5s ease-in-out infinite;
+}
+
+.qr-demo-processing .rotating-loader-phrase:nth-child(2) {
+    animation: qrPhrase2 5.5s ease-in-out infinite;
+}
+
+.qr-demo-processing .rotating-loader-phrase:nth-child(3) {
+    animation: qrPhrase3 5.5s ease-in-out infinite;
+}
+
+@keyframes qrPhrase1 {
+    0%, 15% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    19%, 91% {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    92% {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    96%, 100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes qrPhrase2 {
+    0%, 16% {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    20%, 33% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    37%, 100% {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+}
+
+@keyframes qrPhrase3 {
+    0%, 34% {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    38%, 51% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    55%, 100% {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
 }
 
 @keyframes processingFade {

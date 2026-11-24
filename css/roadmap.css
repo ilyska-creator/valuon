@@ -428,11 +428,14 @@
     justify-content: center;
     transition: all 0.3s ease;
     font-size: 0.9rem;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.icon-btn:hover {
-    border-color: var(--primary);
-    color: var(--primary);
+@media (hover: hover) and (pointer: fine) {
+    .icon-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
 }
 
 .btn.small {

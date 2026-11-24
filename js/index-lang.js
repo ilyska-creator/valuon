@@ -16,7 +16,6 @@ const translations = {
     ru: {
         page_title: "Valuon — Главная",
         nav_features: "Возможности", nav_business: "Для бизнеса", nav_how: "Как это работает", nav_mission: "Миссия", nav_login: "Вход", nav_dashboard: "В кабинет", nav_verify: "Проверить чек",
-        hero_badge: "Альфа доступ открыт",
         hero_title: 'Единая система <br>электронных чеков',
         hero_desc: "Каждый чек подписан криптографически и проверяется за секунду. Подделать — невозможно, потерять — тоже.",
 
@@ -80,7 +79,6 @@ const translations = {
     en: {
         page_title: "Valuon — Home",
         nav_features: "Features", nav_business: "For Business", nav_how: "How it works", nav_mission: "Mission", nav_login: "Login", nav_dashboard: "Dashboard", nav_verify: "Verify Receipt",
-        hero_badge: "Alpha Access Open",
         hero_title: 'A unified system <br>for digital receipts',
         hero_desc: "Every receipt is cryptographically signed and verifiable in seconds. Impossible to forge, impossible to lose.",
 
@@ -184,7 +182,7 @@ function applyTranslations() {
 
 const qrDemoEl = document.getElementById('qr-demo-loader');
 if (qrDemoEl && typeof RotatingTextLoader !== 'undefined') {
-    qrDemoLoader = new RotatingTextLoader(qrDemoEl, getDemoLoaderPhrases(), { interval: 800 });
+    qrDemoLoader = new RotatingTextLoader(qrDemoEl, getDemoLoaderPhrases(), { autoRotate: false });
 }
 
 window.applyIndexTranslations = applyTranslations;

@@ -6,6 +6,7 @@ class RotatingTextLoader {
         this.container = container;
         this.phrases = phrases;
         this.interval = options.interval || 5000;
+        this.autoRotate = options.autoRotate !== false;
         this.currentIndex = 0;
         this.intervalId = null;
         this.render();
@@ -29,6 +30,7 @@ class RotatingTextLoader {
 
     start() {
         this.stop();
+        if (!this.autoRotate) return;
         this.intervalId = setInterval(() => this.next(), this.interval);
     }
 
@@ -60,6 +62,13 @@ class RotatingTextLoader {
     }
 
     setPhrases(phrases) {
+        if (!this.autoRotate && this.phraseEls && this.phraseEls.length === phrases.length) {
+            this.phrases = phrases;
+            this.phraseEls.forEach((el, i) => {
+                el.textContent = phrases[i];
+            });
+            return;
+        }
         this.stop();
         this.phrases = phrases;
         this.currentIndex = 0;
