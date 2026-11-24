@@ -60,16 +60,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     function scrollToField(el) {
         if (!el) return;
         const reduced = prefersReducedMotion();
-        var wrap = el.closest('.input-group') || el.closest('.form-options') || el.parentNode;
-        window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+        const wrap = el.closest('.input-group') || el.closest('.form-options') || el.parentNode;
+        const target = wrap || el;
+        target.scrollIntoView({
+            behavior: reduced ? 'auto' : 'smooth',
+            block: 'center',
+        });
         if (wrap && !reduced) {
             wrap.classList.remove('shake');
             void wrap.offsetWidth;
             wrap.classList.add('shake');
             setTimeout(function () { wrap.classList.remove('shake'); }, 400);
         }
-        // preventScroll stops the browser from immediately jumping to the
-        // focused field, which was cancelling the smooth scroll-to-top above.
         el.focus({ preventScroll: true });
     }
 
