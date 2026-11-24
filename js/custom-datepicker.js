@@ -25,9 +25,18 @@ class CustomDatePicker {
         this._closeTimer = null;
         this._focusDate = null;
         this.selectedDate = this.input.value ? this._parseDate(this.input.value) : null;
-        this.viewDate = this.selectedDate ? new Date(this.selectedDate) : new Date();
+        this.viewDate = this._toViewMonth(this.selectedDate);
         this.build();
         this.bind();
+    }
+
+    _toViewMonth(date) {
+        const base = date || new Date();
+        return new Date(base.getFullYear(), base.getMonth(), 1);
+    }
+
+    _shiftViewMonth(deltaMonths) {
+        this.viewDate = new Date(this.viewDate.getFullYear(), this.viewDate.getMonth() + deltaMonths, 1);
     }
 
     // --- DOM construction ---
@@ -323,7 +332,7 @@ class CustomDatePicker {
             this.panel.querySelectorAll('.cal-cell[data-month]').forEach(el => {
                 el.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.viewDate.setMonth(parseInt(el.dataset.month, 10));
+                    this.viewDate = new Date(this.viewDate.getFullYear(), parseInt(el.dataset.month, 10), 1);
                     this.mode = 'days';
                     this.render();
                 });
@@ -332,7 +341,7 @@ class CustomDatePicker {
             this.panel.querySelectorAll('.cal-cell[data-year]').forEach(el => {
                 el.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.viewDate.setFullYear(parseInt(el.dataset.year, 10));
+                    this.viewDate = new Date(parseInt(el.dataset.year, 10), this.viewDate.getMonth(), 1);
                     this.mode = 'months';
                     this.render();
                 });
@@ -342,12 +351,12 @@ class CustomDatePicker {
 
     _navigate(dir) {
         if (this.mode === 'months') {
-            this.viewDate.setFullYear(this.viewDate.getFullYear() + dir);
+            this.viewDate = new Date(this.viewDate.getFullYear() + dir, this.viewDate.getMonth(), 1);
             this.render();
             return;
         }
         if (this.mode === 'years') {
-            this.viewDate.setFullYear(this.viewDate.getFullYear() + dir * 12);
+            this.viewDate = new Date(this.viewDate.getFullYear() + dir * 12, this.viewDate.getMonth(), 1);
             this.render();
             return;
         }
@@ -356,14 +365,14 @@ class CustomDatePicker {
 
         const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (reducedMotion) {
-            this.viewDate.setMonth(this.viewDate.getMonth() + dir);
+            this._shiftViewMonth(dir);
             this.render();
             return;
         }
 
         const grid = this.panel.querySelector('.cal-days-grid');
         if (!grid) {
-            this.viewDate.setMonth(this.viewDate.getMonth() + dir);
+            this._shiftViewMonth(dir);
             this.render();
             return;
         }
@@ -375,7 +384,7 @@ class CustomDatePicker {
                 this._navAnimating = false;
                 return;
             }
-            this.viewDate.setMonth(this.viewDate.getMonth() + dir);
+            this._shiftViewMonth(dir);
             this.render();
             const g = this.panel.querySelector('.cal-days-grid');
             if (!g) {
@@ -410,7 +419,7 @@ class CustomDatePicker {
         this.panel.classList.remove('closing');
 
         this.selectedDate = this.input.value ? this._parseDate(this.input.value) : null;
-        if (this.selectedDate) this.viewDate = new Date(this.selectedDate);
+        if (this.selectedDate) this.viewDate = this._toViewMonth(this.selectedDate);
         this._focusDate = this.selectedDate
             ? new Date(this.selectedDate.getFullYear(), this.selectedDate.getMonth(), this.selectedDate.getDate())
             : new Date();
@@ -502,7 +511,7 @@ class CustomDatePicker {
 
     syncDisplay() {
         this.selectedDate = this.input.value ? this._parseDate(this.input.value) : null;
-        if (this.selectedDate) this.viewDate = new Date(this.selectedDate);
+        if (this.selectedDate) this.viewDate = this._toViewMonth(this.selectedDate);
         this._focusDate = this.selectedDate ? new Date(this.selectedDate) : null;
         this._syncDisplay();
     }
@@ -511,7 +520,7 @@ class CustomDatePicker {
         this.lang = CustomDatePicker.getLang();
         this._cdpInput.placeholder = this.lang === 'ru' ? 'ДД.ММ.ГГГГ' : 'MM/DD/YYYY';
         this.selectedDate = this.input.value ? this._parseDate(this.input.value) : null;
-        this.viewDate = this.selectedDate ? new Date(this.selectedDate) : new Date();
+        this.viewDate = this._toViewMonth(this.selectedDate);
         this._syncDisplay();
         this._syncLockedState();
         if (this.isOpen) {
@@ -639,12 +648,28 @@ class CustomDatePicker {
     }
 
     _syncDateTime() {
+        const hSel = this.panel.querySelector('.cal-hour');
+        const mSel = this.panel.querySelector('.cal-min');
+        const h = hSel ? parseInt(hSel.value, 10) : null;
+        const mi = mSel ? parseInt(mSel.value, 10) : null;
+
         if (!this.selectedDate) {
             this.selectedDate = new Date();
-            this.viewDate = new Date(this.selectedDate);
+            this.viewDate = this._toViewMonth(this.selectedDate);
         } else {
-            this.selectedDate = new Date(this.viewDate.getFullYear(), this.viewDate.getMonth(), this.selectedDate.getDate());
+            this.selectedDate = new Date(
+                this.selectedDate.getFullYear(),
+                this.selectedDate.getMonth(),
+                this.selectedDate.getDate(),
+                this.selectedDate.getHours(),
+                this.selectedDate.getMinutes()
+            );
         }
+
+        if (Number.isFinite(h) && Number.isFinite(mi)) {
+            this.selectedDate.setHours(h, mi, 0, 0);
+        }
+
         this._syncHiddenInput();
         this._syncDisplay();
         this._clearInvalid();
@@ -739,14 +764,30 @@ class CustomDatePicker {
     // --- Keyboard input (mask) ---
 
     _maskHandler = (e) => {
-        const digits = this._cdpInput.value.replace(/\D/g, '').slice(0, 8);
+        const raw = this._cdpInput.value;
+        const selStart = typeof this._cdpInput.selectionStart === 'number' ? this._cdpInput.selectionStart : raw.length;
+        const digitsBeforeCursor = raw.slice(0, selStart).replace(/\D/g, '').length;
+
+        const digits = raw.replace(/\D/g, '').slice(0, 8);
         const sep = this.lang === 'ru' ? '.' : '/';
         let out = '';
         for (let i = 0; i < digits.length; i++) {
             if (i === 2 || i === 4) out += sep;
             out += digits[i];
         }
-        this._cdpInput.value = out;
+
+        if (raw !== out) {
+            this._cdpInput.value = out;
+            if (document.activeElement === this._cdpInput && typeof this._cdpInput.setSelectionRange === 'function') {
+                let newPos = 0;
+                let seenDigits = 0;
+                while (newPos < out.length && seenDigits < digitsBeforeCursor) {
+                    if (/\d/.test(out[newPos])) seenDigits++;
+                    newPos++;
+                }
+                this._cdpInput.setSelectionRange(newPos, newPos);
+            }
+        }
     };
 
     _commitInput(closePanel, advance) {
@@ -949,7 +990,7 @@ class CustomDatePicker {
         if (this._form) {
             this._formHandler = () => {
                 this.selectedDate = null;
-                this.viewDate = new Date();
+                this.viewDate = this._toViewMonth(null);
                 this._focusDate = null;
                 this._clearInvalid();
                 this._syncDisplay();
