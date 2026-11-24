@@ -160,14 +160,20 @@ function buildWarrantyNotifications(personalItems, partnerItems, t) {
             : baseName;
         const shopMeta = isPartner && item.shop_name ? escapeHtml(item.shop_name) : '';
 
-        if (daysLeft > 0) {
+        if (daysLeft >= 0) {
             const datePart = item.warranty_end_date ? formatDate(item.warranty_end_date) : '';
+            const isToday = daysLeft === 0;
             expiring.push({
                 daysLeft,
                 type: 'warning',
                 icon: 'fa-triangle-exclamation',
-                title: (t.notif_expiring_title || 'Warranty for "{name}" is expiring').replace('{name}', () => escapeHtml(displayName)),
-                text: (t.notif_expiring_text || '{count} days left. Check device condition.').replace('{count}', String(daysLeft)),
+                title: (isToday
+                    ? (t.notif_expires_today_title || 'Warranty for "{name}" expires today')
+                    : (t.notif_expiring_title || 'Warranty for "{name}" is expiring')
+                ).replace('{name}', () => escapeHtml(displayName)),
+                text: isToday
+                    ? (t.notif_expires_today_text || 'Last day of warranty. Check device condition.')
+                    : (t.notif_expiring_text || '{count} days left. Check device condition.').replace('{count}', String(daysLeft)),
                 date: shopMeta && datePart ? `${shopMeta} · ${datePart}` : (shopMeta || datePart)
             });
         } else {

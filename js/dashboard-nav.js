@@ -60,6 +60,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const hash = window.__targetView || window.location.hash.replace('#', '') || targetView;
     if (hash && document.getElementById(hash)) {
         activateView(hash);
+        sessionStorage.setItem('dashboard-view', hash);
+        if (window.location.hash !== '#' + hash) {
+            history.replaceState(null, '', '#' + hash);
+        }
         window.scrollTo(0, 0);
     }
 });
