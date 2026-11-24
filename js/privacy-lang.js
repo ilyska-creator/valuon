@@ -32,7 +32,7 @@ const privacyTranslations = {
             privacy_s2_b1: "Данные магазина: название, идентификационный/налоговый номер, контактные данные",
             privacy_s2_b2: "Публичный криптографический ключ магазина (для проверки подлинности выпущенных чеков третьими лицами)",
             privacy_s2_b3: "Данные о выписанных чеках: состав, суммы, дата, способ оплаты, email покупателя (если указан)",
-            privacy_s2_p2: "Приватный ключ подписи магазина хранится только на вашем устройстве и никогда не передаётся на сервер Valuon в открытом виде.",
+            privacy_s2_p2: "Приватный ключ подписи магазина генерируется и хранится в защищённой серверной среде Valuon с изолированным доступом. Он используется исключительно для криптографической подписи чеков и никогда не передаётся в браузер или третьим лицам.",
 
             privacy_s3_title: "3. Зачем мы собираем эти данные",
             privacy_s3_i1: "Чтобы предоставлять сам сервис: хранить ваши чеки, считать сроки гарантии, показывать напоминания",
@@ -131,7 +131,7 @@ const privacyTranslations = {
             privacy_s2_b1: "Store data: name, tax/registration ID, contact details",
             privacy_s2_b2: "The store's public cryptographic key (so third parties can verify the authenticity of issued receipts)",
             privacy_s2_b3: "Data about issued receipts: line items, amounts, date, payment method, buyer's email (if provided)",
-            privacy_s2_p2: "The store's private signing key is stored only on your own device and is never transmitted to the Valuon server in plaintext.",
+            privacy_s2_p2: "The store's private signing key is generated and stored within Valuon's secure server environment with isolated access. It is used exclusively to cryptographically sign receipts and is never transmitted to the browser or third parties.",
 
             privacy_s3_title: "3. Why we collect this data",
             privacy_s3_i1: "To provide the service itself: storing your receipts, calculating warranty periods, showing reminders",

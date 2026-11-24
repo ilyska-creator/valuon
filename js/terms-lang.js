@@ -43,7 +43,7 @@ const termsTranslations = {
 
             terms_s5_title: "5. Правила для продавцов (бизнес-панель)",
             terms_s5_i1: "Вы обязуетесь указывать точные данные о магазине и о выпускаемых чеках — суммы, состав, дату и способ оплаты.",
-            terms_s5_i2: "Вы несёте единоличную ответственность за сохранность своего приватного ключа подписи. Он хранится на вашем устройстве и никогда не передаётся Valuon — мы не можем восстановить его в случае утери.",
+            terms_s5_i2: "Приватный ключ подписи создаётся и хранится в защищённой инфраструктуре сервиса и привязан к вашему магазину. Вы несёте ответственность за безопасность доступа к своему аккаунту продавца (паролю и активным сессиям), через который отдаются команды на выпуск и подписание чеков.",
             terms_s5_i3: "Запрещено выпускать чеки на несуществующие сделки или использовать сервис для мошеннических целей.",
             terms_s5_i4: "Вы соглашаетесь, что Valuon может приостановить или прекратить доступ магазина к сервису при обоснованном подозрении в злоупотреблении.",
 
@@ -120,7 +120,7 @@ const termsTranslations = {
 
             terms_s5_title: "5. Rules for merchants (business panel)",
             terms_s5_i1: "You agree to provide accurate store information and accurate receipt data — amounts, line items, date, and payment method.",
-            terms_s5_i2: "You are solely responsible for safeguarding your private signing key. It is stored on your own device and is never transmitted to Valuon — we cannot recover it if lost.",
+            terms_s5_i2: "The private signing key is generated and stored within the service's secure infrastructure and is tied to your store. You are responsible for safeguarding your merchant account credentials (password and active sessions) used to authorize receipt issuance and signing.",
             terms_s5_i3: "You may not issue receipts for transactions that did not occur, or use the service for fraudulent purposes.",
             terms_s5_i4: "You agree that Valuon may suspend or terminate a store's access to the service on reasonable suspicion of abuse.",
 
