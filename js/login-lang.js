@@ -162,44 +162,65 @@ window.authTranslations = translations;
 // мгновение видел русский текст из HTML, который потом подменялся на
 // английский. Убрали ожидание DOMContentLoaded — текст переводится сразу.
 (() => {
-    const rawLang = localStorage.getItem('valuon-lang') || 'ru';
-    const currentLang = translations[rawLang] ? rawLang : 'ru';
-    document.documentElement.lang = currentLang === 'en' ? 'en' : 'ru';
-    const path = window.location.pathname;
+    function getAuthLang() {
+        const raw = localStorage.getItem('valuon-lang') || 'ru';
+        return translations[raw] ? raw : 'ru';
+    }
 
-    let titleKey = 'page_title';
-    if (path.includes('register')) titleKey = 'page_title_reg';
-    if (path.includes('reset-password')) titleKey = 'page_title_reset';
+    function applyAuthTranslations(langOverride) {
+        const currentLang = langOverride && translations[langOverride] ? langOverride : getAuthLang();
+        document.documentElement.lang = currentLang === 'en' ? 'en' : 'ru';
+        const path = window.location.pathname;
 
-    document.title = translations[currentLang][titleKey];
-    let descKey = 'meta_description';
-    if (path.includes('register')) descKey = 'meta_description_reg';
-    if (path.includes('reset-password')) descKey = 'meta_description_reset';
-    const desc = document.querySelector('meta[name="description"]');
-    if (desc) desc.content = translations[currentLang][descKey];
-    const htmlKeys = ['reg_terms'];
+        let titleKey = 'page_title';
+        if (path.includes('register')) titleKey = 'page_title_reg';
+        if (path.includes('reset-password')) titleKey = 'page_title_reset';
 
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (translations[currentLang][key]) {
-            if (htmlKeys.includes(key)) {
-                el.innerHTML = translations[currentLang][key];
-            } else {
-                el.textContent = translations[currentLang][key];
+        document.title = translations[currentLang][titleKey];
+        let descKey = 'meta_description';
+        if (path.includes('register')) descKey = 'meta_description_reg';
+        if (path.includes('reset-password')) descKey = 'meta_description_reset';
+        const desc = document.querySelector('meta[name="description"]');
+        if (desc) desc.content = translations[currentLang][descKey];
+        const htmlKeys = ['reg_terms'];
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (translations[currentLang][key]) {
+                if (htmlKeys.includes(key)) {
+                    el.innerHTML = translations[currentLang][key];
+                } else {
+                    el.textContent = translations[currentLang][key];
+                }
             }
-        }
-    });
+        });
 
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-i18n-placeholder');
-        if (translations[currentLang][key]) {
-            el.placeholder = translations[currentLang][key];
-        }
-    });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (translations[currentLang][key]) {
+                el.placeholder = translations[currentLang][key];
+            }
+        });
 
-    try {
-        window.dispatchEvent(new CustomEvent('lang-changed', { detail: { lang: currentLang } }));
-    } catch (_) { }
+        const langToggle = document.getElementById('lang-toggle');
+        if (langToggle) langToggle.textContent = currentLang.toUpperCase();
+
+        try {
+            window.dispatchEvent(new CustomEvent('lang-changed', { detail: { lang: currentLang } }));
+        } catch (_) { }
+    }
+
+    window.applyAuthTranslations = applyAuthTranslations;
+    applyAuthTranslations();
+
+    const langToggle = document.getElementById('lang-toggle');
+    if (langToggle) {
+        langToggle.addEventListener('click', () => {
+            const nextLang = getAuthLang() === 'ru' ? 'en' : 'ru';
+            localStorage.setItem('valuon-lang', nextLang);
+            applyAuthTranslations(nextLang);
+        });
+    }
 
     document.querySelectorAll('input[required], select[required], textarea[required]').forEach(el => {
         const form = el.closest('form');

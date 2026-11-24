@@ -227,12 +227,19 @@
         height: 72px;
     }
 
+    .nav-actions {
+        gap: 6px;
+    }
+
     .nav-actions .icon-btn {
-        display: none;
+        width: 36px;
+        height: 36px;
+        font-size: 0.85rem;
     }
 
     .btn.small {
-        padding: 8px 14px;
-        font-size: 0.8rem;
+        padding: 7px 11px;
+        font-size: 0.78rem;
+        white-space: nowrap;
     }
 }

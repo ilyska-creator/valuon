@@ -565,21 +565,22 @@ html.scroll-locked {
     background-clip: text;
     background-image: linear-gradient(to right,
             var(--text-main) 0%,
-            var(--text-main) 30%,
-            rgba(255, 255, 255, 0.25) 47%,
-            rgba(255, 255, 255, 0.2) 53%,
-            var(--text-main) 70%,
+            var(--text-main) 34%,
+            #2563eb 47%,
+            #3b82f6 53%,
+            var(--text-main) 66%,
             var(--text-main) 100%);
     background-size: 300% 100%;
+    background-position: 300% 0;
 }
 
 [data-theme="dark"] .hero-text h1 {
     background-image: linear-gradient(to right,
             var(--text-main) 0%,
-            var(--text-main) 30%,
-            rgba(59, 130, 246, 0.15) 47%,
-            rgba(59, 130, 246, 0.12) 53%,
-            var(--text-main) 70%,
+            var(--text-main) 34%,
+            #60a5fa 47%,
+            #93c5fd 53%,
+            var(--text-main) 66%,
             var(--text-main) 100%);
 }
 
@@ -1050,7 +1051,7 @@ html.scroll-locked {
 
 .hero-text h1 {
     animation: titleReveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both,
-        shimmer 8s ease-in-out 1.5s 4;
+        shimmer 8s ease-in-out 1.5s 4 forwards;
 }
 
 @keyframes titleReveal {
@@ -2635,31 +2636,32 @@ html.modal-open {
 
 .cookie-banner {
     position: fixed;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%) translateY(120%);
-    max-width: 600px;
-    width: calc(100% - 32px);
-    padding: 12px 20px;
+    bottom: 20px;
+    right: 20px;
+    left: auto;
+    transform: translateY(120%);
+    max-width: 400px;
+    width: calc(100% - 40px);
+    padding: 14px 18px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 14px;
     z-index: 100000;
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
     transition: transform 0.4s ease, opacity 0.3s ease, visibility 0.3s ease;
     box-shadow: var(--shadow-lg);
-    border-radius: 12px;
+    border-radius: 14px;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     will-change: transform, opacity;
 }
 
 .cookie-banner.show {
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
@@ -2693,14 +2695,21 @@ html.modal-open {
 
 @media (max-width: 900px) {
     .cookie-banner {
-        top: calc(12px + env(safe-area-inset-top, 0px));
-        bottom: auto;
-        transform: translateX(-50%) translateY(-150%);
+        top: auto;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%) translateY(150%);
+        max-width: 600px;
         width: calc(100% - 24px);
         padding: 14px 16px;
         flex-direction: column;
         text-align: center;
         gap: 10px;
+    }
+
+    body:has(.bottom-nav) .cookie-banner {
+        bottom: calc(76px + env(safe-area-inset-bottom, 0px));
     }
 
     .cookie-banner.show {

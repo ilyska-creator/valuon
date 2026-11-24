@@ -44,6 +44,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         phonePair = wirePhoneInputPair(phoneCountryEl, phoneInput);
     }
 
+    window.addEventListener('lang-changed', (e) => {
+        const nextLang = e.detail?.lang || localStorage.getItem('valuon-lang') || 'ru';
+        if (phoneCountryEl) {
+            const prevCode = phoneCountryEl.value;
+            populateDialCodeSelect(phoneCountryEl, nextLang, prevCode || getDefaultPhoneCountry(null, nextLang));
+            if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+        }
+        modeIndicator.update(true);
+    });
+
     function setLoginMode(mode, { focus = false, instant = false } = {}) {
         loginMode = mode === 'phone' ? 'phone' : 'email';
         const isPhone = loginMode === 'phone';

@@ -66,6 +66,20 @@ if (regPhoneCountryEl) {
     populateDialCodeSelect(regPhoneCountryEl, getLang(), getDefaultPhoneCountry(null, getLang()));
 }
 
+window.addEventListener('lang-changed', (e) => {
+    const nextLang = e.detail?.lang || getLang();
+    const curEl = document.getElementById('currency');
+    if (curEl && typeof window.renderCurrencyOptions === 'function') {
+        window.renderCurrencyOptions(curEl, nextLang);
+    }
+    if (regPhoneCountryEl) {
+        const prevPhoneCode = regPhoneCountryEl.value;
+        populateDialCodeSelect(regPhoneCountryEl, nextLang, prevPhoneCode || getDefaultPhoneCountry(null, nextLang));
+    }
+    if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+    if (typeof CustomDatePicker !== 'undefined') CustomDatePicker.refreshAll();
+});
+
 let registerWidgetId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
