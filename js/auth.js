@@ -315,6 +315,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 containerId: 'forgot-turnstile',
                 skeletonId: 'forgot-turnstile-skel',
                 sitekey: '0x4AAAAAADxC9yNLOh3uKLe-',
+                shouldRender: () => forgotModal.classList.contains('active'),
+                onAbort: () => { delete forgotModal.dataset.turnstileMounted; },
                 onRender: (id) => { forgotWidgetId = id; },
             });
         }

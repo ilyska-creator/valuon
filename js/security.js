@@ -251,7 +251,7 @@ function setTurnstileSkeletonError(skeletonEl, onRetry) {
 /**
  * Mounts a Cloudflare Turnstile widget with timeout/error handling and a retry button.
  */
-export function mountTurnstile({ containerId, skeletonId, sitekey, theme = 'auto', timeoutMs = 6000, onRender }) {
+export function mountTurnstile({ containerId, skeletonId, sitekey, theme = 'auto', timeoutMs = 6000, onRender, shouldRender, onAbort }) {
     const container = document.getElementById(containerId);
     const skeleton = skeletonId ? document.getElementById(skeletonId) : null;
     if (!container) return;
@@ -259,6 +259,10 @@ export function mountTurnstile({ containerId, skeletonId, sitekey, theme = 'auto
     let widgetId = null;
 
     const renderWidget = () => {
+        if (typeof shouldRender === 'function' && !shouldRender()) {
+            if (typeof onAbort === 'function') onAbort();
+            return;
+        }
         container.innerHTML = '';
         widgetId = turnstile.render(`#${containerId}`, {
             sitekey,
