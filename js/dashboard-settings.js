@@ -1,5 +1,5 @@
 import { requireAuth } from './dashboard-auth.js';
-import { logError } from './security.js';
+import { isValidEmail, logError } from './security.js';
 import { refreshNotifBadge } from './dashboard-notifications.js';
 import {
     populateDialCodeSelect,
@@ -119,7 +119,10 @@ async function initSettings() {
             }
             if (currencySelect) currencySelect.value = data.currency || 'EUR';
             if (toggleExpiry) toggleExpiry.checked = data.expiry_alerts ?? true;
-            if (toggleDigest) toggleDigest.checked = data.weekly_digest ?? false;
+            if (toggleDigest) {
+                toggleDigest.checked = false;
+                toggleDigest.disabled = true;
+            }
             currentPhoneE164 = data.phone || null;
         } else {
             const metaFirstName = user.user_metadata?.first_name || '';
@@ -268,15 +271,22 @@ async function initSettings() {
         });
     }
 
-    async function saveToggle(field, value) {
+    async function saveToggle(field, value, toggleEl) {
+        if (toggleEl) toggleEl.disabled = true;
         try {
-            await client
+            const { error } = await client
                 .from('profiles')
                 .update({ [field]: value, updated_at: new Date().toISOString() })
                 .eq('id', user.id);
+            if (error) throw error;
+            return true;
         } catch (err) {
+            if (toggleEl) toggleEl.checked = !value;
             logError('settings:updateField', err);
-            showToast((getSettingsT().msg_save_error || 'Save failed') + ': ' + (err.message || ''), 'error');
+            showToast(getSettingsT().msg_save_error || 'Save failed', 'error');
+            return false;
+        } finally {
+            if (toggleEl) toggleEl.disabled = false;
         }
     }
 
@@ -284,16 +294,15 @@ async function initSettings() {
     const toggleDigest = document.getElementById('toggle-digest');
 
     if (toggleExpiry) {
-        toggleExpiry.addEventListener('change', (e) => {
-            saveToggle('expiry_alerts', e.target.checked);
-            refreshNotifBadge();
+        toggleExpiry.addEventListener('change', async (e) => {
+            const ok = await saveToggle('expiry_alerts', e.target.checked, toggleExpiry);
+            if (ok) await refreshNotifBadge();
         });
     }
 
     if (toggleDigest) {
-        toggleDigest.addEventListener('change', (e) => {
-            saveToggle('weekly_digest', e.target.checked);
-        });
+        toggleDigest.checked = false;
+        toggleDigest.disabled = true;
     }
 
     const changeEmailBtn = document.getElementById('change-email-btn');
@@ -360,7 +369,7 @@ async function initSettings() {
             const newEmail = newEmailInput?.value.trim();
             const t = getSettingsT();
 
-            if (!newEmail || !newEmail.includes('@')) {
+            if (!newEmail || !isValidEmail(newEmail)) {
                 showToast(t.msg_valid_email || 'Enter a valid email', 'warning');
                 return;
             }
@@ -393,7 +402,7 @@ async function initSettings() {
                 } else if (errMsg.includes('rate limit') || errMsg.includes('too many')) {
                     msg = t.msg_rate_limit || 'Too many attempts. Please wait a minute.';
                 } else {
-                    msg = errMsg || 'Failed';
+                    msg = t.msg_save_error || 'Save failed';
                 }
                 showToast(msg, 'error');
                 confirmEmailChange.innerHTML = originalHTML;

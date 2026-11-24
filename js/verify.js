@@ -1,4 +1,4 @@
-import { supabase } from './supabase-client.js';
+import { SUPABASE_URL } from './supabase-client.js';
 import { logError } from './security.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
 

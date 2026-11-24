@@ -313,14 +313,17 @@
                         </label>
                     </div>
 
-                    <div class="setting-row">
+                    <div class="setting-row is-disabled">
                         <div class="setting-info">
-                            <span class="setting-label" data-i18n="setting_email_digest">Еженедельная сводка</span>
+                            <span class="setting-label-row">
+                                <span class="setting-label" data-i18n="setting_email_digest">Еженедельная сводка</span>
+                                <span class="setting-soon-badge" data-i18n="coming_soon">Скоро</span>
+                            </span>
                             <span class="setting-desc" data-i18n="setting_digest_desc">Обзор ваших активов каждый
                                 понедельник</span>
                         </div>
                         <label class="toggle-switch">
-                            <input type="checkbox" id="toggle-digest">
+                            <input type="checkbox" id="toggle-digest" disabled aria-disabled="true">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
