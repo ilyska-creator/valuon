@@ -500,132 +500,43 @@ input[type="datetime-local"].custom-datepicker {
 
 .cal-time {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    align-items: center;
+    gap: 6px;
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px solid var(--border);
 }
 
-.cal-time-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.cal-time-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-
-.cal-time-readout {
-    color: var(--text-main);
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-    font-size: 0.85rem;
-    padding: 2px 7px;
+.cal-time select {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--light);
-    border: 1px solid var(--border);
-}
-
-.cal-time-now {
-    padding: 4px 10px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--primary);
-    font-size: 0.78rem;
-    font-weight: 600;
-    font-family: var(--font-main);
-    cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .cal-time-now:hover {
-        background: rgba(37, 99, 235, 0.08);
-        border-color: var(--primary);
-    }
-}
-
-.cal-time-cols {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-}
-
-.cal-time-col-wrap {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--light);
-    overflow: hidden;
-}
-
-.cal-time-col-title {
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-muted);
-    text-align: center;
-    padding: 5px 4px 4px;
-    border-bottom: 1px solid var(--border);
-}
-
-.cal-time-col {
-    height: 124px;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    padding: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    scrollbar-width: thin;
-}
-
-.cal-time-col::-webkit-scrollbar {
-    width: 4px;
-}
-
-.cal-time-col::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 4px;
-}
-
-.cal-time-opt {
-    width: 100%;
-    padding: 5px 4px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
     color: var(--text-main);
     font-size: 0.85rem;
     font-family: var(--font-main);
-    font-variant-numeric: tabular-nums;
-    text-align: center;
     cursor: pointer;
+    text-align: center;
+    -moz-appearance: textfield;
+    transition: border-color 0.15s;
+}
+
+.cal-time select:hover {
+    border-color: var(--text-muted);
+}
+
+.cal-time select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.cal-time-sep {
+    color: var(--text-muted);
+    font-size: 1rem;
+    font-weight: 600;
     flex-shrink: 0;
-    transition: background-color 0.12s ease, color 0.12s ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .cal-time-opt:hover {
-        background: rgba(0, 0, 0, 0.05);
-    }
-}
-
-.cal-time-opt.is-selected {
-    background: var(--primary);
-    color: #fff;
-    font-weight: 600;
 }
 
 [data-theme="dark"] .custom-datepicker-trigger {
@@ -707,21 +618,18 @@ input[type="datetime-local"].custom-datepicker {
     background: rgba(255, 255, 255, 0.12);
 }
 
-[data-theme="dark"] .cal-time-readout,
-[data-theme="dark"] .cal-time-col-wrap {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+[data-theme="dark"] .cal-time select {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
 }
 
-@media (hover: hover) and (pointer: fine) {
-    [data-theme="dark"] .cal-time-opt:hover {
-        background: rgba(255, 255, 255, 0.08);
-    }
+[data-theme="dark"] .cal-time select:hover {
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
-[data-theme="dark"] .cal-time-opt.is-selected {
-    background: var(--primary);
-    color: #fff;
+[data-theme="dark"] .cal-time select:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
 
 .input-with-lock .custom-datepicker-trigger {
