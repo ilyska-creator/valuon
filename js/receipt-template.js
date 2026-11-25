@@ -485,7 +485,7 @@ function buildFooter() {
 export function buildReceiptCard(receipt, shop, opts = {}) {
     const items = Array.isArray(receipt.receipt_items) && receipt.receipt_items.length > 0
         ? receipt.receipt_items
-        : [{ item_name: shop.shop_name || 'Digital Receipt', qty: 1, unit_price: Number(receipt.gross_total) || 0, vat_rate: 0, net_total: Number(receipt.net_total) || 0, gross_total: Number(receipt.gross_total) || 0 }];
+        : [{ item_name: shop.shop_name || 'Digital Receipt', qty: 1, unit_price: Number(receipt.net_total) || Number(receipt.gross_total) || 0, vat_rate: 0, net_total: Number(receipt.net_total) || 0, gross_total: Number(receipt.gross_total) || 0 }];
 
     const moneyFn = moneyFormatter(shop.currency);
 

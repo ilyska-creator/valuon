@@ -36,6 +36,7 @@ const dashboardTranslations = {
         status_expiring: 'Заканчивается',
         status_expired: 'Истекла',
         days_left: 'Осталось {count} дней',
+        warranty_expires_today: 'Истекает сегодня',
         warranty_expired_text: 'Гарантия истекла',
         no_warranty: 'Нет гарантии',
         add_to_calendar: 'В календарь',
@@ -268,6 +269,7 @@ const dashboardTranslations = {
         status_expiring: 'Expiring Soon',
         status_expired: 'Expired',
         days_left: '{count} days left',
+        warranty_expires_today: 'Expires today',
         warranty_expired_text: 'Warranty expired',
         no_warranty: 'No warranty',
         add_to_calendar: 'Add to calendar',
@@ -515,6 +517,10 @@ function applyDashboardLang(lang) {
     const desc = document.querySelector('meta[name="description"]');
     if (desc) desc.content = t.meta_description;
 
+    const activeLang = lang === 'en' ? 'en' : 'ru';
+    localStorage.setItem('valuon-lang', activeLang);
+    document.documentElement.lang = activeLang;
+
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (t[key]) {
@@ -525,15 +531,17 @@ function applyDashboardLang(lang) {
                 if (countStr !== '') {
                     const count = parseInt(countStr, 10);
                     if (!isNaN(count)) {
-                        const storedLang = localStorage.getItem('valuon-lang') || 'ru';
-                        if (storedLang === 'ru') {
-                            const d = count % 10, dd = count % 100;
-                            text = text.replace(/({count}\s*)(\w+)/, (_, p, w) => {
-                                if (!w.startsWith('дн')) return p + w;
+                        if (activeLang === 'ru') {
+                            const abs = Math.abs(count);
+                            const d = abs % 10, dd = abs % 100;
+                            text = text.replace(/({count}\s*)([а-яА-ЯёЁ]+)/, (_, p, w) => {
+                                if (!w.toLowerCase().startsWith('дн')) return p + w;
                                 if (d === 1 && dd !== 11) return p + 'день';
                                 if (d >= 2 && d <= 4 && (dd < 10 || dd >= 20)) return p + 'дня';
                                 return p + 'дней';
                             });
+                        } else if (Math.abs(count) === 1) {
+                            text = text.replace(/({count}\s*)days\b/i, '$1day');
                         }
                         text = text.replace('{count}', count);
                     }
@@ -551,15 +559,13 @@ function applyDashboardLang(lang) {
     const langBtn = document.getElementById('lang-toggle');
     if (langBtn) {
         const span = langBtn.querySelector('span');
-        if (span) span.textContent = lang.toUpperCase();
+        if (span) span.textContent = activeLang.toUpperCase();
     }
 
     const settingsLangLabel = document.getElementById('settings-lang-label');
-    if (settingsLangLabel) settingsLangLabel.textContent = lang.toUpperCase();
+    if (settingsLangLabel) settingsLangLabel.textContent = activeLang.toUpperCase();
 
-    localStorage.setItem('valuon-lang', lang);
-    document.documentElement.lang = lang === 'en' ? 'en' : 'ru';
-    window.dispatchEvent(new CustomEvent('lang-changed', { detail: { lang } }));
+    window.dispatchEvent(new CustomEvent('lang-changed', { detail: { lang: activeLang } }));
     if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
     if (typeof CustomDatePicker !== 'undefined') CustomDatePicker.refreshAll();
 }

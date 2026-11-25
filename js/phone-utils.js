@@ -664,6 +664,13 @@ function quotePostgrestLiteral(val) {
 }
 
 /**
+ * Escapes PostgreSQL LIKE/ILIKE wildcard characters (%, _, \) for exact case-insensitive matching.
+ */
+function escapeIlikePattern(val) {
+    return String(val).replace(/[\\%_]/g, '\\$&');
+}
+
+/**
  * Builds a PostgREST .or() filter matching receipts that belong to this buyer
  * (by permanent customer_user_id, email, or phone) while excluding other customers'
  * receipts when the same user is also a shop owner.
@@ -677,7 +684,7 @@ export function buildBuyerReceiptOrFilter({ userId, email, phone }) {
         clauses.push(`customer_user_id.eq.${cleanUid}`);
     }
     const cleanEmail = (email || '').trim().toLowerCase();
-    if (cleanEmail) clauses.push(`customer_email.ilike.${quotePostgrestLiteral(cleanEmail)}`);
+    if (cleanEmail) clauses.push(`customer_email.ilike.${quotePostgrestLiteral(escapeIlikePattern(cleanEmail))}`);
     const cleanPhone = (phone || '').trim();
     if (cleanPhone && isValidE164(cleanPhone)) {
         clauses.push(`customer_phone.eq.${quotePostgrestLiteral(cleanPhone)}`);

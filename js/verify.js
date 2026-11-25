@@ -187,25 +187,13 @@ function extractFiscalSignature(raw) {
 
     // 1. URL format (e.g. https://valuon.app/verify.html?sig=... or ?seg=...)
     if (text.includes('?') || text.includes('#') || text.startsWith('http://') || text.startsWith('https://')) {
-        try {
-            const url = (text.startsWith('http://') || text.startsWith('https://'))
-                ? new URL(text)
-                : new URL(text, 'https://valuon.app');
-
-            const querySig = url.searchParams.get('sig')
-                || url.searchParams.get('seg')
-                || url.searchParams.get('signature')
-                || url.searchParams.get('hash');
-            if (querySig) return decodeURIComponent(querySig).trim();
-
-            const rawHash = url.hash || '';
-            const hashMatch = rawHash.match(/#(?:sig|seg|signature|hash)=([^&]+)/i);
-            if (hashMatch && hashMatch[1]) {
-                return decodeURIComponent(hashMatch[1]).trim();
-            }
-        } catch (_) {
-            const m = text.match(/[?&#](?:sig|seg|signature|hash)=([^&#]+)/i);
-            if (m && m[1]) return decodeURIComponent(m[1]).trim();
+        const queryMatch = text.match(/[?&](?:sig|seg|signature|hash)=([^&#]+)/i);
+        if (queryMatch && queryMatch[1]) {
+            return safeDecode(queryMatch[1]).trim();
+        }
+        const hashMatch = text.match(/#(?:[^&]*&)?(?:sig|seg|signature|hash)=([^&#]+)/i);
+        if (hashMatch && hashMatch[1]) {
+            return safeDecode(hashMatch[1]).trim();
         }
     }
 
@@ -296,8 +284,9 @@ async function decodeQR(file) {
             }
             const buf = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+            const maxPages = Math.min(pdf.numPages, 20);
             const pagesToScan = [];
-            for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
+            for (let i = pdf.numPages; i >= 1 && pagesToScan.length < maxPages; i--) {
                 pagesToScan.push(i);
             }
             for (const pageNum of pagesToScan) {
@@ -1101,20 +1090,26 @@ async function verifyReceiptByHash(fiscalHash) {
 }
 
 (() => {
-    const params = new URLSearchParams(window.location.search);
-    const querySig = params.get('sig') || params.get('seg') || params.get('signature') || params.get('hash');
-    const rawHash = window.location.hash || '';
-    const hashMatch = rawHash.match(/#(?:sig|seg|signature|hash)=([^&]+)/i);
-    const hashSig = hashMatch ? decodeURIComponent(hashMatch[1]).trim() : null;
+    const rawSearch = window.location.search || '';
+    const queryMatch = rawSearch.match(/[?&](?:sig|seg|signature|hash)=([^&#]+)/i);
+    const querySig = queryMatch ? safeDecode(queryMatch[1]).trim() : null;
 
-    const sig = (querySig ? querySig.trim() : null) || hashSig;
+    const rawHash = window.location.hash || '';
+    const hashMatch = rawHash.match(/#(?:[^&]*&)?(?:sig|seg|signature|hash)=([^&#]+)/i);
+    const hashSig = hashMatch ? safeDecode(hashMatch[1]).trim() : null;
+
+    const sig = querySig || hashSig;
 
     if (!sig) {
         document.documentElement.classList.remove('verify-auto-hash');
         return;
     }
     try {
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        const cleanParams = new URLSearchParams(window.location.search);
+        ['sig', 'seg', 'signature', 'hash'].forEach((k) => cleanParams.delete(k));
+        const nextSearch = cleanParams.toString();
+        const nextUrl = window.location.pathname + (nextSearch ? `?${nextSearch}` : '');
+        window.history.replaceState(null, '', nextUrl);
     } catch (_) { /* ignore */ }
     verifyReceiptByHash(sig);
 })();

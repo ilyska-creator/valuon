@@ -16,6 +16,7 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
     }
 
     let wasOpen = isOpen();
+    modal.setAttribute('aria-hidden', wasOpen ? 'false' : 'true');
 
     function getFocusable() {
         return Array.from(modal.querySelectorAll(
@@ -60,6 +61,23 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
         let touchStartTime = 0;
         let isDraggingDown = false;
         let canSwipe = false;
+        let startedInTopZone = false;
+        let touchTarget = null;
+
+        function hasScrolledInnerContainer(startNode, boundary) {
+            let node = startNode instanceof Element ? startNode : null;
+            while (node) {
+                if (node.scrollTop > 0 && node.scrollHeight > node.clientHeight + 1) {
+                    const ov = window.getComputedStyle(node).overflowY;
+                    if (ov === 'auto' || ov === 'scroll' || ov === 'overlay') {
+                        return true;
+                    }
+                }
+                if (node === boundary) break;
+                node = node.parentElement;
+            }
+            return false;
+        }
 
         contentEl.addEventListener('touchstart', (e) => {
             if (window.innerWidth > 768 || e.touches.length > 1) return;
@@ -72,20 +90,24 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
                     return;
                 }
             }
-            // Allow swipe if at top of scroll or touched top 80px (header / drag area)
+            // Allow swipe if touched top drag area OR all scrollable containers under finger are at scrollTop === 0
             const rect = contentEl.getBoundingClientRect();
             const touchY = e.touches[0].clientY;
-            const isTopZone = (touchY - rect.top) < 80;
-            const isScrolledToTop = contentEl.scrollTop <= 0;
+            const isTopZone = Boolean(target.closest('.sheet-drag-handle, .sheet-drag-pill')) || (touchY - rect.top) < 64;
+            const isScrolledToTop = !hasScrolledInnerContainer(target, contentEl);
 
             if (isTopZone || isScrolledToTop) {
                 canSwipe = true;
+                startedInTopZone = isTopZone;
+                touchTarget = target;
                 touchStartY = touchY;
                 touchStartX = e.touches[0].clientX;
                 touchStartTime = performance.now();
                 isDraggingDown = false;
             } else {
                 canSwipe = false;
+                startedInTopZone = false;
+                touchTarget = null;
             }
         }, { passive: true });
 
@@ -97,11 +119,11 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
             const diffX = currentX - touchStartX;
 
             if (!isDraggingDown) {
-                if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (Math.abs(diffX) > Math.abs(diffY) || diffY < 0) {
                     canSwipe = false;
                     return;
                 }
-                if (diffY > 8 && contentEl.scrollTop <= 0) {
+                if (diffY > 8 && (startedInTopZone || !hasScrolledInnerContainer(touchTarget, contentEl))) {
                     isDraggingDown = true;
                 }
             }
@@ -115,9 +137,19 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
             }
         }, { passive: false });
 
+        const snapBack = () => {
+            contentEl.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+            contentEl.style.transform = '';
+            setTimeout(() => {
+                contentEl.style.transition = '';
+            }, 280);
+        };
+
         const endTouch = (e) => {
             if (!canSwipe) return;
             canSwipe = false;
+            startedInTopZone = false;
+            touchTarget = null;
             if (!isDraggingDown) return;
             isDraggingDown = false;
 
@@ -130,28 +162,34 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
 
             if (diffY > 85 || (diffY > 40 && velocity > 0.45)) {
                 if (typeof beforeClose === 'function' && !beforeClose()) {
-                    contentEl.style.transform = '';
-                    setTimeout(() => {
-                        contentEl.style.transition = '';
-                    }, 280);
+                    snapBack();
                     return;
                 }
                 contentEl.style.transform = 'translateY(100%)';
                 setTimeout(() => {
-                    contentEl.style.transform = '';
-                    contentEl.style.transition = '';
                     onClose?.();
+                    requestAnimationFrame(() => {
+                        contentEl.style.transform = '';
+                        contentEl.style.transition = '';
+                    });
                 }, 260);
             } else {
-                contentEl.style.transform = '';
-                setTimeout(() => {
-                    contentEl.style.transition = '';
-                }, 260);
+                snapBack();
             }
         };
 
+        const cancelTouch = () => {
+            if (!canSwipe) return;
+            canSwipe = false;
+            startedInTopZone = false;
+            touchTarget = null;
+            if (!isDraggingDown) return;
+            isDraggingDown = false;
+            snapBack();
+        };
+
         contentEl.addEventListener('touchend', endTouch, { passive: true });
-        contentEl.addEventListener('touchcancel', endTouch, { passive: true });
+        contentEl.addEventListener('touchcancel', cancelTouch, { passive: true });
     }
 
     // --- Keyboard adaptive collapse & auto scroll-centering on mobile ---
@@ -182,6 +220,7 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
         wasOpen = nowOpen;
 
         if (nowOpen) {
+            modal.setAttribute('aria-hidden', 'false');
             lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
             document.addEventListener('keydown', handleKeydown);
             requestAnimationFrame(() => {
@@ -194,6 +233,7 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
                 }
             });
         } else {
+            modal.setAttribute('aria-hidden', 'true');
             document.removeEventListener('keydown', handleKeydown);
             modal.classList.remove('keyboard-active');
             if (contentEl) {

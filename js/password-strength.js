@@ -3,7 +3,7 @@ const REQUIREMENTS = [
     { key: 'uppercase', test: p => /[A-Z]/.test(p) },
     { key: 'lowercase', test: p => /[a-z]/.test(p) },
     { key: 'number', test: p => /[0-9]/.test(p) },
-    { key: 'special', test: p => /[^A-Za-z0-9]/.test(p) },
+    { key: 'special', test: p => /[^\p{L}\p{N}\s]/u.test(p) },
 ];
 
 const LABELS = {
@@ -38,9 +38,12 @@ const SEGMENT_COLORS = [
 
 export function checkPasswordStrength(password) {
     const checks = REQUIREMENTS.map(r => ({ key: r.key, passed: r.test(password) }));
-    const score = checks.filter(c => c.passed).length;
+    const rawScore = checks.filter(c => c.passed).length;
+    const hasMinLength = password.length >= 8;
+    const score = hasMinLength ? rawScore : Math.min(rawScore, 2);
     const pct = (score / checks.length) * 100;
-    return { score, pct, checks };
+    const isValid = hasMinLength && password.length <= 128 && rawScore >= 3;
+    return { score, pct, checks, hasMinLength, isValid };
 }
 
 function getStrengthText(score, lang = 'ru') {
@@ -114,11 +117,12 @@ export function updateStrengthUI(container, password, lang = 'ru') {
     container.classList.add('ps-visible');
 
     const segments = container.querySelectorAll('.ps-segment');
+    const activeColor = SEGMENT_COLORS[Math.max(0, score - 1)] || SEGMENT_COLORS[0];
     segments.forEach((seg, i) => {
         const filled = i < score;
         seg.classList.toggle('filled', filled);
         if (filled) {
-            seg.style.setProperty('--segment-color', SEGMENT_COLORS[i]);
+            seg.style.setProperty('--segment-color', activeColor);
         }
     });
 

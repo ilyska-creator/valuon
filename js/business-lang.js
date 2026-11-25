@@ -79,7 +79,10 @@ const businessTranslations = {
         error_phone_invalid: 'Некорректный формат номера телефона',
         field_required: 'Заполните это поле',
         error_item_name: 'Укажите название товара',
-        error_item_qty: 'Количество должно быть не меньше 1',
+        error_item_qty: 'Количество должно быть целым числом не меньше 1',
+        error_item_price: 'Укажите корректную цену (не меньше 0)',
+        error_item_vat: 'Ставка налога должна быть от 0 до 100%',
+        error_item_warranty: 'Гарантия должна быть целым числом от 0 до 600 мес.',
 
         success_title: 'Чек выписан!',
         success_client_label: 'Клиент',
@@ -431,7 +434,10 @@ const businessTranslations = {
         error_phone_invalid: 'Invalid phone number format',
         field_required: 'Please fill out this field',
         error_item_name: 'Enter a product name',
-        error_item_qty: 'Quantity must be at least 1',
+        error_item_qty: 'Quantity must be a whole number of at least 1',
+        error_item_price: 'Enter a valid price (0 or more)',
+        error_item_vat: 'Tax rate must be between 0 and 100%',
+        error_item_warranty: 'Warranty must be a whole number between 0 and 600 months',
 
         success_title: 'Receipt issued!',
         success_client_label: 'Client',

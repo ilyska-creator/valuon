@@ -135,8 +135,8 @@ function sortDashboardItems(items, mode, isVerified) {
             const noB = isNoWarranty(b);
             const daysA = noA ? null : calculateDaysLeft(a.warranty_end_date);
             const daysB = noB ? null : calculateDaysLeft(b.warranty_end_date);
-            const bucketA = noA ? 2 : (daysA > 0 ? 0 : 1);
-            const bucketB = noB ? 2 : (daysB > 0 ? 0 : 1);
+            const bucketA = noA ? 2 : (daysA >= 0 ? 0 : 1);
+            const bucketB = noB ? 2 : (daysB >= 0 ? 0 : 1);
             if (bucketA !== bucketB) return bucketA - bucketB;
             if (bucketA === 0 && daysA !== daysB) return daysA - daysB;
             if (bucketA === 1 && daysA !== daysB) return daysB - daysA;
@@ -362,7 +362,7 @@ export { calculateDaysLeft };
 
 function getStatusInfo(daysLeft) {
     if (daysLeft > 30) return { class: 'active' };
-    if (daysLeft > 0) return { class: 'warning' };
+    if (daysLeft >= 0) return { class: 'warning' };
     return { class: 'expired' };
 }
 
@@ -443,7 +443,7 @@ function renderItems(items, opts = {}) {
                                 title="${btnOpenReceiptText}" aria-label="${btnOpenReceiptText}">
                             <i class="fa-solid fa-receipt"></i>
                         </button>` : '';
-        const calendarButtonHtml = item.warranty_end_date && daysLeft > 0 ? `
+        const calendarButtonHtml = item.warranty_end_date && daysLeft >= 0 ? `
                         <button type="button" class="btn-action btn-add-calendar btn-calendar-wide" data-id="${escapeHtml(item.id)}"
                                 title="${btnCalendarText}" aria-label="${btnCalendarText}">
                             <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i>
@@ -460,7 +460,7 @@ function renderItems(items, opts = {}) {
                             <div class="no-warranty-track"><i class="fa-solid fa-shield-slash"></i></div>
                         </div>`;
         } else {
-            const progressTextKey = daysLeft > 0 ? 'days_left' : 'warranty_expired_text';
+            const progressTextKey = daysLeft > 0 ? 'days_left' : (daysLeft === 0 ? 'warranty_expires_today' : 'warranty_expired_text');
             const untilLabel = escapeHtml(t.progress_until || 'until');
             const endD = item.warranty_end_date ? item.warranty_end_date.slice(0, 10).split('-') : null;
             const endDateStr = endD ? (lang === 'ru' ? `${endD[2]}.${endD[1]}.${endD[0]}` : `${endD[1]}/${endD[2]}/${endD[0]}`) : '';
@@ -665,7 +665,7 @@ function renderVerifiedItems(receipts, t, opts = {}) {
 
         const btnCalendarText = escapeHtml(t.add_to_calendar || 'В календарь');
         const btnReceiptPdfText = escapeHtml(t.btn_receipt_pdf || (lang === 'ru' ? 'Чек PDF' : 'PDF Receipt'));
-        const calendarButtonHtml = item.warranty_end_date && daysLeft > 0 ? `
+        const calendarButtonHtml = item.warranty_end_date && daysLeft >= 0 ? `
                         <button type="button" class="btn-action btn-add-calendar btn-calendar-wide" data-id="${escapeHtml(item.id)}"
                                 title="${btnCalendarText}" aria-label="${btnCalendarText}">
                             <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i>
@@ -688,7 +688,7 @@ function renderVerifiedItems(receipts, t, opts = {}) {
                             <div class="no-warranty-track"><i class="fa-solid fa-shield-slash"></i></div>
                         </div>`;
         } else {
-            const progressTextKey = daysLeft > 0 ? 'days_left' : 'warranty_expired_text';
+            const progressTextKey = daysLeft > 0 ? 'days_left' : (daysLeft === 0 ? 'warranty_expires_today' : 'warranty_expired_text');
             const untilLabel = escapeHtml(t.progress_until || 'until');
             const endD = item.warranty_end_date ? item.warranty_end_date.slice(0, 10).split('-') : null;
             const endDateStr = endD ? (lang === 'ru' ? `${endD[2]}.${endD[1]}.${endD[0]}` : `${endD[1]}/${endD[2]}/${endD[0]}`) : '';
@@ -834,7 +834,7 @@ async function loadVerifiedItems(userEmail, client) {
         if (isNoWarranty({ warranty_months: it.warranty_months, purchase_date: it.purchase_date, warranty_end_date: it.warranty_end_date })) return;
         const days = calculateDaysLeft(it.warranty_end_date);
         if (days > 30) verifiedActive++;
-        else if (days > 0 && days <= 30) verifiedExpiring++;
+        else if (days >= 0 && days <= 30) verifiedExpiring++;
         else verifiedExpired++;
     });
 
@@ -931,8 +931,8 @@ function updateStats(items) {
         if (isNoWarranty(item)) return;
         const days = calculateDaysLeft(item.warranty_end_date);
         if (days > 30) activeCount++;
-        else if (days > 0 && days <= 30) expiringCount++;
-        else if (days <= 0) expiredCount++;
+        else if (days >= 0 && days <= 30) expiringCount++;
+        else if (days < 0) expiredCount++;
     });
 
     window.animateCount(totalEl, items.length + verifiedStats.total);

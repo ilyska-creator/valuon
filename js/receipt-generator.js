@@ -85,7 +85,7 @@ export function buildQrPayload(receipt) {
     let qrData = '';
     if (receipt.fiscal_hash) {
         const baseUrl = getVerifyBaseUrl();
-        qrData = `${baseUrl}/verify.html?sig=${encodeURIComponent(receipt.fiscal_hash)}`;
+        qrData = `${baseUrl}/verify.html#sig=${encodeURIComponent(receipt.fiscal_hash)}`;
     } else {
         qrData = `RECEIPT:${esc(receiptSerial)}|DATE:${esc(qrDate)}|TAX:${esc(vatAmount.toFixed(2))}|TOTAL:${esc(grossTotal.toFixed(2))}|SELLER:${esc(receipt.tax_id)}|SHOP_ID:${esc(receipt.shop_id)}`;
     }

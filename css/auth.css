@@ -447,180 +447,6 @@ html.modal-open:has(.auth-body) {
     color: var(--primary);
 }
 
-@media (max-width: 600px) {
-    .auth-body {
-        padding: 0;
-        align-items: flex-start;
-    }
-
-    .back-link {
-        top: 16px;
-        left: 16px;
-        font-size: 0.85rem;
-        z-index: 10;
-    }
-
-    .auth-top-actions {
-        top: 10px;
-        right: 14px;
-        gap: 6px;
-    }
-
-    .auth-top-actions .icon-btn {
-        width: 34px;
-        height: 34px;
-        font-size: 0.85rem;
-    }
-
-    .auth-container,
-    .auth-container--register {
-        max-width: none;
-        margin-top: 0;
-    }
-
-    .auth-card,
-    .auth-container--register .auth-card {
-        padding: 56px 24px 32px;
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-        border-top: none;
-        min-height: 100dvh;
-        box-shadow: none;
-    }
-
-    #forgot-modal {
-        align-items: flex-end;
-        padding: 0;
-    }
-
-    .forgot-modal-content {
-        width: 100%;
-        max-width: 100%;
-        border-radius: 22px 22px 0 0;
-        padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0));
-        max-height: calc(100dvh - 25px);
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        transform: translateY(100%);
-    }
-
-    .forgot-modal-content::before {
-        content: '';
-        display: block;
-        width: 38px;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.22);
-        border-radius: 2px;
-        margin: -0.35rem auto 0.75rem;
-        flex-shrink: 0;
-    }
-
-    [data-theme="light"] .forgot-modal-content::before,
-    :not([data-theme="dark"]) .forgot-modal-content::before {
-        background: rgba(0, 0, 0, 0.18);
-    }
-
-    #forgot-modal.active .forgot-modal-content {
-        transform: translateY(0);
-    }
-
-    #forgot-modal.closing .forgot-modal-content {
-        transform: translateY(100%);
-        transition: transform 0.25s ease;
-    }
-
-    .forgot-icon {
-        width: 44px;
-        height: 44px;
-        font-size: 1.25rem;
-        margin: 0 auto 10px;
-    }
-
-    .forgot-modal-content h3 {
-        font-size: 1.15rem;
-        margin-bottom: 6px;
-    }
-
-    .forgot-desc {
-        font-size: 0.85rem;
-        margin-bottom: 14px;
-        line-height: 1.4;
-    }
-
-    .forgot-modal-content .input-group input {
-        font-size: 16px !important;
-        padding: 11px 14px;
-    }
-
-    .forgot-modal-content .auth-btn {
-        min-height: 48px;
-        font-size: 0.95rem;
-    }
-
-    .forgot-modal-content .btn-close {
-        top: 14px;
-        right: 14px;
-        width: 44px;
-        height: 44px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-    }
-
-    [data-theme="dark"] .auth-card {
-        box-shadow: none;
-    }
-
-    .auth-logo h1 {
-        font-size: 1.5rem;
-    }
-
-    .auth-subtitle {
-        font-size: 0.9rem;
-        margin-bottom: 24px;
-    }
-
-    .input-group input {
-        padding: 12px 14px;
-        font-size: 0.95rem;
-    }
-
-    .form-options {
-        font-size: 0.8rem;
-    }
-
-    .auth-btn {
-        padding: 12px 20px;
-        font-size: 1rem;
-    }
-
-    .form-options {
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-
-    .input-wrap input {
-        padding: 10px 12px 10px 38px;
-        font-size: 0.95rem;
-    }
-
-    .input-wrap:has(.toggle-password) input {
-        padding-right: 40px;
-    }
-
-    .input-icon {
-        left: 12px;
-        font-size: 0.85rem;
-    }
-
-    .input-wrap .toggle-password,
-    .input-wrap .toggle-password-confirm {
-        right: 12px;
-    }
-}
-
 #forgot-modal {
     position: fixed;
     inset: 0;
@@ -1110,7 +936,7 @@ html.modal-open:has(.auth-body) {
     padding: 12px 14px 12px 40px;
 }
 
-.input-wrap:has(.toggle-password) input {
+.input-wrap:has(.toggle-password, .toggle-password-confirm) input {
     padding-right: 44px;
 }
 
@@ -1163,7 +989,8 @@ html.modal-open:has(.auth-body) {
     color: var(--primary);
 }
 
-.input-wrap .toggle-password {
+.input-wrap .toggle-password,
+.input-wrap .toggle-password-confirm {
     position: absolute;
     right: 14px;
     top: 50%;
@@ -1541,6 +1368,182 @@ html.modal-open:has(.auth-body) {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+@media (max-width: 600px) {
+    .auth-body {
+        padding: 0;
+        align-items: flex-start;
+    }
+
+    .back-link {
+        top: 16px;
+        left: 16px;
+        font-size: 0.85rem;
+        z-index: 10;
+    }
+
+    .auth-top-actions {
+        top: 10px;
+        right: 14px;
+        gap: 6px;
+    }
+
+    .auth-top-actions .icon-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 0.85rem;
+    }
+
+    .auth-container,
+    .auth-container--register {
+        max-width: none;
+        margin-top: 0;
+    }
+
+    .auth-card,
+    .auth-container--register .auth-card {
+        padding: 56px 24px 32px;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+        min-height: 100dvh;
+        box-shadow: none;
+    }
+
+    #forgot-modal {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .forgot-modal-content {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 22px 22px 0 0;
+        padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0));
+        max-height: calc(100dvh - 25px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        transform: translateY(100%);
+    }
+
+    .forgot-modal-content::before {
+        content: '';
+        display: block;
+        width: 38px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.22);
+        border-radius: 2px;
+        margin: -0.35rem auto 0.75rem;
+        flex-shrink: 0;
+    }
+
+    [data-theme="light"] .forgot-modal-content::before,
+    :not([data-theme="dark"]) .forgot-modal-content::before {
+        background: rgba(0, 0, 0, 0.18);
+    }
+
+    #forgot-modal:not(.active) .forgot-modal-content {
+        transform: translateY(100%);
+    }
+
+    #forgot-modal.active .forgot-modal-content {
+        transform: translateY(0);
+    }
+
+    #forgot-modal.closing .forgot-modal-content {
+        transform: translateY(100%);
+        transition: transform 0.25s ease;
+    }
+
+    .forgot-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+        margin: 0 auto 10px;
+    }
+
+    .forgot-modal-content h3 {
+        font-size: 1.15rem;
+        margin-bottom: 6px;
+    }
+
+    .forgot-desc {
+        font-size: 0.85rem;
+        margin-bottom: 14px;
+        line-height: 1.4;
+    }
+
+    .forgot-modal-content .input-group input {
+        font-size: 16px !important;
+        padding: 11px 14px;
+    }
+
+    .forgot-modal-content .auth-btn {
+        min-height: 48px;
+        font-size: 0.95rem;
+    }
+
+    .forgot-modal-content .btn-close {
+        top: 14px;
+        right: 14px;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    [data-theme="dark"] .auth-card {
+        box-shadow: none;
+    }
+
+    .auth-logo h1 {
+        font-size: 1.5rem;
+    }
+
+    .auth-subtitle {
+        font-size: 0.9rem;
+        margin-bottom: 24px;
+    }
+
+    .input-group input {
+        padding: 12px 14px;
+        font-size: 0.95rem;
+    }
+
+    .form-options {
+        font-size: 0.8rem;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .auth-btn {
+        padding: 12px 20px;
+        font-size: 1rem;
+    }
+
+    .input-wrap input,
+    #email {
+        padding: 10px 12px 10px 38px;
+        font-size: 0.95rem;
+    }
+
+    .input-wrap:has(.toggle-password, .toggle-password-confirm) input {
+        padding-right: 40px;
+    }
+
+    .input-icon {
+        left: 12px;
+        font-size: 0.85rem;
+    }
+
+    .input-wrap .toggle-password,
+    .input-wrap .toggle-password-confirm {
+        right: 12px;
+    }
 }
 
 @media (max-width: 420px) {

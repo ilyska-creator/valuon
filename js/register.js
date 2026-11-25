@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             else if (check(password !== confirmPassword, lang === 'ru' ? 'Пароли не совпадают' : 'Passwords do not match', confirmEl)) { }
             else {
                 var strength = checkPasswordStrength(password);
-                if (check(strength.score < 3, lang === 'ru' ? 'Пароль слишком слабый. Используйте минимум 8 символов, заглавные, строчные буквы, цифры и спецсимволы.' : 'Password is too weak. Use at least 8 characters, uppercase, lowercase, numbers and special characters.', passwordEl)) { }
+                if (check(!strength.isValid, lang === 'ru' ? 'Пароль слишком слабый. Используйте минимум 8 символов, заглавные, строчные буквы, цифры и спецсимволы.' : 'Password is too weak. Use at least 8 characters, uppercase, lowercase, numbers and special characters.', passwordEl)) { }
             }
 
             if (check(!termsEl.checked, lang === 'ru' ? 'Примите условия использования' : 'Accept the terms of use', termsEl)) { }
@@ -250,93 +250,90 @@ document.addEventListener('DOMContentLoaded', async () => {
                     throw localizedError(lang === 'ru' ? 'Подтвердите, что вы не робот' : 'Please complete the captcha');
                 }
 
-                const displayName = `${firstName} ${lastName}`;
-
-                // Pre-check phone availability before creating the auth account (gracefully skipped if RPC not deployed yet)
-                if (normalizedPhone) {
-                    try {
-                        const { data: isAvailable, error: availErr } = await supabase.rpc('check_phone_available', {
-                            p_phone: normalizedPhone
-                        });
-                        if (!availErr && isAvailable === false) {
-                            scrollToField(phoneEl);
-                            throw localizedError(lang === 'ru'
-                                ? 'Этот номер телефона уже привязан к другому аккаунту'
-                                : 'This phone number is already linked to another account');
-                        }
-                    } catch (availCatch) {
-                        if (availCatch?.isLocalized) {
-                            throw availCatch;
-                        }
-                    }
-                }
-
                 setSessionOnly(false);
-                const { data, error } = await supabase.auth.signUp({
-                    email,
-                    password,
-                    options: {
-                        captchaToken,
-                        data: {
-                            display_name: displayName,
-                            first_name: firstName,
-                            last_name: lastName,
-                            phone: normalizedPhone || null,
-                            birthdate: birthdate,
-                            currency: currency,
-                            created_at: new Date().toISOString()
-                        }
+                const { data, error } = await supabase.functions.invoke('register-user', {
+                    body: {
+                        email,
+                        password,
+                        phone: normalizedPhone || null,
+                        firstName,
+                        lastName,
+                        birthdate,
+                        currency,
+                        captchaToken
                     }
                 });
 
-                if (error) throw error;
-
-                if (data.user) {
-                    const baseProfile = {
-                        id: data.user.id,
-                        email: email.toLowerCase().trim(),
-                        first_name: firstName,
-                        last_name: lastName,
-                        birthdate: birthdate,
-                        currency: currency
-                    };
-                    const profilePayload = normalizedPhone
-                        ? { ...baseProfile, phone: normalizedPhone }
-                        : baseProfile;
-
-                    let { error: profileError } = await supabase
-                        .from('profiles')
-                        .upsert(profilePayload, { onConflict: 'id' });
-
-                    // Graceful fallback if phone column isn't migrated yet (42703) or unique conflict (23505)
-                    if (profileError && (profileError.code === '42703' || profileError.code === '23505')) {
-                        if (profileError.code === '23505') {
-                            await supabase.auth.updateUser({ data: { phone: null } }).catch(() => { });
-                            showToast(
-                                lang === 'ru'
-                                    ? 'Этот номер телефона уже занят — вы сможете указать другой в настройках'
-                                    : 'This phone number is already in use — you can add another one in Settings',
-                                'warning'
-                            );
-                        }
-                        const retry = await supabase.from('profiles').upsert(baseProfile, { onConflict: 'id' });
-                        profileError = retry.error;
-                    }
-
-                    if (profileError) {
-                        logError('reg:saveProfile', profileError);
-                        showToast(lang === 'ru' ? 'Ошибка сохранения данных профиля' : 'Error saving profile data', 'error');
-                    } else {
-                        const { error: lazyBindError } = await supabase.rpc('bind_pending_receipts');
-
-                        if (lazyBindError) {
-                            logError('reg:lazyBind', lazyBindError);
-                            showToast(lang === 'ru' ? 'Не удалось привязать старые чеки от партнёров' : 'Failed to link old partner receipts', 'warning');
-                        }
-                    }
+                let fnErrorCode = data?.error || null;
+                if (error) {
+                    try {
+                        const errBody = await error.context?.json?.();
+                        if (errBody?.error) fnErrorCode = errBody.error;
+                    } catch (_) { /* ignore non-JSON error body */ }
                 }
 
-                if (data.session) {
+                if (fnErrorCode) {
+                    const errorMap = {
+                        phone_taken: {
+                            el: phoneEl,
+                            msg: lang === 'ru'
+                                ? 'Этот номер телефона уже привязан к другому аккаунту'
+                                : 'This phone number is already linked to another account',
+                        },
+                        email_taken: {
+                            el: emailEl,
+                            msg: lang === 'ru' ? 'Этот email уже зарегистрирован' : 'This email is already registered',
+                        },
+                        captcha_failed: {
+                            el: null,
+                            msg: lang === 'ru' ? 'Проверка капчи не пройдена. Попробуйте снова' : 'Captcha verification failed. Please try again',
+                        },
+                        rate_limited: {
+                            el: null,
+                            msg: lang === 'ru' ? 'Слишком много попыток. Подождите немного' : 'Too many attempts. Please wait a moment',
+                        },
+                        weak_password: {
+                            el: passwordEl,
+                            msg: lang === 'ru'
+                                ? 'Пароль слишком слабый. Используйте минимум 8 символов, заглавные, строчные буквы, цифры и спецсимволы.'
+                                : 'Password is too weak. Use at least 8 characters, uppercase, lowercase, numbers and special characters.',
+                        },
+                        invalid_phone: {
+                            el: phoneEl,
+                            msg: lang === 'ru' ? 'Введите корректный номер телефона' : 'Enter a valid phone number',
+                        },
+                        invalid_email: {
+                            el: emailEl,
+                            msg: lang === 'ru' ? 'Введите корректный email' : 'Enter a valid email',
+                        },
+                        invalid_birthdate: {
+                            el: birthdateEl,
+                            msg: lang === 'ru' ? 'Укажите корректную дату рождения' : 'Enter a valid date of birth',
+                        },
+                    };
+                    const mapped = errorMap[fnErrorCode];
+                    if (mapped) {
+                        if (mapped.el) scrollToField(mapped.el);
+                        throw localizedError(mapped.msg);
+                    }
+                    throw error || new Error(fnErrorCode);
+                }
+
+                if (error) throw error;
+
+                if (data?.session?.access_token && data?.session?.refresh_token) {
+                    const { error: sessionErr } = await supabase.auth.setSession({
+                        access_token: data.session.access_token,
+                        refresh_token: data.session.refresh_token
+                    });
+                    if (sessionErr) throw sessionErr;
+
+                    const { error: lazyBindError } = await supabase.rpc('bind_pending_receipts');
+                    if (lazyBindError) {
+                        logError('reg:lazyBind', lazyBindError);
+                        showToast(lang === 'ru' ? 'Не удалось привязать старые чеки от партнёров' : 'Failed to link old partner receipts', 'warning');
+                    }
+
                     window.location.href = 'dashboard.html';
                 } else {
                     const msg = lang === 'ru'

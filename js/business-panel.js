@@ -1083,24 +1083,29 @@ async function initBusinessPanel() {
 
     function readItemRows() {
         if (!itemsList) return [];
+        const round2 = (v) => Math.round((v + Number.EPSILON) * 100) / 100;
         return [...itemsList.querySelectorAll('[data-item-row]')].map((row, index) => {
             const itemName = row.querySelector('[data-field="item_name"]').value.trim();
-            const qty = parseFloat(row.querySelector('[data-field="qty"]').value) || 0;
-            const unitPrice = parseFloat(row.querySelector('[data-field="price"]').value) || 0;
+            const rawQty = Number(row.querySelector('[data-field="qty"]').value);
+            const qty = Number.isFinite(rawQty) && rawQty > 0 ? Math.floor(rawQty) : 0;
+            const rawPrice = parseFloat(row.querySelector('[data-field="price"]').value);
+            const unitPrice = Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : 0;
             let vatRate = parseFloat(row.querySelector('[data-field="vat_rate"]').value);
             if (isNaN(vatRate) || vatRate < 0) vatRate = 0;
+            if (vatRate > 100) vatRate = 100;
             let warrantyMonths = parseInt(row.querySelector('[data-field="warranty_months"]').value, 10);
             if (isNaN(warrantyMonths) || warrantyMonths < 1) warrantyMonths = 0;
+            if (warrantyMonths > 600) warrantyMonths = 600;
             let discount = parseFloat(row.querySelector('[data-field="discount"]').value);
             if (isNaN(discount) || discount < 0) discount = 0;
             if (discount > 100) discount = 100;
             const category = (row.querySelector('[data-field="category"]').value || '').trim();
 
-            const baseTotal = qty * unitPrice;
-            const discountAmount = baseTotal * (discount / 100);
-            const netTotal = baseTotal - discountAmount;
-            const vatAmount = netTotal * (vatRate / 100);
-            const grossTotal = netTotal + vatAmount;
+            const baseTotal = round2(qty * unitPrice);
+            const discountAmount = round2(baseTotal * (discount / 100));
+            const netTotal = round2(baseTotal - discountAmount);
+            const vatAmount = round2(netTotal * (vatRate / 100));
+            const grossTotal = round2(netTotal + vatAmount);
 
             return { itemName, qty, unitPrice, vatRate, warrantyMonths, discount, category, discountAmount, netTotal, vatAmount, grossTotal, sortOrder: index };
         });
@@ -1321,15 +1326,35 @@ async function initBusinessPanel() {
         const errorEl = row.querySelector('[data-item-error]');
         const nameInput = row.querySelector('[data-field="item_name"]');
         const qtyInput = row.querySelector('[data-field="qty"]');
+        const priceInput = row.querySelector('[data-field="price"]');
+        const vatInput = row.querySelector('[data-field="vat_rate"]');
+        const warrantyInput = row.querySelector('[data-field="warranty_months"]');
         const t = bizT();
+        const isEn = bizLang() === 'en';
+
         const name = nameInput?.value.trim() || '';
-        const qty = parseFloat(qtyInput?.value) || 0;
+        const qtyRaw = qtyInput?.value.trim() || '';
+        const qty = Number(qtyRaw);
+        const priceRaw = priceInput?.value.trim() || '';
+        const price = Number(priceRaw);
+        const vatRaw = vatInput?.value.trim() || '';
+        const vat = vatRaw === '' ? 0 : Number(vatRaw);
+        const warrantyRaw = warrantyInput?.value.trim() || '';
+        const warranty = warrantyRaw === '' ? 0 : Number(warrantyRaw);
+
         let message = '';
         if (!name) {
-            message = t.error_item_name || (bizLang() === 'en' ? 'Enter a product name' : 'Укажите название товара');
-        } else if (qty <= 0) {
-            message = t.error_item_qty || (bizLang() === 'en' ? 'Quantity must be at least 1' : 'Количество должно быть не меньше 1');
+            message = t.error_item_name || (isEn ? 'Enter a product name' : 'Укажите название товара');
+        } else if (qtyRaw === '' || !Number.isInteger(qty) || qty < 1) {
+            message = t.error_item_qty || (isEn ? 'Quantity must be a whole number of at least 1' : 'Количество должно быть целым числом не меньше 1');
+        } else if (priceRaw === '' || !Number.isFinite(price) || price < 0) {
+            message = t.error_item_price || (isEn ? 'Enter a valid price (0 or more)' : 'Укажите корректную цену (не меньше 0)');
+        } else if (!Number.isFinite(vat) || vat < 0 || vat > 100) {
+            message = t.error_item_vat || (isEn ? 'Tax rate must be between 0 and 100%' : 'Ставка налога должна быть от 0 до 100%');
+        } else if (!Number.isInteger(warranty) || warranty < 0 || warranty > 600) {
+            message = t.error_item_warranty || (isEn ? 'Warranty must be between 0 and 600 months' : 'Гарантия должна быть целым числом от 0 до 600 мес.');
         }
+
         if (message) {
             if (showError) {
                 row.classList.add('is-invalid');
@@ -1663,14 +1688,14 @@ async function initBusinessPanel() {
             let verifyUrl = qrData && qrData.startsWith('http') ? qrData : null;
             if (!verifyUrl && receiptData.fiscal_hash) {
                 const origin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : 'https://valuon.app';
-                verifyUrl = `${origin}/verify.html?sig=${encodeURIComponent(receiptData.fiscal_hash)}`;
+                verifyUrl = `${origin}/verify.html#sig=${encodeURIComponent(receiptData.fiscal_hash)}`;
             }
 
             if (openBtn) {
                 if (verifyUrl) {
                     let openUrl = verifyUrl;
                     if (typeof window !== 'undefined' && window.location?.origin && receiptData.fiscal_hash) {
-                        openUrl = `${window.location.origin}/verify.html?sig=${encodeURIComponent(receiptData.fiscal_hash)}`;
+                        openUrl = `${window.location.origin}/verify.html#sig=${encodeURIComponent(receiptData.fiscal_hash)}`;
                     }
                     openBtn.href = openUrl;
                     openBtn.classList.remove('is-hidden');
@@ -2007,6 +2032,7 @@ async function initBusinessPanel() {
         if (!terminalsModal || !currentShop) return;
         renderTerminalsList();
         terminalsModal.classList.remove('is-hidden');
+        terminalsModal.setAttribute('aria-hidden', 'false');
         document.documentElement.classList.add('modal-open');
     }
 
@@ -2017,6 +2043,7 @@ async function initBusinessPanel() {
         setTimeout(() => {
             terminalsModal.classList.remove('closing');
             terminalsModal.classList.add('is-hidden');
+            terminalsModal.setAttribute('aria-hidden', 'true');
             if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
                 document.documentElement.classList.remove('modal-open');
             }
@@ -2030,6 +2057,7 @@ async function initBusinessPanel() {
         terminalFormModal.querySelectorAll('[data-terminal-error]').forEach((el) => { el.textContent = ''; });
         terminalsModal?.querySelector('.modal-content')?.classList.add('is-stacked-behind');
         terminalFormModal.classList.remove('is-hidden');
+        terminalFormModal.setAttribute('aria-hidden', 'false');
         document.documentElement.classList.add('modal-open');
         const nameField = terminalForm?.querySelector('#terminal-name');
         if (window.innerWidth > 768) {
@@ -2044,6 +2072,7 @@ async function initBusinessPanel() {
         setTimeout(() => {
             terminalFormModal.classList.remove('closing');
             terminalFormModal.classList.add('is-hidden');
+            terminalFormModal.setAttribute('aria-hidden', 'true');
             if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
                 document.documentElement.classList.remove('modal-open');
             }
@@ -2545,6 +2574,7 @@ async function initBusinessPanel() {
         setTimeout(() => {
             el.classList.remove('closing');
             el.classList.add('is-hidden');
+            el.setAttribute('aria-hidden', 'true');
             document.documentElement.classList.remove('modal-open');
             baselineDate = '';
             forms.receipt?.reset();
@@ -2638,6 +2668,7 @@ async function initBusinessPanel() {
             }
 
             modal.el.classList.remove('is-hidden');
+            modal.el.setAttribute('aria-hidden', 'false');
             document.documentElement.classList.add('modal-open');
             updateTotalPreview();
             requestAnimationFrame(() => contactModeIndicator.update(true));
