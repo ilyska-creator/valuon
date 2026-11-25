@@ -1833,6 +1833,7 @@ async function initBusinessPanel() {
         }
 
         if (modalBody) modalBody.classList.add('is-hidden');
+        document.getElementById('header-save-draft-btn')?.classList.add('is-hidden');
         successScreen?.classList.remove('is-hidden');
         successScreen?.classList.remove('is-visible');
         if (successScreen) {
@@ -1840,14 +1841,18 @@ async function initBusinessPanel() {
             // проигрывалась заново при каждом показе экрана успеха.
             void successScreen.offsetWidth;
             successScreen.classList.add('is-visible');
+            const modalScrollHost = successScreen.closest('.modal-content');
+            if (modalScrollHost) modalScrollHost.scrollTop = 0;
+            successScreen.scrollTop = 0;
         }
-        successScreen?.querySelector('#success-download-btn')?.focus();
+        successScreen?.querySelector('#success-download-btn')?.focus({ preventScroll: true });
     }
 
     function hideSuccessScreen() {
         successScreen?.classList.add('is-hidden');
         successScreen?.classList.remove('is-visible');
         modalBody?.classList.remove('is-hidden');
+        document.getElementById('header-save-draft-btn')?.classList.remove('is-hidden');
         expandClientSection();
 
         const qrImg = document.getElementById('receipt-success-qr-img');
