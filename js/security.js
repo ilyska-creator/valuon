@@ -275,10 +275,19 @@ export function mountTurnstile({ containerId, skeletonId, sitekey, theme = 'auto
             if (typeof onAbort === 'function') onAbort();
             return;
         }
+        if (widgetId !== null && typeof turnstile !== 'undefined') {
+            try { turnstile.remove(widgetId); } catch (_) { /* ignore */ }
+            widgetId = null;
+        }
         container.innerHTML = '';
+        const resolvedTheme = theme === 'auto'
+            ? (document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light')
+            : theme;
+        const resolvedLang = (localStorage.getItem('valuon-lang') || 'ru') === 'en' ? 'en' : 'ru';
         widgetId = turnstile.render(`#${containerId}`, {
             sitekey,
-            theme,
+            theme: resolvedTheme,
+            language: resolvedLang,
             'error-callback': () => {
                 setTurnstileSkeletonError(skeleton, retry);
             },

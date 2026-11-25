@@ -136,7 +136,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             wrap.classList.add('shake');
             setTimeout(function () { wrap.classList.remove('shake'); }, 400);
         }
-        el.focus({ preventScroll: true });
+        const focusTarget = (el._cdpInput instanceof HTMLElement && el._cdpInput)
+            || (el.tagName === 'SELECT' && wrap?.querySelector('.custom-select-trigger'))
+            || (el.tabIndex === -1 && wrap?.querySelector('.custom-datepicker-input, .custom-select-trigger'))
+            || el;
+        focusTarget.focus({ preventScroll: true });
     }
 
     const registerForm = document.getElementById('register-form');
@@ -174,12 +178,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             var birthdate = birthdateEl?.value || '';
             var currency = currencyEl?.value || '';
 
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const birthDateObj = birthdate ? parseLocalIsoDate(birthdate) : null;
+            let actualAge = null;
+            if (birthDateObj) {
+                const age = today.getFullYear() - birthDateObj.getFullYear();
+                const monthDiff = today.getMonth() - birthDateObj.getMonth();
+                const dayDiff = today.getDate() - birthDateObj.getDate();
+                actualAge = age - (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? 1 : 0);
+            }
+
             if (check(!email, lang === 'ru' ? 'Введите email' : 'Enter your email', emailEl)) { }
             else if (check(!isValidEmail(email), lang === 'ru' ? 'Введите корректный email' : 'Enter a valid email', emailEl)) { }
             else if (check(hasPhone && !normalizedPhone, lang === 'ru' ? 'Введите корректный номер телефона' : 'Enter a valid phone number', phoneEl)) { }
             else if (check(!firstName, lang === 'ru' ? 'Введите ваше имя' : 'Please enter your first name', firstNameEl)) { }
             else if (check(!lastName, lang === 'ru' ? 'Введите вашу фамилию' : 'Please enter your last name', lastNameEl)) { }
             else if (check(!birthdate, lang === 'ru' ? 'Укажите дату рождения' : 'Please enter your date of birth', birthdateEl)) { }
+            else if (check(!birthDateObj, lang === 'ru' ? 'Проверьте корректность даты рождения' : 'Please check the birth date', birthdateEl)) { }
+            else if (check(birthDateObj > today, lang === 'ru' ? 'Дата рождения не может быть в будущем' : 'Birth date cannot be in the future', birthdateEl)) { }
+            else if (check(actualAge < 16, lang === 'ru' ? 'Вам должно быть не менее 16 лет' : 'You must be at least 16 years old', birthdateEl)) { }
+            else if (check(actualAge > 120, lang === 'ru' ? 'Проверьте корректность даты рождения' : 'Please check the birth date', birthdateEl)) { }
             else if (check(!currency, lang === 'ru' ? 'Выберите валюту' : 'Please select a currency', currencyEl)) { }
             else if (check(!password, lang === 'ru' ? 'Введите пароль' : 'Enter a password', passwordEl)) { }
             else if (check(!confirmPassword, lang === 'ru' ? 'Подтвердите пароль' : 'Confirm your password', confirmEl)) { }
@@ -198,56 +217,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             var btn = registerForm.querySelector('button[type="submit"]');
             var originalText = btn.innerHTML;
 
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const birthDateObj = parseLocalIsoDate(birthdate);
-
-            if (!birthDateObj) {
-                scrollToField(birthdateEl);
-                showToast(lang === 'ru' ? 'Проверьте корректность даты рождения' : 'Please check the birth date', 'warning');
-                return;
-            }
-
-            if (birthDateObj > today) {
-                scrollToField(birthdateEl);
-                showToast(lang === 'ru' ? 'Дата рождения не может быть в будущем' : 'Birth date cannot be in the future', 'warning');
-                return;
-            }
-
-            const age = today.getFullYear() - birthDateObj.getFullYear();
-            const monthDiff = today.getMonth() - birthDateObj.getMonth();
-            const dayDiff = today.getDate() - birthDateObj.getDate();
-            const actualAge = age - (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? 1 : 0);
-
-            if (actualAge < 16) {
-                scrollToField(birthdateEl);
-                showToast(lang === 'ru' ? 'Вам должно быть не менее 16 лет' : 'You must be at least 16 years old', 'warning');
-                return;
-            }
-
-            if (actualAge > 120) {
-                scrollToField(birthdateEl);
-                showToast(lang === 'ru' ? 'Проверьте корректность даты рождения' : 'Please check the birth date', 'warning');
-                return;
-            }
-
             try {
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
-
-
-                const rateLimitCheck = checkSignupRateLimit(email);
-                if (!rateLimitCheck.allowed) {
-                    throw localizedError(lang === 'ru'
-                        ? 'Слишком много попыток регистрации с этого email. Попробуйте позже.'
-                        : 'Too many signup attempts from this email. Try again later.');
-                }
 
                 const captchaToken = (typeof turnstile !== 'undefined' && registerWidgetId !== null)
                     ? turnstile.getResponse(registerWidgetId)
                     : null;
                 if (!captchaToken) {
                     throw localizedError(lang === 'ru' ? 'Подтвердите, что вы не робот' : 'Please complete the captcha');
+                }
+
+                const rateLimitCheck = checkSignupRateLimit(email);
+                if (!rateLimitCheck.allowed) {
+                    throw localizedError(lang === 'ru'
+                        ? 'Слишком много попыток регистрации с этого email. Попробуйте позже.'
+                        : 'Too many signup attempts from this email. Try again later.');
                 }
 
                 setSessionOnly(false);

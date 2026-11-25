@@ -229,7 +229,7 @@ window.authTranslations = translations;
 
     document.querySelectorAll('input[required], select[required], textarea[required]').forEach(el => {
         const form = el.closest('form');
-        if (!form) return;
+        if (!form || form.id === 'register-form' || form.id === 'login-form' || form.id === 'reset-form') return;
         const container = el.closest('.input-group') || el.parentNode;
 
         const error = document.createElement('div');
@@ -241,7 +241,6 @@ window.authTranslations = translations;
         container.appendChild(error);
 
         form.addEventListener('submit', (e) => {
-            if (form.id === 'register-form' || form.id === 'login-form') return;
             const lang = localStorage.getItem('valuon-lang') || 'ru';
             const msg = lang === 'en' ? 'Please fill out this field' : 'Заполните это поле';
             el.setCustomValidity('');

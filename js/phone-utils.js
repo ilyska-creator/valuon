@@ -110,6 +110,13 @@ function validateInternationalCandidate(candidate) {
     if (parsed.matched) {
         const matchedCountry = findPhoneCountry(parsed.code);
         if (matchedCountry && !isValidLocalLength(matchedCountry, parsed.local)) {
+            if (matchedCountry.stripTrunkZero && parsed.local.startsWith('0')) {
+                const stripped = parsed.local.slice(1);
+                if (isValidLocalLength(matchedCountry, stripped)) {
+                    const normalized = `${parsed.dial}${stripped}`;
+                    return E164_REGEX.test(normalized) ? normalized : null;
+                }
+            }
             return null;
         }
     }
@@ -354,7 +361,9 @@ export function formatLocalPhone(countryOrCode, rawValue) {
     if (!digits) return '';
 
     const country = resolvePhoneCountry(countryOrCode);
-    const pattern = getPhoneGroups(country);
+    const pattern = (country && (country.code === 'EE' || country.code === 'LV') && digits.length === 7)
+        ? [3, 4]
+        : getPhoneGroups(country);
     const chunks = [];
     let idx = 0;
 
@@ -428,10 +437,11 @@ function safeFlag(code) {
  * Populates a <select> element with country dial codes for phone input.
  * Compatible with both native <select> and Valuon's CustomSelect (data-searchable).
  */
-export function populateDialCodeSelect(selectEl, lang = 'ru', selectedCode = 'EE') {
+export function populateDialCodeSelect(selectEl, lang = 'ru', selectedCode = '') {
     if (!selectEl) return;
-    const prevVal = selectEl.value || selectedCode || 'EE';
-    const targetCode = findPhoneCountry(prevVal) ? prevVal : (findPhoneCountry(selectedCode) ? selectedCode : 'EE');
+    const explicit = selectedCode && findPhoneCountry(selectedCode) ? selectedCode.toUpperCase() : '';
+    const prevVal = selectEl.value && findPhoneCountry(selectEl.value) ? selectEl.value.toUpperCase() : '';
+    const targetCode = explicit || prevVal || 'EE';
 
     selectEl.innerHTML = '';
     const isRu = lang === 'ru';
@@ -593,7 +603,7 @@ export function wirePhoneInputPair(selectEl, inputEl, opts = {}) {
         const pasted = e.clipboardData?.getData('text');
         if (!pasted) return;
         const trimmed = pasted.trim();
-        if (trimmed.startsWith('+') || trimmed.startsWith('00') || /^\d[\d\s\-()]{6,}$/.test(trimmed)) {
+        if (trimmed.startsWith('+') || trimmed.startsWith('00') || /^[\d(][\d\s\-()]{6,}$/.test(trimmed)) {
             if (tryApplyInternational(trimmed, { isPaste: true })) {
                 e.preventDefault();
                 if (typeof opts.onInput === 'function') opts.onInput();

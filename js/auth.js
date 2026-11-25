@@ -241,21 +241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     });
                     if (sessionErr) throw sessionErr;
                     activeSession = sessionData?.session || data.session;
-
-                    if (rememberMe) {
-                        localStorage.setItem('valuon-remember-login', JSON.stringify({ mode: 'phone', value: normalizedPhone }));
-                    } else {
-                        localStorage.removeItem('valuon-remember-login');
-                    }
                 } else {
-                    if (rememberMe) {
-                        localStorage.setItem('valuon-remember-email', email);
-                        localStorage.setItem('valuon-remember-login', JSON.stringify({ mode: 'email', value: email }));
-                    } else {
-                        localStorage.removeItem('valuon-remember-email');
-                        localStorage.removeItem('valuon-remember-login');
-                    }
-
                     const { data, error } = await client.auth.signInWithPassword({
                         email,
                         password,
@@ -266,17 +252,36 @@ document.addEventListener('DOMContentLoaded', async () => {
                     activeSession = data.session;
                 }
 
-                if (activeSession) {
-                    const card = loginForm.closest('.auth-card');
-                    const reduced = prefersReducedMotion();
-                    btn.innerHTML = `<i class="fa-solid fa-circle-check" style="font-size:1.25rem;${reduced ? '' : 'animation:checkPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;'}color:var(--success);"></i>`;
-                    if (!reduced) {
-                        await new Promise(r => setTimeout(r, 800));
-                        if (card) card.classList.add('auth-card--leaving');
-                        await new Promise(r => setTimeout(r, 350));
-                    }
-                    window.location.href = 'dashboard.html';
+                if (!activeSession) {
+                    throw new Error('No active session returned');
                 }
+
+                if (loginMode === 'phone') {
+                    if (rememberMe) {
+                        localStorage.setItem('valuon-remember-login', JSON.stringify({ mode: 'phone', value: normalizedPhone }));
+                    } else {
+                        localStorage.removeItem('valuon-remember-login');
+                        localStorage.removeItem('valuon-remember-email');
+                    }
+                } else {
+                    if (rememberMe) {
+                        localStorage.setItem('valuon-remember-email', email);
+                        localStorage.setItem('valuon-remember-login', JSON.stringify({ mode: 'email', value: email }));
+                    } else {
+                        localStorage.removeItem('valuon-remember-email');
+                        localStorage.removeItem('valuon-remember-login');
+                    }
+                }
+
+                const card = loginForm.closest('.auth-card');
+                const reduced = prefersReducedMotion();
+                btn.innerHTML = `<i class="fa-solid fa-circle-check" style="font-size:1.25rem;${reduced ? '' : 'animation:checkPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;'}color:var(--success);"></i>`;
+                if (!reduced) {
+                    await new Promise(r => setTimeout(r, 800));
+                    if (card) card.classList.add('auth-card--leaving');
+                    await new Promise(r => setTimeout(r, 350));
+                }
+                window.location.href = 'dashboard.html';
             } catch (err) {
                 setSessionOnly(false);
                 logError('auth:login', err);
@@ -424,8 +429,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 setLoadingButton(btn);
                 setSessionOnly(false);
 
+                const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const resetPath = isLocalHost ? '/reset-password.html' : '/reset-password';
                 const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                    redirectTo: `${window.location.origin}/reset-password.html`,
+                    redirectTo: `${window.location.origin}${resetPath}`,
                     captchaToken
                 });
 
@@ -439,8 +446,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 showToast(lang
                     ? 'Ошибка отправки. Проверьте email и попробуйте снова.'
                     : 'Failed to send. Check email and try again.');
-                if (typeof turnstile !== 'undefined' && forgotWidgetId !== null) turnstile.reset(forgotWidgetId);
             } finally {
+                if (typeof turnstile !== 'undefined' && forgotWidgetId !== null) turnstile.reset(forgotWidgetId);
                 resetLoadingButton(btn, originalText);
             }
         });

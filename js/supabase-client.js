@@ -20,14 +20,14 @@ export function setSessionOnly(enabled) {
 const adaptiveStorage = {
     getItem(key) {
         try {
+            if (sessionStorage.getItem(SESSION_ONLY_KEY) === '1') {
+                const sessionVal = sessionStorage.getItem(key);
+                if (sessionVal !== null) return sessionVal;
+                return localStorage.getItem(key);
+            }
             const localVal = localStorage.getItem(key);
             if (localVal !== null) return localVal;
-
-            const sessionVal = sessionStorage.getItem(key);
-            if (sessionVal !== null && key !== SESSION_ONLY_KEY) {
-                sessionStorage.setItem(SESSION_ONLY_KEY, '1');
-            }
-            return sessionVal;
+            return sessionStorage.getItem(key);
         } catch (_) {
             return null;
         }
