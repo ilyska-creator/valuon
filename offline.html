@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valuon — Нет подключения</title>
+    <meta name="theme-color" content="#2563eb">
+    <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .offline-card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px 28px;
+            text-align: center;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+        }
+
+        .offline-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            border-radius: 16px;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            font-size: 0.94rem;
+            line-height: 1.55;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 46px;
+            border-radius: 12px;
+            border: none;
+            background: var(--primary);
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+    <script>
+        (function () {
+            if (localStorage.getItem('valuon-theme') === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <main class="offline-card">
+        <div class="offline-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2" y1="2" x2="22" y2="22"></line>
+                <path d="M8.5 16.5a5 5 0 0 1 7 0"></path>
+                <path d="M2 8.82a15 15 0 0 1 4.17-2.65"></path>
+                <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"></path>
+                <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"></path>
+                <path d="M5 13a10 10 0 0 1 5.24-2.76"></path>
+                <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+        </div>
+        <h1 id="offline-title">Нет подключения к интернету</h1>
+        <p id="offline-desc">Проверьте мобильную связь или Wi-Fi и попробуйте обновить страницу.</p>
+        <button type="button" class="btn" id="offline-retry">Повторить</button>
+    </main>
+
+    <script>
+        (function () {
+            const isEn = (localStorage.getItem('valuon-lang') || 'ru') === 'en';
+            if (isEn) {
+                document.documentElement.lang = 'en';
+                document.title = 'Valuon — Offline';
+                document.getElementById('offline-title').textContent = 'No internet connection';
+                document.getElementById('offline-desc').textContent = 'Check your mobile data or Wi-Fi connection and try again.';
+                document.getElementById('offline-retry').textContent = 'Try again';
+            }
+            document.getElementById('offline-retry').addEventListener('click', () => {
+                window.location.reload();
+            });
+            window.addEventListener('online', () => {
+                window.location.reload();
+            });
+        })();
+    </script>
+</body>
+
+</html>

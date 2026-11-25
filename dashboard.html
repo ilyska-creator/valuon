@@ -20,6 +20,13 @@
     <link rel="stylesheet" href="css/toast.css">
     <script>(function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); })();</script>
     <script>if (location.hash) { window.__targetView = location.hash.replace('#', ''); history.replaceState(null, '', location.pathname); };</script>
+    <meta name="theme-color" content="#2563eb">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Valuon">
 </head>
 
 <body class="dashboard-body">
@@ -350,6 +357,21 @@
                     </div>
                 </div>
 
+                <div class="settings-section hidden" id="pwa-install-card" data-animate>
+                    <h2><i class="fa-solid fa-mobile-screen-button"></i> <span data-i18n="settings_app">Приложение</span></h2>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label" data-i18n="setting_install_title">Установить Valuon</span>
+                            <span class="setting-desc" data-i18n="setting_install_desc">Быстрый запуск с главного экрана телефона как нативное приложение</span>
+                            <span class="setting-desc hidden" id="pwa-ios-hint" data-i18n="setting_install_ios_hint" style="margin-top:6px;color:var(--primary);font-weight:500;">В Safari нажмите «Поделиться» (↑) → «На экран „Домой“»</span>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm hidden" id="pwa-install-btn">
+                            <i class="fa-solid fa-download"></i> <span data-i18n="btn_install_app">Установить</span>
+                        </button>
+                        <span class="hidden" id="pwa-installed-badge" data-i18n="pwa_installed_badge" style="font-size:0.85rem;font-weight:600;color:var(--success);white-space:nowrap;">Установлено</span>
+                    </div>
+                </div>
+
                 <div class="settings-section danger-zone disabled-section" data-animate>
                     <h2><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="settings_danger">Опасная
                             зона</span></h2>
@@ -631,6 +653,7 @@
     <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
+    <script defer src="js/pwa.js"></script>
 </body>
 
 </html>

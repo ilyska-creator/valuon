@@ -1,0 +1,52 @@
+{
+  "name": "Valuon — Цифровые чеки и гарантии",
+  "short_name": "Valuon",
+  "description": "Храните чеки и отслеживайте гарантии на ваши покупки. Криптографическая проверка подлинности Ed25519.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "categories": ["finance", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Мои вещи",
+      "short_name": "Вещи",
+      "url": "/dashboard",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Чеки и документы",
+      "short_name": "Чеки",
+      "url": "/receipts",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Проверить QR-чек",
+      "short_name": "QR",
+      "url": "/verify",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
