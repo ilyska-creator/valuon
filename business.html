@@ -629,6 +629,18 @@
                             </div>
                             <p class="receipt-success-qr-hint" data-i18n="success_qr_hint">Наведите камеру смартфона, чтобы открыть и сохранить чек</p>
                             <div class="receipt-success-qr-tools">
+                                <button type="button" class="btn-qr-action is-hidden" id="success-share-btn" title="Поделиться чеком">
+                                    <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+                                    <span data-i18n="success_share_btn">Поделиться</span>
+                                </button>
+                                <a href="#" target="_blank" rel="noopener noreferrer" class="btn-qr-action is-wa is-hidden" id="success-wa-btn" title="Отправить в WhatsApp">
+                                    <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+                                    <span>WhatsApp</span>
+                                </a>
+                                <a href="#" target="_blank" rel="noopener noreferrer" class="btn-qr-action is-tg is-hidden" id="success-tg-btn" title="Отправить в Telegram">
+                                    <i class="fa-brands fa-telegram" aria-hidden="true"></i>
+                                    <span>Telegram</span>
+                                </a>
                                 <button type="button" class="btn-qr-action" id="success-copy-url-btn" title="Скопировать ссылку для отправки">
                                     <i class="fa-solid fa-copy" aria-hidden="true"></i>
                                     <span id="success-copy-url-label" data-i18n="success_copy_link">Копировать</span>

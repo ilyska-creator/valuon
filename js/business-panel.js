@@ -395,6 +395,11 @@ async function initBusinessPanel() {
                     <span data-i18n="lifecycle_manage_btn">${escapeHtml(t.lifecycle_manage_btn || 'Возврат')}</span>
                 </button>` : '';
 
+            const shareBtnHtml = r.fiscal_hash ? `
+                <button type="button" class="ledger-btn ledger-btn-share btn-share-receipt" data-id="${escapeHtml(r.id)}" data-i18n-title="share_receipt_title" title="${escapeHtml(t.share_receipt_title || 'Поделиться ссылкой на чек')}" aria-label="${escapeHtml(t.share_receipt_title || 'Поделиться ссылкой на чек')}">
+                    <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+                </button>` : '';
+
             const downloadBtnHtml = `
                 <button type="button" class="ledger-btn ledger-btn-download btn-download-receipt" data-id="${escapeHtml(r.id)}" data-i18n-title="download_receipt_title" title="${escapeHtml(t.download_receipt_title || 'Скачать чек')}">
                     <i class="fa-solid fa-download" aria-hidden="true"></i>
@@ -603,6 +608,7 @@ async function initBusinessPanel() {
                     <div class="ledger-col-amount">${amountHtml}</div>
                     <div class="ledger-col-actions">
                         ${manageBtnHtml}
+                        ${shareBtnHtml}
                         ${downloadBtnHtml}
                     </div>
                 </div>
@@ -1657,6 +1663,68 @@ async function initBusinessPanel() {
 
     // --- Экран успеха -------------------------------------------------
 
+    function buildReceiptSharePayload(receiptData) {
+        if (!receiptData) return null;
+        let verifyUrl = null;
+        try {
+            const { data: qrData } = buildQrPayload({
+                ...receiptData,
+                tax_id: currentShop?.tax_id,
+                shop_id: receiptData.shop_id || currentShop?.id
+            });
+            if (qrData && qrData.startsWith('http')) verifyUrl = qrData;
+        } catch (_) { /* fallback below */ }
+
+        if (!verifyUrl && receiptData.fiscal_hash) {
+            const origin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : 'https://valuon.app';
+            const isLocal = window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1';
+            const verifyPath = isLocal ? '/verify.html' : '/verify';
+            verifyUrl = `${origin}${verifyPath}#sig=${encodeURIComponent(receiptData.fiscal_hash)}`;
+        }
+        if (!verifyUrl) return null;
+
+        const lang = bizLang();
+        const shopName = receiptData.shop_name || currentShop?.shop_name || 'Valuon';
+        const num = receiptData.receipt_number ? `#RCP-${receiptData.receipt_number}` : `#${String(receiptData.id || '').slice(0, 8).toUpperCase()}`;
+        const currency = receiptData.currency || currentShop?.currency || 'EUR';
+        const amountStr = typeof window.formatCurrency === 'function'
+            ? window.formatCurrency(parseFloat(receiptData.gross_total) || 0, currency, lang)
+            : `${(parseFloat(receiptData.gross_total) || 0).toFixed(2)} ${currency}`;
+
+        const title = lang === 'en' ? `Receipt ${num} — ${shopName}` : `Чек ${num} — ${shopName}`;
+        const text = lang === 'en'
+            ? `Your digital receipt ${num} from ${shopName} (${amountStr}):`
+            : `Ваш цифровой чек ${num} от ${shopName} (${amountStr}):`;
+
+        const phoneDigits = String(receiptData.customer_phone || '').replace(/\D/g, '');
+        const waBase = phoneDigits.length >= 7 ? `https://wa.me/${phoneDigits}` : 'https://wa.me/';
+        const waUrl = `${waBase}?text=${encodeURIComponent(`${text} ${verifyUrl}`)}`;
+        const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(verifyUrl)}&text=${encodeURIComponent(text)}`;
+
+        return { verifyUrl, title, text, waUrl, tgUrl };
+    }
+
+    async function shareReceiptViaSystemOrCopy(receiptData) {
+        const payload = buildReceiptSharePayload(receiptData);
+        if (!payload) return;
+        const lang = bizLang();
+        const t = bizT();
+        if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+            try {
+                await navigator.share({ title: payload.title, text: payload.text, url: payload.verifyUrl });
+                return;
+            } catch (err) {
+                if (err?.name === 'AbortError') return;
+            }
+        }
+        try {
+            await navigator.clipboard.writeText(payload.verifyUrl);
+            window.showToast(t.share_link_copied || (lang === 'en' ? 'Receipt link copied' : 'Ссылка на чек скопирована'), 'success');
+        } catch (_) {
+            window.open(payload.waUrl, '_blank', 'noopener,noreferrer');
+        }
+    }
+
     function showSuccessScreen(receiptData) {
         lastIssuedReceipt = receiptData;
         const t = bizT();
@@ -1732,6 +1800,34 @@ async function initBusinessPanel() {
                     copyBtn.classList.add('is-hidden');
                 }
             }
+
+            const sharePayload = buildReceiptSharePayload(receiptData);
+            const shareBtn = document.getElementById('success-share-btn');
+            const waBtn = document.getElementById('success-wa-btn');
+            const tgBtn = document.getElementById('success-tg-btn');
+            if (shareBtn) {
+                if (sharePayload && typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+                    shareBtn.classList.remove('is-hidden');
+                } else {
+                    shareBtn.classList.add('is-hidden');
+                }
+            }
+            if (waBtn) {
+                if (sharePayload) {
+                    waBtn.href = sharePayload.waUrl;
+                    waBtn.classList.remove('is-hidden');
+                } else {
+                    waBtn.classList.add('is-hidden');
+                }
+            }
+            if (tgBtn) {
+                if (sharePayload) {
+                    tgBtn.href = sharePayload.tgUrl;
+                    tgBtn.classList.remove('is-hidden');
+                } else {
+                    tgBtn.classList.add('is-hidden');
+                }
+            }
         } catch (qrErr) {
             logError('biz:showSuccessScreen:qr', qrErr);
         }
@@ -1770,7 +1866,16 @@ async function initBusinessPanel() {
 
         const openBtn = document.getElementById('success-open-url-btn');
         if (openBtn) openBtn.href = '#';
+        const waBtn = document.getElementById('success-wa-btn');
+        if (waBtn) { waBtn.href = '#'; waBtn.classList.add('is-hidden'); }
+        const tgBtn = document.getElementById('success-tg-btn');
+        if (tgBtn) { tgBtn.href = '#'; tgBtn.classList.add('is-hidden'); }
+        document.getElementById('success-share-btn')?.classList.add('is-hidden');
     }
+
+    document.getElementById('success-share-btn')?.addEventListener('click', () => {
+        if (lastIssuedReceipt) shareReceiptViaSystemOrCopy(lastIssuedReceipt);
+    });
 
     document.getElementById('success-copy-url-btn')?.addEventListener('click', async (e) => {
         const btn = e.currentTarget;
@@ -3890,6 +3995,15 @@ async function initBusinessPanel() {
                 const receiptId = manageBtn.dataset.id;
                 const receipt = currentReceiptsList.find(r => String(r.id) === String(receiptId));
                 if (receipt) openLifecycleModal(receipt);
+                return;
+            }
+
+            const shareBtn = e.target.closest('.btn-share-receipt');
+            if (shareBtn) {
+                e.stopPropagation();
+                const receiptId = shareBtn.dataset.id;
+                const receipt = currentReceiptsList.find(r => String(r.id) === String(receiptId));
+                if (receipt) await shareReceiptViaSystemOrCopy(receipt);
                 return;
             }
 
