@@ -174,16 +174,6 @@ html {
     align-items: center;
 }
 
-.close-sidebar-btn {
-    display: none;
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 4px;
-}
-
 .sidebar-nav {
     display: flex;
     flex-direction: column;
@@ -311,45 +301,6 @@ html {
     border-color: var(--border);
 }
 
-.mobile-menu-btn {
-    display: none;
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 90;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    color: var(--text-main);
-    font-size: 1.2rem;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow-sm);
-}
-
-.sidebar-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: 95;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.sidebar-overlay.active {
-    display: block;
-    opacity: 1;
-}
-
 .stat-icon {
     width: 44px;
     height: 44px;
@@ -459,7 +410,6 @@ html {
     justify-content: center;
 }
 
-
 .item-card {
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -488,92 +438,6 @@ html {
     box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.4);
 }
 
-.item-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.item-icon {
-    width: 48px;
-    height: 48px;
-    background: var(--light);
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    color: var(--secondary);
-}
-
-[data-theme="dark"] .item-icon {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.item-icon-ring {
-    position: relative;
-    width: 52px;
-    height: 52px;
-    flex-shrink: 0;
-}
-
-.item-icon-ring .item-icon {
-    position: absolute;
-    inset: 0;
-    width: 40px;
-    height: 40px;
-    margin: auto;
-    border-radius: 50%;
-}
-
-.item-icon-ring .item-icon.verified {
-    border-radius: 50%;
-}
-
-.progress-ring {
-    position: absolute;
-    inset: 0;
-    transform: rotate(-90deg);
-    pointer-events: none;
-}
-
-.progress-ring-track {
-    fill: none;
-    stroke: var(--border);
-    stroke-width: 3;
-}
-
-.progress-ring-track.none {
-    stroke-dasharray: 4 6;
-    stroke-linecap: round;
-}
-
-.progress-ring-fill {
-    fill: none;
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-dasharray: 144.5;
-    transition: stroke-dashoffset 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.progress-ring-fill.active {
-    stroke: var(--success);
-}
-
-.progress-ring-fill.warning {
-    stroke: var(--warning);
-}
-
-.progress-ring-fill.expired {
-    stroke: var(--error);
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .progress-ring-fill {
-        transition: none;
-    }
-}
-
 .item-status-badge.none {
     background: rgba(148, 163, 184, 0.1);
     color: #94a3b8;
@@ -582,33 +446,6 @@ html {
 
 [data-theme="dark"] .item-status-badge.none {
     background: rgba(148, 163, 184, 0.15);
-}
-
-.item-body {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.item-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text-main);
-    line-height: 1.3;
-    margin: 0;
-}
-
-.item-brand {
-    font-size: 0.9rem;
-    color: var(--secondary);
-    font-weight: 500;
-}
-
-.item-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    margin-top: var(--space-1);
 }
 
 .tag {
@@ -625,15 +462,6 @@ html {
 
 [data-theme="dark"] .tag {
     background: rgba(255, 255, 255, 0.05);
-}
-
-.item-footer {
-    margin-top: auto;
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
 }
 
 .no-warranty-track {
@@ -1121,69 +949,6 @@ html {
 
 /* ==== Карточка загруженного пользователем чека ==== */
 
-.mine-item-actions.receipt-actions .btn-view-receipt,
-.mine-item-actions.receipt-actions .btn-download-receipt {
-    flex: 1;
-}
-
-.mine-item-actions.receipt-actions .btn-delete-receipt {
-    flex: 0 0 auto;
-    width: 44px;
-    padding: 0;
-}
-
-.mine-item-actions.receipt-actions .btn-view-receipt {
-    background: rgba(59, 130, 246, 0.14);
-    color: color-mix(in srgb, var(--primary) 85%, black);
-}
-
-.mine-item-actions.receipt-actions .btn-view-receipt:hover {
-    background: rgba(59, 130, 246, 0.22);
-    transform: translateY(-1px);
-}
-
-[data-theme="dark"] .mine-item-actions.receipt-actions .btn-view-receipt {
-    background: rgba(59, 130, 246, 0.25);
-    color: #93c5fd;
-}
-
-[data-theme="dark"] .mine-item-actions.receipt-actions .btn-view-receipt:hover {
-    background: rgba(59, 130, 246, 0.35);
-}
-
-.mine-item-actions.receipt-actions .btn-download-receipt {
-    background: var(--light);
-    color: var(--text-main);
-}
-
-.mine-item-actions.receipt-actions .btn-download-receipt:hover {
-    background: rgba(0, 0, 0, 0.06);
-    transform: translateY(-1px);
-}
-
-[data-theme="dark"] .mine-item-actions.receipt-actions .btn-download-receipt {
-    background: rgba(255, 255, 255, 0.06);
-}
-
-[data-theme="dark"] .mine-item-actions.receipt-actions .btn-download-receipt:hover {
-    background: rgba(255, 255, 255, 0.12);
-}
-
-.mine-item-actions.receipt-actions .btn-delete-receipt {
-    background: rgba(239, 68, 68, 0.18);
-    color: color-mix(in srgb, var(--error) 85%, black);
-}
-
-.mine-item-actions.receipt-actions .btn-delete-receipt:hover {
-    background: rgba(239, 68, 68, 0.28);
-    transform: translateY(-1px);
-}
-
-[data-theme="dark"] .mine-item-actions.receipt-actions .btn-delete-receipt {
-    background: rgba(239, 68, 68, 0.3);
-    color: #f87171;
-}
-
 /* ==== Карточка чека от бизнес-партнёра ==== */
 
 .mine-item-card.business .mine-item-icon {
@@ -1193,30 +958,6 @@ html {
 
 [data-theme="dark"] .mine-item-card.business .mine-item-icon {
     background: rgba(16, 185, 129, 0.2);
-}
-
-.shop-pill {
-    display: inline-flex;
-    align-self: flex-start;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: var(--radius-full);
-    background: rgba(59, 130, 246, 0.12);
-    color: color-mix(in srgb, var(--primary) 80%, black);
-    font-size: 0.82rem;
-    font-weight: 700;
-}
-
-[data-theme="dark"] .shop-pill {
-    background: rgba(59, 130, 246, 0.22);
-    color: #93c5fd;
-}
-
-.mine-item-actions.download-only .btn-download-biz {
-    flex: 1;
-    width: auto;
-    padding: 0 14px;
 }
 
 .mine-item-actions .btn-download-biz {
@@ -1584,9 +1325,6 @@ html {
 }
 
 @media (max-width: 900px) {
-    .mobile-menu-btn {
-        display: flex;
-    }
 
     .bottom-nav {
         display: flex;
@@ -1601,14 +1339,6 @@ html {
         transform: none;
     }
 
-    .close-sidebar-btn {
-        display: none;
-    }
-
-    .menu-trigger {
-        display: none;
-    }
-
     .main-content {
         margin-left: 0;
         padding: 24px;
@@ -1617,20 +1347,6 @@ html {
 
     .sidebar-footer {
         display: none !important;
-    }
-
-    .sidebar-overlay {
-        display: none;
-        pointer-events: none;
-        opacity: 0;
-        visibility: hidden;
-    }
-
-    .sidebar-overlay.active {
-        display: block;
-        pointer-events: auto;
-        opacity: 1;
-        visibility: visible;
     }
 
     body.scroll-locked {
@@ -1971,7 +1687,6 @@ html {
     }
 }
 
-
 .circle-btn i {
     font-size: 1rem;
     transition: transform 0.3s ease;
@@ -1980,7 +1695,6 @@ html {
 .circle-btn:active i {
     transform: rotate(180deg);
 }
-
 
 #logout-btn {
     margin-top: 8px;
@@ -2119,34 +1833,6 @@ html {
     left: 50%;
     transform: translateX(-50%);
     white-space: nowrap;
-}
-
-.menu-trigger {
-    background: none;
-    border: none;
-    color: var(--text-main);
-    font-size: 1.4rem;
-    cursor: pointer;
-    padding: 8px;
-    margin-left: -8px;
-    border-radius: 8px;
-    transition: background 0.2s;
-    z-index: 2;
-    flex-shrink: 0;
-}
-
-.menu-trigger:hover {
-    background: rgba(0, 0, 0, 0.1);
-}
-
-.top-bar-spacer {
-    width: 40px;
-    height: 40px;
-    flex-shrink: 0;
-}
-
-.mobile-menu-btn:not(.menu-trigger) {
-    display: none !important;
 }
 
 @media (max-width: 900px) {
@@ -2332,76 +2018,6 @@ html {
     gap: 24px;
 }
 
-.receipt-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    transition: all 0.3s ease;
-}
-
-.receipt-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.15);
-    border-color: rgba(59, 130, 246, 0.3);
-}
-
-[data-theme="dark"] .receipt-card:hover {
-    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.4);
-}
-
-.receipt-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-}
-
-.receipt-icon {
-    width: 48px;
-    height: 48px;
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-}
-
-[data-theme="dark"] .receipt-icon {
-    background: rgba(59, 130, 246, 0.15);
-}
-
-.receipt-info h3 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-main);
-    margin: 0 0 4px 0;
-}
-
-.receipt-info p {
-    font-size: 0.85rem;
-    color: var(--secondary);
-    margin: 0;
-}
-
-.receipt-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.receipt-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: auto;
-    padding-top: 16px;
-    border-top: 1px solid var(--border);
-}
-
 .upload-zone {
     border: 2px dashed var(--border);
     border-radius: 20px;
@@ -2533,29 +2149,6 @@ html {
     margin-top: 4px;
 }
 
-.receipt-actions .btn-action {
-    flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    white-space: nowrap;
-    min-width: 44px;
-}
-
-.receipt-actions .btn-action.danger {
-    flex: 0 0 auto;
-    min-width: 44px;
-}
-
 .btn-action.primary {
     background: rgba(59, 130, 246, 0.1);
     color: #3b82f6;
@@ -2595,7 +2188,6 @@ html {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-main);
 }
-
 
 .settings-container {
     display: flex;
@@ -3264,25 +2856,6 @@ html {
     color: var(--primary);
 }
 
-.btn-action.danger {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--error);
-}
-
-.btn-action.danger:hover {
-    background: rgba(239, 68, 68, 0.2);
-    transform: translateY(-1px);
-}
-
-[data-theme="dark"] .btn-action.danger {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
-}
-
-[data-theme="dark"] .btn-action.danger:hover {
-    background: rgba(239, 68, 68, 0.25);
-}
-
 .forgot-icon {
     width: 54px;
     height: 54px;
@@ -3311,116 +2884,6 @@ html {
     box-shadow: none !important;
 }
 
-.item-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-}
-
-.item-actions .btn-action {
-    flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    min-width: 44px;
-}
-
-.item-actions .btn-action.primary {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-}
-
-.item-actions .btn-action.primary:hover {
-    background: rgba(59, 130, 246, 0.2);
-    transform: translateY(-1px);
-}
-
-[data-theme="dark"] .item-actions .btn-action.primary {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
-}
-
-[data-theme="dark"] .item-actions .btn-action.primary:hover {
-    background: rgba(59, 130, 246, 0.25);
-}
-
-.item-actions .btn-action.danger {
-    flex: 0 0 auto;
-    min-width: 44px;
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--error);
-}
-
-.item-actions .btn-action.danger:hover {
-    background: rgba(239, 68, 68, 0.2);
-    transform: translateY(-1px);
-}
-
-[data-theme="dark"] .item-actions .btn-action.danger {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
-}
-
-[data-theme="dark"] .item-actions .btn-action.danger:hover {
-    background: rgba(239, 68, 68, 0.25);
-}
-
-.item-actions .btn-action.btn-add-calendar {
-    flex: 0 0 auto;
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--success);
-}
-
-.item-actions .btn-action.btn-add-calendar:hover {
-    background: rgba(16, 185, 129, 0.2);
-    transform: translateY(-1px);
-}
-
-[data-theme="dark"] .item-actions .btn-action.btn-add-calendar {
-    background: rgba(16, 185, 129, 0.15);
-    color: #34d399;
-}
-
-[data-theme="dark"] .item-actions .btn-action.btn-add-calendar:hover {
-    background: rgba(16, 185, 129, 0.25);
-}
-
-.section-divider {
-    height: 1px;
-    background: var(--border);
-    margin: 48px 0;
-    position: relative;
-}
-
-.section-divider::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: -10px;
-    transform: translateX(-50%);
-    width: 40px;
-    height: 20px;
-    background: var(--light);
-    border-left: 1px solid var(--border);
-    border-right: 1px solid var(--border);
-}
-
-[data-theme="dark"] .section-divider::after {
-    background: var(--bg-body);
-}
-
-
 .shop-badge {
     display: inline-flex;
     align-items: center;
@@ -3447,27 +2910,10 @@ html {
     align-items: center;
 }
 
-.business-card .receipt-icon {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--success);
-}
-
-[data-theme="dark"] .business-card .receipt-icon {
-    background: rgba(16, 185, 129, 0.15);
-}
-
-@media (max-width: 480px) {
-    .section-divider {
-        margin: 32px 0;
-    }
-}
-
 .input-group:has([required]) label::after {
     content: ' *';
     color: var(--error);
 }
-
-
 
 .receipt-items-list {
     margin: 0.4rem 0 0;
@@ -3479,59 +2925,6 @@ html {
 
 .receipt-items-list li {
     list-style: disc;
-}
-
-.receipt-card-items {
-    margin: 4px 0 0;
-    padding: 12px;
-    background: rgba(59, 130, 246, 0.04);
-    border-radius: 12px;
-    border: 1px solid var(--border);
-}
-
-.receipt-card-item.single {
-    display: flex;
-    gap: 8px;
-    font-size: 0.88rem;
-    align-items: center;
-}
-
-.receipt-card-items-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.receipt-card-items-list li {
-    font-size: 0.85rem;
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    padding: 4px 0;
-    border-bottom: 1px solid var(--border);
-    list-style: none;
-}
-
-.receipt-card-items-list li:last-child {
-    border-bottom: none;
-}
-
-.receipt-card-items .item-name {
-    font-weight: 600;
-    color: var(--text-main);
-}
-
-.receipt-card-items .item-qty {
-    color: var(--secondary);
-}
-
-.receipt-card-items .item-warranty {
-    color: var(--primary);
-    font-size: 0.8rem;
-    margin-left: auto;
 }
 
 .items-section-header {
@@ -3785,13 +3178,6 @@ html {
 
 /* ==== Partner Receipt Lifecycle (Buyer Receipts & Notifications) ==== */
 
-.business-card-pills {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
 .lifecycle-pill {
     display: inline-flex;
     align-items: center;
@@ -3911,14 +3297,6 @@ html {
 [data-theme="dark"] .mine-stat.accent-refund .mine-stat-icon,
 [data-theme="dark"] .mine-stat.accent-refund .mine-stat-value {
     color: #fcd34d;
-}
-
-.receipt-card-items.is-struck .item-name,
-.receipt-card-items.is-struck .item-qty,
-.receipt-card-items .item-row-refunded .item-name,
-.receipt-card-items .item-row-refunded .item-qty {
-    text-decoration: line-through;
-    opacity: 0.6;
 }
 
 .item-refund-pill {

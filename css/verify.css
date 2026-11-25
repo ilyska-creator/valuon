@@ -89,15 +89,6 @@
     margin: 0;
 }
 
-.verify-logo .lang-toggle {
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 36px;
-    height: 36px;
-    font-size: 0.8rem;
-}
-
 .verify-subtitle {
     text-align: center;
     color: var(--text-muted);
@@ -397,24 +388,6 @@
     100% {
         top: 15%;
     }
-}
-
-.scanner-actions {
-    position: absolute;
-    bottom: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: var(--space-2);
-    z-index: 5;
-    opacity: 0;
-    transition: opacity var(--transition-base);
-    pointer-events: none;
-}
-
-.scanner-area.active .scanner-actions {
-    opacity: 1;
-    pointer-events: auto;
 }
 
 .scanner-action {
@@ -1041,10 +1014,6 @@ html.verify-auto-hash .verify-hash-loading,
 
     .verify-result-block.active {
         margin-top: var(--space-4);
-    }
-
-    .scanner-actions {
-        bottom: 8px;
     }
 
     .scanner-action {
