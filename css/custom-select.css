@@ -343,8 +343,10 @@ select.custom-select {
    его позиция зависит от положения триггера, а появление клавиатуры это
    положение постоянно меняет. Шторка не привязана к триггеру, поэтому
    клавиатура на неё не влияет. */
-html.cs-sheet-lock {
+html.cs-sheet-lock,
+html.cs-sheet-lock body {
     overflow: hidden;
+    overscroll-behavior: none;
     height: 100%;
 }
 
@@ -368,6 +370,7 @@ html.cs-sheet-lock {
     -webkit-backdrop-filter: blur(4px);
     opacity: 0;
     transition: opacity 0.24s ease;
+    touch-action: none;
 }
 
 .cs-sheet-backdrop.visible {
@@ -376,34 +379,17 @@ html.cs-sheet-lock {
 
 .custom-select-dropdown.cs-sheet {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    top: auto;
+    inset: 0;
     z-index: var(--z-picker, 20000);
-    height: 82dvh;
-    max-height: 82dvh;
+    max-height: none;
     width: auto;
     border: none;
-    border-top: 1px solid var(--border);
-    border-radius: 20px 20px 0 0;
-    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.18);
+    border-radius: 0;
+    box-shadow: none;
     background: var(--card-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    overflow: hidden;
-}
-
-.custom-select-dropdown.cs-sheet::before {
-    content: '';
-    display: block;
-    width: 36px;
-    height: 4px;
-    border-radius: 999px;
-    background: var(--border);
-    margin: 10px auto 2px;
-    flex: none;
 }
 
 .custom-select-dropdown.cs-sheet.visible {
@@ -442,13 +428,16 @@ html.cs-sheet-lock {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 16px 12px;
+    padding: max(env(safe-area-inset-top, 0px), 14px) 16px 12px;
     background: var(--card-bg);
     border-bottom: 1px solid var(--border);
+    touch-action: none;
 }
 
 .custom-select-dropdown.cs-sheet .custom-select-options {
     padding: 0;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .custom-select-dropdown.cs-sheet .custom-select-search {

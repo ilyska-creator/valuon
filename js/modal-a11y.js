@@ -226,6 +226,9 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
     });
 
     const observer = new MutationObserver(() => {
+        if (modal.classList.contains('closing')) {
+            window.__valuonActivePicker?.close?.();
+        }
         const nowOpen = isOpen();
         if (nowOpen === wasOpen) return;
         wasOpen = nowOpen;
@@ -247,6 +250,7 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
                 }
             });
         } else {
+            window.__valuonActivePicker?.close?.();
             const idx = openModalStack.indexOf(modal);
             if (idx !== -1) openModalStack.splice(idx, 1);
             modal.setAttribute('aria-hidden', 'true');

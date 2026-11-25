@@ -371,6 +371,33 @@ class CustomSelect {
             this.dropdown.style.width = '';
             this.dropdown.style.transformOrigin = '';
             this.lockPageScroll();
+
+            this._sheetTouchY = 0;
+            this._sheetTouchStart = (e) => {
+                if (e.touches.length === 1) {
+                    this._sheetTouchY = e.touches[0].clientY;
+                }
+            };
+            this._sheetTouchMove = (e) => {
+                if (e.touches.length > 1) return;
+                const scroller = e.target.closest?.('.custom-select-options');
+                if (!scroller) {
+                    e.preventDefault();
+                    return;
+                }
+                const maxScroll = scroller.scrollHeight - scroller.clientHeight;
+                if (maxScroll <= 1) {
+                    e.preventDefault();
+                    return;
+                }
+                const dy = e.touches[0].clientY - this._sheetTouchY;
+                if ((dy > 0 && scroller.scrollTop <= 0) || (dy < 0 && scroller.scrollTop >= maxScroll - 1)) {
+                    e.preventDefault();
+                }
+            };
+            this.dropdown.addEventListener('touchstart', this._sheetTouchStart, { passive: true });
+            this.dropdown.addEventListener('touchmove', this._sheetTouchMove, { passive: false });
+            this._backdrop?.addEventListener('touchmove', this._sheetTouchMove, { passive: false });
         } else {
             this.position();
         }
@@ -459,6 +486,15 @@ class CustomSelect {
 
         document.removeEventListener('click', this._closeHandler);
         document.removeEventListener('keydown', this._keyHandler);
+        if (this._sheetTouchStart) {
+            this.dropdown.removeEventListener('touchstart', this._sheetTouchStart);
+            this._sheetTouchStart = null;
+        }
+        if (this._sheetTouchMove) {
+            this.dropdown.removeEventListener('touchmove', this._sheetTouchMove);
+            this._backdrop?.removeEventListener('touchmove', this._sheetTouchMove);
+            this._sheetTouchMove = null;
+        }
         if (this._scrollHandler) {
             window.removeEventListener('scroll', this._scrollHandler);
             if (this._scrollParent) this._scrollParent.removeEventListener('scroll', this._scrollHandler);
