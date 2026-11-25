@@ -217,6 +217,30 @@ input[type="datetime-local"].custom-datepicker {
     outline: none;
 }
 
+@keyframes csReveal {
+    0% {
+        opacity: 0;
+        transform: scaleY(0.85);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+}
+
+@keyframes csHide {
+    0% {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scaleY(0.85);
+    }
+}
+
 .custom-datepicker-panel.visible {
     animation: csReveal 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

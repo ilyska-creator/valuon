@@ -155,7 +155,7 @@
 }
 
 .feature-list li i.fa-circle {
-    color: var(--border);
+    color: var(--text-muted);
     font-size: 0.8rem;
 }
 
@@ -166,19 +166,7 @@
 
     .timeline-container {
         position: relative;
-        padding: 0 20px;
-    }
-
-    .timeline-container::before {
-        content: '';
-        position: absolute;
-        left: 50%;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: var(--border);
-        transform: translateX(-50%);
-        z-index: 0;
+        padding: 0 20px var(--space-12);
     }
 
     .timeline-card {

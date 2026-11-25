@@ -22,7 +22,8 @@ html.modal-open:has(.auth-body) {
     min-height: 100dvh;
     padding: var(--space-5);
     position: relative;
-    overflow: hidden;
+    overflow-x: clip;
+    overflow-y: auto;
 }
 
 :not([data-theme="dark"]) .auth-body {
@@ -94,7 +95,7 @@ html.modal-open:has(.auth-body) {
 
 .auth-container--register {
     max-width: 580px;
-    margin-top: 0;
+    margin-top: var(--space-12);
 }
 
 .auth-container--register .auth-card {
@@ -795,7 +796,7 @@ html.modal-open:has(.auth-body) {
 }
 
 [data-theme="dark"] .ps-req-fail {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.62);
 }
 
 [data-theme="dark"] .ps-req-passed {
@@ -1105,7 +1106,7 @@ html.modal-open:has(.auth-body) {
     gap: 10px;
     background: rgba(239, 68, 68, 0.05);
     border-color: rgba(239, 68, 68, 0.28);
-    color: var(--text-primary, #1f2937);
+    color: var(--text-main, #1f2937);
 }
 
 [data-theme="dark"] .turnstile-skel.is-error {
@@ -1144,7 +1145,7 @@ html.modal-open:has(.auth-body) {
     border-radius: var(--radius-sm, 6px);
     border: 1px solid var(--border);
     background: var(--white, #ffffff);
-    color: var(--text-primary, #111827);
+    color: var(--text-main, #111827);
     font-size: 0.76rem;
     font-weight: 600;
     cursor: pointer;
@@ -1511,7 +1512,7 @@ html.modal-open:has(.auth-body) {
 
     .input-group input {
         padding: 12px 14px;
-        font-size: 0.95rem;
+        font-size: 16px;
     }
 
     .form-options {
@@ -1528,7 +1529,7 @@ html.modal-open:has(.auth-body) {
     .input-wrap input,
     #email {
         padding: 10px 12px 10px 38px;
-        font-size: 0.95rem;
+        font-size: 16px;
     }
 
     .input-wrap:has(.toggle-password, .toggle-password-confirm) input {
@@ -1564,7 +1565,7 @@ html.modal-open:has(.auth-body) {
 
     .phone-input-group input[type="tel"] {
         padding: 10px 12px;
-        font-size: 0.95rem;
+        font-size: 16px;
     }
 }
 

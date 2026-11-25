@@ -124,6 +124,8 @@
     font-size: 0.85rem;
     color: var(--text-muted);
     line-height: 1.4;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .toast-close {

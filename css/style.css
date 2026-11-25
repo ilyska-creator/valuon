@@ -616,7 +616,7 @@ html.scroll-locked {
 
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
     gap: 32px;
 }
 
@@ -626,7 +626,7 @@ html.scroll-locked {
 
 .business-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
     gap: 24px;
     margin-bottom: 48px;
 }
@@ -683,7 +683,7 @@ html.scroll-locked {
 
 .verify-scanner-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
     gap: 24px;
     margin-bottom: 48px;
 }
@@ -1250,6 +1250,8 @@ select:-webkit-autofill:focus {
         position: fixed;
         right: -100%;
         top: 72px;
+        max-height: calc(100dvh - 72px);
+        overflow-y: auto;
         flex-direction: column;
         width: 100%;
         text-align: center;

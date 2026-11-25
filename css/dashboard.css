@@ -382,14 +382,17 @@ html {
 
 [data-theme="dark"] .stat-icon.blue {
     background: rgba(37, 99, 235, 0.2);
+    color: #60a5fa;
 }
 
 [data-theme="dark"] .stat-icon.green {
     background: rgba(22, 163, 74, 0.2);
+    color: #4ade80;
 }
 
 [data-theme="dark"] .stat-icon.orange {
     background: rgba(234, 88, 12, 0.2);
+    color: #fb923c;
 }
 
 [data-theme="dark"] .stat-icon.red {
@@ -694,7 +697,7 @@ html {
 
 #items-grid-mine,
 #items-grid-verified {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
 }
 
 .mine-item-card {
@@ -1609,7 +1612,7 @@ html {
     .main-content {
         margin-left: 0;
         padding: 24px;
-        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0));
+        padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
     }
 
     .sidebar-footer {
@@ -2161,7 +2164,7 @@ html {
         margin-left: 0;
         padding: 24px;
         padding-top: calc(72px + 24px);
-        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0));
+        padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
         position: relative;
     }
 
@@ -3133,7 +3136,7 @@ html {
         flex: 1;
         text-align: center;
         justify-content: center;
-        border-radius: 5%;
+        border-radius: var(--radius-md);
 
     }
 
