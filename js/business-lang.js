@@ -158,7 +158,7 @@ const businessTranslations = {
 
         terminals_widget_title: 'Кассовые аппараты',
         terminals_count_zero: 'Кассовые аппараты не добавлены',
-        terminals_count_one: '1 кассовый аппарат',
+        terminals_count_one: '{n} кассовый аппарат',
         terminals_count_few: '{n} кассовых аппарата',
         terminals_count_many: '{n} кассовых аппаратов',
         terminals_modal_title: 'Кассовые аппараты',
@@ -512,7 +512,7 @@ const businessTranslations = {
 
         terminals_widget_title: 'Cash Registers',
         terminals_count_zero: 'No cash registers added',
-        terminals_count_one: '1 cash register',
+        terminals_count_one: '{n} cash register',
         terminals_count_few: '{n} cash registers',
         terminals_count_many: '{n} cash registers',
         terminals_modal_title: 'Cash Registers',
@@ -762,8 +762,9 @@ function formatMoney(value, currencyCode) {
 
 window.animateAmount = function (el, target, duration, currencyCode) {
     if (!el) return;
-    const raw = el.textContent.replace(/[^0-9.\-]/g, '');
-    const start = raw ? parseFloat(raw) : 0;
+    const prevNum = el.dataset.amountValue != null ? Number(el.dataset.amountValue) : NaN;
+    const start = Number.isFinite(prevNum) ? prevNum : 0;
+    el.dataset.amountValue = String(Number.isFinite(target) ? target : 0);
     if (start === target) { el.textContent = formatMoney(target, currencyCode); return; }
 
     if (duration == null) {

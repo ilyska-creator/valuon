@@ -173,6 +173,10 @@ function showLoading(btn, loading) {
     } else {
         btn.disabled = false;
         btn.innerHTML = btn.dataset.original || btn.innerHTML;
+        btn.querySelectorAll('[data-i18n]').forEach((el) => {
+            const key = el.getAttribute('data-i18n');
+            if (key && typeof window.t === 'function') el.textContent = window.t(key);
+        });
     }
 }
 
@@ -621,6 +625,11 @@ async function startCamera() {
         startScanLoop();
     } catch (err) {
         logError('verify:camera', err);
+        const isEn = (localStorage.getItem('valuon-lang') || 'ru') === 'en';
+        window.showToast?.(
+            isEn ? 'Camera unavailable — choose a photo instead' : 'Камера недоступна — выберите фото чека',
+            'warning'
+        );
         scanFileInput?.click();
     }
 }
@@ -647,6 +656,12 @@ function startScanLoop() {
     if (!mediaStream) return;
     if (!window.jsQR) {
         console.warn('[verify] jsQR not loaded, cannot start scan loop');
+        stopCamera();
+        const isEn = (localStorage.getItem('valuon-lang') || 'ru') === 'en';
+        window.showToast?.(
+            isEn ? 'QR scanner failed to load. Please refresh the page.' : 'Сканер QR не загрузился. Обновите страницу.',
+            'error'
+        );
         return;
     }
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -840,6 +855,17 @@ copyBtn?.addEventListener('click', async () => {
         window.t('detail_store') + ': ' + lastResultData.store,
         window.t('detail_status') + ': ' + lastResultData.sellerStatus
     );
+    if (Array.isArray(lastResultData.items) && lastResultData.items.length > 0) {
+        const warrantySuffix = window.t('items_warranty_suffix');
+        lines.push(window.t('detail_items') + ':');
+        lastResultData.items.forEach((it) => {
+            const name = it.name || it.item_name || '—';
+            const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+            const w = parseInt(it.warrantyMonths ?? it.warranty_months, 10) || 0;
+            const parts = [`- ${name}`, qty > 1 ? `×${qty}` : null, w > 0 ? `(${w} ${warrantySuffix})` : null].filter(Boolean);
+            lines.push(parts.join(' '));
+        });
+    }
     const text = lines.join('\n');
     try {
         await navigator.clipboard.writeText(text);
@@ -909,8 +935,26 @@ fileInput?.addEventListener('change', async () => {
     const file = fileInput.files?.[0];
     if (!file) return;
 
+    const isAllowedType = file.type === 'application/pdf' || file.type.startsWith('image/');
+    if (!isAllowedType) {
+        window.showToast(window.t('file_type_not_supported'), 'error');
+        fileInput.value = '';
+        return;
+    }
+
     if (file.size > 10 * 1024 * 1024) {
         window.showToast(window.t('file_too_big'), 'error');
+        fileInput.value = '';
+        return;
+    }
+
+    if (file.type === 'application/pdf' && typeof pdfjsLib === 'undefined') {
+        console.warn('[verify] pdfjsLib not loaded, cannot preview PDF');
+        const isEn = (localStorage.getItem('valuon-lang') || 'ru') === 'en';
+        window.showToast(
+            isEn ? 'PDF library failed to load. Please refresh the page.' : 'Не удалось загрузить обработчик PDF. Обновите страницу.',
+            'error'
+        );
         fileInput.value = '';
         return;
     }
@@ -921,10 +965,6 @@ fileInput?.addEventListener('change', async () => {
 
     if (file.type === 'application/pdf') {
         try {
-            if (typeof pdfjsLib === 'undefined') {
-                console.warn('[verify] pdfjsLib not loaded, cannot preview PDF');
-                return;
-            }
             const buf = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
             const page = await pdf.getPage(1);

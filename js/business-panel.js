@@ -138,7 +138,7 @@ async function initBusinessPanel() {
     function filterReceiptsList(receiptsList, payMethodMap) {
         let result = receiptsList || [];
         if (receiptFilter === 'active') {
-            result = result.filter(r => !isReceiptClosed(r));
+            result = result.filter(r => getLifecycleStatus(r) === 'active');
         } else if (receiptFilter === 'closed') {
             result = result.filter(r => getLifecycleStatus(r) !== 'active');
         }
@@ -940,7 +940,8 @@ async function initBusinessPanel() {
         if (d.phone_local) return true;
         if (d.payment && d.payment !== 'card') return true;
         if (d.pos_terminal_id) return true;
-        if (d.purchase_date && d.purchase_date !== defaultDateString()) return true;
+        const refDate = baselineDate || defaultDateString();
+        if (d.purchase_date && d.purchase_date !== refDate) return true;
         if (Array.isArray(d.items)) {
             return d.items.some((it) => (
                 (it.item_name && String(it.item_name).trim()) ||
@@ -1196,14 +1197,19 @@ async function initBusinessPanel() {
     });
     itemsList?.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return;
-        const row = e.target.closest('[data-item-row]');
+        const target = e.target;
+        if (!target || target.tagName !== 'INPUT') return;
+        if (target.closest('.custom-select, .custom-select-dropdown, .custom-datepicker, .custom-datepicker-panel')) return;
+        const row = target.closest('[data-item-row]');
         if (!row) return;
         e.preventDefault();
         addItemRow(true, { scroll: true });
-        const rows = itemsList.querySelectorAll('[data-item-row]');
-        const next = rows[rows.length - 1];
-        const nameInput = next?.querySelector('[data-field="item_name"]');
-        if (nameInput) nameInput.focus();
+        if (window.innerWidth > 768) {
+            const rows = itemsList.querySelectorAll('[data-item-row]');
+            const next = rows[rows.length - 1];
+            const nameInput = next?.querySelector('[data-field="item_name"]');
+            if (nameInput) nameInput.focus();
+        }
     });
     itemsList?.addEventListener('click', (e) => {
         const chip = e.target.closest('.warranty-chip');
@@ -1927,10 +1933,16 @@ async function initBusinessPanel() {
 
     function terminalCountText(n) {
         const t = bizT();
-        if (n === 0) return t.terminals_count_zero || (bizLang() === 'en' ? 'No cash registers added' : 'Кассовые аппараты не добавлены');
-        if (n === 1) return t.terminals_count_one || '1 кассовый аппарат';
+        const isEn = bizLang() === 'en';
+        if (n === 0) return t.terminals_count_zero || (isEn ? 'No cash registers added' : 'Кассовые аппараты не добавлены');
+        if (isEn) {
+            const tpl = n === 1
+                ? (t.terminals_count_one || '{n} cash register')
+                : (t.terminals_count_many || '{n} cash registers');
+            return tpl.replace('{n}', String(n));
+        }
         const form = pluralRu(n, 'one', 'few', 'many');
-        return (t['terminals_count_' + form] || '{n} cash registers').replace('{n}', String(n));
+        return (t['terminals_count_' + form] || '{n} кассовых аппаратов').replace('{n}', String(n));
     }
 
     async function loadTerminals(shopId) {
@@ -1953,7 +1965,8 @@ async function initBusinessPanel() {
 
     function renderTerminalsWidget() {
         if (!terminalsCountLabel) return;
-        terminalsCountLabel.textContent = terminalCountText(currentTerminals.length);
+        const activeCount = currentTerminals.filter((t) => t.is_active !== false).length;
+        terminalsCountLabel.textContent = terminalCountText(activeCount);
     }
 
     function renderTerminalsList() {
@@ -1984,10 +1997,10 @@ async function initBusinessPanel() {
                         <span class="terminal-card-serial">S/N: ${escapeHtml(term.serial_number)}</span>
                         ${metaParts.length ? `<span class="terminal-card-meta">${escapeHtml(metaParts.join(' · '))}</span>` : ''}
                     </div>
-                    <button type="button" class="btn-action delete btn-delete-terminal" data-id="${term.id}"
-                        data-i18n-title="delete_terminal_title" title="${t.delete_terminal_title || 'Удалить аппарат'}">
+                    ${term.is_active !== false ? `<button type="button" class="btn-action delete btn-delete-terminal" data-id="${escapeHtml(term.id)}"
+                        data-i18n-title="delete_terminal_title" title="${escapeHtml(t.delete_terminal_title || 'Удалить аппарат')}">
                         <i class="fa-solid fa-trash"></i>
-                    </button>
+                    </button>` : ''}
                 </div>`;
         }).join('');
 
@@ -2191,11 +2204,12 @@ async function initBusinessPanel() {
 
                 if (error) {
                     if (error.code === '23503') {
-                        await client
+                        const { error: deactErr } = await client
                             .from('pos_terminals')
                             .update({ is_active: false })
                             .eq('id', terminalId)
                             .eq('shop_id', currentShop.id);
+                        if (deactErr) throw deactErr;
                         const term = currentTerminals.find((x) => x.id === terminalId);
                         if (term) term.is_active = false;
                         window.showToast(
@@ -2519,8 +2533,12 @@ async function initBusinessPanel() {
                                 .from('shop-logos')
                                 .upload(filePath, logoFile, { upsert: false, contentType: logoFile.type });
                             if (!upErr) {
-                                await client.from('shops').update({ logo_path: filePath }).eq('id', newShop.id);
-                                newShop = { ...newShop, logo_path: filePath };
+                                const { error: logoDbErr } = await client.from('shops').update({ logo_path: filePath }).eq('id', newShop.id);
+                                if (!logoDbErr) {
+                                    newShop = { ...newShop, logo_path: filePath };
+                                } else {
+                                    logError('biz:logoDbUpdate', logoDbErr);
+                                }
                             }
                         }
                     } catch (_) { /* logo is optional */ }
@@ -3333,7 +3351,7 @@ async function initBusinessPanel() {
 
     function updateReceiptFilterCounts(receipts) {
         const all = receipts || [];
-        const activeCnt = all.filter(r => !isReceiptClosed(r)).length;
+        const activeCnt = all.filter(r => getLifecycleStatus(r) === 'active').length;
         const closedCnt = all.filter(r => getLifecycleStatus(r) !== 'active').length;
         const setCnt = (id, val) => {
             const el = document.getElementById(id);
@@ -3471,16 +3489,6 @@ async function initBusinessPanel() {
             releaseReceiptsContainerHeight();
         }
     }, { passive: true });
-
-    // Re-sync dynamic search counter, export scope, shop info & drawer labels when language toggles
-    window.addEventListener('business-lang-changed', () => {
-        if (currentShop) {
-            updateShopInfo(currentShop);
-        }
-        if (currentReceiptsList && currentReceiptsList.length > 0) {
-            renderReceiptCards(list, currentReceiptsList, { animateRows: false });
-        }
-    });
 
     // Export dropdown menu wiring
     const exportWrap = document.getElementById('shop-export-wrap');
@@ -3944,6 +3952,7 @@ async function initBusinessPanel() {
                 listEl.grid.innerHTML = '';
                 listEl.grid.style.display = 'none';
                 if (emptyMsg) emptyMsg.style.display = 'block';
+                updateExportMenuState();
                 updateChart();
                 return;
             }
@@ -3968,13 +3977,32 @@ async function initBusinessPanel() {
 
 
     const themeBtn = document.getElementById('theme-toggle-btn');
+    let themeTimer = null;
+    const scheduleChartRedraw = () => {
+        if (themeTimer) clearTimeout(themeTimer);
+        themeTimer = setTimeout(updateChart, 150);
+    };
+    const syncBizThemeIcon = () => {
+        const icon = themeBtn?.querySelector('i');
+        if (!icon) return;
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    };
     if (themeBtn) {
-        let themeTimer = null;
-        themeBtn.addEventListener('click', () => {
-            if (themeTimer) clearTimeout(themeTimer);
-            themeTimer = setTimeout(updateChart, 150);
-        });
+        themeBtn.addEventListener('click', scheduleChartRedraw);
     }
+    window.addEventListener('themeChange', () => {
+        syncBizThemeIcon();
+        scheduleChartRedraw();
+    });
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'valuon-theme') {
+            if (e.newValue === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            else document.documentElement.removeAttribute('data-theme');
+            syncBizThemeIcon();
+            scheduleChartRedraw();
+        }
+    });
 
     const firstReceiptBtn = document.getElementById('create-first-receipt-btn');
     if (firstReceiptBtn) {
@@ -4044,24 +4072,59 @@ async function initBusinessPanel() {
         return { groups, daysMap };
     }
 
-    function fillReceiptCounts(receipts, groups, daysMap) {
+    function toLocalDateParts(rawDate) {
+        if (!rawDate) return null;
+        const str = String(rawDate).trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+            const [y, m, d] = str.split('-').map(Number);
+            return { y, m, d };
+        }
+        const dt = new Date(str);
+        if (Number.isNaN(dt.getTime())) return null;
+        return { y: dt.getFullYear(), m: dt.getMonth() + 1, d: dt.getDate() };
+    }
+
+    function toLocalBucketKey(rawDate, mode) {
+        const p = toLocalDateParts(rawDate);
+        if (!p) return null;
+        const mm = String(p.m).padStart(2, '0');
+        if (mode === 'month') return `${p.y}-${mm}`;
+        const dd = String(p.d).padStart(2, '0');
+        return `${p.y}-${mm}-${dd}`;
+    }
+
+    function buildMonthMap(year, lang) {
+        const groups = {};
+        const keysMap = {};
+        const locale = lang === 'en' ? 'en-US' : 'ru-RU';
+        for (let m = 0; m < 12; m++) {
+            const d = new Date(year, m, 1);
+            const key = `${year}-${String(m + 1).padStart(2, '0')}`;
+            const label = d.toLocaleDateString(locale, { month: 'short' });
+            groups[key] = { label, count: 0, total: 0 };
+            keysMap[key] = true;
+        }
+        return { groups, daysMap: keysMap };
+    }
+
+    function fillReceiptCounts(receipts, groups, daysMap, mode = 'day') {
         receipts.forEach(r => {
             if (!r.purchase_date || isReceiptClosed(r)) return;
-            const dateStr = r.purchase_date.slice(0, 10);
-            if (daysMap[dateStr]) {
-                groups[dateStr].count++;
+            const key = toLocalBucketKey(r.purchase_date, mode);
+            if (key && daysMap[key]) {
+                groups[key].count++;
             }
         });
     }
 
-    function fillRevenueTotals(receipts, groups, daysMap) {
+    function fillRevenueTotals(receipts, groups, daysMap, mode = 'day') {
         receipts.forEach(r => {
             if (!r.purchase_date || isReceiptClosed(r)) return;
-            const dateStr = r.purchase_date.slice(0, 10);
-            if (daysMap[dateStr]) {
+            const key = toLocalBucketKey(r.purchase_date, mode);
+            if (key && daysMap[key]) {
                 const net = getNetReceiptRevenue(r);
                 if (Number.isFinite(net)) {
-                    groups[dateStr].total += net;
+                    groups[key].total += net;
                 }
             }
         });
@@ -4174,22 +4237,34 @@ async function initBusinessPanel() {
         }
 
         const lang = localStorage.getItem('valuon-lang') || 'ru';
-        const cal = getCalendarPeriod(period, new Date());
+        const now = new Date();
+        const cal = getCalendarPeriod(period, now);
+        const isYear = period === 'year';
 
-        const cur = buildDayMap(cal.currentStart, cal.currentEnd, lang);
-        const prev = buildDayMap(cal.previousStart, cal.previousEnd, lang);
+        const cur = isYear
+            ? buildMonthMap(now.getFullYear(), lang)
+            : buildDayMap(cal.currentStart, cal.currentEnd, lang);
+        const prev = isYear
+            ? buildMonthMap(now.getFullYear() - 1, lang)
+            : buildDayMap(cal.previousStart, cal.previousEnd, lang);
 
+        const bucketMode = isYear ? 'month' : 'day';
         const fillFn = field === 'revenue' ? fillRevenueTotals : fillReceiptCounts;
-        fillFn(receipts, cur.groups, cur.daysMap);
-        fillFn(receipts, prev.groups, prev.daysMap);
+        fillFn(receipts, cur.groups, cur.daysMap, bucketMode);
+        fillFn(receipts, prev.groups, prev.daysMap, bucketMode);
 
         const curSeries = extractSeries(cur.groups, field);
         const prevSeries = extractSeries(prev.groups, field);
 
-        const today = new Date();
-        today.setHours(23, 59, 59, 999);
-        const daysElapsed = Math.max(0, Math.ceil((today - cal.currentStart) / 86400000));
-        const limit = Math.min(daysElapsed, curSeries.data.length);
+        let limit;
+        if (isYear) {
+            limit = Math.min(now.getMonth() + 1, curSeries.data.length);
+        } else {
+            const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+            const startUtc = Date.UTC(cal.currentStart.getFullYear(), cal.currentStart.getMonth(), cal.currentStart.getDate());
+            const daysElapsed = Math.max(0, Math.round((todayUtc - startUtc) / 86400000) + 1);
+            limit = Math.min(daysElapsed, curSeries.data.length);
+        }
         const curData = limit > 0 ? curSeries.data.slice(0, limit) : [];
         const prevData = limit > 0 ? prevSeries.data.slice(0, limit) : [];
         const change = computeChange(curData, prevData);
@@ -4339,7 +4414,7 @@ async function initBusinessPanel() {
             showChartEmpty('receipts-chart', '.chart-box:first-child .chart-wrapper',
                 () => receiptsChartInstance, t['chart_empty_' + period] || t.chart_empty || 'Нет данных для графика');
             receiptsChartInstance = null;
-            updateChangeBadge('change-receipts', { absolute: 0, percent: 0 });
+            updateChangeBadge('change-receipts', aggregated.change);
             return;
         }
 
@@ -4376,7 +4451,7 @@ async function initBusinessPanel() {
             showChartEmpty('revenue-chart', '.chart-box:last-child .chart-wrapper',
                 () => revenueChartInstance, t['chart_empty_' + period] || t.chart_empty || 'Нет данных для графика');
             revenueChartInstance = null;
-            updateChangeBadge('change-revenue', { absolute: 0, percent: 0 });
+            updateChangeBadge('change-revenue', aggregated.change);
             return;
         }
 
@@ -4424,8 +4499,23 @@ async function initBusinessPanel() {
         refreshItemCategorySelects();
         if (!currentShop) return;
         updateShopInfo(currentShop);
-        renderReceiptCards(list, currentReceiptsList);
-        window.applyBusinessTranslations?.();
+        renderTerminalsWidget();
+        if (terminalsModal && !terminalsModal.classList.contains('is-hidden')) {
+            renderTerminalsList();
+        }
+        const curLang = localStorage.getItem('valuon-lang') || 'ru';
+        const curCurrency = currentShop?.currency || 'EUR';
+        if (stats.revenue && stats.revenue.dataset.amountValue != null) {
+            stats.revenue.textContent = window.formatCurrency(Number(stats.revenue.dataset.amountValue) || 0, curCurrency, curLang);
+        }
+        if (stats.avgReceipt && stats.avgReceipt.dataset.amountValue != null) {
+            stats.avgReceipt.textContent = window.formatCurrency(Number(stats.avgReceipt.dataset.amountValue) || 0, curCurrency, curLang);
+        }
+        if (currentReceiptsList && currentReceiptsList.length > 0) {
+            renderReceiptCards(list, currentReceiptsList, { animateRows: false });
+        } else {
+            updateExportMenuState();
+        }
         syncDraftButton();
         requestAnimationFrame(() => {
             receiptFilterIndicator.update(true);
