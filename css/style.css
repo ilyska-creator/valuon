@@ -178,10 +178,12 @@ ul {
     color: var(--text-main);
 }
 
-.btn-outline:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    background: rgba(59, 130, 246, 0.05);
+@media (hover: hover) and (pointer: fine) {
+    .btn-outline:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: rgba(59, 130, 246, 0.05);
+    }
 }
 
 .btn-outline:active {

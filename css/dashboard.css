@@ -549,9 +549,12 @@ html {
     --accent-text: color-mix(in srgb, var(--secondary) 25%, black);
 }
 
-.mine-item-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+@media (hover: hover) and (pointer: fine) {
+    .mine-item-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    }
 }
 
 .mine-item-card.is-active {
@@ -3092,8 +3095,10 @@ html {
     color: #93c5fd;
 }
 
-.mine-item-card.verified:hover {
-    border-color: rgba(16, 185, 129, 0.35);
+@media (hover: hover) and (pointer: fine) {
+    .mine-item-card.verified:hover {
+        border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    }
 }
 
 .verified-check {

@@ -27,8 +27,19 @@ function showToast(message, type = 'error', duration = 4000) {
     };
 
     const safeType = Object.prototype.hasOwnProperty.call(icons, type) ? type : 'info';
+    const toastKey = `${safeType}:${String(message ?? '')}`;
+
+    // Deduplicate identical active toasts (e.g. rapid double-submit on iOS autofill)
+    const existing = Array.from(container.querySelectorAll('.toast:not(.removing)'))
+        .find(el => el.dataset.toastKey === toastKey);
+    if (existing) {
+        if (typeof existing._resetTimer === 'function') existing._resetTimer(duration);
+        return;
+    }
+
     const toast = document.createElement('div');
     toast.className = `toast ${safeType}`;
+    toast.dataset.toastKey = toastKey;
     toast.setAttribute('role', safeType === 'error' ? 'alert' : 'status');
     toast.setAttribute('aria-live', safeType === 'error' ? 'assertive' : 'polite');
     toast.innerHTML = `
@@ -56,6 +67,23 @@ function showToast(message, type = 'error', duration = 4000) {
     let remaining = duration;
     let isPaused = false;
     let timer = setTimeout(() => removeToast(toast), duration);
+
+    toast._resetTimer = (newDuration = duration) => {
+        if (toast.classList.contains('removing')) return;
+        clearTimeout(timer);
+        remaining = newDuration;
+        lastResumeTime = Date.now();
+        isPaused = false;
+        const bar = toast.querySelector('.toast-progress');
+        if (bar) {
+            bar.style.animation = 'none';
+            void bar.offsetWidth;
+            bar.style.animation = '';
+            bar.style.animationDuration = `${newDuration}ms`;
+            bar.style.animationPlayState = 'running';
+        }
+        timer = setTimeout(() => removeToast(toast), newDuration);
+    };
 
     toast.addEventListener('pointerenter', (e) => {
         if (e.pointerType !== 'mouse' || isPaused) return;

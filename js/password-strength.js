@@ -3,7 +3,6 @@ const REQUIREMENTS = [
     { key: 'uppercase', test: p => /[A-Z]/.test(p) },
     { key: 'lowercase', test: p => /[a-z]/.test(p) },
     { key: 'number', test: p => /[0-9]/.test(p) },
-    { key: 'special', test: p => /[^\p{L}\p{N}\s]/u.test(p) },
 ];
 
 const LABELS = {
@@ -12,24 +11,21 @@ const LABELS = {
         uppercase: 'Заглавная буква (A-Z)',
         lowercase: 'Строчная буква (a-z)',
         number: 'Цифра (0-9)',
-        special: 'Спецсимвол (!@# и т.д.)',
     },
     en: {
         length: 'At least 8 characters',
         uppercase: 'Uppercase letter (A-Z)',
         lowercase: 'Lowercase letter (a-z)',
         number: 'Number (0-9)',
-        special: 'Special character (!@# etc.)',
     },
 };
 
 const STRENGTH_TEXTS = {
-    ru: { 0: 'Очень слабый', 1: 'Слабый', 2: 'Средний', 3: 'Хороший', 4: 'Надёжный', 5: 'Надёжный' },
-    en: { 0: 'Very weak', 1: 'Weak', 2: 'Fair', 3: 'Good', 4: 'Strong', 5: 'Strong' },
+    ru: { 0: 'Очень слабый', 1: 'Слабый', 2: 'Средний', 3: 'Хороший', 4: 'Надёжный' },
+    en: { 0: 'Very weak', 1: 'Weak', 2: 'Fair', 3: 'Good', 4: 'Strong' },
 };
 
 const SEGMENT_COLORS = [
-    '#ef4444',
     '#ef4444',
     '#f59e0b',
     '#22c55e',
@@ -63,7 +59,7 @@ export function createStrengthContainer(passwordInput) {
 
     const bar = document.createElement('div');
     bar.className = 'ps-meter-bar';
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < REQUIREMENTS.length; i++) {
         const seg = document.createElement('span');
         seg.className = 'ps-segment';
         seg.dataset.idx = i;
@@ -129,7 +125,7 @@ export function updateStrengthUI(container, password, lang = 'ru') {
     const bar = container.querySelector('.ps-meter-bar');
     bar.classList.toggle('glow', score >= 3);
 
-    const LABEL_COLORS = ['#ef4444', '#ef4444', '#f59e0b', '#22c55e', '#16a34a', '#16a34a'];
+    const LABEL_COLORS = ['#ef4444', '#ef4444', '#f59e0b', '#22c55e', '#16a34a'];
 
     const text = container.querySelector('.ps-meter-label');
     const strengthText = getStrengthText(score, lang);

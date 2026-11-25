@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             else if (check(password !== confirmPassword, lang === 'ru' ? 'Пароли не совпадают' : 'Passwords do not match', confirmEl)) { }
             else {
                 var strength = checkPasswordStrength(password);
-                if (check(!strength.isValid, lang === 'ru' ? 'Пароль слишком слабый. Используйте минимум 8 символов, заглавные, строчные буквы, цифры и спецсимволы.' : 'Password is too weak. Use at least 8 characters, uppercase, lowercase, numbers and special characters.', passwordEl)) { }
+                if (check(!strength.isValid, lang === 'ru' ? 'Пароль слишком слабый. Используйте минимум 8 символов, буквы и цифры.' : 'Password is too weak. Use at least 8 characters, letters and numbers.', passwordEl)) { }
             }
 
             if (check(!termsEl.checked, lang === 'ru' ? 'Примите условия использования' : 'Accept the terms of use', termsEl)) { }
@@ -281,8 +281,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         weak_password: {
                             el: passwordEl,
                             msg: lang === 'ru'
-                                ? 'Пароль слишком слабый. Используйте минимум 8 символов, заглавные, строчные буквы, цифры и спецсимволы.'
-                                : 'Password is too weak. Use at least 8 characters, uppercase, lowercase, numbers and special characters.',
+                                ? 'Пароль слишком слабый. Используйте минимум 8 символов, буквы и цифры.'
+                                : 'Password is too weak. Use at least 8 characters, letters and numbers.',
                         },
                         invalid_phone: {
                             el: phoneEl,

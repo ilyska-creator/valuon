@@ -359,32 +359,65 @@ html.cs-sheet-lock {
     display: none;
 }
 
-.custom-select-dropdown.cs-sheet {
+.cs-sheet-backdrop {
     position: fixed;
     inset: 0;
+    z-index: calc(var(--z-picker, 20000) - 1);
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.24s ease;
+}
+
+.cs-sheet-backdrop.visible {
+    opacity: 1;
+}
+
+.custom-select-dropdown.cs-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
     z-index: var(--z-picker, 20000);
-    max-height: none;
+    height: 82dvh;
+    max-height: 82dvh;
     width: auto;
     border: none;
-    border-radius: 0;
-    box-shadow: none;
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.18);
     background: var(--card-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    overflow: hidden;
+}
+
+.custom-select-dropdown.cs-sheet::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--border);
+    margin: 10px auto 2px;
+    flex: none;
 }
 
 .custom-select-dropdown.cs-sheet.visible {
-    animation: csSheetIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: csSheetIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .custom-select-dropdown.cs-sheet.closing {
-    animation: csSheetOut 0.18s cubic-bezier(0.4, 0, 0.2, 1) both;
+    animation: csSheetOut 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 @keyframes csSheetIn {
     0% {
-        opacity: 0;
-        transform: translateY(18px);
+        opacity: 0.9;
+        transform: translateY(100%);
     }
 
     100% {
@@ -400,8 +433,8 @@ html.cs-sheet-lock {
     }
 
     100% {
-        opacity: 0;
-        transform: translateY(18px);
+        opacity: 0.9;
+        transform: translateY(100%);
     }
 }
 
@@ -409,7 +442,7 @@ html.cs-sheet-lock {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: max(env(safe-area-inset-top, 0px), 14px) 16px 12px;
+    padding: 8px 16px 12px;
     background: var(--card-bg);
     border-bottom: 1px solid var(--border);
 }

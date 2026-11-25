@@ -137,8 +137,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
+        let lastLoginSubmitAt = 0;
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const nowTs = Date.now();
+            if (nowTs - lastLoginSubmitAt < 400) return;
+            lastLoginSubmitAt = nowTs;
             const btn = loginForm.querySelector('button[type="submit"]');
             const password = document.getElementById('password').value;
             const rememberMe = document.getElementById('remember')?.checked;

@@ -1,4 +1,4 @@
-import { SUPABASE_URL } from './supabase-client.js';
+import { supabase, SUPABASE_URL } from './supabase-client.js';
 import { logError } from './security.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
 
@@ -14,6 +14,40 @@ const hashLoadingLoader = document.getElementById('hash-loading-loader');
 const resultBlock = document.getElementById('verify-result');
 const resultBlockWrapper = document.getElementById('result-block');
 const retryBtn = document.getElementById('verify-retry-btn');
+const ctaBtn = document.getElementById('verify-cta-btn');
+const ctaIcon = document.getElementById('verify-cta-icon');
+const ctaLabel = document.getElementById('verify-cta-label');
+let isUserSignedIn = false;
+
+const refreshAuthState = async () => {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        isUserSignedIn = Boolean(session);
+    } catch (_) {
+        isUserSignedIn = false;
+    }
+    return isUserSignedIn;
+};
+
+function updateVerifyCta(visible) {
+    if (!ctaBtn) return;
+    if (!visible) {
+        ctaBtn.style.display = 'none';
+        return;
+    }
+    if (isUserSignedIn) {
+        ctaBtn.href = 'dashboard.html';
+        if (ctaIcon) ctaIcon.className = 'fa-solid fa-table-columns';
+        if (ctaLabel) ctaLabel.textContent = window.t('cta_open_dashboard');
+    } else {
+        ctaBtn.href = 'login.html?redirect=%2Fdashboard.html';
+        if (ctaIcon) ctaIcon.className = 'fa-solid fa-right-to-bracket';
+        if (ctaLabel) ctaLabel.textContent = window.t('cta_login_track');
+    }
+    ctaBtn.style.display = '';
+}
+
+refreshAuthState();
 const resultIcon = document.getElementById('result-icon');
 const resultTitle = document.getElementById('result-title');
 const resultDesc = document.getElementById('result-desc');
@@ -73,6 +107,7 @@ function setHashLoading(active) {
         verifyTabsWrap?.classList.add('is-hidden');
         Object.values(panels).forEach(p => p?.classList.add('done'));
         resultBlockWrapper?.classList.remove('active');
+    updateVerifyCta(false);
         hashLoadingBlock?.classList.add('active');
         if (hashLoadingLoader) {
             if (hashLoadingLoader._rotatingLoader) {
@@ -120,6 +155,7 @@ tabs.forEach(tab => {
         const target = panels[tab.dataset.tab];
         if (target) target.classList.add('active');
         resultBlockWrapper?.classList.remove('active');
+    updateVerifyCta(false);
         lastResultState = null;
         lastResultData = null;
         sessionStorage.setItem('verify-active-tab', tab.dataset.tab);
@@ -134,6 +170,7 @@ function resetAll() {
     lastResultData = null;
     Object.values(panels).forEach(p => p?.classList.remove('done'));
     resultBlockWrapper?.classList.remove('active');
+    updateVerifyCta(false);
     if (copyBtn) {
         copyBtn.style.display = 'none';
         copyBtn.classList.remove('copied');
@@ -576,6 +613,14 @@ function showResult(status, data) {
     }
     if (status !== 'success') {
         copyBtn && (copyBtn.style.display = 'none');
+        updateVerifyCta(false);
+    } else {
+        updateVerifyCta(true);
+        refreshAuthState().then(() => {
+            if (lastResultState?.status === 'success' && resultBlockWrapper?.classList.contains('active')) {
+                updateVerifyCta(true);
+            }
+        });
     }
 }
 
@@ -622,6 +667,7 @@ async function startCamera() {
         scanBtn.classList.remove('btn-primary');
         scanBtn.classList.add('btn-outline');
         resultBlockWrapper?.classList.remove('active');
+    updateVerifyCta(false);
         startScanLoop();
     } catch (err) {
         logError('verify:camera', err);

@@ -334,6 +334,10 @@ class CustomSelect {
             clearTimeout(this._closeTimer);
             this._closeTimer = null;
         }
+        if (this._focusTimer) {
+            clearTimeout(this._focusTimer);
+            this._focusTimer = null;
+        }
         if (window.__valuonActivePicker && window.__valuonActivePicker !== this) {
             window.__valuonActivePicker.close();
         }
@@ -344,6 +348,17 @@ class CustomSelect {
         const sheetMode = this.isSheetMode;
         this._sheetMode = sheetMode;
         this.dropdown.classList.toggle('cs-sheet', sheetMode);
+
+        if (sheetMode) {
+            if (!this._backdrop) {
+                this._backdrop = document.createElement('div');
+                this._backdrop.className = 'cs-sheet-backdrop';
+                this._backdrop.addEventListener('click', () => this.close());
+            }
+            document.body.appendChild(this._backdrop);
+            void this._backdrop.offsetHeight;
+            this._backdrop.classList.add('visible');
+        }
 
         document.body.appendChild(this.dropdown);
         this.dropdown.style.display = 'flex';
@@ -370,7 +385,16 @@ class CustomSelect {
             this.dropdown.querySelectorAll('.custom-select-option').forEach((l) => l.classList.remove('highlighted'));
             const sel = this._allOptions.find((o) => o.value === this.select.value);
             if (sel) sel.li.classList.add('highlighted');
-            this.search.focus({ preventScroll: true });
+            if (sheetMode) {
+                this._focusTimer = setTimeout(() => {
+                    this._focusTimer = null;
+                    if (this.isOpen && this.search) {
+                        this.search.focus({ preventScroll: true });
+                    }
+                }, 280);
+            } else {
+                this.search.focus({ preventScroll: true });
+            }
         }
 
         this._closeHandler = (e) => {
@@ -412,6 +436,10 @@ class CustomSelect {
             window.__valuonActivePicker = null;
         }
 
+        if (this._focusTimer) {
+            clearTimeout(this._focusTimer);
+            this._focusTimer = null;
+        }
         if (this._positionRaf) {
             cancelAnimationFrame(this._positionRaf);
             this._positionRaf = null;
@@ -425,6 +453,9 @@ class CustomSelect {
 
         this.dropdown.classList.remove('visible');
         this.dropdown.classList.add('closing');
+        if (this._backdrop) {
+            this._backdrop.classList.remove('visible');
+        }
 
         document.removeEventListener('click', this._closeHandler);
         document.removeEventListener('keydown', this._keyHandler);
@@ -444,8 +475,11 @@ class CustomSelect {
             this.dropdown.classList.remove('closing', 'cs-sheet');
             this.dropdown.style.display = 'none';
             this.wrapper.appendChild(this.dropdown);
+            if (this._backdrop && this._backdrop.parentNode) {
+                this._backdrop.parentNode.removeChild(this._backdrop);
+            }
             this.unlockPageScroll();
-        }, this._sheetMode ? 180 : 130);
+        }, this._sheetMode ? 230 : 130);
     }
 
     position() {
