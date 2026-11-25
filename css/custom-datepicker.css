@@ -203,7 +203,7 @@ input[type="datetime-local"].custom-datepicker {
 
 .custom-datepicker-panel {
     position: fixed;
-    z-index: 99999;
+    z-index: var(--z-picker, 20000);
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);

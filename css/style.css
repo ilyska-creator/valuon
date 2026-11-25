@@ -57,13 +57,14 @@ html {
 
 
     --z-navbar: 1000;
-    --z-sidebar: 9000;
-    --z-bottom-nav: 9999;
-    --z-cookie: 9999;
+    --z-sidebar: 1200;
+    --z-bottom-nav: 1500;
+    --z-cookie: 2000;
     --z-modal-overlay: 10000;
-    --z-modal-content: 1001;
-    --z-auth-modal: 1000;
-    --z-toast: 99999;
+    --z-modal-content: 10001;
+    --z-auth-modal: 10000;
+    --z-picker: 20000;
+    --z-toast: 30000;
 
 
     --bg-body: var(--white);
@@ -2648,7 +2649,7 @@ html.modal-open {
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    z-index: 100000;
+    z-index: var(--z-cookie);
     font-size: 0.84rem;
     opacity: 0;
     visibility: hidden;

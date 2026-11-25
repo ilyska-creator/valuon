@@ -147,7 +147,7 @@ html {
     padding: var(--space-6);
     position: fixed;
     height: 100vh;
-    z-index: 100;
+    z-index: var(--z-sidebar);
     transition: transform var(--transition-base);
     will-change: transform;
 }

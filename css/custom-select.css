@@ -91,7 +91,7 @@ select.custom-select {
 
 .custom-select-dropdown {
     position: fixed;
-    z-index: 99999;
+    z-index: var(--z-picker, 20000);
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -362,7 +362,7 @@ html.cs-sheet-lock {
 .custom-select-dropdown.cs-sheet {
     position: fixed;
     inset: 0;
-    z-index: 20000;
+    z-index: var(--z-picker, 20000);
     max-height: none;
     width: auto;
     border: none;
