@@ -18,7 +18,7 @@
                 obs.unobserve(entry.target);
             }
         });
-    }, { threshold: 0.01, rootMargin: '0px 0px -40px 0px' }) : null;
+    }, { threshold: 0.01, rootMargin: '0px 0px -10px 0px' }) : null;
 
     function applyDelay(el) {
         if (el.dataset.delay && !el.style.getPropertyValue('--anim-delay')) {

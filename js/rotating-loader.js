@@ -1,10 +1,11 @@
 class RotatingTextLoader {
     constructor(container, phrases, options = {}) {
-        if (container && container._rotatingLoader) {
+        if (!container) return;
+        if (container._rotatingLoader) {
             container._rotatingLoader.destroy();
         }
         this.container = container;
-        this.phrases = phrases;
+        this.phrases = Array.isArray(phrases) ? phrases.map(p => String(p ?? '')) : [];
         this.interval = options.interval || 5000;
         this.autoRotate = options.autoRotate !== false;
         this.currentIndex = 0;
@@ -14,15 +15,31 @@ class RotatingTextLoader {
     }
 
     render() {
-        this.container.innerHTML = `
-            <i class="fa-solid fa-circle-notch rotating-loader-spinner"></i>
-            <div class="rotating-loader-text">
-                ${this.phrases.map((p, i) => `<span class="rotating-loader-phrase${i === 0 ? ' active' : ''}">${p}</span>`).join('')}
-            </div>
-            <div class="rotating-loader-dots">
-                ${this.phrases.map((_, i) => `<span class="dot${i === 0 ? ' active' : ''}"></span>`).join('')}
-            </div>
-        `;
+        if (!this.container) return;
+        this.container.innerHTML = '';
+
+        const spinner = document.createElement('i');
+        spinner.className = 'fa-solid fa-circle-notch rotating-loader-spinner';
+        spinner.setAttribute('aria-hidden', 'true');
+
+        const textWrap = document.createElement('div');
+        textWrap.className = 'rotating-loader-text';
+        this.phrases.forEach((p, i) => {
+            const span = document.createElement('span');
+            span.className = `rotating-loader-phrase${i === 0 ? ' active' : ''}`;
+            span.textContent = p;
+            textWrap.appendChild(span);
+        });
+
+        const dotsWrap = document.createElement('div');
+        dotsWrap.className = 'rotating-loader-dots';
+        this.phrases.forEach((_, i) => {
+            const dot = document.createElement('span');
+            dot.className = `dot${i === 0 ? ' active' : ''}`;
+            dotsWrap.appendChild(dot);
+        });
+
+        this.container.append(spinner, textWrap, dotsWrap);
         this.phraseEls = this.container.querySelectorAll('.rotating-loader-phrase');
         this.dotEls = this.container.querySelectorAll('.dot');
         this.start();
@@ -30,7 +47,7 @@ class RotatingTextLoader {
 
     start() {
         this.stop();
-        if (!this.autoRotate) return;
+        if (!this.autoRotate || this.phrases.length <= 1) return;
         this.intervalId = setInterval(() => this.next(), this.interval);
     }
 
@@ -42,35 +59,36 @@ class RotatingTextLoader {
     }
 
     next() {
-        if (!this.container || !this.container.isConnected || !this.phraseEls?.length) {
+        if (!this.container || !this.container.isConnected || !this.phraseEls?.length || this.phrases.length === 0) {
             this.destroy();
             return;
         }
         const prev = this.currentIndex;
         this.currentIndex = (this.currentIndex + 1) % this.phrases.length;
-        this.phraseEls[prev].classList.remove('active');
-        this.dotEls[prev].classList.remove('active');
-        this.phraseEls[this.currentIndex].classList.add('active');
-        this.dotEls[this.currentIndex].classList.add('active');
+        this.phraseEls[prev]?.classList.remove('active');
+        this.dotEls[prev]?.classList.remove('active');
+        this.phraseEls[this.currentIndex]?.classList.add('active');
+        this.dotEls[this.currentIndex]?.classList.add('active');
     }
 
     destroy() {
         this.stop();
-        if (this.container._rotatingLoader === this) {
+        if (this.container && this.container._rotatingLoader === this) {
             delete this.container._rotatingLoader;
         }
     }
 
     setPhrases(phrases) {
-        if (!this.autoRotate && this.phraseEls && this.phraseEls.length === phrases.length) {
-            this.phrases = phrases;
+        const safePhrases = Array.isArray(phrases) ? phrases.map(p => String(p ?? '')) : [];
+        if (!this.autoRotate && this.phraseEls && this.phraseEls.length === safePhrases.length) {
+            this.phrases = safePhrases;
             this.phraseEls.forEach((el, i) => {
-                el.textContent = phrases[i];
+                el.textContent = safePhrases[i];
             });
             return;
         }
         this.stop();
-        this.phrases = phrases;
+        this.phrases = safePhrases;
         this.currentIndex = 0;
         this.render();
     }

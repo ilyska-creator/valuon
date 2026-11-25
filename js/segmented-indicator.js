@@ -18,9 +18,11 @@ export function createSegmentedIndicator(container, indicator, options = {}) {
     const itemSelector = options.itemSelector || 'button';
     const activeClass = options.activeClass || 'active';
     let initialized = false;
+    let destroyed = false;
     let rafId = null;
 
     const applyPosition = (instant) => {
+        if (destroyed) return;
         const activeBtn = container.querySelector(`${itemSelector}.${activeClass}`);
         if (!activeBtn) {
             indicator.style.opacity = '0';
@@ -31,6 +33,7 @@ export function createSegmentedIndicator(container, indicator, options = {}) {
         const left = activeBtn.offsetLeft;
         if (width <= 0) {
             // Container is currently hidden (e.g. inside a closed modal) — snap once visible
+            indicator.style.opacity = '0';
             initialized = false;
             return;
         }
@@ -53,6 +56,7 @@ export function createSegmentedIndicator(container, indicator, options = {}) {
     };
 
     const update = (instant = false) => {
+        if (destroyed) return;
         if (rafId !== null) {
             cancelAnimationFrame(rafId);
             rafId = null;
@@ -67,13 +71,18 @@ export function createSegmentedIndicator(container, indicator, options = {}) {
         }
     };
 
-    const onResize = () => applyPosition(true);
+    const onResize = () => update(true);
     window.addEventListener('resize', onResize, { passive: true });
 
     let resizeObserver = null;
     if (typeof ResizeObserver !== 'undefined') {
         resizeObserver = new ResizeObserver(() => {
-            applyPosition(true);
+            if (destroyed) return;
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                rafId = null;
+                applyPosition(true);
+            });
         });
         resizeObserver.observe(container);
         container.querySelectorAll(itemSelector).forEach((item) => {
@@ -82,7 +91,9 @@ export function createSegmentedIndicator(container, indicator, options = {}) {
     }
 
     if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => applyPosition(true)).catch(() => { });
+        document.fonts.ready.then(() => {
+            if (!destroyed) applyPosition(true);
+        }).catch(() => { });
     }
 
     applyPosition(true);
@@ -90,6 +101,7 @@ export function createSegmentedIndicator(container, indicator, options = {}) {
     return {
         update,
         destroy() {
+            destroyed = true;
             if (rafId !== null) cancelAnimationFrame(rafId);
             window.removeEventListener('resize', onResize);
             if (resizeObserver) resizeObserver.disconnect();

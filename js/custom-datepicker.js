@@ -141,15 +141,19 @@ class CustomDatePicker {
                 m === selected.getMonth() &&
                 y === selected.getFullYear();
 
+            const isDisabled = this._isOutOfRange(date);
+
             let cls = 'cal-day';
             if (!inMonth) cls += ' cal-day-other';
             if (dow === 0 || dow === 6) cls += ' cal-day-weekend';
             if (isToday) cls += ' cal-day-today';
             if (isSelected) cls += ' cal-day-selected';
+            if (isDisabled) cls += ' cal-day-disabled';
 
             let attrs = `data-date="${iso}" role="gridcell" aria-label="${this.lang === 'ru' ? `${d} ${monthGen[m]} ${y}` : `${monthNames[m]} ${d}, ${y}`}"`;
             if (isSelected) attrs += ' aria-selected="true"';
             if (isToday) attrs += ' aria-current="date"';
+            if (isDisabled) attrs += ' aria-disabled="true"';
 
             return `<span class="${cls}" ${attrs}>${d}</span>`;
         };
@@ -301,6 +305,7 @@ class CustomDatePicker {
             e.stopPropagation();
             this.mode = this.mode === 'days' ? 'months' : 'years';
             this.render();
+            if (this.isOpen) this.position();
         });
 
         if (this.mode === 'days') {
@@ -309,7 +314,9 @@ class CustomDatePicker {
 
             if (todayBtn) todayBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this._selectDate(new Date());
+                const now = new Date();
+                if (this._isOutOfRange(now)) return;
+                this._selectDate(now, { useDateTime: true });
             });
             if (clearBtn) clearBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -319,8 +326,9 @@ class CustomDatePicker {
             this.panel.querySelectorAll('.cal-day').forEach(el => {
                 el.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    if (el.classList.contains('cal-day-disabled')) return;
                     const date = this._parseDate(el.dataset.date);
-                    if (date) this._selectDate(date);
+                    if (date && !this._isOutOfRange(date)) this._selectDate(date);
                 });
             });
 
@@ -335,6 +343,7 @@ class CustomDatePicker {
                     this.viewDate = new Date(this.viewDate.getFullYear(), parseInt(el.dataset.month, 10), 1);
                     this.mode = 'days';
                     this.render();
+                    if (this.isOpen) this.position();
                 });
             });
         } else {
@@ -344,6 +353,7 @@ class CustomDatePicker {
                     this.viewDate = new Date(parseInt(el.dataset.year, 10), this.viewDate.getMonth(), 1);
                     this.mode = 'months';
                     this.render();
+                    if (this.isOpen) this.position();
                 });
             });
         }
@@ -530,6 +540,10 @@ class CustomDatePicker {
     }
 
     destroy() {
+        if (this._closeTimer) {
+            clearTimeout(this._closeTimer);
+            this._closeTimer = null;
+        }
         this.close();
         if (this._observer) this._observer.disconnect();
         if (this._formHandler) this._form.removeEventListener('reset', this._formHandler);
@@ -537,6 +551,7 @@ class CustomDatePicker {
         if (this._nativeChangeHandler) this.input.removeEventListener('change', this._nativeChangeHandler);
         this.panel.remove();
         this.wrapper.replaceWith(this.input);
+        this.input.removeAttribute('tabindex');
         const s = this.input.style;
         s.position = ''; s.width = ''; s.height = '';
         s.padding = ''; s.margin = ''; s.overflow = '';
@@ -546,6 +561,16 @@ class CustomDatePicker {
     }
 
     // --- Internal ---
+
+    _isOutOfRange(date) {
+        if (!(date instanceof Date) || isNaN(date.getTime())) return false;
+        const iso = this._isoDate(date);
+        const minStr = (this.input.min || '').slice(0, 10);
+        const maxStr = (this.input.max || '').slice(0, 10);
+        if (minStr && /^\d{4}-\d{2}-\d{2}$/.test(minStr) && iso < minStr) return true;
+        if (maxStr && /^\d{4}-\d{2}-\d{2}$/.test(maxStr) && iso > maxStr) return true;
+        return false;
+    }
 
     position() {
         const trigRect = this.trigger.getBoundingClientRect();
@@ -564,6 +589,7 @@ class CustomDatePicker {
             top = trigRect.top - panelH - gap;
             origin = 'bottom';
         }
+        top = Math.max(8, top);
 
         const panelW = Math.min(Math.max(trigRect.width, 260), 320);
         let left;
@@ -581,13 +607,13 @@ class CustomDatePicker {
         this.panel.style.transformOrigin = origin + ' center';
     }
 
-    _selectDate(date) {
-        this._applySelection(date);
+    _selectDate(date, opts = {}) {
+        this._applySelection(date, opts);
         this.close();
     }
 
-    _applySelection(date) {
-        if (this.isDatetime) {
+    _applySelection(date, opts = {}) {
+        if (this.isDatetime && !opts.useDateTime) {
             let hh = '12', mm = '00';
             const val = this.input.value;
             if (val && val.includes('T')) {
@@ -598,10 +624,12 @@ class CustomDatePicker {
                     if (mi) mm = mi;
                 }
             }
-            const hSel = this.panel.querySelector('.cal-hour');
-            const mSel = this.panel.querySelector('.cal-min');
-            if (hSel) hh = hSel.value;
-            if (mSel) mm = mSel.value;
+            if (this.isOpen) {
+                const hSel = this.panel.querySelector('.cal-hour');
+                const mSel = this.panel.querySelector('.cal-min');
+                if (hSel) hh = hSel.value;
+                if (mSel) mm = mSel.value;
+            }
             date.setHours(parseInt(hh, 10), parseInt(mm, 10));
         }
 
@@ -800,9 +828,13 @@ class CustomDatePicker {
         }
         const result = this._parseInputText(raw);
         if (result instanceof Date) {
-            this._applySelection(result);
-            this._clearInvalid();
-            if (advance) this._focusNext();
+            if (this._isOutOfRange(result)) {
+                this._showError(this.lang === 'ru' ? 'Дата вне допустимого диапазона' : 'Date is out of allowed range');
+            } else {
+                this._applySelection(result);
+                this._clearInvalid();
+                if (advance) this._focusNext();
+            }
         } else {
             this._showError(this._inputErrorMessage(result ? result.error : 'format'));
         }
@@ -817,7 +849,7 @@ class CustomDatePicker {
         if (idx === -1) return;
         for (let i = idx + 1; i < els.length; i++) {
             const el = els[i];
-            if (el === this.input) continue;
+            if (el === this.input || el === this._cdpInput) continue;
             if (el.disabled || el.readOnly) continue;
             if (el.type === 'hidden') continue;
             if (el.tabIndex < 0) continue;
@@ -883,7 +915,15 @@ class CustomDatePicker {
         const parts = datePart.split('-');
         if (parts.length !== 3) return null;
         const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-        return isNaN(d.getTime()) ? null : d;
+        if (isNaN(d.getTime())) return null;
+        if (this.isDatetime && str.includes('T')) {
+            const timePart = str.split('T')[1] || '';
+            const [hh, mm] = timePart.split(':').map(n => parseInt(n, 10));
+            if (Number.isFinite(hh) && Number.isFinite(mm)) {
+                d.setHours(hh, mm, 0, 0);
+            }
+        }
+        return d;
     }
 
     _isoDate(date) {
@@ -905,7 +945,7 @@ class CustomDatePicker {
             this._clearInvalid();
             if (this._cdpInput.value.replace(/\D/g, '').length === 8) {
                 const res = this._parseInputText(this._cdpInput.value);
-                if (res instanceof Date) this._commitInput(false, true);
+                if (res instanceof Date && !this._isOutOfRange(res)) this._commitInput(false, false);
             }
         });
         this._cdpInput.addEventListener('blur', () => this._commitInput(false, false));
@@ -965,7 +1005,11 @@ class CustomDatePicker {
                 case 'ArrowDown': e.preventDefault(); this._moveFocus(new Date(cur.getFullYear(), cur.getMonth(), cur.getDate() + 7)); break;
                 case 'Home': e.preventDefault(); this._moveFocus(new Date(y, m, 1)); break;
                 case 'End': e.preventDefault(); this._moveFocus(new Date(y, m, new Date(y, m + 1, 0).getDate())); break;
-                case 'Enter': e.preventDefault(); if (this._focusDate) this._selectDate(new Date(this._focusDate)); break;
+                case 'Enter':
+                    if (e.target && e.target.closest('.cal-title-btn, .cal-nav, .cal-btn')) return;
+                    e.preventDefault();
+                    if (this._focusDate && !this._isOutOfRange(this._focusDate)) this._selectDate(new Date(this._focusDate));
+                    break;
             }
         });
 
@@ -989,11 +1033,12 @@ class CustomDatePicker {
         this._form = this.input.closest('form');
         if (this._form) {
             this._formHandler = () => {
-                this.selectedDate = null;
-                this.viewDate = this._toViewMonth(null);
-                this._focusDate = null;
+                const def = this.input.defaultValue ? this._parseDate(this.input.defaultValue) : null;
+                this.selectedDate = def;
+                this.viewDate = this._toViewMonth(def);
+                this._focusDate = def ? new Date(def) : null;
                 this._clearInvalid();
-                this._syncDisplay();
+                setTimeout(() => this._syncDisplay(), 0);
             };
             this._form.addEventListener('reset', this._formHandler);
         }

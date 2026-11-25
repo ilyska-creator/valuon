@@ -129,6 +129,7 @@ class CustomSelect {
 
         const val = this.select.value;
         this.select.querySelectorAll('option').forEach((opt) => {
+            if (opt.disabled) return;
             const li = document.createElement('li');
             li.className = 'custom-select-option';
             li.setAttribute('role', 'option');
@@ -319,7 +320,10 @@ class CustomSelect {
 
     unlockPageScroll() {
         if (this._lockedScroll) {
-            document.documentElement.classList.remove('cs-sheet-lock');
+            const otherSheetOpen = window.__valuonActivePicker && window.__valuonActivePicker !== this && window.__valuonActivePicker.isOpen && window.__valuonActivePicker._sheetMode;
+            if (!otherSheetOpen) {
+                document.documentElement.classList.remove('cs-sheet-lock');
+            }
             this._lockedScroll = false;
         }
     }
@@ -464,6 +468,8 @@ class CustomSelect {
         const width = Math.min(Math.max(trigRect.width, minW), window.innerWidth - 16);
         const left = Math.max(8, Math.min(trigRect.left, window.innerWidth - width - 8));
 
+        top = Math.max(8, top);
+
         this.dropdown.style.left = left + 'px';
         this.dropdown.style.width = width + 'px';
         this.dropdown.style.top = top + 'px';
@@ -475,8 +481,6 @@ class CustomSelect {
         this.select.dispatchEvent(new Event('change', { bubbles: true }));
         this.sync();
         this.close();
-        this.trigger.blur();
-        if (this.search) this.search.blur();
     }
 
     bind() {
@@ -518,9 +522,10 @@ class CustomSelect {
             } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
                 if (!this.isOpen) { this.open(); return; }
-                const idx = opts.findIndex(
-                    (o) => o.classList.contains('highlighted') || o.dataset.value === this.select.value
-                );
+                let idx = opts.findIndex((o) => o.classList.contains('highlighted'));
+                if (idx === -1) {
+                    idx = opts.findIndex((o) => o.dataset.value === this.select.value);
+                }
                 const next = Math.max(0, Math.min(idx + (e.key === 'ArrowDown' ? 1 : -1), opts.length - 1));
                 opts.forEach((o) => o.classList.remove('highlighted'));
                 if (opts[next]) {
@@ -544,6 +549,34 @@ class CustomSelect {
             attributes: true,
             attributeFilter: ['disabled']
         });
+
+        this._invalidHandler = () => {
+            this.trigger.focus();
+        };
+        this.select.addEventListener('invalid', this._invalidHandler);
+
+        this._form = this.select.closest('form');
+        if (this._form) {
+            this._resetHandler = () => {
+                setTimeout(() => this.sync(), 0);
+            };
+            this._form.addEventListener('reset', this._resetHandler);
+        }
+    }
+
+    destroy() {
+        if (this._closeTimer) {
+            clearTimeout(this._closeTimer);
+            this._closeTimer = null;
+        }
+        this.close();
+        this.unlockPageScroll();
+        if (this._disabledObserver) this._disabledObserver.disconnect();
+        if (this._invalidHandler) this.select.removeEventListener('invalid', this._invalidHandler);
+        if (this._form && this._resetHandler) this._form.removeEventListener('reset', this._resetHandler);
+        this.dropdown.remove();
+        this.wrapper.replaceWith(this.select);
+        delete this.select._cs;
     }
 
     refresh() {

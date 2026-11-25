@@ -26,15 +26,18 @@ function showToast(message, type = 'error', duration = 4000) {
         info: isRu ? 'Информация' : 'Info'
     };
 
+    const safeType = Object.prototype.hasOwnProperty.call(icons, type) ? type : 'info';
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+    toast.className = `toast ${safeType}`;
+    toast.setAttribute('role', safeType === 'error' ? 'alert' : 'status');
+    toast.setAttribute('aria-live', safeType === 'error' ? 'assertive' : 'polite');
     toast.innerHTML = `
-        <div class="toast-icon"><i class="${icons[type] || icons.info}"></i></div>
+        <div class="toast-icon" aria-hidden="true"><i class="${icons[safeType]}"></i></div>
         <div class="toast-body">
-            <div class="toast-title">${titles[type]}</div>
+            <div class="toast-title">${titles[safeType]}</div>
             <div class="toast-message">${escapeToastHtml(message)}</div>
         </div>
-        <button class="toast-close"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="toast-close" aria-label="${isRu ? 'Закрыть' : 'Close'}"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         <div class="toast-progress" style="animation-duration: ${duration}ms"></div>
     `;
 

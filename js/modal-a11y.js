@@ -1,3 +1,5 @@
+const openModalStack = [];
+
 export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose } = {}) {
     if (!modal || modal.dataset.a11yBound) return;
     modal.dataset.a11yBound = '1';
@@ -28,7 +30,12 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
         );
     }
 
+    function isTopModal() {
+        return openModalStack.length === 0 || openModalStack[openModalStack.length - 1] === modal;
+    }
+
     function handleKeydown(e) {
+        if (!isTopModal()) return;
         if (e.key === 'Escape') {
             if (e.defaultPrevented || window.__valuonActivePicker?.isOpen) return;
             e.preventDefault();
@@ -44,7 +51,11 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
             if (focusables.length === 0) return;
             const first = focusables[0];
             const last = focusables[focusables.length - 1];
-            if (e.shiftKey && document.activeElement === first) {
+            const activeInside = modal.contains(document.activeElement);
+            if (!activeInside) {
+                e.preventDefault();
+                (e.shiftKey ? last : first).focus();
+            } else if (e.shiftKey && document.activeElement === first) {
                 e.preventDefault();
                 last.focus();
             } else if (!e.shiftKey && document.activeElement === last) {
@@ -220,6 +231,9 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
         wasOpen = nowOpen;
 
         if (nowOpen) {
+            const idx = openModalStack.indexOf(modal);
+            if (idx !== -1) openModalStack.splice(idx, 1);
+            openModalStack.push(modal);
             modal.setAttribute('aria-hidden', 'false');
             lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
             document.addEventListener('keydown', handleKeydown);
@@ -233,6 +247,8 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
                 }
             });
         } else {
+            const idx = openModalStack.indexOf(modal);
+            if (idx !== -1) openModalStack.splice(idx, 1);
             modal.setAttribute('aria-hidden', 'true');
             document.removeEventListener('keydown', handleKeydown);
             modal.classList.remove('keyboard-active');
