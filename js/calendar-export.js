@@ -105,6 +105,17 @@ export function buildICS(item) {
     const endPlusOne = new Date(endDate.getTime());
     endPlusOne.setDate(endPlusOne.getDate() + 1);
 
+    const safeUidBase = item.id
+        ? String(item.id).replace(/[^A-Za-z0-9._-]/g, '')
+        : `${formatDateValue(endDate)}-${slugify(item.name || item.item_name || 'item') || 'warranty'}`;
+
+    const today = new Date();
+    const daysUntilEnd = Math.round(
+        (Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) -
+         Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000
+    );
+    const alarmTrigger = daysUntilEnd >= 7 ? '-P7D' : 'PT9H';
+
     const lines = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
@@ -112,7 +123,7 @@ export function buildICS(item) {
         'CALSCALE:GREGORIAN',
         'METHOD:PUBLISH',
         'BEGIN:VEVENT',
-        `UID:${item.id}@valuon.app`,
+        `UID:${safeUidBase}@valuon.app`,
         `DTSTAMP:${formatDateTimeStamp(new Date())}`,
         `DTSTART;VALUE=DATE:${formatDateValue(endDate)}`,
         `DTEND;VALUE=DATE:${formatDateValue(endPlusOne)}`,
@@ -121,7 +132,7 @@ export function buildICS(item) {
     if (description) lines.push(`DESCRIPTION:${description}`);
     lines.push(
         'BEGIN:VALARM',
-        'TRIGGER:-P7D',
+        `TRIGGER:${alarmTrigger}`,
         'ACTION:DISPLAY',
         `DESCRIPTION:${icsEscape(REMINDER_LABELS[lang])}`,
         'END:VALARM',
@@ -134,6 +145,9 @@ export function buildICS(item) {
 
 export function downloadICS(item) {
     const t = currentT();
+    const notify = (msg, type) => {
+        if (typeof showToast === 'function') showToast(msg, type);
+    };
     const noWarrantyMsg = t.msg_calendar_no_warranty || (currentLang() === 'ru'
         ? 'У этого товара нет гарантии'
         : 'This item has no warranty');
@@ -141,13 +155,13 @@ export function downloadICS(item) {
     try {
         const endDate = parseDateOnly(item?.warranty_end_date);
         if (!endDate) {
-            showToast(noWarrantyMsg, 'warning');
+            notify(noWarrantyMsg, 'warning');
             return;
         }
 
         const ics = buildICS(item);
         if (!ics) {
-            showToast(noWarrantyMsg, 'warning');
+            notify(noWarrantyMsg, 'warning');
             return;
         }
 
@@ -162,10 +176,12 @@ export function downloadICS(item) {
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 2000);
 
-        showToast(t.calendar_added_toast || 'Событие добавлено в календарь', 'success');
+        notify(t.calendar_added_toast || (currentLang() === 'ru'
+            ? 'Событие добавлено в календарь'
+            : 'Event added to your calendar'), 'success');
     } catch (err) {
         logError('calendar:export', err);
-        showToast(t.msg_calendar_error || (currentLang() === 'ru'
+        notify(t.msg_calendar_error || (currentLang() === 'ru'
             ? 'Не удалось создать событие календаря'
             : 'Could not create calendar event'), 'error');
     }

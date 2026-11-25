@@ -116,7 +116,15 @@ function initialsFor(name) {
 }
 
 function formatDate(isoString) {
-    const d = new Date(isoString);
+    if (!isoString) return '—';
+    const raw = String(isoString).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        const [y, m, day] = raw.split('-').map(Number);
+        const d = new Date(y, m - 1, day);
+        if (Number.isNaN(d.getTime())) return '—';
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    const d = new Date(raw);
     if (Number.isNaN(d.getTime())) return '—';
     const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });

@@ -1,21 +1,33 @@
+export function parseLocalDate(dateInput) {
+    if (dateInput instanceof Date) {
+        return Number.isNaN(dateInput.getTime()) ? null : new Date(dateInput.getFullYear(), dateInput.getMonth(), dateInput.getDate());
+    }
+    if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateInput.trim())) {
+        const [year, month, day] = dateInput.trim().slice(0, 10).split('-').map(Number);
+        const dt = new Date(year, month - 1, day);
+        if (dt.getFullYear() === year && dt.getMonth() === month - 1 && dt.getDate() === day) return dt;
+        return null;
+    }
+    const parsed = new Date(dateInput);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export function calculateDaysLeft(warrantyEndDate) {
-    let endDate;
+    let endUtcMs;
 
     if (warrantyEndDate instanceof Date) {
-        endDate = new Date(warrantyEndDate.getTime());
+        if (Number.isNaN(warrantyEndDate.getTime())) return -999;
+        endUtcMs = Date.UTC(warrantyEndDate.getFullYear(), warrantyEndDate.getMonth(), warrantyEndDate.getDate());
     } else if (typeof warrantyEndDate === 'string' && /^\d{4}-\d{2}-\d{2}/.test(warrantyEndDate)) {
         const [year, month, day] = warrantyEndDate.slice(0, 10).split('-').map(Number);
-        endDate = new Date(year, month - 1, day);
+        endUtcMs = Date.UTC(year, month - 1, day);
     } else {
         return -999;
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    endDate.setHours(0, 0, 0, 0);
-
-    const diffTime = endDate.getTime() - today.getTime();
-    const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const now = new Date();
+    const todayUtcMs = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const days = Math.round((endUtcMs - todayUtcMs) / 86400000);
     return Number.isFinite(days) ? days : -999;
 }
 

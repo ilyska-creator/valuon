@@ -231,11 +231,13 @@ async function initSettings() {
             const currency = currencySelect?.value || 'EUR';
 
             try {
+                const displayName = [firstName, lastName].filter(Boolean).join(' ').trim();
                 const { error: dbError } = await client
                     .from('profiles')
                     .update({
                         first_name: firstName,
                         last_name: lastName,
+                        display_name: displayName,
                         currency: currency,
                         updated_at: new Date().toISOString()
                     })
@@ -243,12 +245,14 @@ async function initSettings() {
 
                 if (dbError) throw dbError;
 
-                await client.auth.updateUser({
+                const { error: authUpdateErr } = await client.auth.updateUser({
                     data: {
                         first_name: firstName,
                         last_name: lastName,
+                        display_name: displayName,
                     }
                 });
+                if (authUpdateErr) throw authUpdateErr;
 
                 originalFirstName = firstName;
                 originalLastName = lastName;
@@ -606,29 +610,21 @@ async function initSettings() {
     const langBtn = document.getElementById('settings-lang-toggle');
 
     if (themeBtn) {
-        const updateThemeBtn = () => {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            const icon = themeBtn.querySelector('i');
-            const label = document.getElementById('settings-theme-label');
-            if (icon) icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-            const t = getSettingsT();
-            if (label) label.textContent = isDark ? (t.setting_light_theme || 'Светлая') : (t.setting_dark_theme || 'Тёмная');
-        };
-
-        updateThemeBtn();
+        updateThemeLabelSync();
 
         themeBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
+            if (newTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
             localStorage.setItem('valuon-theme', newTheme);
-            updateThemeBtn();
+            updateThemeLabelSync();
             window.dispatchEvent(new CustomEvent('themeChange'));
         });
-
-        window.addEventListener('themeChange', updateThemeBtn);
-        window.addEventListener('lang-changed', updateThemeBtn);
     }
 
     if (langBtn) {
@@ -687,6 +683,12 @@ async function ensureSettingsLoaded() {
 
 document.querySelectorAll('[data-view="settings"]').forEach(el => {
     el.addEventListener('click', ensureSettingsLoaded);
+});
+
+window.addEventListener('dashboard-view-changed', (e) => {
+    if (e.detail?.viewId === 'view-settings') {
+        ensureSettingsLoaded();
+    }
 });
 
 if (window.location.hash === '#view-settings' || window.__targetView === 'view-settings' || sessionStorage.getItem('dashboard-view') === 'view-settings') {

@@ -3,6 +3,7 @@ import { escapeHtml, logError, pluralRu } from './security.js';
 import { attachModalA11y } from './modal-a11y.js';
 import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
+import { parseLocalDate } from './warranty-utils.js';
 
 let pendingDeleteId = null;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -234,6 +235,7 @@ async function attachFreshSignedUrls(receipts, client) {
 
     const now = Date.now();
     const msPerSecond = 1000;
+    const SAFETY_MARGIN_MS = 5 * 60 * 1000;
     const needsRefresh = new Set();
     const uniquePaths = new Set();
 
@@ -242,7 +244,7 @@ async function attachFreshSignedUrls(receipts, client) {
         const expiresAt = r.created_at
             ? new Date(r.created_at).getTime() + SIGNED_URL_TTL * msPerSecond
             : 0;
-        if (r.file_url && Number.isFinite(expiresAt) && now < expiresAt) return;
+        if (r.file_url && Number.isFinite(expiresAt) && now + SAFETY_MARGIN_MS < expiresAt) return;
         needsRefresh.add(idx);
         uniquePaths.add(r.file_path);
     });
@@ -561,7 +563,8 @@ function setupReceiptsTabs() {
 function renderBusinessCard(r, t) {
     const lang = getLang();
     const locale = lang === 'ru' ? 'ru-RU' : 'en-US';
-    const dateStr = r.purchase_date ? new Date(r.purchase_date).toLocaleDateString(locale) : '—';
+    const dateObj = r.purchase_date ? parseLocalDate(r.purchase_date) : null;
+    const dateStr = dateObj ? dateObj.toLocaleDateString(locale) : '—';
     const receiptNum = escapeHtml(r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`);
 
     const lc = r.lifecycle_status || 'active';
@@ -622,7 +625,8 @@ function renderBusinessCard(r, t) {
 
     let lifecycleNoteHtml = '';
     if (lc !== 'active' && (r.status_reason || r.status_changed_at)) {
-        const changedStr = r.status_changed_at ? new Date(r.status_changed_at).toLocaleDateString(locale) : '';
+        const changedDateObj = r.status_changed_at ? parseLocalDate(r.status_changed_at) : null;
+        const changedStr = changedDateObj ? changedDateObj.toLocaleDateString(locale) : '';
         const reasonStr = r.status_reason ? escapeHtml(r.status_reason) : '';
         lifecycleNoteHtml = `
             <div class="receipt-lifecycle-meta is-${escapeHtml(lc)}">
@@ -689,8 +693,9 @@ function renderPersonalCard(r, t) {
     const priceFormatted = hasAmount
         ? escapeHtml(window.formatCurrency(amountVal, r.display_currency || 'EUR', lang))
         : '';
-    const dateStr = r.display_date
-        ? escapeHtml(new Date(r.display_date).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US'))
+    const displayDateObj = r.display_date ? parseLocalDate(r.display_date) : null;
+    const dateStr = displayDateObj
+        ? escapeHtml(displayDateObj.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US'))
         : '';
 
     const displayName = escapeHtml(r.display_name);
@@ -741,6 +746,7 @@ function renderPersonalCard(r, t) {
             <div class="receipt-doc-actions">
                 <button type="button" class="receipt-doc-btn is-primary btn-view-receipt"
                         data-url="${escapeHtml(r.file_url)}"
+                        data-file-path="${escapeHtml(r.file_path || '')}"
                         title="${btnViewText}">
                     <i class="fa-solid fa-eye" aria-hidden="true"></i>
                     <span data-i18n="btn_view">${btnViewText}</span>
@@ -813,9 +819,28 @@ function restoreListeners(client, userId) {
     // один раз при инициализации (в отличие от статичных upload-zone/шапки).
     document.getElementById('empty-upload-receipt-btn')?.addEventListener('click', () => uploadModal?.open());
 
+    const urlSignedAt = Date.now();
+    const resolveFreshReceiptUrl = async (btn) => {
+        const filePath = btn.dataset.filePath;
+        const currentUrl = btn.dataset.url;
+        const signedAt = Number(btn.dataset.signedAt) || urlSignedAt;
+        const isExpiring = Date.now() - signedAt > (SIGNED_URL_TTL - 300) * 1000;
+        if (filePath && (!currentUrl || isExpiring)) {
+            const { data, error } = await client.storage
+                .from('receipts')
+                .createSignedUrl(filePath, SIGNED_URL_TTL);
+            if (!error && data?.signedUrl) {
+                btn.dataset.url = data.signedUrl;
+                btn.dataset.signedAt = String(Date.now());
+                return data.signedUrl;
+            }
+        }
+        return currentUrl || '';
+    };
+
     document.querySelectorAll('.btn-view-receipt').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const rawUrl = btn.dataset.url;
+        btn.addEventListener('click', async () => {
+            const rawUrl = await resolveFreshReceiptUrl(btn);
             if (!rawUrl) return;
             try {
                 const parsed = new URL(rawUrl, window.location.origin);
@@ -828,16 +853,19 @@ function restoreListeners(client, userId) {
 
     document.querySelectorAll('.btn-download-receipt').forEach(btn => {
         btn.addEventListener('click', async () => {
-            const url = btn.dataset.url;
             const name = btn.dataset.name || 'receipt';
-            if (!url) return;
-
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
             try {
-                const response = await fetch(url);
+                const url = await resolveFreshReceiptUrl(btn);
+                if (!url) throw new Error('Missing receipt URL');
+                const parsed = new URL(url, window.location.origin);
+                if (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && parsed.origin === window.location.origin)) {
+                    throw new Error('Invalid receipt URL protocol');
+                }
+                const response = await fetch(parsed.href);
                 if (!response.ok) throw new Error('Network response was not ok');
                 const blob = await response.blob();
                 const blobUrl = URL.createObjectURL(blob);
@@ -860,36 +888,37 @@ function restoreListeners(client, userId) {
         });
     });
 
+    let receiptsPdfLibsPromise = null;
+    const ensureReceiptsPdfLibs = () => {
+        if (!receiptsPdfLibsPromise) {
+            const loadOne = (src, checkFn) => checkFn()
+                ? Promise.resolve()
+                : new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.onload = resolve;
+                    s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+            receiptsPdfLibsPromise = (async () => {
+                await loadOne('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => typeof window.jspdf !== 'undefined');
+                await loadOne('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js', () => typeof qrcode !== 'undefined');
+                await loadOne('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', () => typeof window.html2canvas !== 'undefined');
+            })().catch((err) => {
+                receiptsPdfLibsPromise = null;
+                throw err;
+            });
+        }
+        return receiptsPdfLibsPromise;
+    };
+
     document.querySelectorAll('.btn-download-biz').forEach(btn => {
         btn.addEventListener('click', async () => {
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             try {
-                if (typeof window.jspdf === 'undefined') {
-                    await new Promise((resolve, reject) => {
-                        const s = document.createElement('script');
-                        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-                        s.onload = resolve; s.onerror = reject;
-                        document.head.appendChild(s);
-                    });
-                }
-                if (typeof qrcode === 'undefined') {
-                    await new Promise((resolve, reject) => {
-                        const s = document.createElement('script');
-                        s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
-                        s.onload = resolve; s.onerror = reject;
-                        document.head.appendChild(s);
-                    });
-                }
-                if (typeof window.html2canvas === 'undefined') {
-                    await new Promise((resolve, reject) => {
-                        const s = document.createElement('script');
-                        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-                        s.onload = resolve; s.onerror = reject;
-                        document.head.appendChild(s);
-                    });
-                }
+                await ensureReceiptsPdfLibs();
                 const { downloadReceiptPDF } = await import('./receipt-generator.js');
                 const userPhoneForPdf = await fetchCurrentUserPhone(client, userId);
                 const pdfOrFilter = buildBuyerReceiptOrFilter({ userId, email: currentUserEmail, phone: userPhoneForPdf });
@@ -1116,30 +1145,54 @@ function createUploadModal(client, userId) {
         }
     }
 
+    function setFieldLock(input, locked) {
+        if (!input) return;
+        input.readOnly = locked;
+        if (input._cdp) input._cdp.setLocked(locked);
+        const group = input.closest('.input-group');
+        group?.querySelector('.lock-icon')?.classList.toggle('hidden', !locked);
+    }
+
     function setFieldsLocked(locked) {
-        lockedFields.forEach(input => {
-            if (!input) return;
-            input.readOnly = locked;
-            if (input._cdp) input._cdp.setLocked(locked);
-        });
-        if (currencySelect) currencySelect.disabled = locked;
-        lockIcons.forEach(icon => icon.classList.toggle('hidden', !locked));
+        lockedFields.forEach(input => setFieldLock(input, locked));
+        if (currencySelect) {
+            currencySelect.disabled = locked;
+            currencySelect.closest('.input-group')?.querySelector('.lock-icon')?.classList.toggle('hidden', !locked);
+        }
+        if (!locked) {
+            lockIcons.forEach(icon => icon.classList.add('hidden'));
+        }
         updateHintText(locked);
     }
 
     function fillFromItem(selected) {
-        if (selected.dataset.name) receiptNameInput.value = selected.dataset.name;
-        if (selected.dataset.price) amountInput.value = selected.dataset.price;
-        if (selected.dataset.date) {
-            dateInput.value = selected.dataset.date;
-            if (dateInput._cdp) dateInput._cdp.syncDisplay();
-        }
-        if (selected.dataset.store) storeInput.value = selected.dataset.store;
-        if (selected.dataset.currency && currencySelect) {
-            currencySelect.value = selected.dataset.currency;
+        const nameVal = (selected.dataset.name || '').trim();
+        const priceVal = (selected.dataset.price || '').trim();
+        const dateVal = (selected.dataset.date || '').trim();
+        const storeVal = (selected.dataset.store || '').trim();
+        const currVal = (selected.dataset.currency || '').trim();
+
+        receiptNameInput.value = nameVal;
+        setFieldLock(receiptNameInput, Boolean(nameVal));
+
+        amountInput.value = priceVal;
+        setFieldLock(amountInput, Boolean(priceVal));
+
+        dateInput.value = dateVal;
+        if (dateInput._cdp) dateInput._cdp.syncDisplay();
+        setFieldLock(dateInput, Boolean(dateVal));
+
+        storeInput.value = storeVal;
+        setFieldLock(storeInput, Boolean(storeVal));
+
+        if (currencySelect) {
+            currencySelect.value = currVal || userDefaultCurrency;
+            currencySelect.disabled = Boolean(currVal);
+            currencySelect.closest('.input-group')?.querySelector('.lock-icon')?.classList.toggle('hidden', !currVal);
             if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
             updateAmountSuffix();
         }
+        updateHintText(Boolean(nameVal || priceVal || dateVal || storeVal || currVal));
     }
 
     function clearLockedFields() {
@@ -1152,6 +1205,11 @@ function createUploadModal(client, userId) {
     }
 
     function open() {
+        if (modal._closeTimer) {
+            clearTimeout(modal._closeTimer);
+            modal._closeTimer = null;
+            modal.classList.remove('closing');
+        }
         modal.classList.add('active');
         document.documentElement.classList.add('modal-open');
         if (dateInput) {
@@ -1175,13 +1233,16 @@ function createUploadModal(client, userId) {
         isSubmitting = false;
         if (modal.classList.contains('closing')) return;
         modal.classList.add('closing');
-        setTimeout(() => {
+        modal._closeTimer = setTimeout(() => {
+            modal._closeTimer = null;
             modal.classList.remove('active', 'closing');
             syncModalOpenClass();
-            form.reset();
-            miniDropZone?.classList.remove('has-file');
-            setFieldsLocked(false);
             clearLockedFields();
+            setFieldsLocked(false);
+            form.reset();
+            if (dateInput?._cdp) dateInput._cdp.syncDisplay();
+            if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+            miniDropZone?.classList.remove('has-file');
             if (fileNameDisplay) {
                 const lang = getLang();
                 const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
@@ -1232,7 +1293,6 @@ function createUploadModal(client, userId) {
                 return;
             }
             fillFromItem(selected);
-            setFieldsLocked(true);
         });
     }
 

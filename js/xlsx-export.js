@@ -42,7 +42,7 @@ function escapeXml(str) {
 
 function sanitizeTextCell(value) {
     let str = value == null ? '' : String(value);
-    if (/^[=+\-@\t\r]/.test(str) && !/^-\d+(\.\d+)?$/.test(str)) {
+    if (/^[\s\u0000-\u0020]*[=+\-@|]/.test(str) && !/^\s*-\d+(\.\d+)?\s*$/.test(str)) {
         str = `'${str}`;
     }
     return str;
@@ -60,11 +60,16 @@ function colIndexToLetter(index) {
 }
 
 function sanitizeSheetName(name, fallback) {
-    const cleaned = String(name || fallback || 'Sheet')
+    let cleaned = String(name || fallback || 'Sheet')
         .replace(/[\\/*?:[\]]/g, ' ')
         .trim()
-        .slice(0, 31);
-    return cleaned || fallback || 'Sheet';
+        .replace(/^'+|'+$/g, '')
+        .slice(0, 31)
+        .trim();
+    if (!cleaned || cleaned.toLowerCase() === 'history') {
+        cleaned = fallback || 'Sheet';
+    }
+    return cleaned.slice(0, 31);
 }
 
 function buildWorksheetXml(sheet) {
@@ -108,7 +113,9 @@ function buildWorksheetXml(sheet) {
                 return `<c r="${ref}" s="0"/>`;
             }
             if (col.type === 'money' || col.type === 'number' || col.type === 'int') {
-                const num = typeof raw === 'number' ? raw : parseFloat(raw);
+                const num = typeof raw === 'number'
+                    ? raw
+                    : (typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : NaN);
                 if (Number.isFinite(num)) {
                     const styleIdx = col.type === 'money' ? 2 : col.type === 'int' ? 3 : 0;
                     return `<c r="${ref}" s="${styleIdx}"><v>${num}</v></c>`;
@@ -262,10 +269,18 @@ function buildZipStore(files) {
  * [{ name: 'Receipts', columns: [{ header, type?, minWidth?, maxWidth? }], rows: [[...], ...] }]
  */
 export function buildXlsxBlob(sheets) {
-    const safeSheets = (sheets || []).map((s, idx) => ({
-        ...s,
-        safeName: sanitizeSheetName(s.name, `Sheet${idx + 1}`),
-    }));
+    const usedNames = new Set();
+    const safeSheets = (sheets || []).map((s, idx) => {
+        let base = sanitizeSheetName(s.name, `Sheet${idx + 1}`);
+        let candidate = base;
+        let suffix = 2;
+        while (usedNames.has(candidate.toLowerCase())) {
+            const tag = ` (${suffix++})`;
+            candidate = base.slice(0, 31 - tag.length).trim() + tag;
+        }
+        usedNames.add(candidate.toLowerCase());
+        return { ...s, safeName: candidate };
+    });
 
     const contentTypesOverrides = safeSheets
         .map((_, idx) => `<Override PartName="/xl/worksheets/sheet${idx + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`)

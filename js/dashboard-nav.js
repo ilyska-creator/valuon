@@ -4,7 +4,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const bottomLinks = document.querySelectorAll('.bottom-nav-item[data-view]');
     const views = document.querySelectorAll('.dashboard-view');
 
+    function isDashboardView(id) {
+        if (!id) return false;
+        const el = document.getElementById(id);
+        return Boolean(el && el.classList.contains('dashboard-view'));
+    }
+
     function activateView(targetId) {
+        if (!isDashboardView(targetId)) return;
+
         sidebarLinks.forEach(l => l.classList.remove('active'));
         bottomLinks.forEach(l => l.classList.remove('active'));
 
@@ -24,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     view.querySelectorAll('[data-animate]').forEach(el => el.classList.add('is-visible'));
                 });
             }
+            window.dispatchEvent(new CustomEvent('dashboard-view-changed', { detail: { viewId: targetId } }));
         }
     }
 
@@ -31,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
 
         const targetId = link.getAttribute('href').replace('#', '');
+        if (!isDashboardView(targetId)) return;
         activateView(targetId);
         sessionStorage.setItem('dashboard-view', targetId);
         if (window.location.hash !== '#' + targetId) {
@@ -50,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('popstate', () => {
         const hash = window.location.hash.replace('#', '') || 'view-items';
-        if (document.getElementById(hash)) {
+        if (isDashboardView(hash)) {
             activateView(hash);
             sessionStorage.setItem('dashboard-view', hash);
         }
@@ -58,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const targetView = sessionStorage.getItem('dashboard-view');
     const hash = window.__targetView || window.location.hash.replace('#', '') || targetView;
-    if (hash && document.getElementById(hash)) {
+    if (isDashboardView(hash)) {
         activateView(hash);
         sessionStorage.setItem('dashboard-view', hash);
         if (window.location.hash !== '#' + hash) {

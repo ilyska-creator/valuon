@@ -3,7 +3,8 @@ import { escapeHtml, logError } from './security.js';
 import {
     calculateDaysLeft,
     isNoWarranty,
-    extractActivePartnerWarrantyItems
+    extractActivePartnerWarrantyItems,
+    parseLocalDate
 } from './warranty-utils.js';
 import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
 
@@ -20,8 +21,8 @@ function formatDate(dateStr) {
     if (!dateStr) return '';
     const lang = getNotifLang();
     const locale = lang === 'ru' ? 'ru-RU' : 'en-US';
-    const date = new Date(dateStr);
-    if (Number.isNaN(date.getTime())) return '';
+    const date = parseLocalDate(dateStr);
+    if (!date) return '';
     return date.toLocaleDateString(locale, { day: 'numeric', month: 'numeric', year: 'numeric' });
 }
 
@@ -236,8 +237,16 @@ export async function refreshNotifBadge() {
     try {
         const auth = await requireAuth();
         if (!auth) return;
-        const count = await computeActiveAlertsCount(auth.user.id, auth.user.email, auth.client);
-        updateNotifBadge(count);
+        cachedUserId = auth.user.id;
+        cachedUserEmail = auth.user.email;
+        cachedClient = auth.client;
+        if (notifInitialized) {
+            await loadNotifications(auth.user.id, auth.user.email, auth.client);
+            currentNotifLang = getNotifLang();
+        } else {
+            const count = await computeActiveAlertsCount(auth.user.id, auth.user.email, auth.client);
+            updateNotifBadge(count);
+        }
     } catch (e) {
         logError('notif:badgeRefresh', e);
     }
@@ -322,6 +331,7 @@ async function loadNotifications(userId, userEmail, client) {
 }
 
 let notifInitialized = false;
+let notifLoadPromise = null;
 let currentNotifLang = getNotifLang();
 
 let cachedUserId = null;
@@ -330,25 +340,41 @@ let cachedClient = null;
 
 async function ensureNotifLoaded() {
     if (notifInitialized) return;
-    try {
-        const auth = await requireAuth();
-        if (!auth) return;
-        cachedUserId = auth.user.id;
-        cachedUserEmail = auth.user.email;
-        cachedClient = auth.client;
-        await loadNotifications(auth.user.id, auth.user.email, auth.client);
-        currentNotifLang = getNotifLang();
-        notifInitialized = true;
-    } catch (e) {
-        logError('notif:load', e);
-    }
+    if (notifLoadPromise) return notifLoadPromise;
+    notifLoadPromise = (async () => {
+        try {
+            const auth = await requireAuth();
+            if (!auth) return;
+            cachedUserId = auth.user.id;
+            cachedUserEmail = auth.user.email;
+            cachedClient = auth.client;
+            await loadNotifications(auth.user.id, auth.user.email, auth.client);
+            currentNotifLang = getNotifLang();
+            notifInitialized = true;
+        } catch (e) {
+            logError('notif:load', e);
+        } finally {
+            notifLoadPromise = null;
+        }
+    })();
+    return notifLoadPromise;
 }
 
 document.querySelectorAll('[data-view="notifications"]').forEach(el => {
     el.addEventListener('click', ensureNotifLoaded);
 });
 
-if (window.location.hash === '#view-notifications' || window.__targetView === 'view-notifications' || sessionStorage.getItem('dashboard-view') === 'view-notifications') {
+window.addEventListener('dashboard-view-changed', (e) => {
+    if (e.detail?.viewId === 'view-notifications') {
+        ensureNotifLoaded();
+    }
+});
+
+const startsOnNotifView = window.location.hash === '#view-notifications'
+    || window.__targetView === 'view-notifications'
+    || sessionStorage.getItem('dashboard-view') === 'view-notifications';
+
+if (startsOnNotifView) {
     ensureNotifLoaded();
 }
 
@@ -376,13 +402,15 @@ window.addEventListener('phone-changed', async () => {
     }
 });
 
-(async function initNotifBadge() {
-    try {
-        const auth = await requireAuth();
-        if (!auth) return;
-        const count = await computeActiveAlertsCount(auth.user.id, auth.user.email, auth.client);
-        updateNotifBadge(count);
-    } catch (e) {
-        logError('notif:badgeInit', e);
-    }
-})();
+if (!startsOnNotifView) {
+    (async function initNotifBadge() {
+        try {
+            const auth = await requireAuth();
+            if (!auth) return;
+            const count = await computeActiveAlertsCount(auth.user.id, auth.user.email, auth.client);
+            updateNotifBadge(count);
+        } catch (e) {
+            logError('notif:badgeInit', e);
+        }
+    })();
+}

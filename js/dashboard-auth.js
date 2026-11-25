@@ -29,11 +29,21 @@ export function setupLogout(currentClient) {
     });
 }
 
+let authListenerBound = false;
+
 export async function requireAuth() {
     const { session, client } = await getAuthSession();
     if (!session) {
         window.location.href = 'login.html';
         return null;
+    }
+    if (!authListenerBound) {
+        authListenerBound = true;
+        client.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT') {
+                window.location.href = 'login.html';
+            }
+        });
     }
     return { user: session.user, client };
 }

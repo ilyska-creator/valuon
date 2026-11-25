@@ -3,7 +3,7 @@ import { escapeHtml, logError } from './security.js';
 import { downloadICS } from './calendar-export.js';
 import { refreshNotifBadge } from './dashboard-notifications.js';
 import { attachModalA11y } from './modal-a11y.js';
-import { calculateDaysLeft, isNoWarranty } from './warranty-utils.js';
+import { calculateDaysLeft, isNoWarranty, parseLocalDate } from './warranty-utils.js';
 import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
 
@@ -68,6 +68,7 @@ async function initDashboardItems() {
     currentClient = auth.client;
     currentUserId = auth.user.id;
     currentUserEmail = auth.user.email;
+    setupLogout(auth.client);
 
     const { data: profile } = await auth.client
         .from('profiles')
@@ -90,7 +91,6 @@ async function initDashboardItems() {
     setupModal(auth.client, auth.user.id);
     setupEditModal(auth.client, auth.user.id);
     setupDeleteItemModal(auth.client, auth.user.id);
-    setupLogout(auth.client);
 }
 
 const VALID_ITEMS_SORTS = new Set(['newest', 'warranty_asc', 'price_desc', 'price_asc']);
@@ -199,6 +199,50 @@ async function openLinkedPersonalReceipt(itemId, btn) {
     }
 }
 
+let pdfLibsPromise = null;
+
+function loadScriptOnce(src, checkFn) {
+    if (checkFn()) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+    });
+}
+
+function ensurePdfLibsLoaded() {
+    if (!pdfLibsPromise) {
+        pdfLibsPromise = (async () => {
+            await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => typeof window.jspdf !== 'undefined');
+            await loadScriptOnce('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js', () => typeof qrcode !== 'undefined');
+            await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', () => typeof window.html2canvas !== 'undefined');
+        })().catch((err) => {
+            pdfLibsPromise = null;
+            throw err;
+        });
+    }
+    return pdfLibsPromise;
+}
+
+function getTotalWarrantyDays(item) {
+    const start = item?.purchase_date ? parseLocalDate(item.purchase_date) : null;
+    const end = item?.warranty_end_date ? parseLocalDate(item.warranty_end_date) : null;
+    if (start && end) {
+        const diff = Math.round((Date.UTC(end.getFullYear(), end.getMonth(), end.getDate()) - Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) / 86400000);
+        if (diff > 0) return diff;
+    }
+    return (Number(item?.warranty_months) || 12) * 30;
+}
+
+function parseWarrantyMonthsInput(rawVal) {
+    const trimmed = String(rawVal ?? '').trim();
+    if (!trimmed) return 0;
+    const m = parseInt(trimmed, 10);
+    return Number.isFinite(m) && m > 0 ? Math.min(600, m) : 0;
+}
+
 async function downloadVerifiedReceiptPDF(receiptId, btn) {
     if (!receiptId || !currentClient || (!currentUserId && !currentUserEmail)) return;
     const lang = localStorage.getItem('valuon-lang') || 'ru';
@@ -207,30 +251,7 @@ async function downloadVerifiedReceiptPDF(receiptId, btn) {
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
     try {
-        if (typeof window.jspdf === 'undefined') {
-            await new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-                s.onload = resolve; s.onerror = reject;
-                document.head.appendChild(s);
-            });
-        }
-        if (typeof qrcode === 'undefined') {
-            await new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
-                s.onload = resolve; s.onerror = reject;
-                document.head.appendChild(s);
-            });
-        }
-        if (typeof window.html2canvas === 'undefined') {
-            await new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-                s.onload = resolve; s.onerror = reject;
-                document.head.appendChild(s);
-            });
-        }
+        await ensurePdfLibsLoaded();
 
         const { downloadReceiptPDF } = await import('./receipt-generator.js');
         let receipt = verifiedReceiptPdfCache.get(String(receiptId));
@@ -400,7 +421,7 @@ function renderItems(items, opts = {}) {
         const noWarranty = isNoWarranty(item);
         const daysLeft = noWarranty ? null : calculateDaysLeft(item.warranty_end_date);
         const status = noWarranty ? null : getStatusInfo(daysLeft);
-        const totalDays = (item.warranty_months || 12) * 30;
+        const totalDays = getTotalWarrantyDays(item);
         const progress = noWarranty ? 0
             : totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
         const statusClass = noWarranty ? 'none' : status.class;
@@ -638,7 +659,7 @@ function renderVerifiedItems(receipts, t, opts = {}) {
         const noWarranty = isNoWarranty(item);
         const daysLeft = noWarranty ? null : calculateDaysLeft(item.warranty_end_date);
         const status = noWarranty ? null : getStatusInfo(daysLeft);
-        const totalDays = (item.warranty_months || 12) * 30;
+        const totalDays = getTotalWarrantyDays(item);
         const progress = noWarranty ? 0
             : totalDays > 0 ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 0;
         const statusClass = noWarranty ? 'none' : status.class;
@@ -997,12 +1018,17 @@ async function openEditModal(itemId, client, userId) {
         window.applyDashboardLang(lang);
     }
 
+    if (modal._closeTimer) {
+        clearTimeout(modal._closeTimer);
+        modal._closeTimer = null;
+        modal.classList.remove('closing');
+    }
     modal.classList.add('active');
     document.documentElement.classList.add('modal-open');
 }
 
 function syncModalOpenClass() {
-    if (!document.querySelector('.modal.active:not(.closing)')) {
+    if (!document.querySelector('.modal-overlay.active:not(.closing), .modal.active:not(.closing)')) {
         document.documentElement.classList.remove('modal-open');
     }
 }
@@ -1055,7 +1081,8 @@ function setupEditModal(client, userId) {
         }
         if (modal.classList.contains('closing')) return;
         modal.classList.add('closing');
-        setTimeout(() => {
+        modal._closeTimer = setTimeout(() => {
+            modal._closeTimer = null;
             modal.classList.remove('active', 'closing');
             form.reset();
             syncModalOpenClass();
@@ -1119,7 +1146,7 @@ function setupEditModal(client, userId) {
                 store_name: form.querySelector('[name="store_name"]').value.trim(),
                 serial_number: form.querySelector('[name="serial_number"]').value.trim(),
                 purchase_date: form.querySelector('[name="purchase_date"]').value,
-                warranty_months: (m => isNaN(m) ? 12 : Math.max(0, m))(parseInt(form.querySelector('[name="warranty_months"]').value)),
+                warranty_months: parseWarrantyMonthsInput(form.querySelector('[name="warranty_months"]').value),
                 location: form.querySelector('[name="location"]').value.trim(),
                 currency: form.querySelector('[name="currency"]')?.value || 'EUR',
                 updated_at: new Date().toISOString()
@@ -1237,7 +1264,8 @@ function setupModal(client, userId) {
         }
         if (modal.classList.contains('closing')) return;
         modal.classList.add('closing');
-        setTimeout(() => {
+        modal._closeTimer = setTimeout(() => {
+            modal._closeTimer = null;
             modal.classList.remove('active', 'closing');
             form?.reset();
             syncModalOpenClass();
@@ -1277,6 +1305,11 @@ function setupModal(client, userId) {
     }
 
     addBtn.addEventListener('click', () => {
+        if (modal._closeTimer) {
+            clearTimeout(modal._closeTimer);
+            modal._closeTimer = null;
+            modal.classList.remove('closing');
+        }
         resetSubmitState();
         modal.classList.add('active');
         document.documentElement.classList.add('modal-open');
@@ -1345,7 +1378,7 @@ function setupModal(client, userId) {
                 brand: brandInput ? brandInput.value.trim() : '',
                 serial_number: serialInput ? serialInput.value.trim() : '',
                 purchase_date: dateInput.value,
-                warranty_months: (m => isNaN(m) ? 12 : Math.max(0, m))(parseInt(monthsInput.value)),
+                warranty_months: parseWarrantyMonthsInput(monthsInput.value),
                 location: locationInput ? locationInput.value.trim() : '',
                 price: Math.max(0, parseFloat(priceInput?.value) || 0),
                 store_name: storeInput ? storeInput.value.trim() : '',
@@ -1383,6 +1416,8 @@ initDashboardItems().catch(e => {
     const lang = localStorage.getItem('valuon-lang') || 'ru';
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
     const msg = t.load_error || (lang === 'ru' ? 'Ошибка загрузки. Обновите страницу.' : 'Load error. Please refresh.');
-    const el = document.querySelector('#items-grid-mine');
+    const el = document.querySelector('#items-grid-verified:not(.hidden), #items-grid-mine:not(.hidden)')
+        || document.querySelector('#items-grid-verified')
+        || document.querySelector('#items-grid-mine');
     if (el) el.innerHTML = `<p class="empty-state error">${msg}</p>`;
 });
