@@ -67,7 +67,9 @@ function renderDeviceTypeOptions(select, lang, options) {
 }
 
 function deviceIconMarkup(type) {
-    const icon = window.DEVICE_ICONS[type] || window.DEVICE_ICONS.other;
+    const icon = (type && Object.prototype.hasOwnProperty.call(window.DEVICE_ICONS, type))
+        ? window.DEVICE_ICONS[type]
+        : window.DEVICE_ICONS.other;
     return '<i class="fa-solid ' + icon + '"></i>';
 }
 

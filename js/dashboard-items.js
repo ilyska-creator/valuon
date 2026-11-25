@@ -417,7 +417,9 @@ function renderItems(items, opts = {}) {
     const sortedItems = sortDashboardItems(items, currentItemsSort, false);
 
     grid.innerHTML = sortedItems.map(item => {
-        const iconClass = window.DEVICE_ICONS[item.type] || window.DEVICE_ICONS.other;
+        const iconClass = (item.type && Object.prototype.hasOwnProperty.call(window.DEVICE_ICONS, item.type))
+            ? window.DEVICE_ICONS[item.type]
+            : window.DEVICE_ICONS.other;
         const noWarranty = isNoWarranty(item);
         const daysLeft = noWarranty ? null : calculateDaysLeft(item.warranty_end_date);
         const status = noWarranty ? null : getStatusInfo(daysLeft);
@@ -652,7 +654,9 @@ function renderVerifiedItems(receipts, t, opts = {}) {
     lastVerifiedItems = sortedItems;
 
     grid.innerHTML = sortedItems.map(item => {
-        const iconClass = window.DEVICE_ICONS[item.category] || window.DEVICE_ICONS.other;
+        const iconClass = (item.category && Object.prototype.hasOwnProperty.call(window.DEVICE_ICONS, item.category))
+            ? window.DEVICE_ICONS[item.category]
+            : window.DEVICE_ICONS.other;
         const d = item.purchase_date ? item.purchase_date.slice(0, 10).split('-') : null;
         const dateStr = d ? (lang === 'ru' ? `${d[2]}.${d[1]}.${d[0]}` : `${d[1]}/${d[2]}/${d[0]}`) : '';
         const qty = parseInt(item.qty, 10) || 1;

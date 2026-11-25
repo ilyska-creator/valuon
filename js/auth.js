@@ -1,5 +1,5 @@
 import { supabase, setSessionOnly } from './supabase-client.js';
-import { checkLoginRateLimit, setLoadingButton, resetLoadingButton, isValidEmail, logError, mountTurnstile } from './security.js';
+import { checkLoginRateLimit, resetLoginRateLimit, setLoadingButton, resetLoadingButton, isValidEmail, logError, mountTurnstile } from './security.js';
 import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
 import { createSegmentedIndicator, prefersReducedMotion } from './segmented-indicator.js';
 import { attachModalA11y } from './modal-a11y.js';
@@ -255,6 +255,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!activeSession) {
                     throw new Error('No active session returned');
                 }
+
+                resetLoginRateLimit(rateLimitKey);
 
                 if (loginMode === 'phone') {
                     if (rememberMe) {

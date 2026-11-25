@@ -137,22 +137,22 @@
                 <p class="stage-context" data-i18n="step1_context">Прежде чем звать больше магазинов и пользователей —
                     нужно укрепить то, что уже построено.</p>
                 <ul class="feature-list">
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_3">Выгрузить и закоммитить
-                            RLS-политики в SQL-миграции</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_3">Автоматизация версионирования
+                            схемы базы данных и политик доступа</span></li>
                     <li><i class="fa-solid fa-check"></i> <span data-i18n="step1_item_4">Подключить проверку
                             сложности пароля на регистрации и сбросе</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_5">Добавить CSP-заголовки
-                            (vercel.json)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_7">Настроить проверку MIME-типа
-                            файлов в Storage bucket</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_8">Добавить версию формата в
-                            подписываемые данные чека</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_9">«Заморозить» данные магазина
-                            на чеке при проверке подписи</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_10">Починить округление сумм в
-                            PDF</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_11">Ограничения CHECK на
-                            значения позиций чека в БД</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_5">Расширенные политики
+                            защиты браузера и заголовки безопасности</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_7">Дополнительная серверная
+                            валидация загружаемых файлов чеков</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_8">Версионирование формата
+                            криптографической подписи чека</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_9">Снимок реквизитов магазина
+                            на момент выпуска чека при верификации</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_10">Унификация расчётов и
+                            форматирования сумм в PDF-чеках</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_11">Дополнительные правила
+                            целостности данных позиций чека</span></li>
                     <li><i class="fa-solid fa-check"></i> <span data-i18n="step1_item_12">Выбор валюты магазина и
                             чека (мультивалютность, EUR по умолчанию)</span></li>
                     <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_13">Эстонский язык
@@ -166,8 +166,8 @@
                 </ul>
                 <div class="decision-gate">
                     <i class="fa-solid fa-signs-post"></i>
-                    <span data-i18n="step1_gate">Без этого этапа масштабировать нельзя — рост числа магазинов и чеков
-                        увеличит ущерб от уже найденных проблем.</span>
+                    <span data-i18n="step1_gate">Этот этап закладывает надёжную техническую основу перед подключением
+                        новых магазинов и ростом объёма чеков.</span>
                 </div>
             </div>
 

@@ -101,6 +101,13 @@ function buildDownloadFilename(rawName, fileType, filePath, blobType) {
 function validateReceiptFile(file) {
     if (!file) return false;
     const lang = getLang();
+    if (file.size === 0) {
+        showToast(
+            lang === 'ru' ? 'Файл пустой. Выберите корректный файл чека.' : 'File is empty. Please choose a valid receipt file.',
+            'warning'
+        );
+        return false;
+    }
     if (file.size > MAX_FILE_SIZE) {
         showToast(
             lang === 'ru'
@@ -120,6 +127,26 @@ function validateReceiptFile(file) {
         return false;
     }
     return true;
+}
+
+async function verifyReceiptMagicBytes(file) {
+    try {
+        const buf = await file.slice(0, 12).arrayBuffer();
+        const b = new Uint8Array(buf);
+        if (b.length < 4) return false;
+        // JPEG: FF D8 FF
+        if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return file.type === 'image/jpeg' || file.type === 'image/jpg';
+        // PNG: 89 50 4E 47 0D 0A 1A 0A
+        if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return file.type === 'image/png';
+        // WEBP: RIFF....WEBP
+        if (b.length >= 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+            b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return file.type === 'image/webp';
+        // PDF: %PDF-
+        if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return file.type === 'application/pdf';
+        return false;
+    } catch (_) {
+        return false;
+    }
 }
 
 async function initReceipts() {
@@ -1063,6 +1090,12 @@ function setupDeleteModal(client, userId) {
                 .eq('user_id', userId)
                 .single();
 
+            const { error: dbError } = await client.from('receipts').delete()
+                .eq('id', pendingDeleteId)
+                .eq('user_id', userId);
+
+            if (dbError) throw dbError;
+
             if (delReceipt?.file_path) {
                 const { error: storageError } = await client.storage
                     .from('receipts')
@@ -1072,12 +1105,6 @@ function setupDeleteModal(client, userId) {
                     console.warn('Storage delete warning:', storageError.message);
                 }
             }
-
-            const { error: dbError } = await client.from('receipts').delete()
-                .eq('id', pendingDeleteId)
-                .eq('user_id', userId);
-
-            if (dbError) throw dbError;
 
             showToast(lang === 'ru' ? 'Чек удалён' : 'Receipt deleted', 'success');
             closeDeleteModal();
@@ -1311,6 +1338,16 @@ function createUploadModal(client, userId) {
         }
         const file = fileInput.files[0];
         if (!validateReceiptFile(file)) return;
+        const magicOk = await verifyReceiptMagicBytes(file);
+        if (!magicOk) {
+            showToast(
+                lang === 'ru'
+                    ? 'Содержимое файла не соответствует формату JPG, PNG, WebP или PDF.'
+                    : 'File contents do not match a valid JPG, PNG, WebP, or PDF file.',
+                'error'
+            );
+            return;
+        }
 
         isSubmitting = true;
         btn.disabled = true;

@@ -1,18 +1,53 @@
+const LOGIN_RL_STORAGE_KEY = 'valuon-rl-login';
+const SIGNUP_RL_STORAGE_KEY = 'valuon-rl-signup';
 const loginAttempts = new Map();
 const MAX_LOGIN_ATTEMPTS = 10;
-const LOGIN_TIMEOUT_MS = 15 * 60 * 1000; 
+const LOGIN_TIMEOUT_MS = 15 * 60 * 1000;
 
+function readRateLimitBucket(storageKey, fallbackMap, key, windowMs) {
+    const now = Date.now();
+    try {
+        const raw = localStorage.getItem(storageKey);
+        const parsed = raw ? JSON.parse(raw) : {};
+        const list = Array.isArray(parsed?.[key]) ? parsed[key] : [];
+        return list.filter(t => typeof t === 'number' && now - t < windowMs);
+    } catch (_) {
+        const list = fallbackMap.get(key) || [];
+        return list.filter(t => now - t < windowMs);
+    }
+}
+
+function writeRateLimitBucket(storageKey, fallbackMap, key, list, windowMs) {
+    fallbackMap.set(key, list);
+    try {
+        const now = Date.now();
+        const raw = localStorage.getItem(storageKey);
+        const parsed = raw ? JSON.parse(raw) : {};
+        const next = {};
+        Object.keys(parsed || {}).forEach((k) => {
+            const cleaned = Array.isArray(parsed[k]) ? parsed[k].filter(t => typeof t === 'number' && now - t < windowMs) : [];
+            if (cleaned.length > 0) next[k] = cleaned;
+        });
+        if (list.length > 0) next[key] = list;
+        else delete next[key];
+        localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch (_) { /* storage unavailable */ }
+}
+
+export function resetLoginRateLimit(identifier) {
+    if (!identifier) return;
+    const key = String(identifier).toLowerCase().trim();
+    writeRateLimitBucket(LOGIN_RL_STORAGE_KEY, loginAttempts, key, [], LOGIN_TIMEOUT_MS);
+}
 
 export function checkLoginRateLimit(identifier, lang = 'ru') {
     const key = identifier.toLowerCase().trim();
     const now = Date.now();
 
-    const attempts = loginAttempts.get(key) || [];
-    const recentAttempts = attempts.filter(t => now - t < LOGIN_TIMEOUT_MS);
-
-    loginAttempts.set(key, recentAttempts);
+    const recentAttempts = readRateLimitBucket(LOGIN_RL_STORAGE_KEY, loginAttempts, key, LOGIN_TIMEOUT_MS);
 
     if (recentAttempts.length >= MAX_LOGIN_ATTEMPTS) {
+        writeRateLimitBucket(LOGIN_RL_STORAGE_KEY, loginAttempts, key, recentAttempts, LOGIN_TIMEOUT_MS);
         const oldestAttempt = Math.min(...recentAttempts);
         const resetTime = new Date(oldestAttempt + LOGIN_TIMEOUT_MS);
         const minutes = Math.ceil((resetTime - now) / 60000);
@@ -25,7 +60,7 @@ export function checkLoginRateLimit(identifier, lang = 'ru') {
     }
 
     recentAttempts.push(now);
-    loginAttempts.set(key, recentAttempts);
+    writeRateLimitBucket(LOGIN_RL_STORAGE_KEY, loginAttempts, key, recentAttempts, LOGIN_TIMEOUT_MS);
 
     return {
         allowed: true,
@@ -37,23 +72,21 @@ export function checkLoginRateLimit(identifier, lang = 'ru') {
 
 const signupAttempts = new Map();
 const MAX_SIGNUP_ATTEMPTS = 3;
-const SIGNUP_TIMEOUT_MS = 60 * 60 * 1000; 
+const SIGNUP_TIMEOUT_MS = 60 * 60 * 1000;
 
 export function checkSignupRateLimit(email) {
     const key = email.toLowerCase().trim();
     const now = Date.now();
 
-    const attempts = signupAttempts.get(key) || [];
-    const recentAttempts = attempts.filter(t => now - t < SIGNUP_TIMEOUT_MS);
-
-    signupAttempts.set(key, recentAttempts);
+    const recentAttempts = readRateLimitBucket(SIGNUP_RL_STORAGE_KEY, signupAttempts, key, SIGNUP_TIMEOUT_MS);
 
     if (recentAttempts.length >= MAX_SIGNUP_ATTEMPTS) {
+        writeRateLimitBucket(SIGNUP_RL_STORAGE_KEY, signupAttempts, key, recentAttempts, SIGNUP_TIMEOUT_MS);
         return { allowed: false };
     }
 
     recentAttempts.push(now);
-    signupAttempts.set(key, recentAttempts);
+    writeRateLimitBucket(SIGNUP_RL_STORAGE_KEY, signupAttempts, key, recentAttempts, SIGNUP_TIMEOUT_MS);
 
     return { allowed: true };
 }

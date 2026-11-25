@@ -623,7 +623,13 @@ async function initBusinessPanel() {
     const cachedShop = sessionStorage.getItem('current_shop');
     if (cachedShop) {
         try {
-            currentShop = JSON.parse(cachedShop);
+            const parsedShop = JSON.parse(cachedShop);
+            if (parsedShop && parsedShop.owner_id === user.id) {
+                currentShop = parsedShop;
+            } else {
+                sessionStorage.removeItem('current_shop');
+                currentShop = null;
+            }
         } catch (e) {
             logError('biz:parseCachedShop', e);
             currentShop = null;
@@ -711,7 +717,7 @@ async function initBusinessPanel() {
         activeClass: 'active'
     });
 
-    const DRAFT_KEY = 'biz-receipt-draft';
+    const DRAFT_KEY = `biz-receipt-draft:${user.id}`;
     const CONTACT_MODE_STORAGE_PREFIX = 'valuon-biz-contact-mode:';
     let issuingClose = false;
     let guardVisible = false;
@@ -3527,9 +3533,9 @@ async function initBusinessPanel() {
 
     function sanitizeCsvCell(value) {
         let str = value == null ? '' : String(value);
-        const isSafeNumber = /^-\d+(\.\d+)?$/.test(str);
-        const isSafePhone = /^\+\d[\d\s]+$/.test(str);
-        if (/^[=+\-@\t\r]/.test(str) && !isSafeNumber && !isSafePhone) {
+        const isSafeNumber = /^\s*-\d+(\.\d+)?\s*$/.test(str);
+        const isSafePhone = /^\s*\+\d[\d\s]+\s*$/.test(str);
+        if (/^[\s\u0000-\u0020]*[=+\-@|]/.test(str) && !isSafeNumber && !isSafePhone) {
             str = `'${str}`;
         }
         if (/[",\r\n;]/.test(str)) {
