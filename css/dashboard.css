@@ -2422,19 +2422,21 @@ html {
 
 .email-change-actions {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     flex-shrink: 0;
 }
 
 .email-change-actions .btn-sm {
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    border-radius: 50%;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: var(--radius-md);
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    white-space: nowrap;
     flex-shrink: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
 }
 
 .email-hint {
@@ -2465,9 +2467,9 @@ html {
     opacity: 0;
     margin-top: 0;
     pointer-events: none;
-    transition: grid-template-rows 0.24s cubic-bezier(0.16, 1, 0.3, 1),
-        opacity 0.2s ease,
-        margin-top 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: grid-template-rows 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.24s ease,
+        margin-top 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .inline-expand-panel.is-open {
@@ -2482,6 +2484,12 @@ html {
     overflow: hidden;
     padding: 3px;
     margin: -3px;
+    transform: translateY(-6px) scale(0.99);
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.inline-expand-panel.is-open .inline-expand-inner {
+    transform: translateY(0) scale(1);
 }
 
 .btn-icon-danger {
@@ -2576,6 +2584,14 @@ html {
         width: 100%;
         flex-basis: 100%;
         grid-template-columns: 114px minmax(0, 1fr);
+    }
+
+    .phone-change-form .email-change-actions {
+        width: 100%;
+    }
+
+    .phone-change-form .email-change-actions .btn-sm {
+        flex: 1;
     }
 
     .settings-phone-pair .custom-select-trigger {

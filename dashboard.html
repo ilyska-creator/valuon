@@ -200,12 +200,11 @@
                                     <div class="email-change-form">
                                         <input type="email" id="new-email-input" placeholder="new@email.com">
                                         <div class="email-change-actions">
-                                            <button class="btn btn-primary btn-sm" id="confirm-email-change">
-                                                <i class="fa-solid fa-paper-plane"></i>
+                                            <button type="button" class="btn btn-primary btn-sm" id="confirm-email-change">
+                                                <span data-i18n="btn_save">Сохранить</span>
                                             </button>
-                                            <button class="btn btn-outline btn-sm" id="cancel-email-change"
-                                                aria-label="Отмена">
-                                                <i class="fa-solid fa-xmark"></i>
+                                            <button type="button" class="btn btn-outline btn-sm" id="cancel-email-change">
+                                                <span data-i18n="btn_cancel">Отмена</span>
                                             </button>
                                         </div>
                                     </div>
@@ -248,12 +247,12 @@
                                         </div>
                                         <div class="email-change-actions">
                                             <button type="button" class="btn btn-primary btn-sm"
-                                                id="confirm-phone-change" aria-label="Сохранить номер">
-                                                <i class="fa-solid fa-check"></i>
+                                                id="confirm-phone-change">
+                                                <span data-i18n="btn_save">Сохранить</span>
                                             </button>
                                             <button type="button" class="btn btn-outline btn-sm"
-                                                id="cancel-phone-change" aria-label="Отмена">
-                                                <i class="fa-solid fa-xmark"></i>
+                                                id="cancel-phone-change">
+                                                <span data-i18n="btn_cancel">Отмена</span>
                                             </button>
                                         </div>
                                     </div>
@@ -265,10 +264,8 @@
                         </div>
 
                         <div class="profile-field">
-                            <label data-i18n="label_birthdate">Дата рождения</label>
-                            <input type="date" id="settings-birthdate" class="custom-datepicker" readonly disabled>
-                            <p class="setting-desc" data-i18n="birthdate_readonly_hint">Указывается при регистрации и не
-                                может быть изменена</p>
+                            <label for="settings-birthdate" data-i18n="label_birthdate">Дата рождения</label>
+                            <input type="date" id="settings-birthdate" class="custom-datepicker" autocomplete="bday">
                         </div>
                         <div class="input-row">
                             <div class="profile-field">

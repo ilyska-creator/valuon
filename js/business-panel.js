@@ -2486,6 +2486,21 @@ async function initBusinessPanel() {
                 const createLang = localStorage.getItem('valuon-lang') || 'ru';
                 const fd = new FormData(e.target);
 
+                const rawTaxId = String(fd.get('tax_id') || '').trim().replace(/\s+/g, '').toUpperCase();
+                const taxDigitsCount = (rawTaxId.match(/\d/g) || []).length;
+                if (!/^[A-Z0-9][A-Z0-9-]{3,18}[A-Z0-9]$/.test(rawTaxId) || taxDigitsCount < 4) {
+                    window.showToast(
+                        createLang === 'en'
+                            ? 'Invalid tax ID. Use 5–20 characters (Latin letters, digits, hyphen; at least 4 digits).'
+                            : 'Некорректный налоговый номер. Используйте 5–20 символов (латинские буквы, цифры, дефис; минимум 4 цифры).',
+                        'warning'
+                    );
+                    document.getElementById('tax_id')?.focus();
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                    return;
+                }
+
                 // Validate logo up front (uploaded after the shop exists, since
                 // the storage path is keyed by shop id)
                 const LOGO_MIME_TO_EXT = {
@@ -2513,9 +2528,9 @@ async function initBusinessPanel() {
                 // or sent to, the browser — not even once.
                 const { data: created, error: createError } = await client.functions.invoke('create-shop', {
                     body: {
-                        shop_name: fd.get('shop_name'),
-                        tax_id: fd.get('tax_id'),
-                        address: fd.get('address'),
+                        shop_name: String(fd.get('shop_name') || '').trim(),
+                        tax_id: rawTaxId,
+                        address: String(fd.get('address') || '').trim(),
                         country: fd.get('country') || null,
                         currency: fd.get('currency') || 'EUR',
                     },

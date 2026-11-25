@@ -195,11 +195,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             else if (check(hasPhone && !normalizedPhone, lang === 'ru' ? 'Введите корректный номер телефона' : 'Enter a valid phone number', phoneEl)) { }
             else if (check(!firstName, lang === 'ru' ? 'Введите ваше имя' : 'Please enter your first name', firstNameEl)) { }
             else if (check(!lastName, lang === 'ru' ? 'Введите вашу фамилию' : 'Please enter your last name', lastNameEl)) { }
-            else if (check(!birthdate, lang === 'ru' ? 'Укажите дату рождения' : 'Please enter your date of birth', birthdateEl)) { }
-            else if (check(!birthDateObj, lang === 'ru' ? 'Проверьте корректность даты рождения' : 'Please check the birth date', birthdateEl)) { }
-            else if (check(birthDateObj > today, lang === 'ru' ? 'Дата рождения не может быть в будущем' : 'Birth date cannot be in the future', birthdateEl)) { }
-            else if (check(actualAge < 16, lang === 'ru' ? 'Вам должно быть не менее 16 лет' : 'You must be at least 16 years old', birthdateEl)) { }
-            else if (check(actualAge > 120, lang === 'ru' ? 'Проверьте корректность даты рождения' : 'Please check the birth date', birthdateEl)) { }
+            else if (check(Boolean(birthdate) && !birthDateObj, lang === 'ru' ? 'Проверьте корректность даты рождения' : 'Please check the birth date', birthdateEl)) { }
+            else if (check(Boolean(birthdate) && birthDateObj > today, lang === 'ru' ? 'Дата рождения не может быть в будущем' : 'Birth date cannot be in the future', birthdateEl)) { }
+            else if (check(Boolean(birthdate) && actualAge < 16, lang === 'ru' ? 'Вам должно быть не менее 16 лет' : 'You must be at least 16 years old', birthdateEl)) { }
+            else if (check(Boolean(birthdate) && actualAge > 120, lang === 'ru' ? 'Проверьте корректность даты рождения' : 'Please check the birth date', birthdateEl)) { }
             else if (check(!currency, lang === 'ru' ? 'Выберите валюту' : 'Please select a currency', currencyEl)) { }
             else if (check(!password, lang === 'ru' ? 'Введите пароль' : 'Enter a password', passwordEl)) { }
             else if (check(!confirmPassword, lang === 'ru' ? 'Подтвердите пароль' : 'Confirm your password', confirmEl)) { }
@@ -244,7 +243,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         phone: normalizedPhone || null,
                         firstName,
                         lastName,
-                        birthdate,
+                        birthdate: birthdate || null,
                         currency,
                         captchaToken
                     }

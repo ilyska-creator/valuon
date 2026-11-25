@@ -135,7 +135,6 @@ async function initSettings() {
                 email: user.email || null,
                 first_name: metaFirstName,
                 last_name: metaLastName,
-                display_name: `${metaFirstName} ${metaLastName}`.trim(),
                 birthdate: metaBirthdate,
                 expiry_alerts: true,
                 weekly_digest: false,
@@ -179,24 +178,31 @@ async function initSettings() {
     const saveBtn = document.getElementById('save-profile-btn');
     const firstNameInput = document.getElementById('settings-first-name');
     const lastNameInput = document.getElementById('settings-last-name');
+    const birthdateInput = document.getElementById('settings-birthdate');
     const currencySelect = document.getElementById('settings-currency');
     let originalFirstName = firstNameInput?.value?.trim() || '';
     let originalLastName = lastNameInput?.value?.trim() || '';
+    let originalBirthdate = birthdateInput?.value?.trim() || '';
     let originalCurrency = currencySelect?.value || '';
 
     function updateSaveButtonState() {
         if (!saveBtn || !firstNameInput || !lastNameInput) return;
         const currentFirst = firstNameInput.value.trim();
         const currentLast = lastNameInput.value.trim();
+        const currentBirthdate = birthdateInput?.value?.trim() || '';
         const currentCurrency = currencySelect?.value || '';
         const hasChanges = currentFirst !== originalFirstName || currentLast !== originalLastName
-            || currentCurrency !== originalCurrency;
+            || currentBirthdate !== originalBirthdate || currentCurrency !== originalCurrency;
         const isValid = currentFirst.length > 0 && currentLast.length > 0;
         saveBtn.disabled = !hasChanges || !isValid;
     }
 
     if (firstNameInput) firstNameInput.addEventListener('input', updateSaveButtonState);
     if (lastNameInput) lastNameInput.addEventListener('input', updateSaveButtonState);
+    if (birthdateInput) {
+        birthdateInput.addEventListener('input', updateSaveButtonState);
+        birthdateInput.addEventListener('change', updateSaveButtonState);
+    }
     if (currencySelect) currencySelect.addEventListener('change', updateSaveButtonState);
 
     window.addEventListener('lang-changed', (e) => {
@@ -217,11 +223,36 @@ async function initSettings() {
         saveBtn.addEventListener('click', async () => {
             const firstName = firstNameInput.value.trim();
             const lastName = lastNameInput.value.trim();
+            const birthdate = birthdateInput?.value?.trim() || '';
             const t = getSettingsT();
+            const isRu = getSettingsLang() === 'ru';
 
             if (!firstName || !lastName) {
                 showToast(t.msg_name_required || 'Name required', 'warning');
                 return;
+            }
+
+            if (birthdate) {
+                const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthdate);
+                const parsed = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+                const validDate = parsed && parsed.getFullYear() === Number(m[1]) && parsed.getMonth() === Number(m[2]) - 1 && parsed.getDate() === Number(m[3]);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (!validDate || parsed > today) {
+                    showToast(isRu ? 'Проверьте корректность даты рождения' : 'Please check the birth date', 'warning');
+                    return;
+                }
+                let age = today.getFullYear() - parsed.getFullYear();
+                const md = today.getMonth() - parsed.getMonth();
+                if (md < 0 || (md === 0 && today.getDate() < parsed.getDate())) age--;
+                if (age < 16) {
+                    showToast(isRu ? 'Вам должно быть не менее 16 лет' : 'You must be at least 16 years old', 'warning');
+                    return;
+                }
+                if (age > 120) {
+                    showToast(isRu ? 'Проверьте корректность даты рождения' : 'Please check the birth date', 'warning');
+                    return;
+                }
             }
 
             saveBtn.disabled = true;
@@ -237,7 +268,7 @@ async function initSettings() {
                     .update({
                         first_name: firstName,
                         last_name: lastName,
-                        display_name: displayName,
+                        birthdate: birthdate || null,
                         currency: currency,
                         updated_at: new Date().toISOString()
                     })
@@ -250,12 +281,14 @@ async function initSettings() {
                         first_name: firstName,
                         last_name: lastName,
                         display_name: displayName,
+                        birthdate: birthdate || null,
                     }
                 });
                 if (authUpdateErr) throw authUpdateErr;
 
                 originalFirstName = firstName;
                 originalLastName = lastName;
+                originalBirthdate = birthdate;
                 originalCurrency = currency;
                 window.dispatchEvent(new CustomEvent('currency-changed', { detail: { currency } }));
 

@@ -260,32 +260,66 @@ class CustomDatePicker {
             const timePart = val.split('T')[1];
             if (timePart) {
                 const [h, m] = timePart.split(':');
-                if (h) hour = h;
-                if (m) minute = m;
+                if (h) hour = h.padStart(2, '0');
+                if (m) minute = m.padStart(2, '0');
             }
         } else if (this.selectedDate) {
             hour = String(this.selectedDate.getHours()).padStart(2, '0');
             minute = String(this.selectedDate.getMinutes()).padStart(2, '0');
         }
 
-        let hoursOpts = '';
+        this._selectedHour = hour;
+        this._selectedMin = minute;
+
+        let hoursHtml = '';
         for (let h = 0; h < 24; h++) {
             const v = String(h).padStart(2, '0');
-            hoursOpts += `<option value="${v}"${v === hour ? ' selected' : ''}>${v}</option>`;
+            const sel = v === hour ? ' is-selected' : '';
+            hoursHtml += `<button type="button" class="cal-time-opt${sel}" data-unit="hour" data-val="${v}" aria-selected="${v === hour}">${v}</button>`;
         }
-        let minsOpts = '';
+        let minsHtml = '';
         for (let m = 0; m < 60; m++) {
             const v = String(m).padStart(2, '0');
-            minsOpts += `<option value="${v}"${v === minute ? ' selected' : ''}>${v}</option>`;
+            const sel = v === minute ? ' is-selected' : '';
+            minsHtml += `<button type="button" class="cal-time-opt${sel}" data-unit="min" data-val="${v}" aria-selected="${v === minute}">${v}</button>`;
         }
 
+        const timeLabel = this.lang === 'ru' ? 'Время' : 'Time';
+        const nowLabel = this.lang === 'ru' ? 'Сейчас' : 'Now';
+        const hColLabel = this.lang === 'ru' ? 'Часы' : 'Hours';
+        const mColLabel = this.lang === 'ru' ? 'Минуты' : 'Min';
+
         timeDiv.innerHTML = `
-            <select class="cal-hour" tabindex="-1">${hoursOpts}</select>
-            <span class="cal-time-sep">:</span>
-            <select class="cal-min" tabindex="-1">${minsOpts}</select>
+            <div class="cal-time-head">
+                <span class="cal-time-label">
+                    <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                    <span>${timeLabel}</span>
+                    <strong class="cal-time-readout">${hour}:${minute}</strong>
+                </span>
+                <button type="button" class="cal-time-now">${nowLabel}</button>
+            </div>
+            <div class="cal-time-cols">
+                <div class="cal-time-col-wrap">
+                    <div class="cal-time-col-title">${hColLabel}</div>
+                    <div class="cal-time-col" data-unit="hour" role="listbox" aria-label="${hColLabel}">${hoursHtml}</div>
+                </div>
+                <div class="cal-time-col-wrap">
+                    <div class="cal-time-col-title">${mColLabel}</div>
+                    <div class="cal-time-col" data-unit="min" role="listbox" aria-label="${mColLabel}">${minsHtml}</div>
+                </div>
+            </div>
         `;
 
         this.panel.appendChild(timeDiv);
+
+        requestAnimationFrame(() => {
+            timeDiv.querySelectorAll('.cal-time-col').forEach(col => {
+                const active = col.querySelector('.cal-time-opt.is-selected');
+                if (active) {
+                    col.scrollTop = Math.max(0, active.offsetTop - (col.clientHeight - active.offsetHeight) / 2);
+                }
+            });
+        });
     }
 
     _attachPanelEvents() {
@@ -332,10 +366,45 @@ class CustomDatePicker {
                 });
             });
 
-            const hourSel = this.panel.querySelector('.cal-hour');
-            const minSel = this.panel.querySelector('.cal-min');
-            if (hourSel) hourSel.addEventListener('change', () => this._syncDateTime());
-            if (minSel) minSel.addEventListener('change', () => this._syncDateTime());
+            const timeWrap = this.panel.querySelector('.cal-time');
+            if (timeWrap) {
+                timeWrap.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const nowBtn = e.target.closest('.cal-time-now');
+                    if (nowBtn) {
+                        const now = new Date();
+                        if (this._isOutOfRange(now)) return;
+                        this._selectedHour = String(now.getHours()).padStart(2, '0');
+                        this._selectedMin = String(now.getMinutes()).padStart(2, '0');
+                        this._applySelection(now, { useDateTime: true });
+                        this.render();
+                        return;
+                    }
+                    const opt = e.target.closest('.cal-time-opt');
+                    if (!opt) return;
+                    const unit = opt.dataset.unit;
+                    const val = opt.dataset.val;
+                    if (unit === 'hour') this._selectedHour = val;
+                    else if (unit === 'min') this._selectedMin = val;
+
+                    const col = opt.closest('.cal-time-col');
+                    col?.querySelectorAll('.cal-time-opt.is-selected').forEach(el => {
+                        el.classList.remove('is-selected');
+                        el.setAttribute('aria-selected', 'false');
+                    });
+                    opt.classList.add('is-selected');
+                    opt.setAttribute('aria-selected', 'true');
+                    if (col) {
+                        col.scrollTo({
+                            top: Math.max(0, opt.offsetTop - (col.clientHeight - opt.offsetHeight) / 2),
+                            behavior: 'smooth',
+                        });
+                    }
+                    const readout = timeWrap.querySelector('.cal-time-readout');
+                    if (readout) readout.textContent = `${this._selectedHour}:${this._selectedMin}`;
+                    this._syncDateTime();
+                });
+            }
         } else if (this.mode === 'months') {
             this.panel.querySelectorAll('.cal-cell[data-month]').forEach(el => {
                 el.addEventListener('click', (e) => {
@@ -624,11 +693,9 @@ class CustomDatePicker {
                     if (mi) mm = mi;
                 }
             }
-            if (this.isOpen) {
-                const hSel = this.panel.querySelector('.cal-hour');
-                const mSel = this.panel.querySelector('.cal-min');
-                if (hSel) hh = hSel.value;
-                if (mSel) mm = mSel.value;
+            if (this.isOpen && this._selectedHour != null && this._selectedMin != null) {
+                hh = this._selectedHour;
+                mm = this._selectedMin;
             }
             date.setHours(parseInt(hh, 10), parseInt(mm, 10));
         }
@@ -663,10 +730,8 @@ class CustomDatePicker {
         const d = String(this.selectedDate.getDate()).padStart(2, '0');
 
         if (this.isDatetime) {
-            const hSel = this.panel.querySelector('.cal-hour');
-            const mSel = this.panel.querySelector('.cal-min');
-            const h = hSel ? hSel.value : String(this.selectedDate.getHours()).padStart(2, '0');
-            const mi = mSel ? mSel.value : String(this.selectedDate.getMinutes()).padStart(2, '0');
+            const h = this._selectedHour != null ? this._selectedHour : String(this.selectedDate.getHours()).padStart(2, '0');
+            const mi = this._selectedMin != null ? this._selectedMin : String(this.selectedDate.getMinutes()).padStart(2, '0');
             this.input.value = `${y}-${m}-${d}T${h}:${mi}`;
         } else {
             this.input.value = `${y}-${m}-${d}`;
@@ -676,10 +741,8 @@ class CustomDatePicker {
     }
 
     _syncDateTime() {
-        const hSel = this.panel.querySelector('.cal-hour');
-        const mSel = this.panel.querySelector('.cal-min');
-        const h = hSel ? parseInt(hSel.value, 10) : null;
-        const mi = mSel ? parseInt(mSel.value, 10) : null;
+        const h = this._selectedHour != null ? parseInt(this._selectedHour, 10) : null;
+        const mi = this._selectedMin != null ? parseInt(this._selectedMin, 10) : null;
 
         if (!this.selectedDate) {
             this.selectedDate = new Date();

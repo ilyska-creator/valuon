@@ -1301,15 +1301,21 @@ html.modal-open:has(.auth-body) {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transform: translateY(4px);
-    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.18s;
+    transform: translateX(14px);
+    transition: opacity 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0.24s;
+}
+
+.auth-field-panel:first-child {
+    transform: translateX(-14px);
 }
 
 .auth-field-panel.is-active {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transform: translateY(0);
+    transform: translateX(0);
 }
 
 .label-optional {
