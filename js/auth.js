@@ -275,26 +275,111 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
 
-                const card = loginForm.closest('.auth-card');
+                const getSafeRedirect = () => {
+                    const raw = new URLSearchParams(window.location.search).get('redirect');
+                    if (!raw) return 'dashboard.html';
+                    if (raw.startsWith('/') && !raw.startsWith('//') && !raw.includes('\\') && !/^\/(login|register)(\.html)?([?#]|$)/i.test(raw)) {
+                        return raw;
+                    }
+                    return 'dashboard.html';
+                };
+
                 const reduced = prefersReducedMotion();
-                btn.innerHTML = `<i class="fa-solid fa-circle-check" style="font-size:1.25rem;${reduced ? '' : 'animation:checkPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;'}color:var(--success);"></i>`;
+                btn.innerHTML = `<i class="fa-solid fa-circle-check" style="font-size:1.25rem;${reduced ? '' : 'animation:checkPop 0.25s cubic-bezier(0.34,1.56,0.64,1) both;'}color:var(--success);"></i>`;
                 if (!reduced) {
-                    await new Promise(r => setTimeout(r, 800));
-                    if (card) card.classList.add('auth-card--leaving');
-                    await new Promise(r => setTimeout(r, 350));
+                    await new Promise(r => setTimeout(r, 180));
                 }
-                window.location.href = 'dashboard.html';
+                window.location.href = getSafeRedirect();
             } catch (err) {
                 setSessionOnly(false);
                 logError('auth:login', err);
-                const msg = loginMode === 'phone'
-                    ? (isRu ? 'Неверный номер телефона или пароль' : 'Invalid phone number or password')
-                    : (isRu ? 'Неверный email или пароль' : 'Invalid email or password');
+                const errMsgLower = String(err?.message || '').toLowerCase();
+                const errCode = String(err?.code || '').toLowerCase();
+                const errStatus = Number(err?.status || 0);
+                const resendBox = document.getElementById('resend-confirm-box');
+                if (resendBox) resendBox.classList.add('hidden');
+
+                let msg;
+                if (!navigator.onLine || errMsgLower.includes('failed to fetch') || errMsgLower.includes('networkerror') || errMsgLower.includes('load failed')) {
+                    msg = isRu
+                        ? 'Ошибка сети. Проверьте подключение к интернету и попробуйте снова.'
+                        : 'Network error. Check your internet connection and try again.';
+                } else if (errStatus === 429 || errCode === 'over_request_rate_limit' || errMsgLower.includes('too many requests') || errMsgLower.includes('rate limit')) {
+                    msg = isRu
+                        ? 'Слишком много попыток входа. Подождите немного и попробуйте снова.'
+                        : 'Too many login attempts. Please wait a moment and try again.';
+                } else if (loginMode === 'email' && (errCode === 'email_not_confirmed' || errMsgLower.includes('email not confirmed'))) {
+                    msg = isRu
+                        ? 'Email не подтверждён. Проверьте почту или отправьте письмо повторно.'
+                        : 'Email is not confirmed. Check your inbox or resend the confirmation email.';
+                    if (resendBox && email) {
+                        const resendText = document.getElementById('resend-confirm-text');
+                        const resendBtn = document.getElementById('resend-confirm-btn');
+                        if (resendText) {
+                            resendText.textContent = isRu
+                                ? `Письмо подтверждения для ${email} не пришло?`
+                                : `Didn't receive the confirmation email for ${email}?`;
+                        }
+                        if (resendBtn) {
+                            resendBtn.textContent = isRu ? 'Отправить письмо повторно' : 'Resend confirmation email';
+                            resendBtn.dataset.email = email;
+                            resendBtn.disabled = false;
+                        }
+                        resendBox.classList.remove('hidden');
+                    }
+                } else {
+                    msg = loginMode === 'phone'
+                        ? (isRu ? 'Неверный номер телефона или пароль' : 'Invalid phone number or password')
+                        : (isRu ? 'Неверный email или пароль' : 'Invalid email or password');
+                }
                 showToast(msg);
                 resetLoadingButton(btn, originalText);
                 if (typeof turnstile !== 'undefined' && loginWidgetId !== null) turnstile.reset(loginWidgetId);
             }
         });
+
+        const resendConfirmBtn = document.getElementById('resend-confirm-btn');
+        if (resendConfirmBtn) {
+            resendConfirmBtn.addEventListener('click', async () => {
+                const targetEmail = resendConfirmBtn.dataset.email || emailInput?.value.trim();
+                const isRuNow = (localStorage.getItem('valuon-lang') || 'ru') === 'ru';
+                if (!targetEmail) return;
+                resendConfirmBtn.disabled = true;
+                const prevText = resendConfirmBtn.textContent;
+                resendConfirmBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+                try {
+                    const { error: resendErr } = await supabase.auth.resend({
+                        type: 'signup',
+                        email: targetEmail
+                    });
+                    if (resendErr) throw resendErr;
+                    showToast(
+                        isRuNow ? 'Письмо подтверждения отправлено повторно!' : 'Confirmation email resent!',
+                        'success'
+                    );
+                    let cooldown = 60;
+                    const tick = () => {
+                        if (cooldown <= 0) {
+                            resendConfirmBtn.disabled = false;
+                            resendConfirmBtn.textContent = isRuNow ? 'Отправить письмо повторно' : 'Resend confirmation email';
+                            return;
+                        }
+                        resendConfirmBtn.textContent = isRuNow ? `Повторно через ${cooldown} с` : `Resend in ${cooldown}s`;
+                        cooldown--;
+                        setTimeout(tick, 1000);
+                    };
+                    tick();
+                } catch (resendErr) {
+                    logError('auth:resendConfirm', resendErr);
+                    showToast(
+                        isRuNow ? 'Не удалось отправить письмо. Попробуйте позже.' : 'Failed to resend email. Try again later.',
+                        'error'
+                    );
+                    resendConfirmBtn.disabled = false;
+                    resendConfirmBtn.textContent = prevText;
+                }
+            });
+        }
     }
 
     const forgotLink = document.querySelector('.forgot-link');

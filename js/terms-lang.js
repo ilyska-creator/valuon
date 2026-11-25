@@ -74,6 +74,11 @@ const termsTranslations = {
             terms_s13_title: "13. Контакты",
             terms_s13_p1: "По любым вопросам об этих Условиях пишите нам:",
 
+            footer_nav_home: "Главная",
+            footer_nav_about: "О нас",
+            footer_nav_roadmap: "Дорожная карта",
+            footer_nav_verify: "Проверка чека",
+            footer_nav_privacy: "Конфиденциальность",
             footer_copyright: "© 2026 Valuon. Все права защищены."
         },
         en: {
@@ -151,6 +156,11 @@ const termsTranslations = {
             terms_s13_title: "13. Contact",
             terms_s13_p1: "For any questions about these Terms, contact us at:",
 
+            footer_nav_home: "Home",
+            footer_nav_about: "About",
+            footer_nav_roadmap: "Roadmap",
+            footer_nav_verify: "Verify Receipt",
+            footer_nav_privacy: "Privacy",
             footer_copyright: "© 2026 Valuon. All rights reserved."
         }
 };

@@ -112,6 +112,11 @@ const roadmapTranslations = {
             step5_gate: "Ключевая метрика: Retention D30 ≥ 25%. Если retention низкий — рассмотреть встраиваемый виджет вместо отдельного приложения.",
 
 
+            footer_nav_home: "Главная",
+            footer_nav_about: "О нас",
+            footer_nav_verify: "Проверка чека",
+            footer_nav_privacy: "Конфиденциальность",
+            footer_nav_terms: "Условия",
             footer_copyright: "© 2026 Valuon. Все права защищены."
         },
         en: {
@@ -227,6 +232,11 @@ const roadmapTranslations = {
             step5_gate: "Key metric: D30 retention ≥ 25%. If retention is low, consider an embeddable widget instead of a standalone app.",
 
 
+            footer_nav_home: "Home",
+            footer_nav_about: "About",
+            footer_nav_verify: "Verify Receipt",
+            footer_nav_privacy: "Privacy",
+            footer_nav_terms: "Terms",
             footer_copyright: "© 2026 Valuon. All rights reserved."
         }
 };

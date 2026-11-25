@@ -15,6 +15,8 @@ const privacyTranslations = {
             privacy_toc_7: "Ваши права",
             privacy_toc_8: "Cookie",
             privacy_toc_9: "Безопасность",
+            privacy_toc_children: "Дети",
+            privacy_toc_changes: "Изменения",
             privacy_toc_10: "Контакты",
 
             privacy_s1_title: "1. Кто мы и о чём этот документ",
@@ -96,6 +98,11 @@ const privacyTranslations = {
             privacy_s12_title: "12. Контакты",
             privacy_s12_p1: "По любым вопросам о персональных данных и этой политике пишите нам:",
 
+            footer_nav_home: "Главная",
+            footer_nav_about: "О нас",
+            footer_nav_roadmap: "Дорожная карта",
+            footer_nav_verify: "Проверка чека",
+            footer_nav_terms: "Условия",
             footer_copyright: "© 2026 Valuon. Все права защищены."
         },
         en: {
@@ -114,6 +121,8 @@ const privacyTranslations = {
             privacy_toc_7: "Your rights",
             privacy_toc_8: "Cookies",
             privacy_toc_9: "Security",
+            privacy_toc_children: "Children",
+            privacy_toc_changes: "Changes",
             privacy_toc_10: "Contact",
 
             privacy_s1_title: "1. Who we are and what this document is",
@@ -195,6 +204,11 @@ const privacyTranslations = {
             privacy_s12_title: "12. Contact",
             privacy_s12_p1: "For any questions about personal data and this policy, contact us at:",
 
+            footer_nav_home: "Home",
+            footer_nav_about: "About",
+            footer_nav_roadmap: "Roadmap",
+            footer_nav_verify: "Verify Receipt",
+            footer_nav_terms: "Terms",
             footer_copyright: "© 2026 Valuon. All rights reserved."
         }
 };

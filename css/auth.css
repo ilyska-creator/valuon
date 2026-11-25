@@ -1606,3 +1606,51 @@ html.modal-open:has(.auth-body) {
         transform: none !important;
     }
 }
+
+.ps-match-hint {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+
+.ps-match-hint.is-visible {
+    display: flex;
+}
+
+.ps-match-hint.is-match {
+    color: var(--success, #16a34a);
+}
+
+.ps-match-hint.is-mismatch {
+    color: var(--danger, #dc2626);
+}
+
+.resend-confirm-box {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(37, 99, 235, 0.06);
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.resend-confirm-box.hidden {
+    display: none;
+}
+
+.resend-confirm-box p {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .resend-confirm-box {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.28);
+}

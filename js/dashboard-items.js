@@ -84,6 +84,9 @@ async function initDashboardItems() {
     setupItemsSort();
     await loadItems(auth.user.id, auth.client);
     await loadVerifiedItems(auth.user.email, auth.client);
+    if (!sessionStorage.getItem('valuon-items-tab') && lastVerifiedReceipts.length === 0 && lastMineItems.length > 0) {
+        activateItemsTab('mine', { instant: true });
+    }
     window.addEventListener('phone-changed', () => {
         verifiedReceiptPdfCache.clear();
         loadVerifiedItems(auth.user.email, auth.client);
@@ -907,37 +910,54 @@ function switchGridTab(oldGrid, newGrid) {
     }, 250);
 }
 
+let _itemsTabsIndicator = null;
+
+function activateItemsTab(target, { instant = false } = {}) {
+    const tab = document.querySelector(`#items-tabs .items-tab[data-items-tab="${target}"]`);
+    if (!tab || tab.classList.contains('active')) return;
+
+    const tabs = document.querySelectorAll('#items-tabs .items-tab');
+    tabs.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+    });
+    tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
+    if (_itemsTabsIndicator) _itemsTabsIndicator.update(instant);
+
+    sessionStorage.setItem('valuon-items-tab', target);
+    const mineGrid = document.querySelector('#items-grid-mine');
+    const verifiedGrid = document.querySelector('#items-grid-verified');
+    if (instant) {
+        if (target === 'mine') {
+            verifiedGrid?.classList.add('hidden');
+            mineGrid?.classList.remove('hidden');
+        } else {
+            mineGrid?.classList.add('hidden');
+            verifiedGrid?.classList.remove('hidden');
+        }
+    } else {
+        const oldGrid = target === 'mine' ? verifiedGrid : mineGrid;
+        const newGrid = target === 'mine' ? mineGrid : verifiedGrid;
+        switchGridTab(oldGrid, newGrid);
+    }
+}
+
 function setupItemsTabs(userId, userEmail, client) {
     const tabsWrap = document.getElementById('items-tabs');
     const tabs = document.querySelectorAll('#items-tabs .items-tab');
     const indicatorEl = document.getElementById('items-tab-indicator');
-    const itemsTabsIndicator = createSegmentedIndicator(tabsWrap, indicatorEl, {
+    _itemsTabsIndicator = createSegmentedIndicator(tabsWrap, indicatorEl, {
         itemSelector: '.items-tab',
     });
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            if (tab.classList.contains('active')) return;
-
-            tabs.forEach(b => {
-                b.classList.remove('active');
-                b.setAttribute('aria-selected', 'false');
-            });
-            tab.classList.add('active');
-            tab.setAttribute('aria-selected', 'true');
-            itemsTabsIndicator.update();
-
-            const target = tab.dataset.itemsTab;
-            sessionStorage.setItem('valuon-items-tab', target);
-            const mineGrid = document.querySelector('#items-grid-mine');
-            const verifiedGrid = document.querySelector('#items-grid-verified');
-            const oldGrid = target === 'mine' ? verifiedGrid : mineGrid;
-            const newGrid = target === 'mine' ? mineGrid : verifiedGrid;
-            switchGridTab(oldGrid, newGrid);
+            activateItemsTab(tab.dataset.itemsTab);
         });
     });
 
-    window.addEventListener('lang-changed', () => itemsTabsIndicator.update(true));
+    window.addEventListener('lang-changed', () => _itemsTabsIndicator?.update(true));
 }
 
 function updateStats(items) {
@@ -1395,6 +1415,7 @@ function setupModal(client, userId) {
 
             showToast(t.msg_item_added || 'Товар добавлен', 'success');
             pendingReloadUserId = userId;
+            activateItemsTab('mine');
 
             successCloseTimer = setTimeout(() => {
                 successCloseTimer = null;

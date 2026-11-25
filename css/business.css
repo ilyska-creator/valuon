@@ -1325,7 +1325,8 @@
 
 @media (max-width: 768px) {
     .header-icons {
-        display: none;
+        padding-right: 0;
+        gap: 0.4rem;
     }
 }
 
@@ -4227,7 +4228,12 @@
     border-radius: 12px;
     border: 1px solid var(--border);
     background: var(--bg-body);
+    cursor: pointer;
     transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.lifecycle-item-row.is-exhausted {
+    cursor: default;
 }
 
 .lifecycle-item-row.is-selected {

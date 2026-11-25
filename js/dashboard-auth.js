@@ -34,7 +34,11 @@ let authListenerBound = false;
 export async function requireAuth() {
     const { session, client } = await getAuthSession();
     if (!session) {
-        window.location.href = 'login.html';
+        const target = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        const loginUrl = (target && target !== '/' && !target.startsWith('/login'))
+            ? `login.html?redirect=${encodeURIComponent(target)}`
+            : 'login.html';
+        window.location.href = loginUrl;
         return null;
     }
     if (!authListenerBound) {

@@ -181,6 +181,9 @@ async function initReceipts() {
     setupReceiptsSort();
 
     await loadAllReceipts(currentUserEmail, currentUserId, client);
+    if (!sessionStorage.getItem('valuon-receipts-tab') && lastPersonalReceipts.length === 0 && lastBusinessReceipts.length > 0) {
+        activateReceiptsTab('business', { instant: true });
+    }
     await populateItemSelect(currentUserId, client);
 
     if (typeof window.applyDashboardLang === 'function') {
@@ -553,38 +556,55 @@ function switchReceiptsGridTab(oldGrid, newGrid) {
     }, 250);
 }
 
+let _receiptsTabsIndicator = null;
+
+function activateReceiptsTab(target, { instant = false } = {}) {
+    const tab = document.querySelector(`#receipts-tabs .items-tab[data-receipts-tab="${target}"]`);
+    if (!tab || tab.classList.contains('active')) return;
+
+    const tabs = document.querySelectorAll('#receipts-tabs .items-tab');
+    tabs.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+    });
+    tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
+    if (_receiptsTabsIndicator) _receiptsTabsIndicator.update(instant);
+
+    sessionStorage.setItem('valuon-receipts-tab', target);
+    const personalGrid = document.getElementById('receipts-grid-personal');
+    const businessGrid = document.getElementById('receipts-grid-business');
+    if (instant) {
+        if (target === 'personal') {
+            businessGrid?.classList.add('hidden');
+            personalGrid?.classList.remove('hidden');
+        } else {
+            personalGrid?.classList.add('hidden');
+            businessGrid?.classList.remove('hidden');
+        }
+    } else {
+        const oldGrid = target === 'personal' ? businessGrid : personalGrid;
+        const newGrid = target === 'personal' ? personalGrid : businessGrid;
+        switchReceiptsGridTab(oldGrid, newGrid);
+    }
+    updateReceiptsSummary();
+}
+
 function setupReceiptsTabs() {
     const tabsWrap = document.getElementById('receipts-tabs');
     const tabs = document.querySelectorAll('#receipts-tabs .items-tab');
     const indicatorEl = document.getElementById('receipts-tab-indicator');
-    const receiptsTabsIndicator = createSegmentedIndicator(tabsWrap, indicatorEl, {
+    _receiptsTabsIndicator = createSegmentedIndicator(tabsWrap, indicatorEl, {
         itemSelector: '.items-tab',
     });
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            if (tab.classList.contains('active')) return;
-
-            tabs.forEach(b => {
-                b.classList.remove('active');
-                b.setAttribute('aria-selected', 'false');
-            });
-            tab.classList.add('active');
-            tab.setAttribute('aria-selected', 'true');
-            receiptsTabsIndicator.update();
-
-            const target = tab.dataset.receiptsTab;
-            sessionStorage.setItem('valuon-receipts-tab', target);
-            const personalGrid = document.getElementById('receipts-grid-personal');
-            const businessGrid = document.getElementById('receipts-grid-business');
-            const oldGrid = target === 'personal' ? businessGrid : personalGrid;
-            const newGrid = target === 'personal' ? personalGrid : businessGrid;
-            switchReceiptsGridTab(oldGrid, newGrid);
-            updateReceiptsSummary();
+            activateReceiptsTab(tab.dataset.receiptsTab);
         });
     });
 
-    window.addEventListener('lang-changed', () => receiptsTabsIndicator.update(true));
+    window.addEventListener('lang-changed', () => _receiptsTabsIndicator?.update(true));
 }
 
 function renderBusinessCard(r, t) {
@@ -1407,6 +1427,7 @@ function createUploadModal(client, userId) {
 
             showToast(lang === 'ru' ? 'Чек успешно загружен!' : 'Receipt uploaded successfully!', 'success');
             close();
+            activateReceiptsTab('personal');
             await loadAllReceipts(currentUserEmail, userId, client);
 
         } catch (err) {

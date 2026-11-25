@@ -910,6 +910,25 @@ html.scroll-locked {
     font-size: 0.9rem;
 }
 
+.footer-nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 20px;
+    margin-bottom: 14px;
+}
+
+.footer-nav-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.15s ease;
+}
+
+.footer-nav-links a:hover {
+    color: var(--primary);
+}
+
 .contact-links {
     margin-top: var(--space-2);
     display: flex;

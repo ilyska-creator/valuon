@@ -177,3 +177,43 @@ export function initPasswordStrength(inputId, options = {}) {
 
     return container;
 }
+
+export function initPasswordMatch(passwordId, confirmId, options = {}) {
+    const passInput = document.getElementById(passwordId);
+    const confirmInput = document.getElementById(confirmId);
+    if (!passInput || !confirmInput) return null;
+
+    const getLang = options.getLang || (() => localStorage.getItem('valuon-lang') || 'ru');
+
+    const hint = document.createElement('div');
+    hint.className = 'ps-match-hint';
+    hint.setAttribute('aria-live', 'polite');
+
+    const parent = confirmInput.closest('.input-wrap') || confirmInput.closest('.password-wrapper') || confirmInput.parentNode;
+    parent.parentNode.insertBefore(hint, parent.nextSibling);
+
+    const update = () => {
+        const p1 = passInput.value;
+        const p2 = confirmInput.value;
+        if (!p2) {
+            hint.classList.remove('is-visible', 'is-match', 'is-mismatch');
+            hint.textContent = '';
+            return;
+        }
+        const isRu = getLang() === 'ru';
+        const matches = p1 === p2;
+        hint.classList.add('is-visible');
+        hint.classList.toggle('is-match', matches);
+        hint.classList.toggle('is-mismatch', !matches);
+        hint.innerHTML = matches
+            ? `<i class="fa-solid fa-check"></i> <span>${isRu ? 'Пароли совпадают' : 'Passwords match'}</span>`
+            : `<i class="fa-solid fa-xmark"></i> <span>${isRu ? 'Пароли не совпадают' : 'Passwords do not match'}</span>`;
+    };
+
+    passInput.addEventListener('input', update);
+    confirmInput.addEventListener('input', update);
+    window.addEventListener('lang-changed', update);
+    document.addEventListener('lang-changed', update);
+
+    return { hint, update };
+}

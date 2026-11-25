@@ -487,8 +487,21 @@ async function initBusinessPanel() {
                 const unitPriceVal = it.unit_price != null && Number.isFinite(parseFloat(it.unit_price))
                     ? parseFloat(it.unit_price)
                     : (Number.isFinite(lineGross) ? lineGross / qty : NaN);
-                const unitSubHtml = qty > 1 && Number.isFinite(unitPriceVal)
-                    ? `<span class="ledger-item-unit">${escapeHtml(window.formatCurrency(unitPriceVal, currency, currentLang))} ${escapeHtml(eachWord)}</span>`
+                const unitSubParts = [];
+                if (qty > 1 && Number.isFinite(unitPriceVal)) {
+                    unitSubParts.push(`${escapeHtml(window.formatCurrency(unitPriceVal, currency, currentLang))} ${escapeHtml(eachWord)}`);
+                }
+                const discVal = it.discount_rate != null ? parseFloat(it.discount_rate) : 0;
+                if (Number.isFinite(discVal) && discVal > 0) {
+                    unitSubParts.push(`−${escapeHtml(String(discVal))}%`);
+                }
+                const vatVal = it.vat_rate != null ? parseFloat(it.vat_rate) : NaN;
+                if (Number.isFinite(vatVal) && vatVal > 0) {
+                    const vatPrefix = currentLang === 'en' ? 'VAT' : 'НДС';
+                    unitSubParts.push(`${vatPrefix} ${escapeHtml(String(vatVal))}%`);
+                }
+                const unitSubHtml = unitSubParts.length
+                    ? `<span class="ledger-item-unit">${unitSubParts.join(' · ')}</span>`
                     : '';
                 const linePriceHtml = Number.isFinite(lineGross)
                     ? `<span class="ledger-item-price">${escapeHtml(window.formatCurrency(lineGross, currency, currentLang))}</span>`
@@ -685,7 +698,10 @@ async function initBusinessPanel() {
     function collapseClientSectionIfFilled() {
         if (window.innerWidth > 640 || !clientChipEl || !clientExpandedEl) return;
         const contactVal = contactMode === 'phone' ? phoneInput?.value.trim() : emailInput?.value.trim();
-        if (contactVal && contactVal.length >= 3) {
+        const isContactReady = contactMode === 'phone'
+            ? Boolean(contactVal && phoneInput?.value.replace(/\D/g, '').length >= 7)
+            : Boolean(contactVal && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(contactVal));
+        if (isContactReady) {
             const payMethodSelect = forms.receipt?.querySelector('[name="payment_method"]');
             const t = bizT();
             const payText = payMethodSelect?.value === 'cash'
@@ -817,7 +833,6 @@ async function initBusinessPanel() {
         if (focus) {
             if (isPhone) phoneInput?.focus();
             else {
-                emailInput?.removeAttribute('readonly');
                 emailInput?.focus();
             }
         }
@@ -1407,14 +1422,7 @@ async function initBusinessPanel() {
         renderAutocomplete();
     });
     emailInput?.addEventListener('focus', () => {
-        // Классический приём против автозаполнения браузера: поле стартует как
-        // readonly, поэтому браузер не показывает свою подсказку по фокусу,
-        // а сразу после focus мы снимаем readonly — ввод остаётся обычным.
-        emailInput.removeAttribute('readonly');
         renderAutocomplete();
-    });
-    emailInput?.addEventListener('mousedown', () => {
-        if (emailInput.hasAttribute('readonly')) emailInput.removeAttribute('readonly');
     });
 
     phoneInput?.addEventListener('blur', () => {
@@ -1824,7 +1832,6 @@ async function initBusinessPanel() {
             if (phoneInput) phoneInput.value = '';
             ensureBizPhoneSelect(getDefaultBizCountry());
             setContactMode(getSavedShopContactMode(), { instant: true });
-            emailInput?.setAttribute('readonly', '');
             const dateInput = forms.receipt?.querySelector('[name="purchase_date"]');
             if (dateInput) {
                 dateInput.value = defaultDateString();
@@ -2610,7 +2617,6 @@ async function initBusinessPanel() {
             hideAutocomplete();
             hideSuccessScreen();
             lastIssuedReceipt = null;
-            emailInput?.setAttribute('readonly', '');
             if (submitLabelEl) {
                 const t = bizT();
                 submitLabelEl.textContent = t.issue_receipt_submit || (bizLang() === 'en' ? 'Issue Receipt' : 'Выписать чек');
@@ -2664,8 +2670,7 @@ async function initBusinessPanel() {
                 if (phoneInput) phoneInput.value = '';
                 ensureBizPhoneSelect(getDefaultBizCountry());
                 setContactMode(getSavedShopContactMode(), { instant: true });
-                emailInput?.setAttribute('readonly', '');
-                expandClientSection();
+                    expandClientSection();
             }
 
             const dateInput = forms.receipt?.querySelector('[name="purchase_date"]');
@@ -3198,7 +3203,6 @@ async function initBusinessPanel() {
             const nextAction = btn.dataset.lifecycleAction;
             if (nextAction === lcAction) return;
             lcAction = nextAction;
-            if (lcReasonInput) lcReasonInput.value = '';
             updateLifecycleTabUI();
         });
     });
@@ -3239,18 +3243,27 @@ async function initBusinessPanel() {
     });
 
     lcItemsList?.addEventListener('click', (e) => {
+        if (!lcReceipt) return;
         const btn = e.target.closest('.lifecycle-qty-btn');
-        if (!btn || !lcReceipt) return;
-        const stepper = btn.closest('.lifecycle-qty-stepper');
-        const id = stepper?.dataset.itemId;
-        const delta = parseInt(btn.dataset.qtyDelta, 10) || 0;
-        const item = (lcReceipt.receipt_items || []).find(x => String(x.id) === id);
-        if (!item) return;
-        const rem = Math.max(0, (parseInt(item.qty, 10) || 1) - (parseInt(item.refunded_qty, 10) || 0));
-        const cur = lcSelections.get(id) || 1;
-        const next = Math.max(1, Math.min(rem, cur + delta));
-        lcSelections.set(id, next);
-        renderLifecycleItems();
+        if (btn) {
+            const stepper = btn.closest('.lifecycle-qty-stepper');
+            const id = stepper?.dataset.itemId;
+            const delta = parseInt(btn.dataset.qtyDelta, 10) || 0;
+            const item = (lcReceipt.receipt_items || []).find(x => String(x.id) === id);
+            if (!item) return;
+            const rem = Math.max(0, (parseInt(item.qty, 10) || 1) - (parseInt(item.refunded_qty, 10) || 0));
+            const cur = lcSelections.get(id) || 1;
+            const next = Math.max(1, Math.min(rem, cur + delta));
+            lcSelections.set(id, next);
+            renderLifecycleItems();
+            return;
+        }
+        if (e.target.closest('.lifecycle-qty-stepper') || e.target.closest('.lifecycle-item-check')) return;
+        const row = e.target.closest('.lifecycle-item-row:not(.is-exhausted)');
+        const cb = row?.querySelector('.lifecycle-item-check:not(:disabled)');
+        if (!cb) return;
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change', { bubbles: true }));
     });
 
     lcReasonPresets?.addEventListener('click', (e) => {
@@ -3640,6 +3653,10 @@ async function initBusinessPanel() {
                 const vatRate = it.vat_rate != null && Number.isFinite(parseFloat(it.vat_rate))
                     ? parseFloat(it.vat_rate)
                     : 0;
+                const discountRate = it.discount_rate != null && Number.isFinite(parseFloat(it.discount_rate))
+                    ? parseFloat(it.discount_rate)
+                    : 0;
+                const categoryVal = it.category || '';
                 const warrantyMonths = Math.max(0, parseInt(it.warranty_months, 10) || 0);
 
                 itemRows.push([
@@ -3648,9 +3665,11 @@ async function initBusinessPanel() {
                     r.customer_email || '',
                     phoneExport,
                     it.item_name || '',
+                    categoryVal,
                     qty,
                     refQty,
                     unitPrice,
+                    discountRate,
                     vatRate,
                     lineNet,
                     lineVat,
@@ -3693,9 +3712,11 @@ async function initBusinessPanel() {
                     { header: t.csv_col_email || 'Customer Email', minWidth: 24 },
                     { header: t.csv_col_phone || 'Customer Phone', minWidth: 18 },
                     { header: t.xlsx_item_col_name || 'Product', minWidth: 26 },
+                    { header: t.xlsx_item_col_category || (currentLang === 'en' ? 'Category' : 'Категория'), minWidth: 16 },
                     { header: t.xlsx_item_col_qty || 'Qty', type: 'int', minWidth: 10 },
                     { header: t.xlsx_item_col_refunded_qty || 'Refunded Qty', type: 'int', minWidth: 14 },
                     { header: t.xlsx_item_col_unit_price || 'Unit Price', type: 'money', minWidth: 13 },
+                    { header: t.xlsx_item_col_discount_rate || (currentLang === 'en' ? 'Discount %' : 'Скидка %'), type: 'number', minWidth: 12 },
                     { header: t.xlsx_item_col_vat_rate || 'VAT %', type: 'number', minWidth: 10 },
                     { header: t.csv_col_net || 'Net', type: 'money', minWidth: 13 },
                     { header: t.csv_col_vat || 'VAT', type: 'money', minWidth: 12 },
@@ -3755,7 +3776,12 @@ async function initBusinessPanel() {
             const payLabel = payMethodMap[payRaw] || r.payment_method || '';
             const itemsSummary = Array.isArray(r.receipt_items)
                 ? r.receipt_items
-                    .map(it => `${String(it.item_name || '').replace(/[;|\r\n]+/g, ' ').trim()} x${Math.max(1, parseInt(it.qty, 10) || 1)}`)
+                    .map(it => {
+                        const base = `${String(it.item_name || '').replace(/[;|\r\n]+/g, ' ').trim()} x${Math.max(1, parseInt(it.qty, 10) || 1)}`;
+                        const disc = parseFloat(it.discount_rate) || 0;
+                        const cat = it.category ? ` [${String(it.category).replace(/[;|\r\n]+/g, ' ').trim()}]` : '';
+                        return `${base}${disc > 0 ? ` (-${disc}%)` : ''}${cat}`;
+                    })
                     .join(' | ')
                 : '';
             const grossNum = parseFloat(r.gross_total) || 0;

@@ -1,6 +1,6 @@
 import { supabase, setSessionOnly } from './supabase-client.js';
 import { checkSignupRateLimit, isValidEmail, logError, mountTurnstile } from './security.js';
-import { initPasswordStrength, checkPasswordStrength } from './password-strength.js';
+import { initPasswordStrength, checkPasswordStrength, initPasswordMatch } from './password-strength.js';
 import { getAuthSession } from './dashboard-auth.js';
 import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
 import { prefersReducedMotion } from './segmented-indicator.js';
@@ -97,6 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     initPasswordStrength('password', { getLang });
+    initPasswordMatch('password', 'confirm-password', { getLang });
 
     const regPhoneInput = document.getElementById('register-phone');
     const regPhonePair = (regPhoneCountryEl && regPhoneInput)
@@ -321,11 +322,60 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     window.location.href = 'dashboard.html';
                 } else {
-                    const msg = lang === 'ru'
-                        ? 'Регистрация успешна! Проверьте почту для подтверждения.'
-                        : 'Registration successful! Check your email to confirm.';
-                    showToast(msg, 'success');
-                    setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+                    const confirmScreen = document.getElementById('register-confirm-screen');
+                    if (confirmScreen) {
+                        const titleEl = document.getElementById('register-confirm-title');
+                        const descEl = document.getElementById('register-confirm-desc');
+                        const resendBtn = document.getElementById('register-resend-btn');
+                        const goLoginEl = document.getElementById('register-go-login');
+                        if (titleEl) titleEl.textContent = lang === 'ru' ? 'Проверьте почту' : 'Check your email';
+                        if (descEl) {
+                            descEl.textContent = lang === 'ru'
+                                ? `Мы отправили письмо со ссылкой подтверждения на ${email}. Перейдите по ссылке в письме, чтобы завершить регистрацию.`
+                                : `We sent a confirmation link to ${email}. Click the link in the email to finish signing up.`;
+                        }
+                        if (resendBtn) {
+                            resendBtn.textContent = lang === 'ru' ? 'Отправить письмо повторно' : 'Resend confirmation email';
+                            resendBtn.onclick = async () => {
+                                const isRuNow = getLang() === 'ru';
+                                resendBtn.disabled = true;
+                                resendBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+                                try {
+                                    const { error: resendErr } = await supabase.auth.resend({ type: 'signup', email });
+                                    if (resendErr) throw resendErr;
+                                    showToast(isRuNow ? 'Письмо отправлено повторно!' : 'Confirmation email resent!', 'success');
+                                    let sec = 60;
+                                    const tick = () => {
+                                        if (sec <= 0) {
+                                            resendBtn.disabled = false;
+                                            resendBtn.textContent = isRuNow ? 'Отправить письмо повторно' : 'Resend confirmation email';
+                                            return;
+                                        }
+                                        resendBtn.textContent = isRuNow ? `Повторно через ${sec} с` : `Resend in ${sec}s`;
+                                        sec--;
+                                        setTimeout(tick, 1000);
+                                    };
+                                    tick();
+                                } catch (resendErr) {
+                                    logError('reg:resend', resendErr);
+                                    showToast(isRuNow ? 'Не удалось отправить письмо. Попробуйте позже.' : 'Failed to resend email. Try again later.', 'error');
+                                    resendBtn.disabled = false;
+                                    resendBtn.textContent = isRuNow ? 'Отправить письмо повторно' : 'Resend confirmation email';
+                                }
+                            };
+                        }
+                        if (goLoginEl) goLoginEl.textContent = lang === 'ru' ? 'Перейти ко входу' : 'Go to Sign In';
+                        registerForm.classList.add('hidden');
+                        registerForm.closest('.auth-card')?.querySelector('.auth-header')?.classList.add('hidden');
+                        confirmScreen.classList.remove('hidden');
+                        confirmScreen.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'center' });
+                    } else {
+                        const msg = lang === 'ru'
+                            ? 'Регистрация успешна! Проверьте почту для подтверждения.'
+                            : 'Registration successful! Check your email to confirm.';
+                        showToast(msg, 'success');
+                        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+                    }
                 }
             } catch (err) {
                 logError('reg:signup', err);
