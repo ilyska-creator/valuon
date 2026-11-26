@@ -4814,15 +4814,12 @@ async function initBusinessPanel() {
             receiptFilterIndicator.update();
 
             if (filterFadeTimer) clearTimeout(filterFadeTimer);
-            if (nextFilter !== 'all' || receiptSearchQuery.trim()) {
-                lockReceiptsContainerHeight();
-            } else {
-                releaseReceiptsContainerHeight();
-            }
+            releaseReceiptsContainerHeight();
             if (list.grid) {
                 list.grid.classList.add('filter-fade-out');
                 filterFadeTimer = setTimeout(async () => {
                     await loadReceiptsPage({ append: false, animateRows: true });
+                    releaseReceiptsContainerHeight();
                     list.grid?.classList.remove('filter-fade-out');
                     list.grid?.classList.add('filter-fade-in');
                     setTimeout(() => list.grid?.classList.remove('filter-fade-in'), 200);
@@ -4865,16 +4862,10 @@ async function initBusinessPanel() {
             if (searchClearBtn) {
                 searchClearBtn.style.display = nextQuery.length > 0 ? 'inline-flex' : 'none';
             }
-            if (nextQuery.trim().length > 0) {
-                lockReceiptsContainerHeight();
-            }
             const run = async () => {
                 receiptSearchQuery = nextQuery;
                 await loadReceiptsPage({ append: false, animateRows: true });
-                if (!nextQuery.trim() && receiptFilter === 'all') {
-                    // Release lock smoothly on next frame once full list is rendered
-                    requestAnimationFrame(releaseReceiptsContainerHeight);
-                }
+                releaseReceiptsContainerHeight();
             };
             if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
             if (immediate) {

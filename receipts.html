@@ -76,9 +76,16 @@
     <main class="main-content">
         <header class="content-header" data-animate>
             <h1 data-i18n="nav_receipts">Receipts &amp; Docs</h1>
-            <button class="btn btn-primary" id="upload-receipt-btn"><i class="fa-solid fa-upload"></i> <span
+            <button type="button" class="btn btn-primary" id="upload-receipt-btn"><i class="fa-solid fa-upload"></i> <span
                     data-i18n="btn_upload">Upload Receipt</span></button>
         </header>
+
+        <button type="button" class="camera-upload-zone" id="take-photo-receipt-btn" data-animate>
+            <i class="fa-solid fa-camera" aria-hidden="true"></i>
+            <p data-i18n="camera_zone_title">Take a receipt photo</p>
+            <span data-i18n="camera_zone_hint">Tap to open your phone camera and attach photo</span>
+        </button>
+        <input type="file" id="quick-camera-input" accept="image/*" capture="environment" style="display: none;">
 
         <div class="upload-zone" id="drop-zone" data-animate>
             <i class="fa-solid fa-cloud-arrow-up"></i>
@@ -208,12 +215,29 @@
 
                 <div class="input-group">
                     <label data-i18n="label_receipt_file">Receipt File</label>
-                    <div class="upload-zone-mini" id="modal-drop-zone">
-                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                        <span id="file-name-display" data-i18n="upload_select_hint">Click to select file (Max 10 MB)</span>
-                        <input type="file" id="modal-file-input"
-                            accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf"
-                            style="display: none;">
+                    <div class="receipt-file-picker-row">
+                        <div class="upload-zone-mini" id="modal-drop-zone">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span id="file-name-display" data-i18n="upload_select_hint">Click to select file (Max 10 MB)</span>
+                            <input type="file" id="modal-file-input"
+                                accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf"
+                                style="display: none;">
+                        </div>
+                        <button type="button" class="btn-modal-camera" id="modal-camera-btn" data-i18n-title="btn_take_photo" title="Take Photo">
+                            <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                            <span data-i18n="btn_camera_short">Photo</span>
+                        </button>
+                        <input type="file" id="modal-camera-input" accept="image/*" capture="environment" style="display: none;">
+                    </div>
+                    <div class="receipt-photo-preview hidden" id="modal-photo-preview">
+                        <img id="modal-photo-thumb" alt="Receipt preview">
+                        <div class="receipt-photo-preview-info">
+                            <span class="receipt-photo-preview-name" id="modal-photo-name"></span>
+                            <span class="receipt-photo-preview-meta" id="modal-photo-meta"></span>
+                        </div>
+                        <button type="button" class="receipt-photo-remove-btn" id="modal-photo-remove" aria-label="Remove">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
                     </div>
                 </div>
 

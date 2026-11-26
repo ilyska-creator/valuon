@@ -86,8 +86,7 @@ function slugify(text) {
         .replace(/^-+|-+$/g, '');
 }
 
-export function buildICS(item) {
-    const lang = currentLang();
+function buildVEventLines(item, lang) {
     const endDate = parseDateOnly(item?.warranty_end_date);
     if (!endDate) return null;
 
@@ -95,11 +94,11 @@ export function buildICS(item) {
     const store = String(item.store_name || item.shop_name || '').trim();
     const serial = String(item.serial_number || '').trim();
 
-    const summary = SUMMARY_TEMPLATES[lang].replace('{name}', name);
+    const summary = (SUMMARY_TEMPLATES[lang] || SUMMARY_TEMPLATES.en).replace('{name}', name);
 
     const descParts = [];
-    if (store) descParts.push(`${STORE_LABELS[lang]}: ${store}`);
-    if (serial) descParts.push(`${SERIAL_LABELS[lang]}: ${serial}`);
+    if (store) descParts.push(`${STORE_LABELS[lang] || STORE_LABELS.en}: ${store}`);
+    if (serial) descParts.push(`${SERIAL_LABELS[lang] || SERIAL_LABELS.en}: ${serial}`);
     const description = descParts.map(icsEscape).join('\\n');
 
     const endPlusOne = new Date(endDate.getTime());
@@ -117,11 +116,6 @@ export function buildICS(item) {
     const alarmTrigger = daysUntilEnd >= 7 ? '-P7D' : 'PT9H';
 
     const lines = [
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        `PRODID:-//Valuon//Valuon Warranty Reminder//${lang.toUpperCase()}`,
-        'CALSCALE:GREGORIAN',
-        'METHOD:PUBLISH',
         'BEGIN:VEVENT',
         `UID:${safeUidBase}@valuon.app`,
         `DTSTAMP:${formatDateTimeStamp(new Date())}`,
@@ -134,13 +128,95 @@ export function buildICS(item) {
         'BEGIN:VALARM',
         `TRIGGER:${alarmTrigger}`,
         'ACTION:DISPLAY',
-        `DESCRIPTION:${icsEscape(REMINDER_LABELS[lang])}`,
+        `DESCRIPTION:${icsEscape(REMINDER_LABELS[lang] || REMINDER_LABELS.en)}`,
         'END:VALARM',
-        'END:VEVENT',
-        'END:VCALENDAR'
+        'END:VEVENT'
     );
+    return lines;
+}
+
+export function buildICS(item) {
+    const lang = currentLang();
+    const eventLines = buildVEventLines(item, lang);
+    if (!eventLines) return null;
+
+    const lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        `PRODID:-//Valuon//Valuon Warranty Reminder//${lang.toUpperCase()}`,
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        ...eventLines,
+        'END:VCALENDAR'
+    ];
 
     return lines.map(foldICSLine).join('\r\n') + '\r\n';
+}
+
+export function buildBatchICS(items) {
+    const lang = currentLang();
+    const allEventLines = [];
+    let count = 0;
+
+    for (const item of (items || [])) {
+        const ev = buildVEventLines(item, lang);
+        if (ev) {
+            allEventLines.push(...ev);
+            count++;
+        }
+    }
+    if (count === 0) return null;
+
+    const lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        `PRODID:-//Valuon//Valuon Warranty Reminders//${lang.toUpperCase()}`,
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        ...allEventLines,
+        'END:VCALENDAR'
+    ];
+
+    return { content: lines.map(foldICSLine).join('\r\n') + '\r\n', count };
+}
+
+export function downloadAllICS(items) {
+    const lang = currentLang();
+    const t = currentT();
+    const notify = (msg, type) => {
+        if (typeof showToast === 'function') showToast(msg, type);
+    };
+
+    try {
+        const result = buildBatchICS(items);
+        if (!result || result.count === 0) {
+            notify(t.calendar_all_empty || (lang === 'ru' ? 'Нет активных гарантий для экспорта' : 'No active warranties to export'), 'warning');
+            return 0;
+        }
+
+        const blob = new Blob([result.content], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `valuon-warranties-${formatDateValue(new Date())}.ics`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+        const tpl = t.calendar_all_toast || (lang === 'ru'
+            ? 'Экспортировано гарантий в календарь: {n}'
+            : 'Exported {n} warranties to calendar');
+        notify(tpl.replace('{n}', String(result.count)), 'success');
+        return result.count;
+    } catch (err) {
+        logError('calendar:exportAll', err);
+        notify(t.msg_calendar_error || (lang === 'ru'
+            ? 'Не удалось создать файл календаря'
+            : 'Could not create calendar file'), 'error');
+        return 0;
+    }
 }
 
 export function downloadICS(item) {

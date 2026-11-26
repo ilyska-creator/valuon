@@ -1149,6 +1149,7 @@
         font-size: 0.82rem;
     }
 
+    .shop-meta .meta-item-tax,
     .shop-meta .meta-item-address {
         grid-column: 1 / -1;
     }

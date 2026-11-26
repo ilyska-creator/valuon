@@ -4303,3 +4303,275 @@ html {
 .ps-match-hint.is-mismatch {
     color: var(--error, #ef4444);
 }
+
+
+/* === Batch Export All Warranties to Calendar Bar === */
+
+.warranty-calendar-bar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.78rem 1rem;
+    margin-bottom: 1.4rem;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-main);
+    font-family: var(--font-main);
+    text-align: left;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.warranty-calendar-bar:hover {
+    border-color: rgba(16, 185, 129, 0.45);
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.08);
+}
+
+.warranty-calendar-bar:active {
+    transform: scale(0.99);
+}
+
+.warranty-calendar-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.05));
+    border: 1px solid rgba(16, 185, 129, 0.24);
+    color: #10b981;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.warranty-calendar-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.14rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.warranty-calendar-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.25;
+}
+
+.warranty-calendar-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+}
+
+.warranty-calendar-action {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-body);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.warranty-calendar-bar:hover .warranty-calendar-action {
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.35);
+}
+
+.warranty-calendar-bar.is-exported .warranty-calendar-action {
+    background: #10b981;
+    border-color: #10b981;
+    color: #fff;
+}
+
+@media (max-width: 640px) {
+    .warranty-calendar-bar {
+        padding: 0.72rem 0.85rem;
+        gap: 0.72rem;
+        margin-bottom: 1.15rem;
+    }
+
+    .warranty-calendar-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 0.95rem;
+    }
+
+    .warranty-calendar-title {
+        font-size: 0.88rem;
+    }
+
+    .warranty-calendar-sub {
+        font-size: 0.74rem;
+    }
+}
+
+
+/* === Mobile Receipt Camera Capture & Photo Preview === */
+
+.camera-upload-zone {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--border);
+    border-radius: 20px;
+    padding: 26px 18px;
+    margin: 18px 0 20px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-main);
+    font-family: var(--font-main);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+
+.camera-upload-zone i {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 10px;
+}
+
+.camera-upload-zone p {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.camera-upload-zone span {
+    font-size: 0.84rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.camera-upload-zone:active {
+    border-color: var(--primary);
+    background: rgba(59, 130, 246, 0.08);
+    transform: scale(0.985);
+}
+
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    .camera-upload-zone {
+        display: flex;
+    }
+}
+
+.receipt-file-picker-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.55rem;
+}
+
+.receipt-file-picker-row .upload-zone-mini {
+    flex: 1;
+    min-width: 0;
+}
+
+.btn-modal-camera {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 12px;
+    border: 1px dashed rgba(59, 130, 246, 0.45);
+    background: rgba(59, 130, 246, 0.08);
+    color: var(--primary);
+    font-family: var(--font-main);
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    touch-action: manipulation;
+    transition: background 0.16s ease, border-color 0.16s ease, transform 0.12s ease;
+}
+
+.btn-modal-camera i {
+    font-size: 1.05rem;
+}
+
+.btn-modal-camera:active {
+    transform: scale(0.96);
+}
+
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    .btn-modal-camera {
+        display: inline-flex;
+    }
+}
+
+.receipt-photo-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.6rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-body);
+}
+
+.receipt-photo-preview img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.receipt-photo-preview-info {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.receipt-photo-preview-name {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.receipt-photo-preview-meta {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+}
+
+.receipt-photo-remove-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.receipt-photo-remove-btn:hover {
+    color: var(--error, #ef4444);
+    border-color: var(--error, #ef4444);
+}

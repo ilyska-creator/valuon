@@ -1,6 +1,6 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
-import { downloadICS } from './calendar-export.js';
+import { downloadICS, downloadAllICS } from './calendar-export.js';
 import { refreshNotifBadge } from './dashboard-notifications.js';
 import { attachModalA11y } from './modal-a11y.js';
 import { calculateDaysLeft, isNoWarranty, parseLocalDate } from './warranty-utils.js';
@@ -1031,7 +1031,76 @@ function updateStats(items) {
     window.animateCount(activeEl, activeCount + verifiedStats.active);
     window.animateCount(expiringEl, expiringCount + verifiedStats.expiring);
     if (expiredEl) window.animateCount(expiredEl, expiredCount + verifiedStats.expired);
+    updateExportAllCalendarBar();
 }
+
+function getActiveWarrantyItems() {
+    const result = [];
+    const verified = extractActiveVerifiedItems(lastVerifiedReceipts || []);
+    for (const it of verified) {
+        if (isNoWarranty({ warranty_months: it.warranty_months, purchase_date: it.purchase_date, warranty_end_date: it.warranty_end_date })) continue;
+        const days = calculateDaysLeft(it.warranty_end_date);
+        if (Number.isFinite(days) && days >= 0) result.push(it);
+    }
+    for (const it of (lastMineItems || [])) {
+        if (isNoWarranty(it)) continue;
+        const days = calculateDaysLeft(it.warranty_end_date);
+        if (Number.isFinite(days) && days >= 0) result.push(it);
+    }
+    return result;
+}
+
+function formatCalendarAllSub(n) {
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
+    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.en || {};
+    if (lang === 'en') {
+        const tpl = n === 1
+            ? (t.calendar_all_sub_one || '{n} active warranty · reminder 7 days before expiry (.ics)')
+            : (t.calendar_all_sub_many || '{n} active warranties · reminders 7 days before expiry (.ics)');
+        return tpl.replace('{n}', String(n));
+    }
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    let tpl;
+    if (mod10 === 1 && mod100 !== 11) tpl = t.calendar_all_sub_one || '{n} активная гарантия · напоминание за 7 дней (.ics)';
+    else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) tpl = t.calendar_all_sub_few || '{n} активные гарантии · напоминания за 7 дней (.ics)';
+    else tpl = t.calendar_all_sub_many || '{n} активных гарантий · напоминания за 7 дней (.ics)';
+    return tpl.replace('{n}', String(n));
+}
+
+function updateExportAllCalendarBar() {
+    const btn = document.getElementById('export-all-calendar-btn');
+    const sub = document.getElementById('export-all-calendar-sub');
+    if (!btn) return;
+    const active = getActiveWarrantyItems();
+    if (active.length === 0) {
+        btn.classList.add('hidden');
+        return;
+    }
+    if (sub) sub.textContent = formatCalendarAllSub(active.length);
+    btn.classList.remove('hidden');
+}
+
+(function bindExportAllCalendarBtn() {
+    const btn = document.getElementById('export-all-calendar-btn');
+    const iconWrap = document.getElementById('export-all-calendar-icon');
+    let resetTimer = null;
+    btn?.addEventListener('click', () => {
+        const active = getActiveWarrantyItems();
+        const exported = downloadAllICS(active);
+        if (exported > 0 && iconWrap) {
+            if (resetTimer) clearTimeout(resetTimer);
+            btn.classList.add('is-exported');
+            iconWrap.innerHTML = '<i class="fa-solid fa-check"></i>';
+            resetTimer = setTimeout(() => {
+                btn.classList.remove('is-exported');
+                iconWrap.innerHTML = '<i class="fa-solid fa-download"></i>';
+                resetTimer = null;
+            }, 1500);
+        }
+    });
+    window.addEventListener('lang-changed', updateExportAllCalendarBar);
+})();
 
 async function openEditModal(itemId, client, userId) {
     const modal = document.getElementById('edit-modal');

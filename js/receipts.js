@@ -1342,45 +1342,141 @@ function createUploadModal(client, userId) {
             form.reset();
             if (dateInput?._cdp) dateInput._cdp.syncDisplay();
             if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
-            miniDropZone?.classList.remove('has-file');
-            if (fileNameDisplay) {
-                const lang = getLang();
-                const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
-                fileNameDisplay.textContent = t.upload_select_hint || 'Нажмите для выбора файла (Макс. 10 МБ)';
-            }
+            clearSelectedFile();
         }, 250);
     }
 
     attachModalA11y(modal, { mode: 'active', onClose: close });
 
-    function setFile(file) {
-        if (!validateReceiptFile(file)) return;
+    const modalCameraBtn = document.getElementById('modal-camera-btn');
+    const modalCameraInput = document.getElementById('modal-camera-input');
+    const quickCameraBtn = document.getElementById('take-photo-receipt-btn');
+    const quickCameraInput = document.getElementById('quick-camera-input');
+    const photoPreviewWrap = document.getElementById('modal-photo-preview');
+    const photoThumbEl = document.getElementById('modal-photo-thumb');
+    const photoNameEl = document.getElementById('modal-photo-name');
+    const photoMetaEl = document.getElementById('modal-photo-meta');
+    const photoRemoveBtn = document.getElementById('modal-photo-remove');
+    let previewObjectUrl = null;
+
+    function formatFileSize(bytes) {
+        if (!bytes) return '';
+        if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function clearSelectedFile() {
+        if (fileInput) fileInput.value = '';
+        if (modalCameraInput) modalCameraInput.value = '';
+        if (quickCameraInput) quickCameraInput.value = '';
+        miniDropZone?.classList.remove('has-file');
+        if (fileNameDisplay) {
+            const lang = getLang();
+            const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+            fileNameDisplay.textContent = t.upload_select_hint || 'Нажмите для выбора файла (Макс. 10 МБ)';
+        }
+        if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+        }
+        if (photoThumbEl) photoThumbEl.removeAttribute('src');
+        photoPreviewWrap?.classList.add('hidden');
+    }
+
+    function updatePhotoPreview(file) {
+        if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+        }
+        if (!photoPreviewWrap || !file || !String(file.type || '').startsWith('image/')) {
+            photoPreviewWrap?.classList.add('hidden');
+            return;
+        }
+        previewObjectUrl = URL.createObjectURL(file);
+        if (photoThumbEl) photoThumbEl.src = previewObjectUrl;
+        if (photoNameEl) photoNameEl.textContent = file.name;
+        if (photoMetaEl) photoMetaEl.textContent = formatFileSize(file.size);
+        photoPreviewWrap.classList.remove('hidden');
+    }
+
+    async function normalizeReceiptPhoto(file) {
+        if (!file || !String(file.type || '').startsWith('image/')) return file;
+        const needsConvert = !['image/jpeg', 'image/png', 'image/webp'].includes(file.type);
+        const needsCompress = file.size > 2.5 * 1024 * 1024;
+        if (!needsConvert && !needsCompress) return file;
+        try {
+            const url = URL.createObjectURL(file);
+            const img = await new Promise((resolve, reject) => {
+                const i = new Image();
+                i.onload = () => resolve(i);
+                i.onerror = reject;
+                i.src = url;
+            });
+            URL.revokeObjectURL(url);
+            const maxDim = 2000;
+            let w = img.naturalWidth || img.width;
+            let h = img.naturalHeight || img.height;
+            if (w > maxDim || h > maxDim) {
+                const scale = maxDim / Math.max(w, h);
+                w = Math.round(w * scale);
+                h = Math.round(h * scale);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.86));
+            if (!blob) return file;
+            const base = (file.name || 'receipt_photo').replace(/\.[^/.]+$/, '');
+            return new File([blob], `${base}.jpg`, { type: 'image/jpeg', lastModified: Date.now() });
+        } catch (_) {
+            return file;
+        }
+    }
+
+    async function setFile(rawFile) {
+        const file = await normalizeReceiptPhoto(rawFile);
+        if (!validateReceiptFile(file)) {
+            clearSelectedFile();
+            return false;
+        }
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(file);
         fileInput.files = dataTransfer.files;
         fileNameDisplay.textContent = file.name;
         miniDropZone?.classList.add('has-file');
+        updatePhotoPreview(file);
+        return true;
     }
 
     closeBtn?.addEventListener('click', close);
     cancelBtn?.addEventListener('click', close);
     modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
     miniDropZone?.addEventListener('click', () => fileInput?.click());
+    modalCameraBtn?.addEventListener('click', () => modalCameraInput?.click());
+    photoRemoveBtn?.addEventListener('click', clearSelectedFile);
 
-    fileInput?.addEventListener('change', () => {
+    fileInput?.addEventListener('change', async () => {
         if (fileInput.files.length > 0) {
-            if (!validateReceiptFile(fileInput.files[0])) {
-                fileInput.value = '';
-                miniDropZone?.classList.remove('has-file');
-                if (fileNameDisplay) {
-                    const lang = getLang();
-                    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
-                    fileNameDisplay.textContent = t.upload_select_hint || 'Нажмите для выбора файла (Макс. 10 МБ)';
-                }
-                return;
-            }
-            fileNameDisplay.textContent = fileInput.files[0].name;
-            miniDropZone?.classList.add('has-file');
+            await setFile(fileInput.files[0]);
+        }
+    });
+
+    modalCameraInput?.addEventListener('change', async () => {
+        if (modalCameraInput.files.length > 0) {
+            await setFile(modalCameraInput.files[0]);
+            modalCameraInput.value = '';
+        }
+    });
+
+    quickCameraBtn?.addEventListener('click', () => quickCameraInput?.click());
+    quickCameraInput?.addEventListener('change', async () => {
+        if (quickCameraInput.files.length > 0) {
+            const captured = quickCameraInput.files[0];
+            quickCameraInput.value = '';
+            open();
+            await setFile(captured);
         }
     });
 
