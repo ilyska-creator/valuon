@@ -303,6 +303,53 @@
                     </div>
                 </div>
 
+                <div class="settings-section" id="settings-security-section" data-animate>
+                    <h2><i class="fa-solid fa-shield-halved"></i> <span data-i18n="settings_security">Security</span></h2>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label" data-i18n="setting_password">Password</span>
+                            <span class="setting-desc" data-i18n="setting_password_desc">Change your account password</span>
+                        </div>
+                        <button type="button" class="btn btn-outline btn-sm" id="change-password-btn" data-i18n="btn_change_password">Change</button>
+                    </div>
+
+                    <div class="password-change-collapse" id="password-change-wrap" aria-hidden="true">
+                        <div class="password-change-inner">
+                            <form id="password-change-form" class="password-change-form" novalidate>
+                                <div class="profile-field">
+                                    <label for="settings-new-password" data-i18n="new_password_label">New password</label>
+                                    <div class="password-wrapper">
+                                        <input type="password" id="settings-new-password" autocomplete="new-password"
+                                            data-i18n-placeholder="new_password_placeholder" placeholder="Enter new password">
+                                        <button type="button" class="pw-eye-btn" data-pw-toggle="settings-new-password" aria-label="Show password">
+                                            <i class="fa-regular fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="profile-field">
+                                    <label for="settings-confirm-password" data-i18n="confirm_password_label">Confirm new password</label>
+                                    <div class="password-wrapper">
+                                        <input type="password" id="settings-confirm-password" autocomplete="new-password"
+                                            data-i18n-placeholder="confirm_password_placeholder" placeholder="Repeat new password">
+                                        <button type="button" class="pw-eye-btn" data-pw-toggle="settings-confirm-password" aria-label="Show password">
+                                            <i class="fa-regular fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <p class="password-change-error" id="settings-password-error" role="alert"></p>
+
+                                <div class="password-change-actions">
+                                    <button type="button" class="btn btn-outline btn-sm" id="cancel-password-btn" data-i18n="btn_cancel">Cancel</button>
+                                    <button type="submit" class="btn btn-primary btn-sm" id="save-password-btn" data-i18n="btn_save">Save</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="settings-section" data-animate>
                     <h2><i class="fa-solid fa-bell"></i> <span data-i18n="settings_notifications">Notifications</span>
                     </h2>

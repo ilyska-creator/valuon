@@ -2,6 +2,11 @@ import { requireAuth } from './dashboard-auth.js';
 import { isValidEmail, logError } from './security.js';
 import { refreshNotifBadge } from './dashboard-notifications.js';
 import {
+    checkPasswordStrength,
+    initPasswordStrength,
+    initPasswordMatch
+} from './password-strength.js';
+import {
     populateDialCodeSelect,
     wirePhoneInputPair,
     formatPhoneDisplay,
@@ -685,6 +690,111 @@ async function initSettings() {
         });
 
         window.addEventListener('lang-changed', updateLangBtn);
+    }
+
+    // --- In-App Password Change (Security Section) ---
+    const changePasswordBtn = document.getElementById('change-password-btn');
+    const passwordChangeWrap = document.getElementById('password-change-wrap');
+    const passwordChangeForm = document.getElementById('password-change-form');
+    const newPwInput = document.getElementById('settings-new-password');
+    const confirmPwInput = document.getElementById('settings-confirm-password');
+    const cancelPasswordBtn = document.getElementById('cancel-password-btn');
+    const savePasswordBtn = document.getElementById('save-password-btn');
+    const pwErrorEl = document.getElementById('settings-password-error');
+
+    if (changePasswordBtn && passwordChangeWrap && passwordChangeForm) {
+        const strengthContainer = initPasswordStrength('settings-new-password', { getLang: getSettingsLang });
+        const matchCtrl = initPasswordMatch('settings-new-password', 'settings-confirm-password', { getLang: getSettingsLang });
+
+        const setPwError = (msg) => {
+            if (pwErrorEl) pwErrorEl.textContent = msg || '';
+        };
+
+        const setPasswordFormOpen = (open) => {
+            passwordChangeWrap.classList.toggle('is-open', open);
+            passwordChangeWrap.setAttribute('aria-hidden', String(!open));
+            changePasswordBtn.classList.toggle('hidden', open);
+            if (!open) {
+                passwordChangeForm.reset();
+                setPwError('');
+                strengthContainer?.classList.remove('ps-visible');
+                matchCtrl?.update();
+                passwordChangeForm.querySelectorAll('input[type="text"]').forEach(inp => { inp.type = 'password'; });
+                passwordChangeForm.querySelectorAll('.pw-eye-btn i').forEach(ic => { ic.className = 'fa-regular fa-eye'; });
+            } else {
+                setTimeout(() => newPwInput?.focus(), 120);
+            }
+        };
+
+        changePasswordBtn.addEventListener('click', () => setPasswordFormOpen(true));
+        cancelPasswordBtn?.addEventListener('click', () => setPasswordFormOpen(false));
+
+        passwordChangeForm.querySelectorAll('[data-pw-toggle]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = document.getElementById(btn.dataset.pwToggle);
+                if (!target) return;
+                const show = target.type === 'password';
+                target.type = show ? 'text' : 'password';
+                const icon = btn.querySelector('i');
+                if (icon) icon.className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+            });
+        });
+
+        [newPwInput, confirmPwInput].forEach(inp => {
+            inp?.addEventListener('input', () => setPwError(''));
+        });
+
+        let pwSubmitting = false;
+        passwordChangeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (pwSubmitting) return;
+            const t = getSettingsT();
+            const lang = getSettingsLang();
+
+            const newPw = newPwInput?.value || '';
+            const confPw = confirmPwInput?.value || '';
+
+            const strength = checkPasswordStrength(newPw);
+            if (!strength.isValid) {
+                setPwError(t.pw_err_weak || (lang === 'en' ? 'New password is too weak' : 'Новый пароль слишком слабый'));
+                newPwInput?.focus();
+                return;
+            }
+            if (newPw !== confPw) {
+                setPwError(t.pw_err_mismatch || (lang === 'en' ? 'Passwords do not match' : 'Пароли не совпадают'));
+                confirmPwInput?.focus();
+                return;
+            }
+
+            pwSubmitting = true;
+            setPwError('');
+            if (savePasswordBtn) savePasswordBtn.disabled = true;
+
+            try {
+                const { error: updateErr } = await client.auth.updateUser({ password: newPw });
+                if (updateErr) {
+                    const code = updateErr.code || '';
+                    const msg = String(updateErr.message || '').toLowerCase();
+                    if (code === 'same_password' || msg.includes('different from the old password')) {
+                        setPwError(t.pw_err_same || (lang === 'en' ? 'New password must be different from the current one' : 'Новый пароль должен отличаться от текущего'));
+                    } else {
+                        setPwError(t.pw_update_failed || (lang === 'en' ? 'Failed to update password' : 'Не удалось обновить пароль'));
+                    }
+                    return;
+                }
+
+                setPasswordFormOpen(false);
+                if (typeof window.showToast === 'function') {
+                    window.showToast(t.pw_updated_toast || (lang === 'en' ? 'Password updated successfully' : 'Пароль успешно обновлён'), 'success');
+                }
+            } catch (err) {
+                logError('settings:changePassword', err);
+                setPwError(t.pw_update_failed || (lang === 'en' ? 'Failed to update password' : 'Не удалось обновить пароль'));
+            } finally {
+                pwSubmitting = false;
+                if (savePasswordBtn) savePasswordBtn.disabled = false;
+            }
+        });
     }
 }
 
