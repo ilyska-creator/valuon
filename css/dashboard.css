@@ -4575,3 +4575,157 @@ html {
     color: var(--error, #ef4444);
     border-color: var(--error, #ef4444);
 }
+
+
+/* === Multi-file Receipt Attachments (up to 3) & Viewer Gallery === */
+
+.receipt-files-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.receipt-files-counter {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    padding: 0.12rem 0.5rem;
+    border-radius: 999px;
+    background: var(--bg-body);
+    border: 1px solid var(--border);
+}
+
+.receipt-files-counter.is-full {
+    color: var(--primary);
+    border-color: rgba(59, 130, 246, 0.35);
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.receipt-file-picker-row.is-limit-reached {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.receipt-files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-top: 0.55rem;
+}
+
+.receipt-files-list .receipt-photo-preview {
+    margin-top: 0;
+}
+
+.receipt-photo-pdf-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.receipt-type-badge.is-multi {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--primary);
+    border-color: rgba(59, 130, 246, 0.28);
+}
+
+.attachments-viewer-card {
+    max-width: 580px;
+}
+
+.att-viewer-stage {
+    position: relative;
+    min-height: 260px;
+    max-height: 54dvh;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--bg-body);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 0.85rem;
+}
+
+.att-viewer-stage img {
+    max-width: 100%;
+    max-height: 54dvh;
+    object-fit: contain;
+    display: block;
+}
+
+.att-viewer-pdf-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 2rem 1.25rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.att-viewer-pdf-box i {
+    font-size: 2.6rem;
+    color: #ef4444;
+}
+
+.att-viewer-pdf-box strong {
+    color: var(--text-main);
+    font-size: 0.92rem;
+    word-break: break-word;
+}
+
+.att-viewer-thumbs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    margin-bottom: 1rem;
+}
+
+.att-viewer-thumb {
+    width: 58px;
+    height: 58px;
+    padding: 0;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: var(--bg-body);
+    overflow: hidden;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ef4444;
+    font-size: 1.2rem;
+    transition: border-color 0.16s ease, transform 0.14s ease;
+}
+
+.att-viewer-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.att-viewer-thumb.active {
+    border-color: var(--primary);
+    transform: scale(1.04);
+}
+
+.att-viewer-actions {
+    display: flex;
+    gap: 0.65rem;
+    justify-content: flex-end;
+}

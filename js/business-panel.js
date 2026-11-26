@@ -13,7 +13,8 @@ import {
     wirePhoneInputPair,
     getCustomerContactSummary,
     escapeIlikePattern,
-    quotePostgrestLiteral
+    quotePostgrestLiteral,
+    fetchCurrentUserPhone
 } from './phone-utils.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
 
@@ -2169,6 +2170,30 @@ async function initBusinessPanel() {
                 ? `${window.currencySymbol(shop.currency)} ${shop.currency}`
                 : '—';
         }
+        const phoneWrap = document.getElementById('display-contact-phone-wrap');
+        const phoneEl = document.getElementById('display-contact-phone');
+        if (phoneWrap && phoneEl) {
+            const rawPhone = String(shop.contact_phone || '').trim();
+            if (rawPhone) {
+                phoneEl.textContent = formatPhoneDisplay(rawPhone) || rawPhone;
+                phoneWrap.classList.remove('is-hidden');
+            } else {
+                phoneEl.textContent = '';
+                phoneWrap.classList.add('is-hidden');
+            }
+        }
+        const emailWrap = document.getElementById('display-contact-email-wrap');
+        const emailEl = document.getElementById('display-contact-email');
+        if (emailWrap && emailEl) {
+            const rawEmail = String(shop.contact_email || '').trim();
+            if (rawEmail) {
+                emailEl.textContent = rawEmail;
+                emailWrap.classList.remove('is-hidden');
+            } else {
+                emailEl.textContent = '';
+                emailWrap.classList.add('is-hidden');
+            }
+        }
 
         updateShopLogo(shop.logo_path);
     }
@@ -3774,10 +3799,186 @@ async function initBusinessPanel() {
         itemSelector: '.receipt-filter-btn',
     });
 
+    // --- Shop Registration & Edit Contacts Phone/Email Wiring ---
+    const regContactEmailInput = document.getElementById('shop-contact-email');
+    const regPhoneCountrySelect = document.getElementById('shop-phone-country');
+    const regContactPhoneInput = document.getElementById('shop-contact-phone');
+    let regPhonePair = null;
+
+    if (regPhoneCountrySelect && regContactPhoneInput) {
+        const initCountry = getDefaultPhoneCountry(null, bizLang());
+        populateDialCodeSelect(regPhoneCountrySelect, bizLang(), initCountry);
+        regPhonePair = wirePhoneInputPair(regPhoneCountrySelect, regContactPhoneInput);
+    }
+
+    (async function prefillShopRegistrationDefaults() {
+        if (regContactEmailInput && !regContactEmailInput.value && user?.email) {
+            regContactEmailInput.value = user.email;
+        }
+        if (!user?.id) return;
+        let userCurrency = '';
+        let userPhone = '';
+        try {
+            const { data: prof } = await client
+                .from('profiles')
+                .select('currency, phone')
+                .eq('id', user.id)
+                .maybeSingle();
+            if (prof?.currency) userCurrency = String(prof.currency).trim().toUpperCase();
+            if (prof?.phone) userPhone = String(prof.phone).trim();
+        } catch (_) {
+            userPhone = (await fetchCurrentUserPhone(client, user.id)) || '';
+        }
+
+        const shopCurrencySelect = document.getElementById('shop-currency');
+        if (shopCurrencySelect && userCurrency) {
+            const hasOpt = Array.from(shopCurrencySelect.options).some(o => o.value === userCurrency);
+            if (hasOpt) {
+                shopCurrencySelect.value = userCurrency;
+                if (shopCurrencySelect._cs) shopCurrencySelect._cs.refresh();
+            }
+        }
+
+        if (regPhoneCountrySelect && regContactPhoneInput && !regContactPhoneInput.value && userPhone) {
+            const parsed = splitPhone(userPhone, getDefaultPhoneCountry(null, bizLang()));
+            if (parsed?.code) {
+                populateDialCodeSelect(regPhoneCountrySelect, bizLang(), parsed.code);
+                regPhoneCountrySelect.value = parsed.code;
+                if (regPhoneCountrySelect._cs) regPhoneCountrySelect._cs.refresh();
+            }
+            if (parsed?.local) {
+                regContactPhoneInput.value = parsed.local;
+                regPhonePair?.formatCurrent();
+            }
+        }
+    })();
+
+    const shopContactsModal = document.getElementById('shop-contacts-modal');
+    const shopContactsForm = document.getElementById('shop-contacts-form');
+    const editShopEmailInput = document.getElementById('edit-shop-contact-email');
+    const editShopPhoneCountry = document.getElementById('edit-shop-phone-country');
+    const editShopPhoneInput = document.getElementById('edit-shop-contact-phone');
+    const editShopEmailErr = document.getElementById('shop-contacts-email-error');
+    const editShopPhoneErr = document.getElementById('shop-contacts-phone-error');
+    let editShopPhonePair = null;
+    let shopContactsSaving = false;
+
+    if (editShopPhoneCountry && editShopPhoneInput) {
+        populateDialCodeSelect(editShopPhoneCountry, bizLang(), getDefaultPhoneCountry(null, bizLang()));
+        editShopPhonePair = wirePhoneInputPair(editShopPhoneCountry, editShopPhoneInput);
+    }
+
+    function openShopContactsModal() {
+        if (!shopContactsModal || !currentShop) return;
+        if (editShopEmailErr) editShopEmailErr.textContent = '';
+        if (editShopPhoneErr) editShopPhoneErr.textContent = '';
+        if (editShopEmailInput) editShopEmailInput.value = currentShop.contact_email || '';
+
+        const fallbackCountry = getDefaultPhoneCountry(currentShop.country, bizLang());
+        if (editShopPhoneCountry && editShopPhoneInput) {
+            if (currentShop.contact_phone) {
+                const parsed = splitPhone(currentShop.contact_phone, fallbackCountry);
+                const code = parsed?.code || fallbackCountry;
+                populateDialCodeSelect(editShopPhoneCountry, bizLang(), code);
+                editShopPhoneCountry.value = code;
+                editShopPhoneInput.value = parsed?.local || '';
+                editShopPhonePair?.formatCurrent();
+            } else {
+                populateDialCodeSelect(editShopPhoneCountry, bizLang(), fallbackCountry);
+                editShopPhoneCountry.value = fallbackCountry;
+                editShopPhoneInput.value = '';
+            }
+            if (editShopPhoneCountry._cs) editShopPhoneCountry._cs.refresh();
+            else if (typeof CustomSelect !== 'undefined') CustomSelect.init(shopContactsModal);
+        }
+
+        shopContactsModal.classList.remove('is-hidden');
+        shopContactsModal.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('modal-open');
+    }
+
+    function closeShopContactsModal() {
+        if (!shopContactsModal || shopContactsModal.classList.contains('is-hidden') || shopContactsModal.classList.contains('closing')) return;
+        shopContactsModal.classList.add('closing');
+        setTimeout(() => {
+            shopContactsModal.classList.add('is-hidden');
+            shopContactsModal.classList.remove('closing');
+            shopContactsModal.setAttribute('aria-hidden', 'true');
+            if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
+                document.documentElement.classList.remove('modal-open');
+            }
+        }, 200);
+    }
+
+    document.getElementById('edit-shop-contacts-btn')?.addEventListener('click', openShopContactsModal);
+    document.getElementById('close-shop-contacts-modal')?.addEventListener('click', closeShopContactsModal);
+    document.getElementById('cancel-shop-contacts-btn')?.addEventListener('click', closeShopContactsModal);
+    shopContactsModal?.addEventListener('click', (e) => {
+        if (e.target === shopContactsModal || e.target.classList.contains('modal-backdrop')) closeShopContactsModal();
+    });
+    attachModalA11y(shopContactsModal, { mode: 'hidden', onClose: closeShopContactsModal });
+
+    shopContactsForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (shopContactsSaving || !currentShop) return;
+        const t = bizT();
+        const lang = bizLang();
+        const rawEmail = String(editShopEmailInput?.value || '').trim().toLowerCase();
+        const rawLocalPhone = String(editShopPhoneInput?.value || '').trim();
+
+        let valid = true;
+        if (rawEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(rawEmail)) {
+            if (editShopEmailErr) editShopEmailErr.textContent = t.shop_contacts_err_email || (lang === 'en' ? 'Enter a valid email address' : 'Введите корректный email');
+            valid = false;
+        } else if (editShopEmailErr) {
+            editShopEmailErr.textContent = '';
+        }
+
+        let normalizedPhone = '';
+        if (rawLocalPhone) {
+            const e164 = normalizePhone(editShopPhoneCountry?.value, rawLocalPhone);
+            if (!e164) {
+                if (editShopPhoneErr) editShopPhoneErr.textContent = t.shop_contacts_err_phone || (lang === 'en' ? 'Enter a valid phone number' : 'Введите корректный номер телефона');
+                valid = false;
+            } else {
+                normalizedPhone = e164;
+                if (editShopPhoneErr) editShopPhoneErr.textContent = '';
+            }
+        } else if (editShopPhoneErr) {
+            editShopPhoneErr.textContent = '';
+        }
+
+        if (!valid) return;
+
+        const saveBtn = document.getElementById('save-shop-contacts-btn');
+        shopContactsSaving = true;
+        if (saveBtn) saveBtn.disabled = true;
+
+        try {
+            const { error } = await client
+                .from('shops')
+                .update({ contact_email: rawEmail, contact_phone: normalizedPhone })
+                .eq('id', currentShop.id);
+            if (error) throw error;
+
+            currentShop = { ...currentShop, contact_email: rawEmail, contact_phone: normalizedPhone };
+            sessionStorage.setItem('current_shop', JSON.stringify(currentShop));
+            updateShopInfo(currentShop);
+            closeShopContactsModal();
+            window.showToast(t.shop_contacts_saved || (lang === 'en' ? 'Shop contacts saved' : 'Контакты магазина сохранены'), 'success');
+        } catch (err) {
+            logError('biz:saveShopContacts', err);
+            window.showToast(lang === 'en' ? 'Failed to save contacts' : 'Не удалось сохранить контакты', 'error');
+        } finally {
+            shopContactsSaving = false;
+            if (saveBtn) saveBtn.disabled = false;
+        }
+    });
+
     try {
         const { data: shop, error } = await client
             .from('shops')
-            .select('id, shop_name, tax_id, address, country, currency, logo_path, public_key, owner_id')
+            .select('id, shop_name, tax_id, address, country, currency, logo_path, public_key, owner_id, contact_email, contact_phone')
             .eq('owner_id', user.id)
             .maybeSingle();
 
@@ -3894,6 +4095,25 @@ async function initBusinessPanel() {
                     }
                 }
 
+                const rawContactEmail = String(fd.get('contact_email') || '').trim().toLowerCase();
+                const rawContactPhoneLocal = String(fd.get('contact_phone') || '').trim();
+                let normalizedShopPhone = '';
+                if (rawContactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(rawContactEmail)) {
+                    window.showToast(createLang === 'en' ? 'Enter a valid shop contact email' : 'Введите корректный email магазина', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                    return;
+                }
+                if (rawContactPhoneLocal) {
+                    normalizedShopPhone = normalizePhone(regPhoneCountrySelect?.value, rawContactPhoneLocal) || '';
+                    if (!normalizedShopPhone) {
+                        window.showToast(createLang === 'en' ? 'Enter a valid shop contact phone' : 'Введите корректный телефон магазина', 'error');
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                        return;
+                    }
+                }
+
                 // Key generation + insert happen server-side (Edge Function
                 // create-shop): the private signing key is never generated in,
                 // or sent to, the browser — not even once.
@@ -3921,6 +4141,20 @@ async function initBusinessPanel() {
                 }
 
                 let newShop = created.shop;
+
+                if (rawContactEmail || normalizedShopPhone) {
+                    try {
+                        const { error: contactErr } = await client
+                            .from('shops')
+                            .update({ contact_email: rawContactEmail, contact_phone: normalizedShopPhone })
+                            .eq('id', newShop.id);
+                        if (!contactErr) {
+                            newShop = { ...newShop, contact_email: rawContactEmail, contact_phone: normalizedShopPhone };
+                        }
+                    } catch (contactEx) {
+                        logError('biz:shopContactsUpdate', contactEx);
+                    }
+                }
 
                 // Upload logo now that the shop exists
                 if (logoFile && logoFile.size && logoFile.size > 0) {

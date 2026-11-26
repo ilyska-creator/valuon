@@ -321,6 +321,155 @@ function sortReceiptsArray(list, mode, isBusiness) {
     return copy;
 }
 
+const MAX_RECEIPT_ATTACHMENTS = 3;
+
+function getReceiptAttachments(r) {
+    if (Array.isArray(r?.attachments) && r.attachments.length > 0) {
+        return r.attachments
+            .filter(a => a && (a.path || a.url))
+            .slice(0, MAX_RECEIPT_ATTACHMENTS);
+    }
+    if (r?.file_path || r?.file_url) {
+        return [{
+            path: r.file_path || '',
+            url: r.file_url || '',
+            type: r.file_type || '',
+            name: r.receipt_name || r.display_name || 'receipt',
+        }];
+    }
+    return [];
+}
+
+let attViewerInitialized = false;
+let attViewerItems = [];
+let attViewerIdx = 0;
+let attViewerReceiptName = 'receipt';
+
+function renderAttachmentsViewerState() {
+    const stage = document.getElementById('att-viewer-stage');
+    const thumbs = document.getElementById('att-viewer-thumbs');
+    const counter = document.getElementById('att-viewer-counter');
+    const openBtn = document.getElementById('att-viewer-open-btn');
+    if (!stage || !attViewerItems.length) return;
+
+    const current = attViewerItems[attViewerIdx] || attViewerItems[0];
+    const lang = getLang();
+    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+    const isPdf = current.type === 'application/pdf' || /\.pdf$/i.test(current.path || '');
+
+    if (counter) counter.textContent = `${attViewerIdx + 1} / ${attViewerItems.length}`;
+    if (openBtn) openBtn.href = current.url || '#';
+
+    if (isPdf) {
+        const hint = t.attachments_pdf_hint || (lang === 'ru' ? 'PDF-документ — нажмите «Открыть» или «Скачать»' : 'PDF document — tap Open or Download');
+        stage.innerHTML = `
+            <div class="att-viewer-pdf-box">
+                <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
+                <strong>${escapeHtml(current.name || 'document.pdf')}</strong>
+                <span>${escapeHtml(hint)}</span>
+            </div>`;
+    } else {
+        stage.innerHTML = `<img src="${escapeHtml(current.url || '')}" alt="${escapeHtml(current.name || 'Receipt')}">`;
+    }
+
+    if (thumbs) {
+        thumbs.innerHTML = attViewerItems.map((att, idx) => {
+            const pdf = att.type === 'application/pdf' || /\.pdf$/i.test(att.path || '');
+            return `<button type="button" class="att-viewer-thumb${idx === attViewerIdx ? ' active' : ''}" data-att-idx="${idx}" aria-label="${idx + 1}">
+                ${pdf ? '<i class="fa-solid fa-file-pdf"></i>' : `<img src="${escapeHtml(att.url || '')}" alt="">`}
+            </button>`;
+        }).join('');
+    }
+}
+
+function initAttachmentsViewer() {
+    if (attViewerInitialized) return;
+    attViewerInitialized = true;
+    const modal = document.getElementById('attachments-viewer-modal');
+    const closeBtn = document.getElementById('close-att-viewer');
+    const thumbs = document.getElementById('att-viewer-thumbs');
+    const dlBtn = document.getElementById('att-viewer-download-btn');
+    if (!modal) return;
+
+    const close = () => {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        document.documentElement.classList.remove('modal-open');
+    };
+    attachModalA11y(modal, { mode: 'active', onClose: close });
+    closeBtn?.addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+    thumbs?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-att-idx]');
+        if (!btn) return;
+        const idx = parseInt(btn.dataset.attIdx, 10);
+        if (!isNaN(idx) && idx >= 0 && idx < attViewerItems.length) {
+            attViewerIdx = idx;
+            renderAttachmentsViewerState();
+        }
+    });
+
+    dlBtn?.addEventListener('click', async () => {
+        const cur = attViewerItems[attViewerIdx];
+        if (!cur?.url) return;
+        const orig = dlBtn.innerHTML;
+        dlBtn.disabled = true;
+        dlBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        try {
+            const res = await fetch(cur.url);
+            if (!res.ok) throw new Error('Download failed');
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = buildDownloadFilename(`${attViewerReceiptName}-${attViewerIdx + 1}`, cur.type, cur.path, blob.type);
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+        } catch (err) {
+            logError('receipts:viewerDownload', err);
+            const lang = getLang();
+            showToast(lang === 'ru' ? 'Не удалось скачать файл' : 'Failed to download file', 'error');
+        } finally {
+            dlBtn.innerHTML = orig;
+            dlBtn.disabled = false;
+        }
+    });
+}
+
+async function openAttachmentsViewer(receipt, attachments, client) {
+    initAttachmentsViewer();
+    const modal = document.getElementById('attachments-viewer-modal');
+    const titleEl = document.getElementById('att-viewer-title');
+    if (!modal || !attachments?.length) return;
+
+    // Ensure fresh signed URLs for all attachments
+    const pathsNeedingSign = attachments.filter(a => a.path && !a.url).map(a => a.path);
+    const hydrated = attachments.map(a => ({ ...a }));
+    if (pathsNeedingSign.length > 0 && client) {
+        try {
+            const { data } = await client.storage.from('receipts').createSignedUrls(pathsNeedingSign, SIGNED_URL_TTL);
+            if (Array.isArray(data)) {
+                const map = new Map();
+                data.forEach((d, i) => { if (d?.signedUrl) map.set(d.path || pathsNeedingSign[i], d.signedUrl); });
+                hydrated.forEach(a => { if (a.path && map.has(a.path)) a.url = map.get(a.path); });
+            }
+        } catch (_) { }
+    }
+
+    attViewerItems = hydrated;
+    attViewerIdx = 0;
+    attViewerReceiptName = receipt?.display_name || receipt?.receipt_name || 'receipt';
+    if (titleEl) titleEl.textContent = attViewerReceiptName;
+
+    renderAttachmentsViewerState();
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+    document.documentElement.classList.add('modal-open');
+}
+
 async function attachFreshSignedUrls(receipts, client) {
     if (!Array.isArray(receipts) || receipts.length === 0) return [];
 
@@ -331,18 +480,26 @@ async function attachFreshSignedUrls(receipts, client) {
     const uniquePaths = new Set();
 
     receipts.forEach((r, idx) => {
-        if (!r?.file_path) return;
+        const atts = getReceiptAttachments(r);
+        if (atts.length === 0) return;
         const expiresAt = r.created_at
             ? new Date(r.created_at).getTime() + SIGNED_URL_TTL * msPerSecond
             : 0;
-        if (r.file_url && Number.isFinite(expiresAt) && now + SAFETY_MARGIN_MS < expiresAt) return;
-        needsRefresh.add(idx);
-        uniquePaths.add(r.file_path);
+        const isExpired = !Number.isFinite(expiresAt) || now + SAFETY_MARGIN_MS >= expiresAt;
+        let rowNeeds = false;
+        atts.forEach(a => {
+            if (!a.path) return;
+            if (!a.url || isExpired) {
+                uniquePaths.add(a.path);
+                rowNeeds = true;
+            }
+        });
+        if (rowNeeds) needsRefresh.add(idx);
     });
 
     const pathsToSign = [...uniquePaths];
     if (pathsToSign.length === 0) {
-        return receipts.map(r => (r?.file_url ? { ...r, file_url: r.file_url } : r));
+        return receipts;
     }
 
     const signedUrlByPath = new Map();
@@ -386,8 +543,18 @@ async function attachFreshSignedUrls(receipts, client) {
 
     return receipts.map((r, idx) => {
         if (!needsRefresh.has(idx)) return r;
-        const freshUrl = signedUrlByPath.get(r.file_path);
-        return freshUrl ? { ...r, file_url: freshUrl } : r;
+        const next = { ...r };
+        if (r.file_path && signedUrlByPath.has(r.file_path)) {
+            next.file_url = signedUrlByPath.get(r.file_path);
+        }
+        if (Array.isArray(r.attachments) && r.attachments.length > 0) {
+            next.attachments = r.attachments.map(a => (
+                a?.path && signedUrlByPath.has(a.path)
+                    ? { ...a, url: signedUrlByPath.get(a.path) }
+                    : a
+            ));
+        }
+        return next;
     });
 }
 
@@ -842,6 +1009,24 @@ function renderPersonalCard(r, t) {
     const btnDownloadText = escapeHtml(t.btn_download || 'Скачать');
     const btnDeleteText = escapeHtml(t.btn_delete || 'Удалить');
 
+    const attachments = getReceiptAttachments(r);
+    const attCount = attachments.length;
+    const multiBadgeTpl = t.receipt_files_badge_few || (lang === 'ru' ? '{n} файла' : '{n} files');
+    const badgeHtml = attCount > 1
+        ? `<span class="receipt-type-badge is-multi"><i class="fa-solid fa-paperclip" aria-hidden="true"></i> ${escapeHtml(multiBadgeTpl.replace('{n}', String(attCount)))}</span>`
+        : `<span class="receipt-type-badge" data-i18n="${typeKey}">${typeLabel}</span>`;
+
+    const downloadBtnHtml = attCount > 1 ? '' : `
+                <button type="button" class="receipt-doc-btn is-secondary btn-download-receipt"
+                        data-url="${escapeHtml(r.file_url)}"
+                        data-name="${displayName}"
+                        data-file-type="${escapeHtml(r.file_type || '')}"
+                        data-file-path="${escapeHtml(r.file_path || '')}"
+                        title="${btnDownloadText}">
+                    <i class="fa-solid fa-download" aria-hidden="true"></i>
+                    <span data-i18n="btn_download">${btnDownloadText}</span>
+                </button>`;
+
     return `
         <article class="receipt-doc-card is-personal" data-id="${escapeHtml(r.id)}">
             <div class="receipt-doc-top">
@@ -854,7 +1039,7 @@ function renderPersonalCard(r, t) {
                         ${storeHtml}
                     </div>
                 </div>
-                <span class="receipt-type-badge" data-i18n="${typeKey}">${typeLabel}</span>
+                ${badgeHtml}
             </div>
 
             ${heroHtml}
@@ -865,21 +1050,14 @@ function renderPersonalCard(r, t) {
 
             <div class="receipt-doc-actions">
                 <button type="button" class="receipt-doc-btn is-primary btn-view-receipt"
+                        data-receipt-id="${escapeHtml(r.id)}"
                         data-url="${escapeHtml(r.file_url)}"
                         data-file-path="${escapeHtml(r.file_path || '')}"
                         title="${btnViewText}">
                     <i class="fa-solid fa-eye" aria-hidden="true"></i>
                     <span data-i18n="btn_view">${btnViewText}</span>
                 </button>
-                <button type="button" class="receipt-doc-btn is-secondary btn-download-receipt"
-                        data-url="${escapeHtml(r.file_url)}"
-                        data-name="${displayName}"
-                        data-file-type="${escapeHtml(r.file_type || '')}"
-                        data-file-path="${escapeHtml(r.file_path || '')}"
-                        title="${btnDownloadText}">
-                    <i class="fa-solid fa-download" aria-hidden="true"></i>
-                    <span data-i18n="btn_download">${btnDownloadText}</span>
-                </button>
+                ${downloadBtnHtml}
                 <button type="button" class="receipt-doc-btn is-danger is-icon btn-delete-receipt"
                         data-id="${escapeHtml(r.id)}"
                         title="${btnDeleteText}" aria-label="${btnDeleteText}">
@@ -960,6 +1138,15 @@ function restoreListeners(client, userId) {
 
     document.querySelectorAll('.btn-view-receipt').forEach(btn => {
         btn.addEventListener('click', async () => {
+            const receiptId = btn.dataset.receiptId;
+            const rec = receiptId
+                ? (lastPersonalReceipts || []).find(x => String(x.id) === String(receiptId))
+                : null;
+            const atts = rec ? getReceiptAttachments(rec) : [];
+            if (atts.length > 1) {
+                openAttachmentsViewer(rec, atts, client);
+                return;
+            }
             const rawUrl = await resolveFreshReceiptUrl(btn);
             if (!rawUrl) return;
             try {
@@ -1051,13 +1238,27 @@ function restoreListeners(client, userId) {
                     if (items?.length) receipt.receipt_items = items;
                 }
 
+                let shopContact = { contact_email: '', contact_phone: '' };
+                if (receipt.shop_id) {
+                    try {
+                        const { data: sData } = await client
+                            .from('shops')
+                            .select('contact_email, contact_phone')
+                            .eq('id', receipt.shop_id)
+                            .maybeSingle();
+                        if (sData) shopContact = sData;
+                    } catch (_) { }
+                }
+
                 const mockShop = {
                     shop_name: receipt.shop_name || 'Partner Store',
                     address: receipt.address || '',
                     country: receipt.country || null,
                     currency: receipt.currency || 'EUR',
                     tax_id: receipt.tax_id || '',
-                    logo_path: receipt.logo_path || null
+                    logo_path: receipt.logo_path || null,
+                    contact_email: shopContact.contact_email || '',
+                    contact_phone: shopContact.contact_phone || ''
                 };
                 await downloadReceiptPDF(receipt, mockShop);
             } catch (e) {
@@ -1154,7 +1355,7 @@ function setupDeleteModal(client, userId) {
         try {
             const { data: delReceipt } = await client
                 .from('receipts')
-                .select('file_path')
+                .select('file_path, attachments')
                 .eq('id', pendingDeleteId)
                 .eq('user_id', userId)
                 .single();
@@ -1165,10 +1366,15 @@ function setupDeleteModal(client, userId) {
 
             if (dbError) throw dbError;
 
-            if (delReceipt?.file_path) {
+            const pathsToRemove = new Set();
+            if (delReceipt?.file_path) pathsToRemove.add(delReceipt.file_path);
+            if (Array.isArray(delReceipt?.attachments)) {
+                delReceipt.attachments.forEach(a => { if (a?.path) pathsToRemove.add(a.path); });
+            }
+            if (pathsToRemove.size > 0) {
                 const { error: storageError } = await client.storage
                     .from('receipts')
-                    .remove([delReceipt.file_path]);
+                    .remove([...pathsToRemove]);
 
                 if (storageError) {
                     console.warn('Storage delete warning:', storageError.message);
@@ -1352,12 +1558,10 @@ function createUploadModal(client, userId) {
     const modalCameraInput = document.getElementById('modal-camera-input');
     const quickCameraBtn = document.getElementById('take-photo-receipt-btn');
     const quickCameraInput = document.getElementById('quick-camera-input');
-    const photoPreviewWrap = document.getElementById('modal-photo-preview');
-    const photoThumbEl = document.getElementById('modal-photo-thumb');
-    const photoNameEl = document.getElementById('modal-photo-name');
-    const photoMetaEl = document.getElementById('modal-photo-meta');
-    const photoRemoveBtn = document.getElementById('modal-photo-remove');
-    let previewObjectUrl = null;
+    const pickerRowEl = document.getElementById('modal-file-picker-row');
+    const filesListEl = document.getElementById('modal-files-list');
+    const filesCounterEl = document.getElementById('modal-files-counter');
+    let selectedFiles = []; // [{ file, previewUrl }]
 
     function formatFileSize(bytes) {
         if (!bytes) return '';
@@ -1365,38 +1569,64 @@ function createUploadModal(client, userId) {
         return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     }
 
-    function clearSelectedFile() {
-        if (fileInput) fileInput.value = '';
-        if (modalCameraInput) modalCameraInput.value = '';
-        if (quickCameraInput) quickCameraInput.value = '';
-        miniDropZone?.classList.remove('has-file');
+    function renderSelectedFiles() {
+        const count = selectedFiles.length;
+        if (filesCounterEl) {
+            filesCounterEl.textContent = `${count} / ${MAX_RECEIPT_ATTACHMENTS}`;
+            filesCounterEl.classList.toggle('is-full', count >= MAX_RECEIPT_ATTACHMENTS);
+        }
+        pickerRowEl?.classList.toggle('is-limit-reached', count >= MAX_RECEIPT_ATTACHMENTS);
+        miniDropZone?.classList.toggle('has-file', count > 0);
+
         if (fileNameDisplay) {
             const lang = getLang();
             const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
-            fileNameDisplay.textContent = t.upload_select_hint || 'Нажмите для выбора файла (Макс. 10 МБ)';
+            if (count === 0) {
+                fileNameDisplay.textContent = t.upload_select_hint || (lang === 'ru' ? 'Нажмите для выбора файлов (до 3)' : 'Click to select files (up to 3)');
+            } else if (count >= MAX_RECEIPT_ATTACHMENTS) {
+                fileNameDisplay.textContent = lang === 'ru' ? 'Прикреплено максимум (3 из 3)' : 'Maximum attached (3 of 3)';
+            } else {
+                fileNameDisplay.textContent = lang === 'ru'
+                    ? `Прикреплено: ${count} · добавить ещё`
+                    : `Attached: ${count} · add more`;
+            }
         }
-        if (previewObjectUrl) {
-            URL.revokeObjectURL(previewObjectUrl);
-            previewObjectUrl = null;
-        }
-        if (photoThumbEl) photoThumbEl.removeAttribute('src');
-        photoPreviewWrap?.classList.add('hidden');
-    }
 
-    function updatePhotoPreview(file) {
-        if (previewObjectUrl) {
-            URL.revokeObjectURL(previewObjectUrl);
-            previewObjectUrl = null;
-        }
-        if (!photoPreviewWrap || !file || !String(file.type || '').startsWith('image/')) {
-            photoPreviewWrap?.classList.add('hidden');
+        if (!filesListEl) return;
+        if (count === 0) {
+            filesListEl.innerHTML = '';
+            filesListEl.classList.add('hidden');
             return;
         }
-        previewObjectUrl = URL.createObjectURL(file);
-        if (photoThumbEl) photoThumbEl.src = previewObjectUrl;
-        if (photoNameEl) photoNameEl.textContent = file.name;
-        if (photoMetaEl) photoMetaEl.textContent = formatFileSize(file.size);
-        photoPreviewWrap.classList.remove('hidden');
+        filesListEl.classList.remove('hidden');
+        filesListEl.innerHTML = selectedFiles.map((entry, idx) => {
+            const isPdf = entry.file.type === 'application/pdf';
+            const thumbHtml = isPdf
+                ? '<span class="receipt-photo-pdf-thumb"><i class="fa-solid fa-file-pdf"></i></span>'
+                : `<img src="${escapeHtml(entry.previewUrl || '')}" alt="">`;
+            return `
+                <div class="receipt-photo-preview" data-file-idx="${idx}">
+                    ${thumbHtml}
+                    <div class="receipt-photo-preview-info">
+                        <span class="receipt-photo-preview-name">${escapeHtml(entry.file.name)}</span>
+                        <span class="receipt-photo-preview-meta">${escapeHtml(formatFileSize(entry.file.size))}</span>
+                    </div>
+                    <button type="button" class="receipt-photo-remove-btn" data-remove-file-idx="${idx}" aria-label="Remove">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>`;
+        }).join('');
+    }
+
+    function clearSelectedFile() {
+        selectedFiles.forEach(entry => {
+            if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
+        });
+        selectedFiles = [];
+        if (fileInput) fileInput.value = '';
+        if (modalCameraInput) modalCameraInput.value = '';
+        if (quickCameraInput) quickCameraInput.value = '';
+        renderSelectedFiles();
     }
 
     async function normalizeReceiptPhoto(file) {
@@ -1435,37 +1665,69 @@ function createUploadModal(client, userId) {
         }
     }
 
-    async function setFile(rawFile) {
-        const file = await normalizeReceiptPhoto(rawFile);
-        if (!validateReceiptFile(file)) {
-            clearSelectedFile();
-            return false;
+    async function addFiles(rawList) {
+        const incoming = Array.from(rawList || []);
+        if (!incoming.length) return false;
+        const lang = getLang();
+        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+        let addedAny = false;
+
+        for (const rawFile of incoming) {
+            if (selectedFiles.length >= MAX_RECEIPT_ATTACHMENTS) {
+                showToast(
+                    t.receipt_files_limit_toast || (lang === 'ru'
+                        ? 'Можно прикрепить максимум 3 файла к одному чеку'
+                        : 'You can attach up to 3 files per receipt'),
+                    'warning'
+                );
+                break;
+            }
+            const file = await normalizeReceiptPhoto(rawFile);
+            if (!validateReceiptFile(file)) continue;
+            const previewUrl = String(file.type || '').startsWith('image/')
+                ? URL.createObjectURL(file)
+                : '';
+            selectedFiles.push({ file, previewUrl });
+            addedAny = true;
         }
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        fileInput.files = dataTransfer.files;
-        fileNameDisplay.textContent = file.name;
-        miniDropZone?.classList.add('has-file');
-        updatePhotoPreview(file);
-        return true;
+        renderSelectedFiles();
+        return addedAny;
+    }
+
+    async function setFile(rawFile) {
+        return addFiles(rawFile ? [rawFile] : []);
     }
 
     closeBtn?.addEventListener('click', close);
     cancelBtn?.addEventListener('click', close);
     modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
-    miniDropZone?.addEventListener('click', () => fileInput?.click());
-    modalCameraBtn?.addEventListener('click', () => modalCameraInput?.click());
-    photoRemoveBtn?.addEventListener('click', clearSelectedFile);
+    miniDropZone?.addEventListener('click', () => {
+        if (selectedFiles.length < MAX_RECEIPT_ATTACHMENTS) fileInput?.click();
+    });
+    modalCameraBtn?.addEventListener('click', () => {
+        if (selectedFiles.length < MAX_RECEIPT_ATTACHMENTS) modalCameraInput?.click();
+    });
+    filesListEl?.addEventListener('click', (e) => {
+        const rmBtn = e.target.closest('[data-remove-file-idx]');
+        if (!rmBtn) return;
+        const idx = parseInt(rmBtn.dataset.removeFileIdx, 10);
+        if (!isNaN(idx) && idx >= 0 && idx < selectedFiles.length) {
+            const [removed] = selectedFiles.splice(idx, 1);
+            if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+            renderSelectedFiles();
+        }
+    });
 
     fileInput?.addEventListener('change', async () => {
         if (fileInput.files.length > 0) {
-            await setFile(fileInput.files[0]);
+            await addFiles(fileInput.files);
+            fileInput.value = '';
         }
     });
 
     modalCameraInput?.addEventListener('change', async () => {
         if (modalCameraInput.files.length > 0) {
-            await setFile(modalCameraInput.files[0]);
+            await addFiles(modalCameraInput.files);
             modalCameraInput.value = '';
         }
     });
@@ -1476,7 +1738,7 @@ function createUploadModal(client, userId) {
             const captured = quickCameraInput.files[0];
             quickCameraInput.value = '';
             open();
-            await setFile(captured);
+            await addFiles([captured]);
         }
     });
 
@@ -1509,52 +1771,66 @@ function createUploadModal(client, userId) {
             return;
         }
 
-        if (!fileInput.files.length) {
+        if (selectedFiles.length === 0) {
             showToast(lang === 'ru' ? 'Прикрепите файл чека' : 'Please attach a receipt file', 'warning');
             return;
         }
-        const file = fileInput.files[0];
-        if (!validateReceiptFile(file)) return;
-        const magicOk = await verifyReceiptMagicBytes(file);
-        if (!magicOk) {
-            showToast(
-                lang === 'ru'
-                    ? 'Содержимое файла не соответствует формату JPG, PNG, WebP или PDF.'
-                    : 'File contents do not match a valid JPG, PNG, WebP, or PDF file.',
-                'error'
-            );
-            return;
+
+        const filesToUpload = selectedFiles.slice(0, MAX_RECEIPT_ATTACHMENTS).map(e => e.file);
+        for (const f of filesToUpload) {
+            if (!validateReceiptFile(f)) return;
+            const magicOk = await verifyReceiptMagicBytes(f);
+            if (!magicOk) {
+                showToast(
+                    lang === 'ru'
+                        ? 'Содержимое файла не соответствует формату JPG, PNG, WebP или PDF.'
+                        : 'File contents do not match a valid JPG, PNG, WebP, or PDF file.',
+                    'error'
+                );
+                return;
+            }
         }
 
         isSubmitting = true;
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
+        const uploadedPaths = [];
         try {
-            const ext = ALLOWED_RECEIPT_MIME_EXT[file.type];
-            const baseName = file.name
-                .replace(/\.[^/.]+$/, '')
-                .normalize('NFKD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-zA-Z0-9_-]/g, '_')
-                .replace(/_+/g, '_')
-                .replace(/^_|_$/g, '')
-                .slice(0, 60)
-                .toLowerCase() || 'receipt';
-            const filePath = `${userId}/${Date.now()}_${baseName}.${ext}`;
+            const ts = Date.now();
+            const uploadedAttachments = await Promise.all(filesToUpload.map(async (file, idx) => {
+                const ext = ALLOWED_RECEIPT_MIME_EXT[file.type];
+                const baseName = file.name
+                    .replace(/\.[^/.]+$/, '')
+                    .normalize('NFKD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-zA-Z0-9_-]/g, '_')
+                    .replace(/_+/g, '_')
+                    .replace(/^_|_$/g, '')
+                    .slice(0, 50)
+                    .toLowerCase() || 'receipt';
+                const filePath = `${userId}/${ts}_${idx + 1}_${baseName}.${ext}`;
 
-            const { error: uploadError } = await client.storage
-                .from('receipts')
-                .upload(filePath, file, { upsert: false, contentType: file.type });
+                const { error: uploadError } = await client.storage
+                    .from('receipts')
+                    .upload(filePath, file, { upsert: false, contentType: file.type });
+                if (uploadError) throw uploadError;
+                uploadedPaths.push(filePath);
 
-            if (uploadError) throw uploadError;
+                const { data: signedData, error: signError } = await client.storage
+                    .from('receipts')
+                    .createSignedUrl(filePath, SIGNED_URL_TTL);
+                if (signError) throw signError;
 
-            const { data: signedData, error: signError } = await client.storage
-                .from('receipts')
-                .createSignedUrl(filePath, SIGNED_URL_TTL);
+                return {
+                    path: filePath,
+                    url: signedData.signedUrl,
+                    type: file.type,
+                    name: file.name,
+                };
+            }));
 
-            if (signError) throw signError;
-
+            const primary = uploadedAttachments[0];
             const receiptName = form.querySelector('[name="receipt_name"]').value.trim();
             const amount = form.querySelector('[name="amount"]').value;
             const purchaseDate = form.querySelector('[name="purchase_date"]').value;
@@ -1568,9 +1844,10 @@ function createUploadModal(client, userId) {
                 user_id: userId,
                 item_id: itemId,
                 receipt_name: receiptName,
-                file_url: signedData.signedUrl,
-                file_path: filePath,
-                file_type: file.type,
+                file_url: primary.url,
+                file_path: primary.path,
+                file_type: primary.type,
+                attachments: uploadedAttachments.map(({ path, type, name }) => ({ path, type, name })),
                 amount: parsedAmount,
                 purchase_date: purchaseDate,
                 store_name: storeName,
@@ -1578,7 +1855,9 @@ function createUploadModal(client, userId) {
             });
 
             if (dbError) {
-                await client.storage.from('receipts').remove([filePath]).catch(() => { });
+                if (uploadedPaths.length > 0) {
+                    await client.storage.from('receipts').remove(uploadedPaths).catch(() => { });
+                }
                 throw dbError;
             }
 

@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/business.css?v=20261126d">
+    <link rel="stylesheet" href="css/business.css?v=20261126h">
     <link rel="stylesheet" href="css/toast.css">
     <link rel="stylesheet" href="css/custom-select.css">
     <link rel="stylesheet" href="css/custom-datepicker.css">
@@ -132,6 +132,28 @@
                         <small class="field-hint" data-i18n="address_hint">Company registration address</small>
                     </div>
 
+                    <div class="input-group">
+                        <label data-i18n="shop_contact_email_label" for="shop-contact-email">Shop Contact Email</label>
+                        <input type="email" id="shop-contact-email" name="contact_email"
+                            placeholder="support@store.com" autocomplete="email"
+                            data-i18n-placeholder="shop_contact_email_placeholder">
+                        <small class="field-hint" data-i18n="shop_contact_email_hint">Shown on receipts for customer support</small>
+                    </div>
+
+                    <div class="input-group">
+                        <label data-i18n="shop_contact_phone_label" for="shop-contact-phone">Shop Contact Phone</label>
+                        <div class="shop-phone-pair">
+                            <select id="shop-phone-country" class="custom-select phone-country-select" data-searchable
+                                data-dropdown-min-width="260"
+                                data-search-placeholder="phone_country_search"
+                                data-search-empty="currency_search_empty"
+                                aria-label="Country code"></select>
+                            <input type="tel" id="shop-contact-phone" name="contact_phone" inputmode="tel"
+                                placeholder="5555 1234" autocomplete="tel-national">
+                        </div>
+                        <small class="field-hint" data-i18n="shop_contact_phone_hint">Shown on receipts so customers can reach your store</small>
+                    </div>
+
                     <button type="submit" class="btn btn-primary w-full mt-4 btn-lg" data-i18n="register_shop_btn">
                         <i class="fa-solid fa-check-circle"></i> Зарегистрировать магазин
                     </button>
@@ -203,6 +225,12 @@
                     <div class="meta-item"><i class="fa-solid fa-coins"></i> <span id="display-currency">—</span></div>
                     <div class="meta-item meta-item-tax"><i class="fa-solid fa-hashtag"></i> <span id="display-tax-id">—</span></div>
                     <div class="meta-item meta-item-address"><i class="fa-solid fa-location-dot"></i> <span id="display-address">—</span></div>
+                    <div class="meta-item is-hidden" id="display-contact-phone-wrap"><i class="fa-solid fa-phone"></i> <span id="display-contact-phone"></span></div>
+                    <div class="meta-item is-hidden" id="display-contact-email-wrap"><i class="fa-solid fa-envelope"></i> <span id="display-contact-email"></span></div>
+                    <button type="button" class="btn-edit-shop-contacts" id="edit-shop-contacts-btn">
+                        <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                        <span data-i18n="edit_shop_contacts_btn">Contacts</span>
+                    </button>
                 </div>
             </div>
 
@@ -1117,6 +1145,54 @@
                 </div>
             </div>
         </div>
+
+        <div id="shop-contacts-modal" class="modal-overlay is-hidden" aria-hidden="true">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content max-w-md">
+                <div class="modal-header">
+                    <div class="modal-heading">
+                        <span class="modal-heading-icon"><i class="fa-solid fa-address-book"></i></span>
+                        <div class="modal-heading-text">
+                            <h2 data-i18n="shop_contacts_modal_title">Shop Contacts</h2>
+                            <p data-i18n="shop_contacts_modal_subtitle">Printed on digital receipts for customer support</p>
+                        </div>
+                    </div>
+                    <button type="button" id="close-shop-contacts-modal" class="btn-close" aria-label="Close"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <form id="shop-contacts-form" class="modal-form" action="#" novalidate>
+                    <div class="input-group">
+                        <label for="edit-shop-contact-email" data-i18n="shop_contact_email_label">Shop Contact Email</label>
+                        <input type="email" id="edit-shop-contact-email" name="contact_email"
+                            data-i18n-placeholder="shop_contact_email_placeholder" placeholder="support@store.com"
+                            autocomplete="email">
+                        <small class="field-error" id="shop-contacts-email-error" role="alert"></small>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="edit-shop-contact-phone" data-i18n="shop_contact_phone_label">Shop Contact Phone</label>
+                        <div class="shop-phone-pair">
+                            <select id="edit-shop-phone-country" class="custom-select phone-country-select" data-searchable
+                                data-dropdown-min-width="260"
+                                data-search-placeholder="phone_country_search"
+                                data-search-empty="currency_search_empty"
+                                aria-label="Country code"></select>
+                            <input type="tel" id="edit-shop-contact-phone" name="contact_phone" inputmode="tel"
+                                placeholder="5555 1234" autocomplete="tel-national">
+                        </div>
+                        <small class="field-error" id="shop-contacts-phone-error" role="alert"></small>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" id="cancel-shop-contacts-btn" class="btn btn-outline"
+                            data-i18n="cancel_btn">Cancel</button>
+                        <button type="submit" id="save-shop-contacts-btn" class="btn btn-primary"
+                            data-i18n="save_product_btn">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </main>
 
     <nav class="bottom-nav">
@@ -1153,13 +1229,13 @@
 
     <script src="js/rotating-loader.js"></script>
     <script src="js/toast.js"></script>
-    <script src="js/custom-select.js"></script>
+    <script src="js/custom-select.js?v=20261126i"></script>
     <script src="js/devices.js"></script>
     <script src="js/countries.js"></script>
     <script src="js/currencies.js"></script>
     <script src="js/custom-datepicker.js"></script>
-    <script src="js/business-lang.js?v=20261126c"></script>
-    <script type="module" src="js/business-panel.js?v=20261126e"></script>
+    <script src="js/business-lang.js?v=20261126f"></script>
+    <script type="module" src="js/business-panel.js?v=20261126i"></script>
     <script type="module" src="js/dashboard-notifications.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/animations.js"></script>

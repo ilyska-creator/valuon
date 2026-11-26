@@ -214,31 +214,25 @@
                 </div>
 
                 <div class="input-group">
-                    <label data-i18n="label_receipt_file">Receipt File</label>
-                    <div class="receipt-file-picker-row">
+                    <div class="receipt-files-label-row">
+                        <label data-i18n="label_receipt_file">Receipt Files</label>
+                        <span class="receipt-files-counter" id="modal-files-counter">0 / 3</span>
+                    </div>
+                    <div class="receipt-file-picker-row" id="modal-file-picker-row">
                         <div class="upload-zone-mini" id="modal-drop-zone">
                             <i class="fa-solid fa-cloud-arrow-up"></i>
-                            <span id="file-name-display" data-i18n="upload_select_hint">Click to select file (Max 10 MB)</span>
-                            <input type="file" id="modal-file-input"
+                            <span id="file-name-display" data-i18n="upload_select_hint">Click to select files (up to 3, max 10 MB)</span>
+                            <input type="file" id="modal-file-input" multiple
                                 accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf"
                                 style="display: none;">
                         </div>
                         <button type="button" class="btn-modal-camera" id="modal-camera-btn" data-i18n-title="btn_take_photo" title="Take Photo">
                             <i class="fa-solid fa-camera" aria-hidden="true"></i>
-                            <span data-i18n="btn_camera_short">Photo</span>
+                            <span data-i18n="btn_camera_short">Camera</span>
                         </button>
                         <input type="file" id="modal-camera-input" accept="image/*" capture="environment" style="display: none;">
                     </div>
-                    <div class="receipt-photo-preview hidden" id="modal-photo-preview">
-                        <img id="modal-photo-thumb" alt="Receipt preview">
-                        <div class="receipt-photo-preview-info">
-                            <span class="receipt-photo-preview-name" id="modal-photo-name"></span>
-                            <span class="receipt-photo-preview-meta" id="modal-photo-meta"></span>
-                        </div>
-                        <button type="button" class="receipt-photo-remove-btn" id="modal-photo-remove" aria-label="Remove">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
+                    <div class="receipt-files-list hidden" id="modal-files-list"></div>
                 </div>
 
                 <div class="input-group">
@@ -294,6 +288,35 @@
                     data-i18n="btn_cancel">Cancel</button>
                 <button type="button" id="confirm-delete-receipt" class="btn btn-danger"
                     data-i18n="btn_delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="attachments-viewer-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content attachments-viewer-card">
+            <div class="modal-header">
+                <div class="modal-heading">
+                    <span class="modal-heading-icon"><i class="fa-solid fa-images"></i></span>
+                    <div class="modal-heading-text">
+                        <h2 id="att-viewer-title" data-i18n="attachments_viewer_title">Receipt Files</h2>
+                        <p id="att-viewer-counter"></p>
+                    </div>
+                </div>
+                <button type="button" id="close-att-viewer" class="btn-close" aria-label="Close"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="att-viewer-stage" id="att-viewer-stage"></div>
+
+            <div class="att-viewer-thumbs" id="att-viewer-thumbs"></div>
+
+            <div class="modal-actions att-viewer-actions">
+                <a href="#" id="att-viewer-open-btn" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> <span data-i18n="attachments_open_file">Open</span>
+                </a>
+                <button type="button" id="att-viewer-download-btn" class="btn btn-primary">
+                    <i class="fa-solid fa-download"></i> <span data-i18n="btn_download">Download</span>
+                </button>
             </div>
         </div>
     </div>

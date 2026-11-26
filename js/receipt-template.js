@@ -5,7 +5,7 @@
 // are in different trust domains (a shop's item/store name ends up
 // rendered in a *buyer's* browser when they download their receipt).
 
-import { getCustomerContactLines } from './phone-utils.js';
+import { getCustomerContactLines, formatPhoneDisplay } from './phone-utils.js';
 
 const FONTS_LINK_ID = 'valuon-receipt-fonts';
 const CARD_WIDTH = 800; // css px — the layout units below assume this width
@@ -184,6 +184,20 @@ function buildHeader(receipt, shop, opts) {
         info.appendChild(el('p', {
             margin: '0 0 4px', fontSize: '13.5px', color: COLORS.secondary, lineHeight: '1.5', overflowWrap: 'break-word',
         }, { text: locationLine }));
+    }
+
+    const shopContactParts = [];
+    if (shop.contact_phone) {
+        const formattedShopPhone = formatPhoneDisplay(shop.contact_phone) || shop.contact_phone;
+        shopContactParts.push(formattedShopPhone);
+    }
+    if (shop.contact_email) {
+        shopContactParts.push(String(shop.contact_email).trim());
+    }
+    if (shopContactParts.length) {
+        info.appendChild(el('p', {
+            margin: '0 0 4px', fontSize: '12.5px', color: COLORS.secondary, lineHeight: '1.45', overflowWrap: 'break-word',
+        }, { text: shopContactParts.join('   ·   ') }));
     }
 
     const idLine = [];

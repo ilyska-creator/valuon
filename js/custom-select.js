@@ -89,13 +89,19 @@ class CustomSelect {
             header.className = 'custom-select-sheet-header';
 
             this.search = document.createElement('input');
-            this.search.type = 'text';
+            this.search.type = 'search';
+            this.search.name = 'cs_filter_' + Math.random().toString(36).slice(2, 8);
             this.search.className = 'custom-select-search';
             this.search.setAttribute('role', 'combobox');
             this.search.setAttribute('aria-autocomplete', 'list');
             this.search.setAttribute('aria-expanded', 'false');
-            this.search.setAttribute('autocomplete', 'off');
+            this.search.setAttribute('autocomplete', 'chrome-off');
+            this.search.setAttribute('autocorrect', 'off');
+            this.search.setAttribute('autocapitalize', 'off');
             this.search.setAttribute('spellcheck', 'false');
+            this.search.setAttribute('enterkeyhint', 'search');
+            this.search.setAttribute('data-lpignore', 'true');
+            this.search.setAttribute('data-form-type', 'other');
             const phKey = this.select.getAttribute('data-search-placeholder');
             if (phKey) {
                 this.search.setAttribute('data-i18n-placeholder', phKey);

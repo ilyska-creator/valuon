@@ -338,13 +338,27 @@ async function downloadVerifiedReceiptPDF(receiptId, btn) {
             verifiedReceiptPdfCache.set(String(receiptId), receipt);
         }
 
+        let shopContact = { contact_email: '', contact_phone: '' };
+        if (receipt.shop_id) {
+            try {
+                const { data: sData } = await currentClient
+                    .from('shops')
+                    .select('contact_email, contact_phone')
+                    .eq('id', receipt.shop_id)
+                    .maybeSingle();
+                if (sData) shopContact = sData;
+            } catch (_) { }
+        }
+
         const mockShop = {
             shop_name: receipt.shop_name || 'Partner Store',
             address: receipt.address || '',
             country: receipt.country || null,
             currency: receipt.currency || 'EUR',
             tax_id: receipt.tax_id || '',
-            logo_path: receipt.logo_path || null
+            logo_path: receipt.logo_path || null,
+            contact_email: shopContact.contact_email || '',
+            contact_phone: shopContact.contact_phone || ''
         };
         await downloadReceiptPDF(receipt, mockShop);
     } catch (e) {

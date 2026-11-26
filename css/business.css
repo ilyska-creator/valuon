@@ -3486,7 +3486,8 @@
     #catalog-modal.modal-overlay,
     #catalog-import-modal.modal-overlay,
     #product-form-modal.modal-overlay,
-    #catalog-picker-modal.modal-overlay {
+    #catalog-picker-modal.modal-overlay,
+    #shop-contacts-modal.modal-overlay {
         padding: 0;
         align-items: flex-end;
     }
@@ -3499,7 +3500,8 @@
     #catalog-modal .modal-content,
     #catalog-import-modal .modal-content,
     #product-form-modal .modal-content,
-    #catalog-picker-modal .modal-content {
+    #catalog-picker-modal .modal-content,
+    #shop-contacts-modal .modal-content {
         width: 100%;
         max-width: 100%;
         max-height: calc(100dvh - env(safe-area-inset-bottom, 0));
@@ -3581,7 +3583,9 @@
     #product-form-modal.modal-overlay.is-hidden .modal-content,
     #product-form-modal.modal-overlay.closing .modal-content,
     #catalog-picker-modal.modal-overlay.is-hidden .modal-content,
-    #catalog-picker-modal.modal-overlay.closing .modal-content {
+    #catalog-picker-modal.modal-overlay.closing .modal-content,
+    #shop-contacts-modal.modal-overlay.is-hidden .modal-content,
+    #shop-contacts-modal.modal-overlay.closing .modal-content {
         transform: translateY(100%);
         opacity: 1;
         animation: none;
@@ -6388,5 +6392,84 @@ mark.search-hit {
 @media (max-width: 520px) {
     .catalog-form-row {
         grid-template-columns: 1fr;
+    }
+}
+
+
+/* === Shop Contact Phone/Email Pair & Edit Button === */
+
+.shop-phone-pair {
+    display: grid;
+    grid-template-columns: 118px 1fr;
+    gap: 0.55rem;
+    align-items: stretch;
+}
+
+.shop-phone-pair .custom-select-wrapper,
+.shop-phone-pair .cs-wrap {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+}
+
+.shop-phone-pair .custom-select-trigger,
+.shop-phone-pair .cs-trigger {
+    width: 100%;
+    height: 100%;
+    min-height: 46px;
+    box-sizing: border-box;
+}
+
+.shop-phone-pair input[type="tel"] {
+    width: 100%;
+    min-height: 46px;
+    box-sizing: border-box;
+}
+
+.shop-meta .meta-item.is-hidden {
+    display: none;
+}
+
+.btn-edit-shop-contacts {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.28rem 0.65rem;
+    margin-left: auto;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-body);
+    color: var(--text-muted);
+    font-family: var(--font-main);
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.btn-edit-shop-contacts:hover {
+    color: var(--primary);
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.06);
+}
+
+@media (max-width: 768px) {
+    .shop-meta #display-contact-phone-wrap,
+    .shop-meta #display-contact-email-wrap {
+        grid-column: 1 / -1;
+    }
+
+    .btn-edit-shop-contacts {
+        grid-column: 1 / -1;
+        width: 100%;
+        justify-content: center;
+        margin-left: 0;
+        margin-top: 0.2rem;
+        padding: 0.6rem 0.9rem;
+        border-radius: 12px;
+        font-size: 0.84rem;
+        gap: 0.45rem;
     }
 }
