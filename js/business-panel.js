@@ -11,6 +11,7 @@ import {
     getDefaultPhoneCountry,
     populateDialCodeSelect,
     wirePhoneInputPair,
+    getCustomerContactLines,
     getCustomerContactSummary,
     escapeIlikePattern,
     quotePostgrestLiteral,
@@ -1791,7 +1792,20 @@ async function initBusinessPanel() {
         const openBtn = document.getElementById('success-open-url-btn');
 
         if (numEl) numEl.textContent = receiptData.receipt_number ? `#RCP-${receiptData.receipt_number}` : `#${String(receiptData.id).slice(0, 8).toUpperCase()}`;
-        if (emailEl) emailEl.textContent = getCustomerContactSummary(receiptData) || (bizLang() === 'en' ? 'Not specified' : 'Не указан');
+        if (emailEl) {
+            const contactLines = getCustomerContactLines(receiptData);
+            emailEl.textContent = '';
+            if (contactLines.length === 0) {
+                emailEl.textContent = bizLang() === 'en' ? 'Not specified' : 'Не указан';
+            } else {
+                contactLines.forEach((line, idx) => {
+                    const part = document.createElement('span');
+                    if (idx > 0) part.className = 'success-contact-sub';
+                    part.textContent = line;
+                    emailEl.appendChild(part);
+                });
+            }
+        }
         if (paymentEl) {
             const payMethod = receiptData.payment_method === 'cash'
                 ? (t.payment_cash || (bizLang() === 'en' ? 'Cash' : 'Наличные'))

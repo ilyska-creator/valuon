@@ -342,11 +342,9 @@ async function downloadVerifiedReceiptPDF(receiptId, btn) {
         if (receipt.shop_id) {
             try {
                 const { data: sData } = await currentClient
-                    .from('shops')
-                    .select('shop_name, address, country, tax_id, logo_path, contact_email, contact_phone')
-                    .eq('id', receipt.shop_id)
-                    .maybeSingle();
-                if (sData) shopMeta = sData;
+                    .rpc('get_shop_public_info', { p_shop_id: receipt.shop_id });
+                const row = Array.isArray(sData) ? sData[0] : sData;
+                if (row) shopMeta = row;
             } catch (_) { }
         }
 
