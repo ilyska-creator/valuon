@@ -2887,6 +2887,36 @@
     color: #ffffff;
 }
 
+#create-receipt-modal .modal-content.is-morphing-height {
+    transition: height 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    overflow: hidden;
+}
+
+#receipt-modal-body {
+    transition: opacity 0.18s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#receipt-modal-body.is-exiting {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.985);
+    pointer-events: none;
+}
+
+#receipt-modal-body.is-entering {
+    animation: receiptBodyEnter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes receiptBodyEnter {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 .receipt-success {
     padding: 0.5rem 0.25rem calc(1.5rem + env(safe-area-inset-bottom, 0));
     text-align: center;
@@ -2900,14 +2930,22 @@
     display: none;
 }
 
+.receipt-success.is-exiting {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+    transition: opacity 0.18s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
 .receipt-success.is-visible {
-    animation: successReveal 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 1;
+    animation: successReveal 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes successReveal {
     from {
         opacity: 0;
-        transform: translateY(18px) scale(0.96);
+        transform: translateY(10px) scale(0.985);
     }
 
     to {
@@ -2916,19 +2954,117 @@
     }
 }
 
+@keyframes successItemRise {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes successRingPulse {
+    0% {
+        opacity: 0.55;
+        transform: scale(0.86);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.62);
+    }
+}
+
+@keyframes successCircleDraw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes successCheckDraw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
 .receipt-success-icon {
-    width: 64px;
-    height: 64px;
+    position: relative;
+    width: 66px;
+    height: 66px;
     margin: 0.25rem auto 1.1rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.6rem;
     color: var(--success);
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(16, 185, 129, 0.06));
     border: 1px solid rgba(16, 185, 129, 0.25);
     border-radius: 50%;
-    animation: iconPop 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+}
+
+.receipt-success-ring {
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    border: 2px solid rgba(16, 185, 129, 0.48);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.receipt-success-svg {
+    display: block;
+    overflow: visible;
+}
+
+.receipt-success-circle {
+    stroke-dasharray: 145;
+    stroke-dashoffset: 145;
+    transform: rotate(-90deg);
+    transform-origin: 26px 26px;
+    opacity: 0.45;
+}
+
+.receipt-success-check {
+    stroke-dasharray: 42;
+    stroke-dashoffset: 42;
+}
+
+.receipt-success.is-visible .receipt-success-icon {
+    animation: iconPop 0.44s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.receipt-success.is-visible .receipt-success-ring {
+    animation: successRingPulse 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+}
+
+.receipt-success.is-visible .receipt-success-circle {
+    animation: successCircleDraw 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards;
+}
+
+.receipt-success.is-visible .receipt-success-check {
+    animation: successCheckDraw 0.34s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+}
+
+.receipt-success.is-visible h3 {
+    animation: successItemRise 0.34s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
+}
+
+.receipt-success.is-visible .receipt-success-number {
+    animation: successItemRise 0.34s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+.receipt-success.is-visible .receipt-success-qr-card {
+    animation: successItemRise 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.14s both;
+}
+
+.receipt-success.is-visible .receipt-success-card {
+    animation: successItemRise 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.19s both;
+}
+
+.receipt-success.is-visible .receipt-success-actions {
+    animation: successItemRise 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both;
 }
 
 .receipt-success h3 {
@@ -5668,12 +5804,31 @@ mark.search-hit {
     .lifecycle-tab-indicator,
     .lifecycle-collapse-wrap,
     .lifecycle-refund-section,
-    .biz-contact-panel {
+    .biz-contact-panel,
+    #create-receipt-modal .modal-content.is-morphing-height,
+    #receipt-modal-body,
+    .receipt-success.is-exiting {
         transition: none;
     }
 
-    .lifecycle-reason-presets.is-switching .lifecycle-preset-chip {
+    .lifecycle-reason-presets.is-switching .lifecycle-preset-chip,
+    #receipt-modal-body.is-entering,
+    .receipt-success.is-visible,
+    .receipt-success.is-visible .receipt-success-icon,
+    .receipt-success.is-visible .receipt-success-ring,
+    .receipt-success.is-visible .receipt-success-circle,
+    .receipt-success.is-visible .receipt-success-check,
+    .receipt-success.is-visible h3,
+    .receipt-success.is-visible .receipt-success-number,
+    .receipt-success.is-visible .receipt-success-qr-card,
+    .receipt-success.is-visible .receipt-success-card,
+    .receipt-success.is-visible .receipt-success-actions {
         animation: none;
+    }
+
+    .receipt-success.is-visible .receipt-success-circle,
+    .receipt-success.is-visible .receipt-success-check {
+        stroke-dashoffset: 0;
     }
 
     .biz-contact-panel {

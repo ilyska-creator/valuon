@@ -723,7 +723,7 @@ async function initBusinessPanel() {
         if (window.innerWidth > 640 || !clientChipEl || !clientExpandedEl) return;
         const contactVal = contactMode === 'phone' ? phoneInput?.value.trim() : emailInput?.value.trim();
         const isContactReady = contactMode === 'phone'
-            ? Boolean(contactVal && phoneInput?.value.replace(/\D/g, '').length >= 7)
+            ? Boolean(contactVal && normalizePhone(phoneCountrySelect?.value, contactVal))
             : Boolean(contactVal && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(contactVal));
         if (isContactReady) {
             const payMethodSelect = forms.receipt?.querySelector('[name="payment_method"]');
@@ -1850,50 +1850,147 @@ async function initBusinessPanel() {
             logError('biz:showSuccessScreen:qr', qrErr);
         }
 
-        if (modalBody) modalBody.classList.add('is-hidden');
-        document.getElementById('header-save-draft-btn')?.classList.add('is-hidden');
-        successScreen?.classList.remove('is-hidden');
-        successScreen?.classList.remove('is-visible');
-        if (successScreen) {
-            // Форсируем reflow, чтобы анимация появления гарантированно
-            // проигрывалась заново при каждом показе экрана успеха.
-            void successScreen.offsetWidth;
-            successScreen.classList.add('is-visible');
-            const modalScrollHost = successScreen.closest('.modal-content');
-            if (modalScrollHost) modalScrollHost.scrollTop = 0;
-            successScreen.scrollTop = 0;
+        const prefersReduced = typeof window !== 'undefined'
+            && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const modalContent = modal.el?.querySelector('.modal-content');
+
+        const morphHeight = (swapFn) => {
+            if (!modalContent || prefersReduced) {
+                swapFn();
+                return;
+            }
+            const startH = modalContent.getBoundingClientRect().height;
+            modalContent.classList.remove('is-morphing-height');
+            modalContent.style.height = '';
+            swapFn();
+            const endH = modalContent.getBoundingClientRect().height;
+            if (Math.abs(endH - startH) < 2) return;
+
+            modalContent.style.height = `${startH}px`;
+            void modalContent.offsetHeight;
+            modalContent.classList.add('is-morphing-height');
+            modalContent.style.height = `${endH}px`;
+
+            let cleaned = false;
+            const cleanup = () => {
+                if (cleaned) return;
+                cleaned = true;
+                modalContent.classList.remove('is-morphing-height');
+                modalContent.style.height = '';
+            };
+            modalContent.addEventListener('transitionend', (ev) => {
+                if (ev.target === modalContent && ev.propertyName === 'height') cleanup();
+            }, { once: true });
+            setTimeout(cleanup, 360);
+        };
+
+        const revealSuccess = () => {
+            morphHeight(() => {
+                if (modalBody) {
+                    modalBody.classList.remove('is-exiting', 'is-entering');
+                    modalBody.classList.add('is-hidden');
+                }
+                document.getElementById('header-save-draft-btn')?.classList.add('is-hidden');
+                if (successScreen) {
+                    successScreen.classList.remove('is-hidden', 'is-exiting', 'is-visible');
+                    void successScreen.offsetWidth;
+                    successScreen.classList.add('is-visible');
+                    if (modalContent) modalContent.scrollTop = 0;
+                    successScreen.scrollTop = 0;
+                }
+            });
+            successScreen?.querySelector('#success-download-btn')?.focus({ preventScroll: true });
+        };
+
+        if (modalBody && !modalBody.classList.contains('is-hidden') && !prefersReduced) {
+            modalBody.classList.remove('is-entering');
+            modalBody.classList.add('is-exiting');
+            setTimeout(revealSuccess, 165);
+        } else {
+            revealSuccess();
         }
-        successScreen?.querySelector('#success-download-btn')?.focus({ preventScroll: true });
     }
 
-    function hideSuccessScreen() {
-        successScreen?.classList.add('is-hidden');
-        successScreen?.classList.remove('is-visible');
-        modalBody?.classList.remove('is-hidden');
-        document.getElementById('header-save-draft-btn')?.classList.remove('is-hidden');
-        expandClientSection();
+    function hideSuccessScreen({ instant = true, onSwap = null } = {}) {
+        const prefersReduced = typeof window !== 'undefined'
+            && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const modalContent = modal.el?.querySelector('.modal-content');
 
-        const qrImg = document.getElementById('receipt-success-qr-img');
-        if (qrImg) qrImg.removeAttribute('src');
+        const doReset = () => {
+            successScreen?.classList.add('is-hidden');
+            successScreen?.classList.remove('is-visible', 'is-exiting');
+            if (modalBody) {
+                modalBody.classList.remove('is-hidden', 'is-exiting');
+                if (!instant && !prefersReduced) {
+                    modalBody.classList.remove('is-entering');
+                    void modalBody.offsetWidth;
+                    modalBody.classList.add('is-entering');
+                    setTimeout(() => modalBody.classList.remove('is-entering'), 320);
+                }
+            }
+            document.getElementById('header-save-draft-btn')?.classList.remove('is-hidden');
+            expandClientSection();
 
-        const copyBtn = document.getElementById('success-copy-url-btn');
-        if (copyBtn) {
-            delete copyBtn.dataset.url;
-            copyBtn.classList.remove('copied');
-            const labelEl = document.getElementById('success-copy-url-label');
-            const iconEl = copyBtn.querySelector('i');
-            const t = bizT();
-            if (labelEl) labelEl.textContent = t.success_copy_link || (bizLang() === 'en' ? 'Copy' : 'Копировать');
-            if (iconEl) iconEl.className = 'fa-solid fa-copy';
+            const qrImg = document.getElementById('receipt-success-qr-img');
+            if (qrImg) qrImg.removeAttribute('src');
+
+            const copyBtn = document.getElementById('success-copy-url-btn');
+            if (copyBtn) {
+                delete copyBtn.dataset.url;
+                copyBtn.classList.remove('copied');
+                const labelEl = document.getElementById('success-copy-url-label');
+                const iconEl = copyBtn.querySelector('i');
+                const t = bizT();
+                if (labelEl) labelEl.textContent = t.success_copy_link || (bizLang() === 'en' ? 'Copy' : 'Копировать');
+                if (iconEl) iconEl.className = 'fa-solid fa-copy';
+            }
+
+            const openBtn = document.getElementById('success-open-url-btn');
+            if (openBtn) openBtn.href = '#';
+            const waBtn = document.getElementById('success-wa-btn');
+            if (waBtn) { waBtn.href = '#'; waBtn.classList.add('is-hidden'); }
+            const tgBtn = document.getElementById('success-tg-btn');
+            if (tgBtn) { tgBtn.href = '#'; tgBtn.classList.add('is-hidden'); }
+            document.getElementById('success-share-btn')?.classList.add('is-hidden');
+
+            if (typeof onSwap === 'function') onSwap();
+        };
+
+        if (instant || prefersReduced || !successScreen || successScreen.classList.contains('is-hidden')) {
+            doReset();
+            return;
         }
 
-        const openBtn = document.getElementById('success-open-url-btn');
-        if (openBtn) openBtn.href = '#';
-        const waBtn = document.getElementById('success-wa-btn');
-        if (waBtn) { waBtn.href = '#'; waBtn.classList.add('is-hidden'); }
-        const tgBtn = document.getElementById('success-tg-btn');
-        if (tgBtn) { tgBtn.href = '#'; tgBtn.classList.add('is-hidden'); }
-        document.getElementById('success-share-btn')?.classList.add('is-hidden');
+        successScreen.classList.add('is-exiting');
+        setTimeout(() => {
+            if (!modalContent) {
+                doReset();
+                return;
+            }
+            const startH = modalContent.getBoundingClientRect().height;
+            modalContent.classList.remove('is-morphing-height');
+            modalContent.style.height = '';
+            doReset();
+            const endH = modalContent.getBoundingClientRect().height;
+            if (Math.abs(endH - startH) < 2) return;
+
+            modalContent.style.height = `${startH}px`;
+            void modalContent.offsetHeight;
+            modalContent.classList.add('is-morphing-height');
+            modalContent.style.height = `${endH}px`;
+
+            let cleaned = false;
+            const cleanup = () => {
+                if (cleaned) return;
+                cleaned = true;
+                modalContent.classList.remove('is-morphing-height');
+                modalContent.style.height = '';
+            };
+            modalContent.addEventListener('transitionend', (ev) => {
+                if (ev.target === modalContent && ev.propertyName === 'height') cleanup();
+            }, { once: true });
+            setTimeout(cleanup, 360);
+        }, 165);
     }
 
     document.getElementById('success-share-btn')?.addEventListener('click', () => {
@@ -1951,35 +2048,39 @@ async function initBusinessPanel() {
         };
         resetSubmitLabel();
 
-        try {
-            hideSuccessScreen();
-            clearDraft();
-            clearAllValidationState();
-            forms.receipt?.reset();
-            resetItemRows();
-            if (phoneInput) phoneInput.value = '';
-            ensureBizPhoneSelect(getDefaultBizCountry());
-            setContactMode(getSavedShopContactMode(), { instant: true });
-            const dateInput = forms.receipt?.querySelector('[name="purchase_date"]');
-            if (dateInput) {
-                dateInput.value = defaultDateString();
-                if (dateInput._cdp) dateInput._cdp.syncDisplay();
-                baselineDate = dateInput.value;
-            }
-            updateTotalPreview();
-        } catch (err) {
-            console.error('Не удалось полностью сбросить форму для нового чека:', err);
-        }
+        hideSuccessScreen({
+            instant: false,
+            onSwap: () => {
+                try {
+                    clearDraft();
+                    clearAllValidationState();
+                    forms.receipt?.reset();
+                    resetItemRows();
+                    if (phoneInput) phoneInput.value = '';
+                    ensureBizPhoneSelect(getDefaultBizCountry());
+                    setContactMode(getSavedShopContactMode(), { instant: true });
+                    const dateInput = forms.receipt?.querySelector('[name="purchase_date"]');
+                    if (dateInput) {
+                        dateInput.value = defaultDateString();
+                        if (dateInput._cdp) dateInput._cdp.syncDisplay();
+                        baselineDate = dateInput.value;
+                    }
+                    updateTotalPreview();
+                } catch (err) {
+                    console.error('Не удалось полностью сбросить форму для нового чека:', err);
+                }
 
-        resetSubmitLabel();
-        requestAnimationFrame(resetSubmitLabel);
-        if (window.innerWidth > 768) {
-            if (contactMode === 'phone') {
-                phoneInput?.focus();
-            } else {
-                emailInput?.focus();
-            }
-        }
+                resetSubmitLabel();
+                requestAnimationFrame(resetSubmitLabel);
+                if (window.innerWidth > 768) {
+                    if (contactMode === 'phone') {
+                        phoneInput?.focus();
+                    } else {
+                        emailInput?.focus();
+                    }
+                }
+            },
+        });
     });
     document.getElementById('success-done-btn')?.addEventListener('click', () => {
         // Раньше здесь сразу вызывался hideSuccessScreen() — экран успеха
@@ -2940,6 +3041,8 @@ async function initBusinessPanel() {
             const itemsValid = validateAllItemRows(true);
             if (!contactValid || !itemsValid) {
                 if (!contactValid) {
+                    expandClientSection();
+                    emailGroup?.scrollIntoView({ block: 'center', behavior: 'smooth' });
                     if (contactMode === 'phone') phoneInput?.focus();
                     else emailInput?.focus();
                 } else {

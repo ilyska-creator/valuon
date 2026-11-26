@@ -131,7 +131,7 @@ function setupItemsSearch() {
 function matchesItemSearch(item, isVerified) {
     if (!currentItemsSearch) return true;
     const fields = isVerified
-        ? [item.name, item.shop_name, item.category]
+        ? [item.item_name, item.name, item.shop_name, item.category]
         : [item.name, item.brand, item.store_name, item.serial_number, item.location, item.type];
     return fields.some(v => v && String(v).toLowerCase().includes(currentItemsSearch));
 }

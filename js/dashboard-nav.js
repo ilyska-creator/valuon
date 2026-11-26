@@ -74,6 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.location.hash !== '#' + hash) {
             history.replaceState(null, '', '#' + hash);
         }
-        window.scrollTo(0, 0);
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+        window.addEventListener('load', () => {
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        }, { once: true });
     }
 });

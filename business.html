@@ -604,7 +604,13 @@
                 </div>
 
                 <div class="receipt-success is-hidden" id="receipt-success-screen" role="status" aria-live="polite">
-                    <div class="receipt-success-icon"><i class="fa-solid fa-check"></i></div>
+                    <div class="receipt-success-icon" aria-hidden="true">
+                        <span class="receipt-success-ring"></span>
+                        <svg class="receipt-success-svg" viewBox="0 0 52 52" width="34" height="34" fill="none">
+                            <circle class="receipt-success-circle" cx="26" cy="26" r="23" stroke="currentColor" stroke-width="2.6" />
+                            <path class="receipt-success-check" d="M15.5 27.2L22.6 34.2L36.8 19.2" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
                     <h3 data-i18n="success_title">Receipt issued!</h3>
                     <p class="receipt-success-number" id="receipt-success-number"></p>
 
