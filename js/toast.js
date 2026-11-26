@@ -18,7 +18,7 @@ function showToast(message, type = 'error', duration = 4000) {
         info: 'fa-solid fa-circle-info'
     };
 
-    const isRu = (localStorage.getItem('valuon-lang') || 'ru') === 'ru';
+    const isRu = ((window.getValuonLang ? window.getValuonLang() : 'en')) === 'ru';
     const titles = {
         error: isRu ? 'Ошибка' : 'Error',
         success: isRu ? 'Успешно' : 'Success',

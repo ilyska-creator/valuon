@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon — Верификация чека</title>
+    <script src=\"js/lang-detect.js\"></script>
+    <title>Valuon — Receipt Verification</title>
     <meta name="description"
-        content="Valuon — Проверьте подлинность чека по QR-коду. Криптографическая верификация Ed25519.">
+        content="Valuon — Verify receipt authenticity by QR code or PDF using Ed25519 cryptographic verification.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -53,14 +54,14 @@
 
             <div class="verify-top-bar">
                 <a id="verify-back-btn" class="verify-back-link" href="index.html">
-                    <i class="fa-solid fa-arrow-left"></i> <span data-i18n="back">Назад</span>
+                    <i class="fa-solid fa-arrow-left"></i> <span data-i18n="back">Back</span>
                 </a>
                 <div class="verify-top-actions">
                     <button type="button" id="theme-toggle" class="icon-btn theme-toggle"
                         aria-label="Toggle theme / Переключить тему"><i class="fa-solid fa-moon"></i></button>
                     <button type="button" id="lang-toggle" class="icon-btn lang-toggle"
                         title="Текущий язык: Русский (нажмите для EN)"
-                        aria-label="Switch language / Переключить язык">RU</button>
+                        aria-label="Switch language / Переключить язык">EN</button>
                 </div>
             </div>
             <div class="verify-logo" data-animate="zoom">
@@ -71,23 +72,21 @@
                         <path d="M9 12l2 2 4-4" />
                     </svg>
                 </div>
-                <h1 data-i18n="title">Верификация чека</h1>
+                <h1 data-i18n="title">Receipt Verification</h1>
             </div>
 
-            <p class="verify-subtitle" data-i18n="subtitle" data-animate>
-                Проверьте подлинность чека по QR-коду или загрузите фото/PDF
-            </p>
+            <p class="verify-subtitle" data-i18n="subtitle" data-animate>Verify a receipt by scanning its QR code or uploading a photo/PDF</p>
 
             <div class="verify-tabs" data-animate>
                 <span class="segmented-indicator verify-tab-indicator" id="verify-tab-indicator"
                     aria-hidden="true"></span>
                 <button class="verify-tab active" data-tab="scan">
                     <i class="fa-solid fa-camera"></i>
-                    <span data-i18n="tab_scan">Сканировать</span>
+                    <span data-i18n="tab_scan">Scan</span>
                 </button>
                 <button class="verify-tab" data-tab="upload">
                     <i class="fa-solid fa-image"></i>
-                    <span data-i18n="tab_upload">Фото / PDF</span>
+                    <span data-i18n="tab_upload">Photo / PDF</span>
                 </button>
             </div>
 
@@ -100,7 +99,7 @@
                     <div class="scan-line"></div>
                     <div class="scanner-content" id="scanner-placeholder">
                         <i class="fa-solid fa-qrcode"></i>
-                        <div id="scan-hint" class="scan-hint" data-i18n="scan_hint">Наведите камеру на QR-код</div>
+                        <div id="scan-hint" class="scan-hint" data-i18n="scan_hint">Point camera at the QR code</div>
                     </div>
                     <video id="scanner-video" class="scanner-video" playsinline muted></video>
                     <canvas id="scanner-canvas" hidden></canvas>
@@ -108,16 +107,16 @@
                     <input type="file" id="scan-file-input" accept="image/*" capture="environment" hidden>
                 </div>
                 <button id="verify-scan-btn" class="btn btn-primary verify-auth-btn" data-animate>
-                    <i class="fa-solid fa-camera"></i> <span data-i18n="scan_btn_open">Открыть камеру</span>
+                    <i class="fa-solid fa-camera"></i> <span data-i18n="scan_btn_open">Open Camera</span>
                 </button>
             </div>
 
             <div id="upload-panel" class="verify-panel">
                 <div id="upload-zone" class="upload-zone" data-animate>
                     <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <p data-i18n="upload_title">Загрузите фото или PDF чека</p>
-                    <span data-i18n="upload_hint">JPG, PNG, PDF до 10 МБ</span>
-                    <span class="drop-hint" data-i18n="drop_hint">Отпустите файл для загрузки</span>
+                    <p data-i18n="upload_title">Upload a receipt photo or PDF</p>
+                    <span data-i18n="upload_hint">JPG, PNG, PDF up to 10 MB</span>
+                    <span class="drop-hint" data-i18n="drop_hint">Drop file to upload</span>
                     <input type="file" id="receipt-file" accept="image/*,application/pdf" hidden>
                 </div>
                 <div id="upload-preview" class="upload-preview">
@@ -128,71 +127,70 @@
                             class="fa-solid fa-xmark"></i></button>
                 </div>
                 <button id="verify-upload-btn" class="btn btn-primary verify-auth-btn" data-animate>
-                    <i class="fa-solid fa-qrcode"></i> <span data-i18n="upload_btn">Проверить</span>
+                    <i class="fa-solid fa-qrcode"></i> <span data-i18n="upload_btn">Verify</span>
                 </button>
             </div>
 
             <div id="hash-loading-block" class="verify-hash-loading" role="status" aria-live="polite">
                 <div id="hash-loading-loader" class="verify-hash-loader">
                     <i class="fa-solid fa-circle-notch fa-spin rotating-loader-spinner" aria-hidden="true"></i>
-                    <span data-i18n="checking_sig">Проверяем подпись…</span>
+                    <span data-i18n="checking_sig">Checking signature...</span>
                 </div>
             </div>
 
             <div id="result-block" class="verify-result-block">
                 <div id="verify-result" class="verify-result">
                     <i id="result-icon" class="fa-solid fa-circle-check"></i>
-                    <h3 id="result-title" data-i18n="result_success_title">Чек верифицирован</h3>
-                    <p id="result-desc" data-i18n="result_success_desc">Подпись чека действительна. Данные не были изменены.</p>
-                    <div id="result-badge" class="verify-badge verified" data-i18n="result_success_badge">Подлинный</div>
+                    <h3 id="result-title" data-i18n="result_success_title">Receipt Verified</h3>
+                    <p id="result-desc" data-i18n="result_success_desc">Receipt signature is valid. Data has not been altered.</p>
+                    <div id="result-badge" class="verify-badge verified" data-i18n="result_success_badge">Authentic</div>
                     <dl id="result-details" class="result-details">
-                        <dt id="result-lifecycle-dt" data-i18n="detail_lifecycle_status" style="display:none">Статус
-                            чека</dt>
+                        <dt id="result-lifecycle-dt" data-i18n="detail_lifecycle_status" style="display:none">Receipt Status</dt>
                         <dd id="result-lifecycle-dd" class="result-lifecycle-dd" style="display:none">—</dd>
-                        <dt id="result-reason-dt" data-i18n="detail_reason" style="display:none">Причина</dt>
+                        <dt id="result-reason-dt" data-i18n="detail_reason" style="display:none">Reason</dt>
                         <dd id="result-reason-dd" class="result-reason-dd" style="display:none">—</dd>
-                        <dt data-i18n="detail_receipt_number">Номер чека</dt>
+                        <dt data-i18n="detail_receipt_number">Receipt #</dt>
                         <dd id="result-receipt-number">—</dd>
                         <dt id="result-items-row" class="result-items-row" data-i18n="detail_items"
-                            style="display:none">Состав чека</dt>
+                            style="display:none">Items</dt>
                         <dd id="result-items-wrap" style="display:none">
                             <ul id="result-items-list" class="verify-items-list"></ul>
                         </dd>
-                        <dt data-i18n="detail_date">Дата покупки</dt>
+                        <dt data-i18n="detail_date">Purchase Date</dt>
                         <dd id="result-receipt-date">—</dd>
-                        <dt data-i18n="detail_register">Номер КСО</dt>
+                        <dt data-i18n="detail_register">Register S/N</dt>
                         <dd id="result-register-serial">—</dd>
-                        <dt data-i18n="detail_amount">Сумма</dt>
+                        <dt data-i18n="detail_amount">Amount</dt>
                         <dd id="result-receipt-amount">—</dd>
-                        <dt id="result-refunded-dt" data-i18n="detail_refunded" style="display:none">Возвращено</dt>
+                        <dt id="result-refunded-dt" data-i18n="detail_refunded" style="display:none">Refunded</dt>
                         <dd id="result-refunded-dd" class="result-refunded-dd" style="display:none">—</dd>
-                        <dt data-i18n="detail_store">Продавец</dt>
+                        <dt data-i18n="detail_store">Seller</dt>
                         <dd id="result-receipt-store" class="result-store-dd">
                             <img id="result-shop-logo" src="" alt="" style="display:none">
                             <span>—</span>
                         </dd>
-                        <dt data-i18n="detail_status">Привязка чека</dt>
+                        <dt data-i18n="detail_status">Receipt Claim Status</dt>
                         <dd id="result-seller-status">—</dd>
                     </dl>
                     <button id="verify-copy-btn" class="copy-btn" style="display:none">
-                        <i class="fa-solid fa-copy"></i> <span data-i18n="copy_btn">Копировать результат</span>
+                        <i class="fa-solid fa-copy"></i> <span data-i18n="copy_btn">Copy result</span>
                     </button>
                 </div>
                 <a id="verify-cta-btn" href="login.html?redirect=%2Fdashboard.html" class="btn btn-primary verify-auth-btn" style="display:none;margin-bottom:10px;text-decoration:none;">
-                    <i id="verify-cta-icon" class="fa-solid fa-right-to-bracket"></i> <span id="verify-cta-label" data-i18n="cta_login_track">Войти и сохранить чек</span>
+                    <i id="verify-cta-icon" class="fa-solid fa-right-to-bracket"></i> <span id="verify-cta-label" data-i18n="cta_login_track">Sign in to save receipt</span>
                 </a>
                 <button id="verify-retry-btn" class="btn btn-outline verify-auth-btn" data-animate style="display:none">
-                    <i class="fa-solid fa-rotate"></i> <span data-i18n="retry_btn">Проверить другой чек</span>
+                    <i class="fa-solid fa-rotate"></i> <span data-i18n="retry_btn">Check another receipt</span>
                 </button>
             </div>
 
             <div class="verify-footer" data-animate="fade">
-                <p data-i18n="footer_text">Все данные проверяются по защищённому реестру.</p>
-                <p class="brand-highlight" data-i18n="footer_brand">Valuon — гарантия подлинности</p>
+                <p data-i18n="footer_text">All data is verified against a secure registry.</p>
+                <p class="brand-highlight" data-i18n="footer_brand">Valuon — guaranteed authenticity</p>
                 <p style="margin-top:24px;"><a href="privacy.html" data-i18n="verify_privacy_link"
-                        style="color:var(--text-muted); font-size:0.85rem;">Политика конфиденциальности</a></p>
+                        style="color:var(--text-muted); font-size:0.85rem;">Privacy Policy</a></p>
                 <p><a href="terms.html" data-i18n="verify_terms_link"
-                        style="color:var(--text-muted); font-size:0.85rem;">Условия пользования</a></p>
+                        style="color:var(--text-muted); font-size:0.85rem;">Terms of Use</a></p>
             </div>
 
         </div>
@@ -200,10 +198,9 @@
 
     <div id="toast-container" class="toast-container"></div>
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
-                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <p id="cookie-text">We use cookies to operate the site. By continuing, you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
         <button id="cookie-btn" class="btn btn-primary small"
-            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Accept</button>
     </div>
     <script src="js/toast.js"></script>
     <script src="js/theme.js"></script>

@@ -5,7 +5,7 @@ import { getAuthSession } from './dashboard-auth.js';
 import { populateDialCodeSelect, wirePhoneInputPair, getDefaultPhoneCountry } from './phone-utils.js';
 import { prefersReducedMotion } from './segmented-indicator.js';
 
-const getLang = () => localStorage.getItem('valuon-lang') || 'ru';
+const getLang = () => (window.getValuonLang ? window.getValuonLang() : 'en');
 
 function parseLocalIsoDate(iso) {
     if (typeof iso !== 'string') return null;

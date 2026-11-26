@@ -241,7 +241,7 @@ async function initBusinessPanel() {
     }
 
     function renderReceiptCards(gridEl, receiptsList, options = {}) {
-        const currentLang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
+        const currentLang = (window.getValuonLang ? window.getValuonLang() : (window.businessCurrentLang || 'en'));
         const bt = window.businessTranslations || {};
         const t = bt[currentLang] || bt.ru || {};
         const warrantySuffix = t.warranty_suffix || 'мес.';
@@ -855,7 +855,7 @@ async function initBusinessPanel() {
     ensureBizPhoneSelect();
 
     function fmtMoney(v) {
-        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
         return window.formatCurrency(v, currentShop?.currency || 'EUR', lang);
     }
 
@@ -1151,7 +1151,7 @@ async function initBusinessPanel() {
             totalPreviewEl.classList.add('pop');
         }
 
-        const gj = localStorage.getItem('valuon-lang') || 'ru';
+        const gj = (window.getValuonLang ? window.getValuonLang() : 'en');
         const t = window.businessTranslations?.[gj] || {};
         const vatWord = t.vat_word || (gj === 'en' ? 'VAT:' : 'НДС:');
 
@@ -1302,7 +1302,7 @@ async function initBusinessPanel() {
     // --- Валидация в реальном времени -----------------------------
 
     function bizLang() {
-        return localStorage.getItem('valuon-lang') || 'ru';
+        return (window.getValuonLang ? window.getValuonLang() : 'en');
     }
     function bizT() {
         return window.businessTranslations?.[bizLang()] || {};
@@ -1999,7 +1999,7 @@ async function initBusinessPanel() {
         const vatEl = document.getElementById('display-tax-id');
         const addrEl = document.getElementById('display-address');
         const countryEl = document.getElementById('display-country');
-        const uiLang = localStorage.getItem('valuon-lang') || 'ru';
+        const uiLang = (window.getValuonLang ? window.getValuonLang() : 'en');
 
         if (nameEl) nameEl.textContent = shop.shop_name || 'Без названия';
         if (vatEl) vatEl.textContent = shop.tax_id || '—';
@@ -2428,7 +2428,7 @@ async function initBusinessPanel() {
     const logoPreviewImg = logoDropPreview?.querySelector('img');
 
     function getLogoLang() {
-        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
         return window.businessTranslations?.[lang] || {};
     }
 
@@ -2521,7 +2521,7 @@ async function initBusinessPanel() {
             .maybeSingle();
 
         if (error && error.code !== 'PGRST116') {
-            const loadLang = localStorage.getItem('valuon-lang') || 'ru';
+            const loadLang = (window.getValuonLang ? window.getValuonLang() : 'en');
             window.showToast(loadLang === 'en' ? 'Failed to load shop data. Check your connection.' : 'Не удалось загрузить данные магазина. Проверьте подключение.', 'error');
 
             if (currentShop) {
@@ -2573,7 +2573,7 @@ async function initBusinessPanel() {
     if (forms.shop) {
         forms.shop.querySelectorAll('input[required], select[required], textarea[required]').forEach((field) => {
             field.addEventListener('invalid', () => {
-                const lang = localStorage.getItem('valuon-lang') || 'ru';
+                const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
                 const msg = window.businessTranslations?.[lang]?.field_required
                     || (lang === 'en' ? 'Please fill out this field' : 'Заполните это поле');
                 field.setCustomValidity(msg);
@@ -2589,11 +2589,11 @@ async function initBusinessPanel() {
             if (btn.disabled) return;
             btn.disabled = true;
             const originalHTML = btn.innerHTML;
-            const createLang = localStorage.getItem('valuon-lang') || 'ru';
+            const createLang = (window.getValuonLang ? window.getValuonLang() : 'en');
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> ' + (window.businessTranslations?.[createLang]?.registering_shop || (createLang === 'en' ? 'Creating...' : 'Создание...'));
 
             try {
-                const createLang = localStorage.getItem('valuon-lang') || 'ru';
+                const createLang = (window.getValuonLang ? window.getValuonLang() : 'en');
                 const fd = new FormData(e.target);
 
                 const rawTaxId = String(fd.get('tax_id') || '').trim().replace(/\s+/g, '').toUpperCase();
@@ -2682,7 +2682,7 @@ async function initBusinessPanel() {
                     } catch (_) { /* logo is optional */ }
                 }
 
-                const createdLang = localStorage.getItem('valuon-lang') || 'ru';
+                const createdLang = (window.getValuonLang ? window.getValuonLang() : 'en');
                 window.showToast(createdLang === 'en' ? 'Store created with cryptographic signature!' : 'Магазин создан с криптографической подписью!', 'success');
 
                 currentShop = newShop;
@@ -2693,7 +2693,7 @@ async function initBusinessPanel() {
                 await refreshDashboard(client, newShop.id, stats, list);
             } catch (err) {
                 logError('biz:createShop', err);
-                const catchLang = localStorage.getItem('valuon-lang') || 'ru';
+                const catchLang = (window.getValuonLang ? window.getValuonLang() : 'en');
                 window.showToast((catchLang === 'en' ? 'Shop creation error: ' : 'Ошибка создания магазина: ') + err.message, 'error');
             } finally {
                 btn.disabled = false;
@@ -2776,7 +2776,7 @@ async function initBusinessPanel() {
 
         if (show) {
             if (!currentShop) {
-                const toastLang = localStorage.getItem('valuon-lang') || 'ru';
+                const toastLang = (window.getValuonLang ? window.getValuonLang() : 'en');
                 window.showToast(toastLang === 'en' ? 'Create a shop first' : 'Сначала создайте магазин', 'warning');
                 return;
             }
@@ -2849,7 +2849,7 @@ async function initBusinessPanel() {
 
     function handleExplicitSaveDraft() {
         const d = collectFormData();
-        const dl = localStorage.getItem('valuon-lang') || 'ru';
+        const dl = (window.getValuonLang ? window.getValuonLang() : 'en');
         const t = window.businessTranslations?.[dl] || {};
         if (!draftHasContent(d)) {
             window.showToast(t.draft_empty_hint || (dl === 'en' ? 'Fill in at least one field to save a draft' : 'Заполните хотя бы одно поле для сохранения черновика'), 'warning');
@@ -2890,12 +2890,12 @@ async function initBusinessPanel() {
     document.getElementById('draft-save-btn')?.addEventListener('click', () => {
         const res = saveDraft();
         if (res === 'error') {
-            const dl = localStorage.getItem('valuon-lang') || 'ru';
+            const dl = (window.getValuonLang ? window.getValuonLang() : 'en');
             window.showToast(dl === 'en' ? 'Could not save the draft' : 'Не удалось сохранить черновик', 'error');
             return;
         }
         if (res === 'saved') {
-            const dl = localStorage.getItem('valuon-lang') || 'ru';
+            const dl = (window.getValuonLang ? window.getValuonLang() : 'en');
             const t = window.businessTranslations?.[dl] || {};
             window.showToast(t.draft_saved || 'Черновик сохранён', 'success');
         }
@@ -2940,7 +2940,7 @@ async function initBusinessPanel() {
                 if (!currentShop) return;
 
                 const fd = new FormData(e.target);
-                const valLang = localStorage.getItem('valuon-lang') || 'ru';
+                const valLang = (window.getValuonLang ? window.getValuonLang() : 'en');
                 let email = null;
                 let normalizedPhone = null;
 
@@ -3002,13 +3002,13 @@ async function initBusinessPanel() {
                 if (issueError || !issued?.id) {
                     let code = null;
                     try { code = (await issueError.context.json())?.error; } catch (_) { /* no body */ }
-                    const errLang = localStorage.getItem('valuon-lang') || 'ru';
+                    const errLang = (window.getValuonLang ? window.getValuonLang() : 'en');
                     window.showToast(errLang === 'en' ? 'Receipt issue error' : 'Ошибка выписки чека', 'error');
                     logError('biz:issueReceipt', issueError || code);
                     return;
                 }
 
-                const succLang = localStorage.getItem('valuon-lang') || 'ru';
+                const succLang = (window.getValuonLang ? window.getValuonLang() : 'en');
                 const receiptLabel = issued.receipt_number ? ` #RCP-${issued.receipt_number}` : '';
                 window.showToast(succLang === 'en' ? `Receipt${receiptLabel} issued!` : `Чек${receiptLabel} выписан!`, 'success');
                 saveShopContactMode(contactMode);
@@ -3059,7 +3059,7 @@ async function initBusinessPanel() {
                 await refreshDashboard(client, currentShop.id, stats, list);
             } catch (err) {
                 logError('biz:issueReceiptCatch', err);
-                const errLang = localStorage.getItem('valuon-lang') || 'ru';
+                const errLang = (window.getValuonLang ? window.getValuonLang() : 'en');
                 window.showToast(errLang === 'en' ? 'Error issuing receipt' : 'Ошибка выписки чека', 'error');
             } finally {
                 issuingClose = false;
@@ -3094,7 +3094,7 @@ async function initBusinessPanel() {
     let lcSubmitting = false;
 
     function getBizT() {
-        const lang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : (window.businessCurrentLang || 'en'));
         return { lang, t: window.businessTranslations?.[lang] || window.businessTranslations?.ru || {} };
     }
 
@@ -3696,7 +3696,7 @@ async function initBusinessPanel() {
     }
 
     function getExportContext() {
-        const currentLang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
+        const currentLang = (window.getValuonLang ? window.getValuonLang() : (window.businessCurrentLang || 'en'));
         const bt = window.businessTranslations || {};
         const t = bt[currentLang] || bt.ru || {};
         const payMethodMap = {
@@ -3972,7 +3972,7 @@ async function initBusinessPanel() {
                 e.stopPropagation();
                 const num = copyBtn.dataset.receiptNum || '';
                 if (!num) return;
-                const currentLang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
+                const currentLang = (window.getValuonLang ? window.getValuonLang() : (window.businessCurrentLang || 'en'));
                 const t = window.businessTranslations?.[currentLang] || window.businessTranslations?.ru || {};
                 try {
                     await navigator.clipboard.writeText(num);
@@ -4019,7 +4019,7 @@ async function initBusinessPanel() {
                 if (receipt && currentShop) {
                     await downloadReceiptPDF(receipt, currentShop);
                 } else {
-                    const errLang = localStorage.getItem('valuon-lang') || 'ru';
+                    const errLang = (window.getValuonLang ? window.getValuonLang() : 'en');
                     window.showToast(errLang === 'en' ? 'Receipt data not found' : 'Не удалось найти данные чека', 'error');
                 }
                 return;
@@ -4100,7 +4100,7 @@ async function initBusinessPanel() {
             const totalRevenue = Math.round(netRevenues.reduce((s, v) => s + v, 0) * 100) / 100;
             const avgReceipt = netRevenues.length > 0 ? totalRevenue / netRevenues.length : 0;
 
-            const statsLang = localStorage.getItem('valuon-lang') || 'ru';
+            const statsLang = (window.getValuonLang ? window.getValuonLang() : 'en');
             const statsCurrency = currentShop?.currency || 'EUR';
             if (statsEl.revenue) {
                 statsEl.revenue.textContent = window.formatCurrency(0, statsCurrency, statsLang);
@@ -4131,7 +4131,7 @@ async function initBusinessPanel() {
             updateChart();
         } catch (e) {
             logError('biz:refreshDashboard', e);
-            const refreshLang = localStorage.getItem('valuon-lang') || 'ru';
+            const refreshLang = (window.getValuonLang ? window.getValuonLang() : 'en');
             window.showToast(refreshLang === 'en' ? 'Failed to update data. Try again later.' : 'Не удалось обновить данные. Попробуйте позже.', 'error');
             if (statsEl.total) statsEl.total.textContent = '—';
             if (statsEl.pending) statsEl.pending.textContent = '—';
@@ -4310,7 +4310,7 @@ async function initBusinessPanel() {
 
     function formatCompactCurrency(value) {
         const amount = Number.isFinite(value) ? value : 0;
-        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
         const code = currentShop?.currency || 'EUR';
         try {
             return new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'ru-RU', {
@@ -4348,7 +4348,7 @@ async function initBusinessPanel() {
     function updatePeriodLabel(elementId, period) {
         const el = document.getElementById(elementId);
         if (!el) return;
-        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
         const cal = getCalendarPeriod(period, new Date());
         const fmt = { day: 'numeric', month: 'short' };
         const loc = lang === 'en' ? 'en-US' : 'ru-RU';
@@ -4402,7 +4402,7 @@ async function initBusinessPanel() {
             return { labels: [], data: [], change: { absolute: 0, percent: 0 } };
         }
 
-        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
         const now = new Date();
         const cal = getCalendarPeriod(period, now);
         const isYear = period === 'year';
@@ -4568,7 +4568,7 @@ async function initBusinessPanel() {
         const context = getChartContext('receipts-chart', '.chart-box:first-child .chart-wrapper');
         if (!context) return;
 
-        const lang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : (window.businessCurrentLang || 'en'));
         const bt = window.businessTranslations || {};
         const t = bt[lang] || bt.ru || {};
         const colors = getChartColors(isDark);
@@ -4605,7 +4605,7 @@ async function initBusinessPanel() {
         const context = getChartContext('revenue-chart', '.chart-box:last-child .chart-wrapper');
         if (!context) return;
 
-        const lang = localStorage.getItem('valuon-lang') || window.businessCurrentLang || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : (window.businessCurrentLang || 'en'));
         const bt = window.businessTranslations || {};
         const t = bt[lang] || bt.ru || {};
         const colors = getChartColors(isDark);
@@ -4669,7 +4669,7 @@ async function initBusinessPanel() {
         if (terminalsModal && !terminalsModal.classList.contains('is-hidden')) {
             renderTerminalsList();
         }
-        const curLang = localStorage.getItem('valuon-lang') || 'ru';
+        const curLang = (window.getValuonLang ? window.getValuonLang() : 'en');
         const curCurrency = currentShop?.currency || 'EUR';
         if (stats.revenue && stats.revenue.dataset.amountValue != null) {
             stats.revenue.textContent = window.formatCurrency(Number(stats.revenue.dataset.amountValue) || 0, curCurrency, curLang);
@@ -4699,7 +4699,7 @@ async function initBusinessPanel() {
 function renderShopCountrySelect() {
     const select = document.getElementById('shop-country');
     if (!select) return;
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     renderCountryOptions(select, lang);
     if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
 }
@@ -4707,7 +4707,7 @@ function renderShopCountrySelect() {
 function renderShopCurrencySelect() {
     const select = document.getElementById('shop-currency');
     if (!select) return;
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     window.renderCurrencyOptions(select, lang);
     if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
 }

@@ -22,7 +22,7 @@ let receiptsLoaded = false;
 
 let uploadModal = null;
 
-let currentRenderedLang = localStorage.getItem('valuon-lang') || 'ru';
+let currentRenderedLang = (window.getValuonLang ? window.getValuonLang() : 'en');
 
 window.addEventListener('lang-changed', (e) => {
     const newLang = e.detail?.lang || getLang();
@@ -38,7 +38,7 @@ window.addEventListener('lang-changed', (e) => {
 });
 
 function getLang() {
-    return localStorage.getItem('valuon-lang') || 'ru';
+    return (window.getValuonLang ? window.getValuonLang() : 'en');
 }
 
 // Вкладки и заголовок секции теперь статичны в HTML (как на странице

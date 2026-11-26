@@ -1,7 +1,7 @@
 {
-  "name": "Valuon — Цифровые чеки и гарантии",
+  "name": "Valuon — Digital Receipts & Warranties",
   "short_name": "Valuon",
-  "description": "Храните чеки и отслеживайте гарантии на ваши покупки. Криптографическая проверка подлинности Ed25519.",
+  "description": "Store digital receipts and track product warranties. Cryptographic Ed25519 authenticity verification.",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
@@ -31,20 +31,20 @@
   ],
   "shortcuts": [
     {
-      "name": "Мои вещи",
-      "short_name": "Вещи",
+      "name": "My Items",
+      "short_name": "Items",
       "url": "/dashboard",
       "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Чеки и документы",
-      "short_name": "Чеки",
+      "name": "Receipts & Documents",
+      "short_name": "Receipts",
       "url": "/receipts",
       "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Проверить QR-чек",
-      "short_name": "QR",
+      "name": "Verify QR Receipt",
+      "short_name": "Verify",
       "url": "/verify",
       "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
     }

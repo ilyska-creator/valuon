@@ -53,7 +53,7 @@
         deferredInstallPrompt = null;
         syncInstallUI();
         if (typeof window.showToast === 'function') {
-            const isRu = (localStorage.getItem('valuon-lang') || 'ru') === 'ru';
+            const isRu = ((window.getValuonLang ? window.getValuonLang() : 'en')) === 'ru';
             window.showToast(
                 isRu ? 'Valuon установлен на устройство!' : 'Valuon installed on your device!',
                 'success'

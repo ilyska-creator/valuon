@@ -186,7 +186,7 @@ if (typeof window !== 'undefined') {
 const TURNSTILE_SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
 
 function getTurnstileCopy() {
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     const dict = (typeof window !== 'undefined' && window.authTranslations?.[lang]) || {};
     return {
         checking: dict.turnstile_checking || (lang === 'en' ? 'Verifying...' : 'Проверка...'),
@@ -316,7 +316,7 @@ export function mountTurnstile({ containerId, skeletonId, sitekey, theme = 'auto
         const resolvedTheme = theme === 'auto'
             ? (document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light')
             : theme;
-        const resolvedLang = (localStorage.getItem('valuon-lang') || 'ru') === 'en' ? 'en' : 'ru';
+        const resolvedLang = ((window.getValuonLang ? window.getValuonLang() : 'en')) === 'en' ? 'en' : 'ru';
         widgetId = turnstile.render(`#${containerId}`, {
             sitekey,
             theme: resolvedTheme,

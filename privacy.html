@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon — Политика конфиденциальности</title>
+    <script src=\"js/lang-detect.js\"></script>
+    <title>Valuon — Privacy Policy</title>
     <meta name="description"
-        content="Valuon — Политика конфиденциальности. Какие данные мы собираем, зачем, как долго храним и какие у вас есть права по GDPR.">
+        content="Valuon Privacy Policy — what data we collect, why, how long we keep it, and your GDPR rights.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -14,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script>
-        (function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); var l = localStorage.getItem('valuon-lang'); if (l === 'en') document.documentElement.lang = 'en'; })();
+        (function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); if (window.getValuonLang) document.documentElement.lang = window.getValuonLang(); })();
     </script>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/privacy.css">
@@ -35,19 +36,17 @@
                 <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle Theme"><i
                         class="fa-solid fa-moon"></i></button>
                 <button type="button" id="lang-toggle" class="icon-btn"
-                    aria-label="Toggle Language"><span>RU</span></button>
-                <a href="index.html" class="btn btn-outline small" data-i18n="privacy_back">← На главную</a>
+                    aria-label="Toggle Language"><span>EN</span></button>
+                <a href="index.html" class="btn btn-outline small" data-i18n="privacy_back">← Back to Home</a>
             </div>
         </div>
     </nav>
 
     <header class="legal-header section">
         <div class="container">
-            <h1 class="fade-in-up" data-i18n="privacy_title">Политика конфиденциальности</h1>
-            <p class="fade-in-up delay-1" data-i18n="privacy_subtitle">Какие данные мы собираем, зачем, как долго храним
-                и какие у вас есть права.</p>
-            <span class="legal-updated fade-in-up delay-1" data-i18n="privacy_updated">Последнее обновление: 18 июля
-                2026 г.</span>
+            <h1 class="fade-in-up" data-i18n="privacy_title">Privacy Policy</h1>
+            <p class="fade-in-up delay-1" data-i18n="privacy_subtitle">What data we collect, why, how long we keep it, and what rights you have.</p>
+            <span class="legal-updated fade-in-up delay-1" data-i18n="privacy_updated">Last updated: July 18, 2026</span>
         </div>
     </header>
 
@@ -55,111 +54,86 @@
         <div class="container legal-container">
 
             <nav class="legal-toc fade-in-up" aria-label="Содержание">
-                <a href="#who-we-are" data-i18n="privacy_toc_1">Кто мы</a>
-                <a href="#data-we-collect" data-i18n="privacy_toc_2">Какие данные собираем</a>
-                <a href="#why-we-collect" data-i18n="privacy_toc_3">Зачем</a>
-                <a href="#legal-basis" data-i18n="privacy_toc_4">Правовые основания</a>
-                <a href="#who-we-share-with" data-i18n="privacy_toc_5">Кому передаём</a>
-                <a href="#retention" data-i18n="privacy_toc_6">Хранение</a>
-                <a href="#your-rights" data-i18n="privacy_toc_7">Ваши права</a>
-                <a href="#cookies" data-i18n="privacy_toc_8">Cookie</a>
-                <a href="#security" data-i18n="privacy_toc_9">Безопасность</a>
-                <a href="#children" data-i18n="privacy_toc_children">Дети</a>
-                <a href="#changes" data-i18n="privacy_toc_changes">Изменения</a>
-                <a href="#contact" data-i18n="privacy_toc_10">Контакты</a>
+                <a href="#who-we-are" data-i18n="privacy_toc_1">Who we are</a>
+                <a href="#data-we-collect" data-i18n="privacy_toc_2">Data we collect</a>
+                <a href="#why-we-collect" data-i18n="privacy_toc_3">Why</a>
+                <a href="#legal-basis" data-i18n="privacy_toc_4">Legal basis</a>
+                <a href="#who-we-share-with" data-i18n="privacy_toc_5">Who we share with</a>
+                <a href="#retention" data-i18n="privacy_toc_6">Retention</a>
+                <a href="#your-rights" data-i18n="privacy_toc_7">Your rights</a>
+                <a href="#cookies" data-i18n="privacy_toc_8">Cookies</a>
+                <a href="#security" data-i18n="privacy_toc_9">Security</a>
+                <a href="#children" data-i18n="privacy_toc_children">Children</a>
+                <a href="#changes" data-i18n="privacy_toc_changes">Changes</a>
+                <a href="#contact" data-i18n="privacy_toc_10">Contact</a>
             </nav>
 
             <div class="legal-card fade-in-up" id="who-we-are" data-animate="up">
-                <h2><i class="fa-solid fa-circle-info"></i> <span data-i18n="privacy_s1_title">1. Кто мы и о чём этот
-                        документ</span></h2>
-                <p data-i18n="privacy_s1_p1">Valuon — сервис цифровых чеков и учёта гарантий. Эта политика объясняет,
-                    какие
-                    персональные данные мы собираем при использовании сайта и приложения Valuon, зачем, на каком
-                    правовом основании, как долго храним и какие права есть у вас в отношении своих данных.</p>
-                <p data-i18n="privacy_s1_p2">Политика написана в соответствии с Общим регламентом по защите данных ЕС
-                    (GDPR, Регламент (ЕС) 2016/679). Мы находимся на этапе раннего пилота — если у вас есть вопросы,
-                    напишите нам напрямую по адресу из раздела «Контакты» ниже.</p>
+                <h2><i class="fa-solid fa-circle-info"></i> <span data-i18n="privacy_s1_title">1. Who we are and what this document is</span></h2>
+                <p data-i18n="privacy_s1_p1">Valuon is a digital receipt and warranty tracking service. This policy explains what personal data we collect when you use the Valuon website and app, why, on what legal basis, how long we keep it, and what rights you have over your data.</p>
+                <p data-i18n="privacy_s1_p2">This policy is written in accordance with the EU General Data Protection Regulation (GDPR, Regulation (EU) 2016/679). We are currently in an early pilot stage — if you have questions, please contact us directly using the address in the "Contact" section below.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="data-we-collect" data-animate="up">
-                <h2><i class="fa-solid fa-database"></i> <span data-i18n="privacy_s2_title">2. Какие данные мы
-                        собираем</span></h2>
-                <p data-i18n="privacy_s2_p1">Мы собираем разные данные в зависимости от того, используете вы Valuon как
-                    покупатель или как продавец.</p>
+                <h2><i class="fa-solid fa-database"></i> <span data-i18n="privacy_s2_title">2. What data we collect</span></h2>
+                <p data-i18n="privacy_s2_p1">We collect different data depending on whether you use Valuon as a buyer or as a merchant.</p>
 
-                <h3 data-i18n="privacy_s2_h1">Если вы покупатель</h3>
+                <h3 data-i18n="privacy_s2_h1">If you are a buyer</h3>
                 <ul>
-                    <li data-i18n="privacy_s2_c1">Данные аккаунта: email, имя и фамилия, дата рождения (для проверки
-                        минимального возраста), номер телефона (по желанию), пароль (хранится в зашифрованном виде, мы
-                        его не видим)</li>
-                    <li data-i18n="privacy_s2_c2">Данные о ваших вещах: название, тип, бренд, цена, серийный номер, дата
-                        покупки, срок гарантии</li>
-                    <li data-i18n="privacy_s2_c3">Загруженные вами файлы: фото или PDF чеков</li>
-                    <li data-i18n="privacy_s2_c4">Технические данные: тип устройства и браузера, IP-адрес — для защиты
-                        от злоупотреблений и мошенничества</li>
+                    <li data-i18n="privacy_s2_c1">Account data: email, first and last name, date of birth (to verify minimum age), phone number (optional), password (stored encrypted, we never see it)</li>
+                    <li data-i18n="privacy_s2_c2">Data about your items: name, type, brand, price, serial number, purchase date, warranty period</li>
+                    <li data-i18n="privacy_s2_c3">Files you upload: photos or PDFs of receipts</li>
+                    <li data-i18n="privacy_s2_c4">Technical data: device and browser type, IP address — to protect against abuse and fraud</li>
                 </ul>
 
-                <h3 data-i18n="privacy_s2_h2">Если вы продавец (бизнес-панель)</h3>
+                <h3 data-i18n="privacy_s2_h2">If you are a merchant (business panel)</h3>
                 <ul>
-                    <li data-i18n="privacy_s2_b1">Данные магазина: название, идентификационный/налоговый номер,
-                        контактные
-                        данные</li>
-                    <li data-i18n="privacy_s2_b2">Публичный криптографический ключ магазина (для проверки подлинности
-                        выпущенных чеков третьими лицами)</li>
-                    <li data-i18n="privacy_s2_b3">Данные о выписанных чеках: состав, суммы, дата, способ оплаты, email
-                        или номер телефона покупателя (если указаны)</li>
+                    <li data-i18n="privacy_s2_b1">Store data: name, tax/registration ID, contact details</li>
+                    <li data-i18n="privacy_s2_b2">The store's public cryptographic key (so third parties can verify the authenticity of issued receipts)</li>
+                    <li data-i18n="privacy_s2_b3">Data about issued receipts: line items, amounts, date, payment method, buyer's email or phone number (if provided)</li>
                 </ul>
 
-                <p data-i18n="privacy_s2_p2">Приватный ключ подписи магазина генерируется и хранится в защищённой серверной среде Valuon с изолированным доступом. Он используется исключительно для криптографической подписи чеков и никогда не передаётся в браузер или третьим лицам.</p>
+                <p data-i18n="privacy_s2_p2">The store's private signing key is generated and stored within Valuon's secure server environment with isolated access. It is used exclusively to cryptographically sign receipts and is never transmitted to the browser or third parties.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="why-we-collect" data-animate="up">
-                <h2><i class="fa-solid fa-bullseye"></i> <span data-i18n="privacy_s3_title">3. Зачем мы собираем эти
-                        данные</span></h2>
+                <h2><i class="fa-solid fa-bullseye"></i> <span data-i18n="privacy_s3_title">3. Why we collect this data</span></h2>
                 <ul>
-                    <li data-i18n="privacy_s3_i1">Чтобы предоставлять сам сервис: хранить ваши чеки, считать сроки
-                        гарантии, показывать напоминания</li>
-                    <li data-i18n="privacy_s3_i2">Чтобы продавец мог выпустить и криптографически подписать
-                        цифровой чек, а покупатель — проверить его подлинность</li>
-                    <li data-i18n="privacy_s3_i3">Чтобы защищать аккаунты от несанкционированного доступа и
-                        мошенничества (проверка ботов при регистрации/входе)</li>
-                    <li data-i18n="privacy_s3_i4">Чтобы отвечать на ваши обращения в поддержку</li>
-                    <li data-i18n="privacy_s3_i5">Чтобы соблюдать применимые юридические обязательства</li>
+                    <li data-i18n="privacy_s3_i1">To provide the service itself: storing your receipts, calculating warranty periods, showing reminders</li>
+                    <li data-i18n="privacy_s3_i2">So a merchant can issue and cryptographically sign a digital receipt, and a buyer can verify its authenticity</li>
+                    <li data-i18n="privacy_s3_i3">To protect accounts from unauthorized access and fraud (bot checks on sign-up/sign-in)</li>
+                    <li data-i18n="privacy_s3_i4">To respond to your support requests</li>
+                    <li data-i18n="privacy_s3_i5">To comply with applicable legal obligations</li>
                 </ul>
-                <p data-i18n="privacy_s3_p1">Мы не продаём ваши персональные данные третьим лицам и не используем их
-                    для показа рекламы.</p>
+                <p data-i18n="privacy_s3_p1">We do not sell your personal data to third parties or use it to serve ads.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="legal-basis" data-animate="up">
-                <h2><i class="fa-solid fa-scale-balanced"></i> <span data-i18n="privacy_s4_title">4. Правовые основания
-                        обработки</span></h2>
+                <h2><i class="fa-solid fa-scale-balanced"></i> <span data-i18n="privacy_s4_title">4. Legal basis for processing</span></h2>
                 <div class="legal-table-wrap">
                     <table class="legal-table">
                         <thead>
                             <tr>
-                                <th data-i18n="privacy_s4_th1">Данные</th>
-                                <th data-i18n="privacy_s4_th2">Основание по GDPR (ст. 6)</th>
+                                <th data-i18n="privacy_s4_th1">Data</th>
+                                <th data-i18n="privacy_s4_th2">GDPR basis (Art. 6)</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td data-i18n="privacy_s4_r1a">Аккаунт, чеки, вещи</td>
-                                <td data-i18n="privacy_s4_r1b">Исполнение договора (п. 1b) — без этих данных сервис
-                                    физически не может работать</td>
+                                <td data-i18n="privacy_s4_r1a">Account, receipts, items</td>
+                                <td data-i18n="privacy_s4_r1b">Performance of a contract (1b) — the service cannot function without this data</td>
                             </tr>
                             <tr>
-                                <td data-i18n="privacy_s4_r2a">Данные магазина и подпись чека</td>
-                                <td data-i18n="privacy_s4_r2b">Исполнение договора с продавцом + законный интерес в
-                                    защите подлинности чеков (п. 1f)</td>
+                                <td data-i18n="privacy_s4_r2a">Store data and receipt signature</td>
+                                <td data-i18n="privacy_s4_r2b">Performance of a contract with the merchant + legitimate interest in protecting receipt authenticity (1f)</td>
                             </tr>
                             <tr>
-                                <td data-i18n="privacy_s4_r3a">Технические/защитные данные (антибот, IP)</td>
-                                <td data-i18n="privacy_s4_r3b">Законный интерес в защите сервиса от злоупотреблений
-                                    (п. 1f)</td>
+                                <td data-i18n="privacy_s4_r3a">Technical/protective data (anti-bot, IP)</td>
+                                <td data-i18n="privacy_s4_r3b">Legitimate interest in protecting the service from abuse (1f)</td>
                             </tr>
                             <tr>
-                                <td data-i18n="privacy_s4_r4a">Необязательные cookie/аналитика (если включены)</td>
-                                <td data-i18n="privacy_s4_r4b">Ваше согласие (п. 1a) — запрашивается отдельно</td>
+                                <td data-i18n="privacy_s4_r4a">Optional cookies/analytics (if enabled)</td>
+                                <td data-i18n="privacy_s4_r4b">Your consent (1a) — requested separately</td>
                             </tr>
                         </tbody>
                     </table>
@@ -167,10 +141,8 @@
             </div>
 
             <div class="legal-card fade-in-up" id="who-we-share-with" data-animate="up">
-                <h2><i class="fa-solid fa-share-nodes"></i> <span data-i18n="privacy_s5_title">5. Кому мы передаём
-                        данные</span></h2>
-                <p data-i18n="privacy_s5_p1">Мы используем ограниченный набор поставщиков услуг (обработчиков данных),
-                    которые обрабатывают данные от нашего имени и по нашим инструкциям:</p>
+                <h2><i class="fa-solid fa-share-nodes"></i> <span data-i18n="privacy_s5_title">5. Who we share data with</span></h2>
+                <p data-i18n="privacy_s5_p1">We use a limited set of service providers (data processors) who process data on our behalf and under our instructions:</p>
                 <ul>
                     <li data-i18n="privacy_s5_i1"><strong>Supabase</strong> — база данных, аутентификация и хранение
                         файлов</li>
@@ -179,31 +151,21 @@
                     <li data-i18n="privacy_s5_i3"><strong>Vercel</strong> — хостинг сайта и анонимная статистика
                         посещаемости без cookies (Vercel Web Analytics)</li>
                 </ul>
-                <p data-i18n="privacy_s5_p2">Мы не передаём ваши данные рекламным сетям и не продаём их третьим лицам.
-                    Если в будущем появятся новые обработчики (например, провайдер email-рассылок), этот раздел будет
-                    обновлён заранее.</p>
+                <p data-i18n="privacy_s5_p2">We do not share your data with ad networks or sell it to third parties. If new processors are added in the future (e.g. an email delivery provider), this section will be updated in advance.</p>
 
-                <h3 data-i18n="privacy_s5_h1">Международная передача данных</h3>
-                <p data-i18n="privacy_s5_p3">Персональные данные хранятся на серверах Supabase, расположенных в
-                    Германии — то есть физически внутри Европейской экономической зоны (ЕЭЗ). Отдельного механизма
-                    международной передачи данных (Standard Contractual Clauses и т.п.) не требуется, так как данные
-                    не покидают ЕЭЗ.</p>
+                <h3 data-i18n="privacy_s5_h1">International data transfers</h3>
+                <p data-i18n="privacy_s5_p3">Personal data is stored on Supabase servers located in Germany — physically within the European Economic Area (EEA). No additional international transfer mechanism (such as Standard Contractual Clauses) is required, since the data never leaves the EEA.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="retention" data-animate="up">
-                <h2><i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="privacy_s6_title">6. Как долго мы
-                        храним данные</span></h2>
-                <p data-i18n="privacy_s6_p1">Данные аккаунта и связанные с ним чеки/вещи хранятся, пока ваш аккаунт
-                    активен. Если вы удаляете аккаунт, мы удаляем связанные с ним персональные данные в разумный срок,
-                    за исключением случаев, когда закон обязывает нас хранить определённые данные дольше
-                    (например, бухгалтерские данные продавца).</p>
-                <p data-i18n="privacy_s6_p2">Технические логи (для защиты от злоупотреблений) хранятся ограниченный
-                    срок и автоматически удаляются.</p>
+                <h2><i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="privacy_s6_title">6. How long we keep data</span></h2>
+                <p data-i18n="privacy_s6_p1">Account data and associated receipts/items are kept while your account is active. If you delete your account, we delete the associated personal data within a reasonable time, except where the law requires us to keep certain data longer (e.g. a merchant's accounting records).</p>
+                <p data-i18n="privacy_s6_p2">Technical logs (for abuse protection) are kept for a limited period and deleted automatically.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="your-rights" data-animate="up">
-                <h2><i class="fa-solid fa-user-shield"></i> <span data-i18n="privacy_s7_title">7. Ваши права</span></h2>
-                <p data-i18n="privacy_s7_p1">В отношении своих персональных данных вы имеете право:</p>
+                <h2><i class="fa-solid fa-user-shield"></i> <span data-i18n="privacy_s7_title">7. Your rights</span></h2>
+                <p data-i18n="privacy_s7_p1">Regarding your personal data, you have the right to:</p>
                 <ul>
                     <li data-i18n="privacy_s7_i1"><strong>На доступ</strong> — узнать, какие данные о вас у нас есть
                     </li>
@@ -222,53 +184,35 @@
                     <li data-i18n="privacy_s7_i8"><strong>На подачу жалобы</strong> в надзорный орган по защите
                         данных вашей страны</li>
                 </ul>
-                <p data-i18n="privacy_s7_p2">Чтобы воспользоваться любым из этих прав, напишите нам на адрес из раздела
-                    «Контакты» — мы ответим в разумный срок.</p>
+                <p data-i18n="privacy_s7_p2">To exercise any of these rights, write to us at the address in the "Contact" section — we will respond within a reasonable time.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="cookies" data-animate="up">
-                <h2><i class="fa-solid fa-cookie-bite"></i> <span data-i18n="privacy_s8_title">8. Cookie и локальное
-                        хранилище</span></h2>
-                <p data-i18n="privacy_s8_p1">Мы используем строго необходимые технические данные (localStorage) для
-                    запоминания ваших настроек — выбранного языка и темы оформления (светлая/тёмная). Эти данные не
-                    передаются на сервер и не используются для отслеживания.</p>
-                <p data-i18n="privacy_s8_p2">Сессия входа хранится через механизм аутентификации Supabase, необходимый
-                    для работы личного кабинета. Для базовой статистики посещаемости используется Vercel Web Analytics —
-                    он работает без cookies, не сохраняет персональные данные и не отслеживает вас между сайтами. Если в
-                    будущем мы добавим маркетинговые или другие не-технические cookie — перед их включением мы запросим
-                    ваше отдельное согласие.</p>
+                <h2><i class="fa-solid fa-cookie-bite"></i> <span data-i18n="privacy_s8_title">8. Cookies and local storage</span></h2>
+                <p data-i18n="privacy_s8_p1">We use strictly necessary technical storage (localStorage) to remember your preferences — selected language and light/dark theme. This data is never sent to a server and is not used for tracking.</p>
+                <p data-i18n="privacy_s8_p2">Your login session is handled via Supabase's authentication mechanism, required for your account dashboard to work. We use Vercel Web Analytics for basic aggregated traffic statistics — it operates without cookies, stores no personal data, and does not track you across sites. If we add marketing or other non-essential cookies in the future, we will ask for your separate consent before enabling them.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="security" data-animate="up">
-                <h2><i class="fa-solid fa-lock"></i> <span data-i18n="privacy_s9_title">9. Безопасность данных</span>
+                <h2><i class="fa-solid fa-lock"></i> <span data-i18n="privacy_s9_title">9. Data security</span>
                 </h2>
-                <p data-i18n="privacy_s9_p1">Мы применяем разумные технические и организационные меры защиты: шифрование
-                    паролей, политики доступа на уровне базы данных (Row Level Security), криптографическую подпись
-                    чеков (Ed25519), проверку от автоматизированных атак при входе и регистрации.</p>
-                <p data-i18n="privacy_s9_p2">Ни одна система не может гарантировать абсолютную защиту на 100% — если
-                    вам стало известно об уязвимости, пожалуйста, сообщите нам напрямую по контактам ниже, прежде
-                    чем публиковать информацию об этом публично.</p>
+                <p data-i18n="privacy_s9_p1">We apply reasonable technical and organizational safeguards: password encryption, database-level access policies (Row Level Security), cryptographic receipt signing (Ed25519), and bot protection on sign-in and sign-up.</p>
+                <p data-i18n="privacy_s9_p2">No system can guarantee 100% protection — if you become aware of a vulnerability, please report it to us directly using the contact details below before disclosing it publicly.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="children" data-animate="up">
-                <h2><i class="fa-solid fa-child"></i> <span data-i18n="privacy_s10_title">10. Дети</span></h2>
-                <p data-i18n="privacy_s10_p1">Valuon не предназначен для лиц младше 16 лет, и мы сознательно не
-                    собираем данные детей младше этого возраста. Если вам стало известно, что ребёнок предоставил нам
-                    свои данные, свяжитесь с нами — мы удалим их.</p>
+                <h2><i class="fa-solid fa-child"></i> <span data-i18n="privacy_s10_title">10. Children</span></h2>
+                <p data-i18n="privacy_s10_p1">Valuon is not intended for individuals under 16, and we do not knowingly collect data from children under this age. If you become aware that a child has provided us with their data, please contact us and we will delete it.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="changes" data-animate="up">
-                <h2><i class="fa-solid fa-file-pen"></i> <span data-i18n="privacy_s11_title">11. Изменения в этой
-                        политике</span></h2>
-                <p data-i18n="privacy_s11_p1">Мы можем время от времени обновлять эту политику — например, по мере
-                    роста продукта или изменения законодательства. Дата последнего обновления указана в начале
-                    страницы. При существенных изменениях мы уведомим вас дополнительно (например, по email или
-                    баннером на сайте).</p>
+                <h2><i class="fa-solid fa-file-pen"></i> <span data-i18n="privacy_s11_title">11. Changes to this policy</span></h2>
+                <p data-i18n="privacy_s11_p1">We may update this policy from time to time — for example, as the product grows or the law changes. The last-updated date is shown at the top of the page. For material changes, we will notify you additionally (e.g. by email or an on-site banner).</p>
             </div>
 
             <div class="legal-card fade-in-up" id="contact" data-animate="up">
-                <h2><i class="fa-solid fa-envelope"></i> <span data-i18n="privacy_s12_title">12. Контакты</span></h2>
-                <p data-i18n="privacy_s12_p1">По любым вопросам о персональных данных и этой политике пишите нам:</p>
+                <h2><i class="fa-solid fa-envelope"></i> <span data-i18n="privacy_s12_title">12. Contact</span></h2>
+                <p data-i18n="privacy_s12_p1">For any questions about personal data and this policy, contact us at:</p>
                 <p><a href="mailto:valuonguard@proton.me">valuonguard@proton.me</a></p>
             </div>
 
@@ -278,13 +222,13 @@
     <footer class="footer">
         <div class="container copyright">
             <nav class="footer-nav-links" aria-label="Навигация">
-                <a href="index.html" data-i18n="footer_nav_home">Главная</a>
-                <a href="about.html" data-i18n="footer_nav_about">О нас</a>
-                <a href="roadmap.html" data-i18n="footer_nav_roadmap">Дорожная карта</a>
-                <a href="verify.html" data-i18n="footer_nav_verify">Проверка чека</a>
-                <a href="terms.html" data-i18n="footer_nav_terms">Условия</a>
+                <a href="index.html" data-i18n="footer_nav_home">Home</a>
+                <a href="about.html" data-i18n="footer_nav_about">About</a>
+                <a href="roadmap.html" data-i18n="footer_nav_roadmap">Roadmap</a>
+                <a href="verify.html" data-i18n="footer_nav_verify">Verify Receipt</a>
+                <a href="terms.html" data-i18n="footer_nav_terms">Terms</a>
             </nav>
-            <p data-i18n="footer_copyright">© 2026 Valuon. Все права защищены.</p>
+            <p data-i18n="footer_copyright">© 2026 Valuon. All rights reserved.</p>
         </div>
     </footer>
 
@@ -292,10 +236,9 @@
     <script src="js/animations.js"></script>
     <script>document.addEventListener('DOMContentLoaded', () => { const n = document.querySelector('.navbar'); if (n) { const t = () => n.classList.toggle('scrolled', window.scrollY > 12); t(); window.addEventListener('scroll', t, { passive: !0 }) } })</script>
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
-                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <p id="cookie-text">We use cookies to operate the site. By continuing, you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
         <button id="cookie-btn" class="btn btn-primary small"
-            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Accept</button>
     </div>
     <script src="js/cookie-banner.js"></script>
 <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

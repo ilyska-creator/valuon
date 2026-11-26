@@ -213,7 +213,7 @@ const privacyTranslations = {
         }
 };
 
-let currentLang = localStorage.getItem('valuon-lang') || 'ru';
+let currentLang = (window.getValuonLang ? window.getValuonLang() : 'en');
 
 function applyPrivacyTranslations(lang) {
     const t = privacyTranslations[lang] || privacyTranslations.ru;

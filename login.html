@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon — Вход</title>
+    <script src=\"js/lang-detect.js\"></script>
+    <title>Valuon — Sign In</title>
     <meta name="description"
-        content="Valuon — Войдите в аккаунт для управления покупками, гарантиями и цифровыми чеками.">
+        content="Sign in to your Valuon account to manage digital receipts and warranties.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -19,7 +20,7 @@
     <link rel="stylesheet" href="css/toast.css">
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script>
-        (function () { const t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); const l = localStorage.getItem('valuon-lang'); if (l === 'en') document.documentElement.lang = 'en'; })();
+        (function () { const t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); if (window.getValuonLang) document.documentElement.lang = window.getValuonLang(); })();
     </script>
     <meta name="theme-color" content="#2563eb">
     <link rel="manifest" href="manifest.webmanifest">
@@ -31,21 +32,21 @@
 </head>
 
 <body class="auth-body">
-    <a href="index.html" class="back-link" data-i18n="back_home" data-animate="fade">← На главную</a>
+    <a href="index.html" class="back-link" data-i18n="back_home" data-animate="fade">← Back to Home</a>
     <div class="auth-top-actions" data-animate="fade">
         <button type="button" id="theme-toggle" class="icon-btn" title="Toggle Theme"
             aria-label="Toggle theme / Переключить тему"><i class="fa-solid fa-moon"></i></button>
         <button type="button" id="lang-toggle" class="icon-btn" title="Switch Language"
-            aria-label="Switch language / Переключить язык">RU</button>
+            aria-label="Switch language / Переключить язык">EN</button>
     </div>
 
     <div class="auth-container">
         <div class="auth-card" data-animate-group data-animate-step="70">
             <div class="auth-logo auth-logo--settle" data-animate>
                 <div class="auth-wordmark">VALUON</div>
-                <h1 data-i18n="auth_title">С возвращением!</h1>
+                <h1 data-i18n="auth_title">Welcome back!</h1>
             </div>
-            <p class="auth-subtitle" data-i18n="auth_subtitle" data-animate>Введите данные для входа в аккаунт</p>
+            <p class="auth-subtitle" data-i18n="auth_subtitle" data-animate>Enter your credentials to access your account</p>
 
             <form id="login-form" class="auth-form no-required-mark" action="#" novalidate>
                 <div class="auth-mode-switch" role="tablist" aria-label="Способ входа" data-animate>
@@ -59,7 +60,7 @@
                     <button type="button" class="auth-mode-btn" role="tab" aria-selected="false"
                         data-login-mode="phone">
                         <i class="fa-solid fa-phone" aria-hidden="true"></i>
-                        <span data-i18n="mode_phone">Телефон</span>
+                        <span data-i18n="mode_phone">Phone</span>
                     </button>
                 </div>
 
@@ -74,7 +75,7 @@
                     </div>
 
                     <div class="input-group auth-field-panel" id="login-phone-group" aria-hidden="true" inert>
-                        <label for="login-phone" data-i18n="label_phone">Номер телефона</label>
+                        <label for="login-phone" data-i18n="label_phone">Phone Number</label>
                         <div class="phone-input-group">
                             <select id="login-phone-country" class="custom-select phone-country-select" data-searchable
                                 data-dropdown-min-width="270" data-search-placeholder="phone_country_search"
@@ -86,7 +87,7 @@
                 </div>
 
                 <div class="input-group" data-animate>
-                    <label for="password" data-i18n="label_password">Пароль</label>
+                    <label for="password" data-i18n="label_password">Password</label>
                     <div class="input-wrap">
                         <span class="input-icon"><i class="fa-solid fa-lock"></i></span>
                         <input type="password" id="password" name="currentPassword" required placeholder="••••••••"
@@ -104,20 +105,20 @@
                                     <path d="M1 4.5l3 3 6-6" stroke="currentColor" stroke-width="1.8"
                                         stroke-linecap="round" stroke-linejoin="round" />
                                 </svg></span></span>
-                        <span data-i18n="login_remember">Запомнить меня</span>
+                        <span data-i18n="login_remember">Remember me</span>
                     </label>
-                    <a href="#" class="forgot-link" data-i18n="login_forgot">Забыли пароль?</a>
+                    <a href="#" class="forgot-link" data-i18n="login_forgot">Forgot password?</a>
                 </div>
 
                 <div class="turnstile-wrap" data-animate>
                     <div class="turnstile-skel" id="login-turnstile-skel">
                         <span class="skel-pulse"></span>
-                        <span data-i18n="turnstile_checking">Проверка...</span>
+                        <span data-i18n="turnstile_checking">Verifying...</span>
                     </div>
                     <div id="login-turnstile"></div>
                 </div>
 
-                <button type="submit" class="btn btn-primary auth-btn" data-i18n="btn_login" data-animate>Войти</button>
+                <button type="submit" class="btn btn-primary auth-btn" data-i18n="btn_login" data-animate>Sign In</button>
 
                 <div id="resend-confirm-box" class="resend-confirm-box hidden">
                     <p id="resend-confirm-text"></p>
@@ -126,14 +127,14 @@
             </form>
 
             <div class="auth-footer" data-animate>
-                <span data-i18n="footer_text">Нет аккаунта?</span>
-                <a href="register.html" data-i18n="footer_link">Зарегистрироваться</a>
+                <span data-i18n="footer_text">Don't have an account?</span>
+                <a href="register.html" data-i18n="footer_link">Sign Up</a>
             </div>
 
             <div class="auth-footer" data-animate>
-                <a href="privacy.html" data-i18n="login_privacy_link">Политика конфиденциальности</a>
+                <a href="privacy.html" data-i18n="login_privacy_link">Privacy Policy</a>
                 <span style="margin:0 6px;color:var(--text-muted)">·</span>
-                <a href="terms.html" data-i18n="login_terms_link">Условия пользования</a>
+                <a href="terms.html" data-i18n="login_terms_link">Terms of Use</a>
             </div>
         </div>
     </div>
@@ -144,11 +145,9 @@
 
             <div id="forgot-step-email">
                 <div class="forgot-icon"><i class="fa-solid fa-key"></i></div>
-                <h3 data-i18n="forgot_title">Восстановление пароля</h3>
-                <p class="forgot-desc" data-i18n="forgot_desc">Введите email, привязанный к аккаунту. Мы отправим ссылку
-                    для сброса пароля.</p>
-                <p class="forgot-phone-hint hidden" id="forgot-phone-hint" data-i18n="forgot_phone_hint">Восстановление
-                    пароля доступно только по email, привязанному к вашему аккаунту.</p>
+                <h3 data-i18n="forgot_title">Reset Password</h3>
+                <p class="forgot-desc" data-i18n="forgot_desc">Enter the email linked to your account. We'll send a password reset link.</p>
+                <p class="forgot-phone-hint hidden" id="forgot-phone-hint" data-i18n="forgot_phone_hint">Password recovery is available only via the email linked to your account.</p>
                 <form id="forgot-form" class="auth-form" action="#" novalidate>
                     <div class="input-group">
                         <label for="forgot-email" data-i18n="label_email">Email</label>
@@ -158,23 +157,20 @@
                     <div class="turnstile-wrap" id="forgot-turnstile-wrap">
                         <div class="turnstile-skel" id="forgot-turnstile-skel">
                             <span class="skel-pulse"></span>
-                            <span data-i18n="turnstile_checking">Проверка...</span>
+                            <span data-i18n="turnstile_checking">Verifying...</span>
                         </div>
                         <div id="forgot-turnstile"></div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary auth-btn" data-i18n="btn_send_link">Отправить
-                        ссылку</button>
+                    <button type="submit" class="btn btn-primary auth-btn" data-i18n="btn_send_link">Send Link</button>
                 </form>
             </div>
 
             <div id="forgot-step-success" class="hidden">
                 <div class="forgot-icon success"><i class="fa-solid fa-envelope-open-text"></i></div>
-                <h3 data-i18n="forgot_success_title">Письмо отправлено!</h3>
-                <p class="forgot-desc" data-i18n="forgot_success_desc">Проверьте почту и перейдите по ссылке в письме
-                    для сброса пароля. Ссылка действительна 1 час.</p>
-                <button class="btn btn-outline auth-btn forgot-back-login" data-i18n="btn_back_to_login">Вернуться ко
-                    входу</button>
+                <h3 data-i18n="forgot_success_title">Email Sent!</h3>
+                <p class="forgot-desc" data-i18n="forgot_success_desc">Check your inbox and click the link to reset your password. The link is valid for 1 hour.</p>
+                <button class="btn btn-outline auth-btn forgot-back-login" data-i18n="btn_back_to_login">Back to Login</button>
             </div>
         </div>
     </div>
@@ -202,10 +198,9 @@
     </script>
     <div id="toast-container" class="toast-container"></div>
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
-                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <p id="cookie-text">We use cookies to operate the site. By continuing, you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
         <button id="cookie-btn" class="btn btn-primary small"
-            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Accept</button>
     </div>
     <script src="js/cookie-banner.js"></script>
     <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

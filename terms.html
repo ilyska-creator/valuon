@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon — Условия использования</title>
+    <script src=\"js/lang-detect.js\"></script>
+    <title>Valuon — Terms of Service</title>
     <meta name="description"
-        content="Valuon — Условия использования. Правила пользования сервисом для покупателей и продавцов, ограничение ответственности.">
+        content="Valuon Terms of Service for buyers and partner merchants.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -14,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script>
-        (function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); var l = localStorage.getItem('valuon-lang'); if (l === 'en') document.documentElement.lang = 'en'; })();
+        (function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); if (window.getValuonLang) document.documentElement.lang = window.getValuonLang(); })();
     </script>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/privacy.css">
@@ -35,19 +36,17 @@
                 <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle Theme"><i
                         class="fa-solid fa-moon"></i></button>
                 <button type="button" id="lang-toggle" class="icon-btn"
-                    aria-label="Toggle Language"><span>RU</span></button>
-                <a href="index.html" class="btn btn-outline small" data-i18n="terms_back">← На главную</a>
+                    aria-label="Toggle Language"><span>EN</span></button>
+                <a href="index.html" class="btn btn-outline small" data-i18n="terms_back">← Back to Home</a>
             </div>
         </div>
     </nav>
 
     <header class="legal-header section">
         <div class="container">
-            <h1 class="fade-in-up" data-i18n="terms_title">Условия использования</h1>
-            <p class="fade-in-up delay-1" data-i18n="terms_subtitle">Правила пользования сервисом Valuon для покупателей
-                и продавцов.</p>
-            <span class="legal-updated fade-in-up delay-1" data-i18n="terms_updated">Последнее обновление: 18 июля 2026
-                г.</span>
+            <h1 class="fade-in-up" data-i18n="terms_title">Terms of Service</h1>
+            <p class="fade-in-up delay-1" data-i18n="terms_subtitle">Rules for using the Valuon service for buyers and merchants.</p>
+            <span class="legal-updated fade-in-up delay-1" data-i18n="terms_updated">Last updated: July 18, 2026</span>
         </div>
     </header>
 
@@ -55,160 +54,108 @@
         <div class="container legal-container">
 
             <nav class="legal-toc fade-in-up" aria-label="Содержание">
-                <a href="#who-we-are" data-i18n="terms_toc_1">Кто мы</a>
-                <a href="#the-service" data-i18n="terms_toc_2">Сервис</a>
-                <a href="#account" data-i18n="terms_toc_3">Аккаунт</a>
-                <a href="#buyer-rules" data-i18n="terms_toc_4">Для покупателей</a>
-                <a href="#merchant-rules" data-i18n="terms_toc_5">Для продавцов</a>
-                <a href="#receipt-status" data-i18n="terms_toc_6">Статус чека</a>
-                <a href="#ip" data-i18n="terms_toc_7">Интел. собственность</a>
-                <a href="#disclaimer" data-i18n="terms_toc_8">Отказ от гарантий</a>
-                <a href="#liability" data-i18n="terms_toc_9">Ответственность</a>
-                <a href="#termination" data-i18n="terms_toc_10">Прекращение доступа</a>
-                <a href="#changes" data-i18n="terms_toc_11">Изменения</a>
-                <a href="#governing-law" data-i18n="terms_toc_12">Право</a>
-                <a href="#contact" data-i18n="terms_toc_13">Контакты</a>
+                <a href="#who-we-are" data-i18n="terms_toc_1">Who we are</a>
+                <a href="#the-service" data-i18n="terms_toc_2">The service</a>
+                <a href="#account" data-i18n="terms_toc_3">Account</a>
+                <a href="#buyer-rules" data-i18n="terms_toc_4">For buyers</a>
+                <a href="#merchant-rules" data-i18n="terms_toc_5">For merchants</a>
+                <a href="#receipt-status" data-i18n="terms_toc_6">Receipt status</a>
+                <a href="#ip" data-i18n="terms_toc_7">Intellectual property</a>
+                <a href="#disclaimer" data-i18n="terms_toc_8">Disclaimer</a>
+                <a href="#liability" data-i18n="terms_toc_9">Liability</a>
+                <a href="#termination" data-i18n="terms_toc_10">Termination</a>
+                <a href="#changes" data-i18n="terms_toc_11">Changes</a>
+                <a href="#governing-law" data-i18n="terms_toc_12">Governing law</a>
+                <a href="#contact" data-i18n="terms_toc_13">Contact</a>
             </nav>
 
             <div class="legal-card fade-in-up" id="who-we-are" data-animate="up">
-                <h2><i class="fa-solid fa-circle-info"></i> <span data-i18n="terms_s1_title">1. Кто мы и о чём этот
-                        документ</span></h2>
-                <p data-i18n="terms_s1_p1">Эти условия использования («Условия») регулируют пользование сайтом и
-                    приложением Valuon — сервисом цифровых чеков и учёта гарантий. Регистрируясь или используя
-                    Valuon, вы соглашаетесь с этими Условиями. Если вы не согласны — пожалуйста, не используйте
-                    сервис.</p>
-                <p><span data-i18n="terms_s1_p2a">Мы находимся на этапе раннего пилота. Вопросы, связанные с
-                        обработкой персональных данных, отдельно описаны в</span>
-                    <a href="privacy.html" data-i18n="terms_s1_privacy_link">Политике конфиденциальности</a>
-                    <span data-i18n="terms_s1_p2b">— этот документ регулирует именно правила пользования
-                        сервисом.</span>
+                <h2><i class="fa-solid fa-circle-info"></i> <span data-i18n="terms_s1_title">1. Who we are and what this document is</span></h2>
+                <p data-i18n="terms_s1_p1">These Terms of Service ("Terms") govern your use of the Valuon website and app — a digital receipt and warranty tracking service. By registering for or using Valuon, you agree to these Terms. If you do not agree, please do not use the service.</p>
+                <p><span data-i18n="terms_s1_p2a">We are currently in an early pilot stage. Matters related to personal data processing are described separately in our</span>
+                    <a href="privacy.html" data-i18n="terms_s1_privacy_link">Privacy Policy</a>
+                    <span data-i18n="terms_s1_p2b">— this document governs the rules of using the service itself.</span>
                 </p>
             </div>
 
             <div class="legal-card fade-in-up" id="the-service" data-animate="up">
-                <h2><i class="fa-solid fa-layer-group"></i> <span data-i18n="terms_s2_title">2. Что представляет собой
-                        сервис</span></h2>
-                <p data-i18n="terms_s2_p1">Valuon позволяет продавцам выпускать цифровые чеки с криптографической
-                    подписью, а покупателям — хранить эти чеки, отслеживать сроки гарантии и проверять подлинность
-                    чека через страницу верификации.</p>
-                <p data-i18n="terms_s2_p2">Сервис предоставляется в текущем виде («as is»), находится в стадии
-                    активной разработки и пилотного запуска — набор функций может меняться, дополняться или
-                    временно быть недоступным.</p>
+                <h2><i class="fa-solid fa-layer-group"></i> <span data-i18n="terms_s2_title">2. What the service is</span></h2>
+                <p data-i18n="terms_s2_p1">Valuon lets merchants issue cryptographically signed digital receipts, and lets buyers store those receipts, track warranty periods, and verify a receipt's authenticity via the verification page.</p>
+                <p data-i18n="terms_s2_p2">The service is provided "as is," is in active development and pilot stage, and its feature set may change, expand, or be temporarily unavailable.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="account" data-animate="up">
-                <h2><i class="fa-solid fa-user"></i> <span data-i18n="terms_s3_title">3. Регистрация и аккаунт</span>
+                <h2><i class="fa-solid fa-user"></i> <span data-i18n="terms_s3_title">3. Registration and account</span>
                 </h2>
                 <ul>
-                    <li data-i18n="terms_s3_i1">Сервис предназначен для лиц старше 16 лет.</li>
-                    <li data-i18n="terms_s3_i2">Вы обязуетесь предоставлять точные данные при регистрации и
-                        поддерживать их в актуальном состоянии.</li>
-                    <li data-i18n="terms_s3_i3">Вы несёте ответственность за сохранность своего пароля и за все
-                        действия, совершённые под вашим аккаунтом.</li>
-                    <li data-i18n="terms_s3_i4">Если вы подозреваете несанкционированный доступ к своему аккаунту —
-                        сообщите нам немедленно по контактам в разделе 13.</li>
+                    <li data-i18n="terms_s3_i1">The service is intended for individuals aged 16 or older.</li>
+                    <li data-i18n="terms_s3_i2">You agree to provide accurate information at registration and to keep it up to date.</li>
+                    <li data-i18n="terms_s3_i3">You are responsible for keeping your password secure and for all activity under your account.</li>
+                    <li data-i18n="terms_s3_i4">If you suspect unauthorized access to your account, notify us immediately using the contact details in section 13.</li>
                 </ul>
             </div>
 
             <div class="legal-card fade-in-up" id="buyer-rules" data-animate="up">
-                <h2><i class="fa-solid fa-bag-shopping"></i> <span data-i18n="terms_s4_title">4. Правила для
-                        покупателей</span></h2>
+                <h2><i class="fa-solid fa-bag-shopping"></i> <span data-i18n="terms_s4_title">4. Rules for buyers</span></h2>
                 <ul>
-                    <li data-i18n="terms_s4_i1">Вы можете хранить в Valuon чеки собственных покупок и загружать
-                        файлы (фото/PDF), права на которые принадлежат вам или которые вы вправе использовать.</li>
-                    <li data-i18n="terms_s4_i2">Запрещено загружать поддельные, чужие или вводящие в заблуждение
-                        чеки, выдавая их за подлинные.</li>
-                    <li data-i18n="terms_s4_i3">Valuon не является стороной сделки купли-продажи между вами и
-                        продавцом и не несёт ответственности за качество товара, гарантийное обслуживание со
-                        стороны продавца или разрешение споров между вами и продавцом.</li>
+                    <li data-i18n="terms_s4_i1">You may store receipts of your own purchases in Valuon and upload files (photos/PDFs) that you own or are otherwise entitled to use.</li>
+                    <li data-i18n="terms_s4_i2">You may not upload forged, third-party, or misleading receipts while representing them as genuine.</li>
+                    <li data-i18n="terms_s4_i3">Valuon is not a party to the sale transaction between you and the merchant and is not responsible for product quality, warranty service provided by the merchant, or resolving disputes between you and the merchant.</li>
                 </ul>
             </div>
 
             <div class="legal-card fade-in-up" id="merchant-rules" data-animate="up">
-                <h2><i class="fa-solid fa-store"></i> <span data-i18n="terms_s5_title">5. Правила для продавцов
-                        (бизнес-панель)</span></h2>
+                <h2><i class="fa-solid fa-store"></i> <span data-i18n="terms_s5_title">5. Rules for merchants (business panel)</span></h2>
                 <ul>
-                    <li data-i18n="terms_s5_i1">Вы обязуетесь указывать точные данные о магазине и о выпускаемых
-                        чеках — суммы, состав, дату и способ оплаты.</li>
-                    <li data-i18n="terms_s5_i2">Приватный ключ подписи создаётся и хранится в защищённой инфраструктуре сервиса и привязан к вашему магазину. Вы несёте ответственность за безопасность доступа к своему аккаунту продавца (паролю и активным сессиям), через который отдаются команды на выпуск и подписание чеков.</li>
-                    <li data-i18n="terms_s5_i3">Запрещено выпускать чеки на несуществующие сделки или использовать
-                        сервис для мошеннических целей.</li>
-                    <li data-i18n="terms_s5_i4">Вы соглашаетесь, что Valuon может приостановить или прекратить
-                        доступ магазина к сервису при обоснованном подозрении в злоупотреблении.</li>
+                    <li data-i18n="terms_s5_i1">You agree to provide accurate store information and accurate receipt data — amounts, line items, date, and payment method.</li>
+                    <li data-i18n="terms_s5_i2">The private signing key is generated and stored within the service's secure infrastructure and is tied to your store. You are responsible for safeguarding your merchant account credentials (password and active sessions) used to authorize receipt issuance and signing.</li>
+                    <li data-i18n="terms_s5_i3">You may not issue receipts for transactions that did not occur, or use the service for fraudulent purposes.</li>
+                    <li data-i18n="terms_s5_i4">You agree that Valuon may suspend or terminate a store's access to the service on reasonable suspicion of abuse.</li>
                 </ul>
             </div>
 
             <div class="legal-card fade-in-up" id="receipt-status" data-animate="up">
-                <h2><i class="fa-solid fa-stamp"></i> <span data-i18n="terms_s6_title">6. Что именно гарантирует
-                        цифровая подпись чека</span></h2>
-                <p data-i18n="terms_s6_p1">Криптографическая подпись Valuon (Ed25519) подтверждает, что данные чека
-                    — сумма, состав, дата — не были изменены после выпуска, и что чек был подписан ключом конкретного
-                    магазина. Она не является государственной фискализацией или сертификацией в юрисдикциях, где
-                    для этого требуется отдельный сертифицированный провайдер.</p>
-                <p data-i18n="terms_s6_p2">В странах, где закон обязывает продавца использовать сертифицированную
-                    кассовую систему, чек Valuon может дополнять, но не заменяет собой официальный фискальный
-                    документ, если иное прямо не указано в интерфейсе для конкретного магазина.</p>
+                <h2><i class="fa-solid fa-stamp"></i> <span data-i18n="terms_s6_title">6. What the receipt's digital signature actually guarantees</span></h2>
+                <p data-i18n="terms_s6_p1">Valuon's cryptographic signature (Ed25519) confirms that the receipt's data — amount, line items, date — has not been altered since issuance, and that the receipt was signed with a specific store's key. It is not a government fiscalization or certification in jurisdictions that require a separate certified provider for that purpose.</p>
+                <p data-i18n="terms_s6_p2">In countries where the law requires merchants to use a certified cash register system, a Valuon receipt may complement, but does not replace, the official fiscal document, unless explicitly stated otherwise in the interface for a specific store.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="ip" data-animate="up">
-                <h2><i class="fa-solid fa-copyright"></i> <span data-i18n="terms_s7_title">7. Интеллектуальная
-                        собственность</span></h2>
-                <p data-i18n="terms_s7_p1">Дизайн, код, логотип и товарный знак Valuon принадлежат нам или нашим
-                    лицензиарам. Используя сервис, вы не приобретаете никаких прав на них, кроме права пользоваться
-                    сервисом по назначению.</p>
-                <p data-i18n="terms_s7_p2">Данные и файлы, которые вы загружаете (чеки, фото, информация о товарах),
-                    остаются вашей собственностью. Вы предоставляете нам ограниченное право хранить и обрабатывать
-                    их исключительно для предоставления вам сервиса.</p>
+                <h2><i class="fa-solid fa-copyright"></i> <span data-i18n="terms_s7_title">7. Intellectual property</span></h2>
+                <p data-i18n="terms_s7_p1">Valuon's design, code, logo, and trademark belong to us or our licensors. Using the service does not grant you any rights to them beyond the right to use the service as intended.</p>
+                <p data-i18n="terms_s7_p2">Data and files you upload (receipts, photos, item information) remain your property. You grant us a limited right to store and process them solely to provide you the service.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="disclaimer" data-animate="up">
-                <h2><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="terms_s8_title">8. Отказ от
-                        гарантий</span></h2>
-                <p data-i18n="terms_s8_p1">Сервис предоставляется «как есть» и «по мере доступности», без каких-либо
-                    гарантий, явных или подразумеваемых, включая гарантии бесперебойной работы, отсутствия ошибок
-                    или пригодности для конкретной цели. Мы находимся на этапе пилота, и функциональность может
-                    изменяться.</p>
+                <h2><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="terms_s8_title">8. Disclaimer of warranties</span></h2>
+                <p data-i18n="terms_s8_p1">The service is provided "as is" and "as available," without warranties of any kind, express or implied, including warranties of uninterrupted operation, error-free performance, or fitness for a particular purpose. We are in a pilot stage and functionality may change.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="liability" data-animate="up">
-                <h2><i class="fa-solid fa-gavel"></i> <span data-i18n="terms_s9_title">9. Ограничение
-                        ответственности</span></h2>
-                <p data-i18n="terms_s9_p1">В максимально допустимой законом степени Valuon не несёт ответственности
-                    за косвенные, случайные или последующие убытки, возникшие в связи с использованием или
-                    невозможностью использования сервиса, включая утрату данных о гарантии или споры между
-                    покупателем и продавцом.</p>
-                <p data-i18n="terms_s9_p2">Ничто в этих Условиях не ограничивает ответственность в случаях, когда
-                    такое ограничение не допускается применимым законодательством (например, в отношении прав
-                    потребителей).</p>
+                <h2><i class="fa-solid fa-gavel"></i> <span data-i18n="terms_s9_title">9. Limitation of liability</span></h2>
+                <p data-i18n="terms_s9_p1">To the maximum extent permitted by law, Valuon is not liable for indirect, incidental, or consequential damages arising from use or inability to use the service, including loss of warranty data or disputes between a buyer and a merchant.</p>
+                <p data-i18n="terms_s9_p2">Nothing in these Terms limits liability where such limitation is not permitted under applicable law (e.g. consumer protection rights).</p>
             </div>
 
             <div class="legal-card fade-in-up" id="termination" data-animate="up">
-                <h2><i class="fa-solid fa-power-off"></i> <span data-i18n="terms_s10_title">10. Прекращение
-                        доступа</span></h2>
-                <p data-i18n="terms_s10_p1">Вы можете удалить свой аккаунт в любой момент через настройки или,
-                    временно, написав нам по контактам ниже. Мы можем приостановить или прекратить доступ к аккаунту
-                    при нарушении этих Условий или при обоснованном подозрении в мошенничестве.</p>
+                <h2><i class="fa-solid fa-power-off"></i> <span data-i18n="terms_s10_title">10. Termination of access</span></h2>
+                <p data-i18n="terms_s10_p1">You may delete your account at any time via settings or, temporarily, by contacting us using the details below. We may suspend or terminate account access for violations of these Terms or on reasonable suspicion of fraud.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="changes" data-animate="up">
-                <h2><i class="fa-solid fa-file-pen"></i> <span data-i18n="terms_s11_title">11. Изменения в
-                        условиях</span></h2>
-                <p data-i18n="terms_s11_p1">Мы можем обновлять эти Условия по мере развития сервиса. Дата последнего
-                    обновления указана в начале страницы. При существенных изменениях мы уведомим вас дополнительно
-                    (например, по email или баннером на сайте). Продолжение использования сервиса после изменений
-                    означает согласие с новой редакцией.</p>
+                <h2><i class="fa-solid fa-file-pen"></i> <span data-i18n="terms_s11_title">11. Changes to these Terms</span></h2>
+                <p data-i18n="terms_s11_p1">We may update these Terms as the service evolves. The last-updated date is shown at the top of the page. For material changes, we will notify you additionally (e.g. by email or an on-site banner). Continued use of the service after changes constitutes acceptance of the revised Terms.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="governing-law" data-animate="up">
-                <h2><i class="fa-solid fa-landmark"></i> <span data-i18n="terms_s12_title">12. Применимое право</span>
+                <h2><i class="fa-solid fa-landmark"></i> <span data-i18n="terms_s12_title">12. Governing law</span>
                 </h2>
-                <p data-i18n="terms_s12_p1">Эти Условия толкуются в соответствии с законодательством юрисдикции
-                    регистрации Valuon.</p>
+                <p data-i18n="terms_s12_p1">These Terms are interpreted in accordance with the law of Valuon's jurisdiction of incorporation.</p>
             </div>
 
             <div class="legal-card fade-in-up" id="contact" data-animate="up">
-                <h2><i class="fa-solid fa-envelope"></i> <span data-i18n="terms_s13_title">13. Контакты</span></h2>
-                <p data-i18n="terms_s13_p1">По любым вопросам об этих Условиях пишите нам:</p>
+                <h2><i class="fa-solid fa-envelope"></i> <span data-i18n="terms_s13_title">13. Contact</span></h2>
+                <p data-i18n="terms_s13_p1">For any questions about these Terms, contact us at:</p>
                 <p><a href="mailto:valuonguard@proton.me">valuonguard@proton.me</a></p>
             </div>
 
@@ -218,13 +165,13 @@
     <footer class="footer">
         <div class="container copyright">
             <nav class="footer-nav-links" aria-label="Навигация">
-                <a href="index.html" data-i18n="footer_nav_home">Главная</a>
-                <a href="about.html" data-i18n="footer_nav_about">О нас</a>
-                <a href="roadmap.html" data-i18n="footer_nav_roadmap">Дорожная карта</a>
-                <a href="verify.html" data-i18n="footer_nav_verify">Проверка чека</a>
-                <a href="privacy.html" data-i18n="footer_nav_privacy">Конфиденциальность</a>
+                <a href="index.html" data-i18n="footer_nav_home">Home</a>
+                <a href="about.html" data-i18n="footer_nav_about">About</a>
+                <a href="roadmap.html" data-i18n="footer_nav_roadmap">Roadmap</a>
+                <a href="verify.html" data-i18n="footer_nav_verify">Verify Receipt</a>
+                <a href="privacy.html" data-i18n="footer_nav_privacy">Privacy</a>
             </nav>
-            <p data-i18n="footer_copyright">© 2026 Valuon. Все права защищены.</p>
+            <p data-i18n="footer_copyright">© 2026 Valuon. All rights reserved.</p>
         </div>
     </footer>
 
@@ -232,10 +179,9 @@
     <script src="js/animations.js"></script>
     <script>document.addEventListener('DOMContentLoaded', () => { const n = document.querySelector('.navbar'); if (n) { const t = () => n.classList.toggle('scrolled', window.scrollY > 12); t(); window.addEventListener('scroll', t, { passive: !0 }) } })</script>
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
-                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <p id="cookie-text">We use cookies to operate the site. By continuing, you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
         <button id="cookie-btn" class="btn btn-primary small"
-            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Accept</button>
     </div>
     <script src="js/cookie-banner.js"></script>
 <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

@@ -178,7 +178,7 @@ function sliceCanvasWithHeader(sourceCanvas, headerSy, headerSh, bodySy, bodySh)
 }
 
 export async function downloadReceiptPDF(receipt, shop) {
-    const genLang = (typeof localStorage !== 'undefined' && localStorage.getItem('valuon-lang')) || 'ru';
+    const genLang = (typeof window !== 'undefined' && window.getValuonLang ? window.getValuonLang() : ((typeof localStorage !== 'undefined' && localStorage.getItem('valuon-lang')) || 'en'));
     const toastError = (msg) => {
         if (typeof window.showToast === 'function') window.showToast(msg, 'error');
     };

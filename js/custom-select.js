@@ -12,7 +12,7 @@ class CustomSelect {
 
     getTranslation(key) {
         if (!key) return '';
-        const lang = localStorage.getItem('valuon-lang') || document.documentElement.lang || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : (document.documentElement.lang || 'en'));
         const dict = window.dashboardTranslations || window.businessTranslations || window.authTranslations;
         const table = dict && (dict[lang] || dict.ru);
         return (table && table[key]) || '';

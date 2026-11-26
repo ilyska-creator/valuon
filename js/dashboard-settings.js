@@ -9,7 +9,7 @@ import {
 } from './phone-utils.js';
 
 function getSettingsLang() {
-    return localStorage.getItem('valuon-lang') || 'ru';
+    return (window.getValuonLang ? window.getValuonLang() : 'en');
 }
 
 function getSettingsT() {
@@ -662,7 +662,7 @@ async function initSettings() {
 
     if (langBtn) {
         const updateLangBtn = () => {
-            const lang = localStorage.getItem('valuon-lang') || 'ru';
+            const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
             const label = document.getElementById('settings-lang-label');
             if (label) label.textContent = lang.toUpperCase();
         };
@@ -671,7 +671,7 @@ async function initSettings() {
 
         langBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            const currentLang = localStorage.getItem('valuon-lang') || 'ru';
+            const currentLang = (window.getValuonLang ? window.getValuonLang() : 'en');
             const newLang = currentLang === 'ru' ? 'en' : 'ru';
             if (window.applyDashboardLang) {
                 window.applyDashboardLang(newLang);
@@ -690,7 +690,7 @@ function updateThemeLabelSync() {
     if (icon) icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
     const label = document.getElementById('settings-theme-label');
     if (!label) return;
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
     label.textContent = isDark ? (t.setting_light_theme || 'Светлая') : (t.setting_dark_theme || 'Тёмная');
 }

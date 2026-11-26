@@ -9,7 +9,7 @@ import {
 import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
 
 function getNotifLang() {
-    return localStorage.getItem('valuon-lang') || 'ru';
+    return (window.getValuonLang ? window.getValuonLang() : 'en');
 }
 
 function getNotifT() {
@@ -256,7 +256,7 @@ async function loadNotifications(userId, userEmail, client) {
     const container = document.getElementById('notifications-container');
     if (!container) return;
 
-    const checkingText = window.dashboardTranslations?.[localStorage.getItem('valuon-lang') || 'ru']?.notif_checking || 'Проверка статусов...';
+    const checkingText = window.dashboardTranslations?.[(window.getValuonLang ? window.getValuonLang() : 'en')]?.notif_checking || 'Проверка статусов...';
     container.innerHTML = `<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> ${checkingText}</div>`;
 
     const [profileRes, itemsRes, partnerReceipts] = await Promise.all([

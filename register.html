@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon — Регистрация</title>
+    <script src=\"js/lang-detect.js\"></script>
+    <title>Valuon — Create Account</title>
     <meta name="description"
-        content="Valuon — Регистрация. Создайте аккаунт и начните управлять гарантиями на покупки бесплатно.">
+        content="Create a free Valuon account to store digital receipts and track product warranties.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -20,7 +21,7 @@
     <link rel="stylesheet" href="css/toast.css">
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script>
-        (function () { const t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); const l = localStorage.getItem('valuon-lang'); if (l === 'en') document.documentElement.lang = 'en'; })();
+        (function () { const t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); if (window.getValuonLang) document.documentElement.lang = window.getValuonLang(); })();
     </script>
     <meta name="theme-color" content="#2563eb">
     <link rel="manifest" href="manifest.webmanifest">
@@ -32,21 +33,21 @@
 </head>
 
 <body class="auth-body">
-    <a href="index.html" class="back-link" data-i18n="back_home" data-animate="fade">← На главную</a>
+    <a href="index.html" class="back-link" data-i18n="back_home" data-animate="fade">← Back to Home</a>
     <div class="auth-top-actions" data-animate="fade">
         <button type="button" id="theme-toggle" class="icon-btn" title="Toggle Theme"
             aria-label="Toggle theme / Переключить тему"><i class="fa-solid fa-moon"></i></button>
         <button type="button" id="lang-toggle" class="icon-btn" title="Switch Language"
-            aria-label="Switch language / Переключить язык">RU</button>
+            aria-label="Switch language / Переключить язык">EN</button>
     </div>
 
     <div class="auth-container auth-container--register">
         <div class="auth-card" data-animate-group data-animate-step="70">
             <div class="auth-logo auth-logo--draw" data-animate>
                 <div class="auth-wordmark">VALUON</div>
-                <h1 data-i18n="reg_title">Создать аккаунт</h1>
+                <h1 data-i18n="reg_title">Create Account</h1>
             </div>
-            <p class="auth-subtitle" data-i18n="reg_subtitle" data-animate>Все чеки и гарантии в одном аккаунте</p>
+            <p class="auth-subtitle" data-i18n="reg_subtitle" data-animate>All receipts and warranties in one account</p>
 
             <form id="register-form" class="auth-form" action="#" novalidate>
                 <div class="input-group" data-animate>
@@ -60,8 +61,8 @@
 
                 <div class="input-group" id="register-phone-group" data-animate>
                     <label for="register-phone">
-                        <span data-i18n="label_phone">Номер телефона</span>
-                        <span class="label-optional" data-i18n="label_optional">(необязательно)</span>
+                        <span data-i18n="label_phone">Phone Number</span>
+                        <span class="label-optional" data-i18n="label_optional">(optional)</span>
                     </label>
                     <div class="phone-input-group">
                         <select id="register-phone-country" class="custom-select phone-country-select" data-searchable
@@ -70,44 +71,42 @@
                         <input type="tel" id="register-phone" name="phone" inputmode="tel" placeholder="5555 1234"
                             autocomplete="tel-national">
                     </div>
-                    <span class="field-hint" data-i18n="phone_register_hint">Для входа по номеру и автоматического
-                        получения чеков от партнёров</span>
+                    <span class="field-hint" data-i18n="phone_register_hint">Sign in with your phone and automatically receive partner receipts</span>
                 </div>
 
                 <div class="input-row" data-animate>
                     <div class="input-group">
-                        <label for="first-name" data-i18n="label_first_name">Имя</label>
+                        <label for="first-name" data-i18n="label_first_name">First Name</label>
                         <input type="text" id="first-name" name="firstName" required
-                            data-i18n-placeholder="ph_first_name" autocomplete="given-name">
+                            data-i18n-placeholder="ph_first_name" placeholder="James" autocomplete="given-name">
                     </div>
                     <div class="input-group">
-                        <label for="last-name" data-i18n="label_last_name">Фамилия</label>
-                        <input type="text" id="last-name" name="lastName" required data-i18n-placeholder="ph_last_name"
+                        <label for="last-name" data-i18n="label_last_name">Last Name</label>
+                        <input type="text" id="last-name" name="lastName" required data-i18n-placeholder="ph_last_name" placeholder="Smith"
                             autocomplete="family-name">
                     </div>
                 </div>
 
                 <div class="input-row" data-animate>
                     <div class="input-group">
-                        <label for="birthdate"><span data-i18n="label_birthdate">Дата рождения</span> <span
-                                class="label-optional" data-i18n="label_optional">(необязательно)</span></label>
+                        <label for="birthdate"><span data-i18n="label_birthdate">Date of Birth</span> <span
+                                class="label-optional" data-i18n="label_optional">(optional)</span></label>
                         <input type="date" id="birthdate" name="birthdate" class="custom-datepicker"
                             autocomplete="bday">
                     </div>
 
                     <div class="input-group">
-                        <label for="currency" data-i18n="currency_label">Валюта</label>
+                        <label for="currency" data-i18n="currency_label">Currency</label>
                         <select id="currency" name="currency" class="custom-select" data-searchable required
                             data-placeholder-i18n="currency_placeholder"
                             data-search-placeholder="currency_search_placeholder" data-search-empty="currency_search_empty">
                         </select>
-                        <span class="field-hint" data-i18n="currency_hint">Валюта по умолчанию для ваших вещей и
-                            чеков — можно сменить позже в настройках</span>
+                        <span class="field-hint" data-i18n="currency_hint">Default currency for your items and receipts — can be changed later in settings</span>
                     </div>
                 </div>
 
                 <div class="input-group" data-animate>
-                    <label for="password" data-i18n="label_password">Пароль</label>
+                    <label for="password" data-i18n="label_password">Password</label>
                     <div class="input-wrap">
                         <span class="input-icon"><i class="fa-solid fa-lock"></i></span>
                         <input type="password" id="password" name="newPassword" required placeholder="••••••••"
@@ -119,7 +118,7 @@
                 </div>
 
                 <div class="input-group" data-animate>
-                    <label for="confirm-password" data-i18n="label_confirm_password">Повторите пароль</label>
+                    <label for="confirm-password" data-i18n="label_confirm_password">Confirm Password</label>
                     <div class="input-wrap">
                         <span class="input-icon"><i class="fa-solid fa-lock"></i></span>
                         <input type="password" id="confirm-password" name="confirmPassword" required
@@ -137,22 +136,20 @@
                                     <path d="M1 4.5l3 3 6-6" stroke="currentColor" stroke-width="1.8"
                                         stroke-linecap="round" stroke-linejoin="round" />
                                 </svg></span></span>
-                        <span data-i18n="reg_terms">Я согласен с <a href="terms.html"
-                                style="color:var(--primary)">условиями пользования</a> и <a href="privacy.html"
-                                style="color:var(--primary)">политикой конфиденциальности</a></span>
+                        <span data-i18n="reg_terms">I agree to the <a href='terms.html' style='color:var(--primary)'>Terms of Use</a> and <a href='privacy.html' style='color:var(--primary)'>Privacy Policy</a></span>
                     </label>
                 </div>
 
                 <div class="turnstile-wrap" data-animate>
                     <div class="turnstile-skel" id="register-turnstile-skel">
                         <span class="skel-pulse"></span>
-                        <span data-i18n="turnstile_checking">Проверка...</span>
+                        <span data-i18n="turnstile_checking">Verifying...</span>
                     </div>
                     <div id="register-turnstile"></div>
                 </div>
 
                 <button type="submit" class="btn btn-primary auth-btn" data-animate
-                    data-i18n="btn_register">Зарегистрироваться</button>
+                    data-i18n="btn_register">Sign Up</button>
             </form>
 
             <div id="register-confirm-screen" class="hidden" style="text-align: center;">
@@ -162,18 +159,18 @@
                 <h3 id="register-confirm-title">Проверьте почту</h3>
                 <p id="register-confirm-desc" class="forgot-desc"></p>
                 <button type="button" id="register-resend-btn" class="btn btn-outline auth-btn" style="margin-bottom: 10px;"></button>
-                <a href="login.html" id="register-go-login" class="btn btn-primary auth-btn" data-i18n="btn_go_login">Перейти ко входу</a>
+                <a href="login.html" id="register-go-login" class="btn btn-primary auth-btn" data-i18n="btn_go_login">Go to Login</a>
             </div>
 
             <div class="auth-footer" data-animate>
-                <span data-i18n="footer_have_account">Уже есть аккаунт?</span>
-                <a href="login.html" data-i18n="footer_link_login">Войти</a>
+                <span data-i18n="footer_have_account">Already have an account?</span>
+                <a href="login.html" data-i18n="footer_link_login">Sign In</a>
             </div>
 
             <div class="auth-footer" data-animate>
-                <a href="privacy.html" data-i18n="login_privacy_link">Политика конфиденциальности</a>
+                <a href="privacy.html" data-i18n="login_privacy_link">Privacy Policy</a>
                 <span style="margin:0 6px;color:var(--text-muted)">·</span>
-                <a href="terms.html" data-i18n="login_terms_link">Условия пользования</a>
+                <a href="terms.html" data-i18n="login_terms_link">Terms of Use</a>
             </div>
         </div>
     </div>
@@ -203,10 +200,9 @@
     <script type="module" src="js/register.js"></script>
     <div id="toast-container" class="toast-container"></div>
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
-                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <p id="cookie-text">We use cookies to operate the site. By continuing, you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
         <button id="cookie-btn" class="btn btn-primary small"
-            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Accept</button>
     </div>
     <script src="js/cookie-banner.js"></script>
     <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

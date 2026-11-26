@@ -21,7 +21,7 @@ const SERIAL_LABELS = {
 };
 
 function currentLang() {
-    return localStorage.getItem('valuon-lang') === 'en' ? 'en' : 'ru';
+    return (window.getValuonLang ? window.getValuonLang() : 'en');
 }
 
 function currentT() {

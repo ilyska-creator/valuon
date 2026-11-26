@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         onRender: (id) => { loginWidgetId = id; },
     });
 
-    const currentLang = localStorage.getItem('valuon-lang') || 'ru';
+    const currentLang = (window.getValuonLang ? window.getValuonLang() : 'en');
     const emailGroup = document.getElementById('login-email-group');
     const phoneGroup = document.getElementById('login-phone-group');
     const emailInput = document.getElementById('email');
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     window.addEventListener('lang-changed', (e) => {
-        const nextLang = e.detail?.lang || localStorage.getItem('valuon-lang') || 'ru';
+        const nextLang = e.detail?.lang || (window.getValuonLang ? window.getValuonLang() : 'en');
         if (phoneCountryEl) {
             const prevCode = phoneCountryEl.value;
             populateDialCodeSelect(phoneCountryEl, nextLang, prevCode || getDefaultPhoneCountry(null, nextLang));
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const password = document.getElementById('password').value;
             const rememberMe = document.getElementById('remember')?.checked;
             const originalText = btn.innerHTML;
-            const lang = localStorage.getItem('valuon-lang') || 'ru';
+            const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
             const isRu = lang === 'ru';
 
             let email = '';
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (resendConfirmBtn) {
             resendConfirmBtn.addEventListener('click', async () => {
                 const targetEmail = resendConfirmBtn.dataset.email || emailInput?.value.trim();
-                const isRuNow = (localStorage.getItem('valuon-lang') || 'ru') === 'ru';
+                const isRuNow = ((window.getValuonLang ? window.getValuonLang() : 'en')) === 'ru';
                 if (!targetEmail) return;
                 resendConfirmBtn.disabled = true;
                 const prevText = resendConfirmBtn.textContent;
@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const btn = forgotForm.querySelector('button[type="submit"]');
             const email = forgotEmailInput?.value.trim();
             const originalText = btn.innerHTML;
-            const lang = (localStorage.getItem('valuon-lang') || 'ru') === 'ru';
+            const lang = ((window.getValuonLang ? window.getValuonLang() : 'en')) === 'ru';
 
 
             if (!email) {
@@ -507,7 +507,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            const rlLang = localStorage.getItem('valuon-lang') || 'ru';
+            const rlLang = (window.getValuonLang ? window.getValuonLang() : 'en');
             const rateLimitCheck = checkLoginRateLimit(`reset_${email}`, rlLang);
             if (!rateLimitCheck.allowed) {
                 showToast(rlLang === 'ru'

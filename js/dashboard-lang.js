@@ -519,7 +519,7 @@ window.animateCount = function (el, target, duration) {
 window.dashboardTranslations = dashboardTranslations;
 
 
-let currentLang = localStorage.getItem('valuon-lang') || 'ru';
+let currentLang = (window.getValuonLang ? window.getValuonLang() : 'en');
 
 function applyDashboardLang(lang) {
     const t = dashboardTranslations[lang] || dashboardTranslations.ru;

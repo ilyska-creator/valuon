@@ -22,7 +22,7 @@ const verifiedReceiptPdfCache = new Map();
 const SIGNED_URL_TTL = 60 * 60;
 
 function renderItemCurrencySelects() {
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     document.querySelectorAll('#add-modal select[name="currency"], #edit-modal select[name="currency"]').forEach((select) => {
         if (typeof window.renderCurrencyOptions === 'function') window.renderCurrencyOptions(select, lang);
     });
@@ -30,7 +30,7 @@ function renderItemCurrencySelects() {
 }
 
 function renderItemTypeSelects() {
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     document.querySelectorAll('#add-modal select[name="type"], #edit-modal select[name="type"]').forEach((select) => {
         if (typeof window.renderDeviceTypeOptions === 'function') window.renderDeviceTypeOptions(select, lang, { withIcons: true });
     });
@@ -111,7 +111,7 @@ function setupItemsSort() {
         const nextSort = VALID_ITEMS_SORTS.has(select.value) ? select.value : 'newest';
         currentItemsSort = nextSort;
         sessionStorage.setItem('valuon-items-sort', nextSort);
-        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
         const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
         renderItems(lastMineItems, { animateCount: false });
         renderVerifiedItems(lastVerifiedReceipts, t, { animateCount: false });
@@ -162,7 +162,7 @@ function sortDashboardItems(items, mode, isVerified) {
 async function openLinkedPersonalReceipt(itemId, btn) {
     const receipt = linkedReceiptsByItemId.get(String(itemId));
     if (!receipt || !currentClient) return;
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
     const originalHTML = btn.innerHTML;
@@ -248,7 +248,7 @@ function parseWarrantyMonthsInput(rawVal) {
 
 async function downloadVerifiedReceiptPDF(receiptId, btn) {
     if (!receiptId || !currentClient || (!currentUserId && !currentUserEmail)) return;
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
@@ -329,7 +329,7 @@ async function loadItems(userId, client) {
     grid.innerHTML = '<div class="rotating-loader"></div>';
     const loaderEl = grid.querySelector('.rotating-loader');
     if (loaderEl && typeof RotatingTextLoader !== 'undefined') {
-        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
         const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
         new RotatingTextLoader(loaderEl, [
             t.loading_items || 'Загружаем покупки…',
@@ -356,7 +356,7 @@ async function loadItems(userId, client) {
 
     if (error) {
         logError('items:load', error);
-        const loadLang = localStorage.getItem('valuon-lang') || 'ru';
+        const loadLang = (window.getValuonLang ? window.getValuonLang() : 'en');
         grid.innerHTML = '<p class="empty-state error">' + (loadLang === 'en' ? 'Data load error.' : 'Ошибка загрузки данных.') + '</p>';
         return;
     }
@@ -378,7 +378,7 @@ async function loadItems(userId, client) {
     updateStats(safeItems);
 
     if (typeof window.applyDashboardLang === 'function') {
-        window.applyDashboardLang(localStorage.getItem('valuon-lang') || 'ru');
+        window.applyDashboardLang((window.getValuonLang ? window.getValuonLang() : 'en'));
     }
 }
 
@@ -394,7 +394,7 @@ function renderItems(items, opts = {}) {
     const grid = document.querySelector('#items-grid-mine');
     if (!grid) return;
 
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
     const countEl = document.getElementById('items-count-mine');
@@ -637,7 +637,7 @@ function renderVerifiedItems(receipts, t, opts = {}) {
     const grid = document.querySelector('#items-grid-verified');
     if (!grid) return;
 
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     const allItems = extractActiveVerifiedItems(receipts);
 
     const countEl = document.getElementById('items-count-verified');
@@ -805,7 +805,7 @@ async function loadVerifiedItems(userEmail, client) {
     grid.innerHTML = '<div class="rotating-loader"></div>';
     const loaderEl = grid.querySelector('.rotating-loader');
     if (loaderEl && typeof RotatingTextLoader !== 'undefined') {
-        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
         const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
         new RotatingTextLoader(loaderEl, [
             t.loading_items || 'Загружаем покупки…',
@@ -845,12 +845,12 @@ async function loadVerifiedItems(userEmail, client) {
 
     if (error) {
         logError('items:loadVerified', error);
-        const loadLang = localStorage.getItem('valuon-lang') || 'ru';
+        const loadLang = (window.getValuonLang ? window.getValuonLang() : 'en');
         grid.innerHTML = `<p class="empty-state error">${loadLang === 'en' ? 'Data load error.' : 'Ошибка загрузки данных.'}</p>`;
         return;
     }
 
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
     lastVerifiedReceipts = data || [];
     renderVerifiedItems(lastVerifiedReceipts, t);
@@ -991,7 +991,7 @@ async function openEditModal(itemId, client, userId) {
     const form = document.getElementById('edit-item-form');
     if (!modal || !form) return;
 
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
     // Данные вещи уже есть в памяти после последней загрузки списка (loadItems),
@@ -1153,7 +1153,7 @@ function setupEditModal(client, userId) {
 
         const btn = submitBtn || form.querySelector('button[type="submit"]');
         submitBtnOriginalHTML = btn.innerHTML;
-        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
         const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
         btn.disabled = true;
@@ -1219,7 +1219,7 @@ function setupDeleteItemModal(client, userId) {
     confirmBtn?.addEventListener('click', async () => {
         if (!pendingDeleteItemId) return;
 
-        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
         const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
         const originalHTML = confirmBtn.innerHTML;
         confirmBtn.disabled = true;
@@ -1372,7 +1372,7 @@ function setupModal(client, userId) {
 
         const btn = submitBtn || form.querySelector('button[type="submit"]');
         submitBtnOriginalHTML = btn.innerHTML;
-        const lang = localStorage.getItem('valuon-lang') || 'ru';
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
         const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
         try {
@@ -1438,7 +1438,7 @@ function setupModal(client, userId) {
 
 initDashboardItems().catch(e => {
     logError('init:dashboardItems', e);
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
     const msg = t.load_error || (lang === 'ru' ? 'Ошибка загрузки. Обновите страницу.' : 'Load error. Please refresh.');
     const el = document.querySelector('#items-grid-verified:not(.hidden), #items-grid-mine:not(.hidden)')

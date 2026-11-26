@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon — Дорожная карта продукта</title>
+    <script src=\"js/lang-detect.js\"></script>
+    <title>Valuon — Roadmap</title>
     <meta name="description"
-        content="Valuon — Дорожная карта развития. Планы по запуску, новым возможностям и международной экспансии.">
+        content="Valuon product roadmap — milestones, upcoming features, and rollout stages.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -14,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script>
-        (function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); var l = localStorage.getItem('valuon-lang'); if (l === 'en') document.documentElement.lang = 'en'; })();
+        (function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); if (window.getValuonLang) document.documentElement.lang = window.getValuonLang(); })();
     </script>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/roadmap.css">
@@ -35,54 +36,43 @@
                 <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle Theme"><i
                         class="fa-solid fa-moon"></i></button>
                 <button type="button" id="lang-toggle" class="icon-btn"
-                    aria-label="Toggle Language"><span>RU</span></button>
-                <a href="index.html" class="btn btn-outline small" data-i18n="roadmap_back">← На главную</a>
+                    aria-label="Toggle Language"><span>EN</span></button>
+                <a href="index.html" class="btn btn-outline small" data-i18n="roadmap_back">← Back to Home</a>
             </div>
         </div>
     </nav>
 
     <header class="roadmap-header section">
         <div class="container">
-            <h1 class="fade-in-up" data-i18n="roadmap_title">Дорожная карта Valuon: единая платформа официальных чеков
-            </h1>
-            <p class="fade-in-up delay-1" data-i18n="roadmap_desc">План развития от рабочего MVP до единой платформы
-                доступа к официальным чекам в разных странах.</p>
+            <h1 class="fade-in-up" data-i18n="roadmap_title">Valuon Roadmap: a unified platform for official digital receipts</h1>
+            <p class="fade-in-up delay-1" data-i18n="roadmap_desc">Development plan from a working MVP to a unified access platform for official receipts across countries.</p>
         </div>
     </header>
 
     <section class="roles-section section">
         <div class="container">
-            <h2 class="roles-heading fade-in-up" data-i18n="roles_section_title">Две роли Valuon, а не одна
-                универсальная</h2>
+            <h2 class="roles-heading fade-in-up" data-i18n="roles_section_title">Two roles for Valuon, not one universal one</h2>
             <div class="role-grid">
                 <div class="role-card role-card-a fade-in-up" data-animate="up">
                     <div class="role-icon role-icon-a"><i class="fa-solid fa-stamp"></i></div>
-                    <span class="role-tag role-tag-a" data-i18n="role_a_tag">Роль А</span>
-                    <h3 data-i18n="role_a_title">Первичный эмитент</h3>
-                    <p data-i18n="role_a_desc">Эстония, Ирландия, Мальта, Финляндия, Лихтенштейн, США — там, где нет
-                        обязательной фискализации, чек Valuon может быть настоящим официальным цифровым чеком, а не
-                        имитацией.</p>
+                    <span class="role-tag role-tag-a" data-i18n="role_a_tag">Role A</span>
+                    <h3 data-i18n="role_a_title">Primary issuer</h3>
+                    <p data-i18n="role_a_desc">Estonia, Ireland, Malta, Finland, Liechtenstein, the US — where receipt fiscalization isn't mandatory, a Valuon receipt can be a genuine official digital receipt, not an imitation of one.</p>
                 </div>
                 <div class="role-card role-card-b fade-in-up" data-animate="up">
                     <div class="role-icon role-icon-b"><i class="fa-solid fa-layer-group"></i></div>
-                    <span class="role-tag role-tag-b" data-i18n="role_b_tag">Роль Б</span>
-                    <h3 data-i18n="role_b_title">Реестр поверх официального</h3>
-                    <p data-i18n="role_b_desc">Германия, Франция, Италия, Испания и другие — чек уже подписан
-                        государственно сертифицированной кассой. Valuon подключается к этим данным и даёт чеку вторую
-                        жизнь у покупателя.</p>
+                    <span class="role-tag role-tag-b" data-i18n="role_b_tag">Role B</span>
+                    <h3 data-i18n="role_b_title">Registry on top of the official one</h3>
+                    <p data-i18n="role_b_desc">Germany, France, Italy, Spain and others — the receipt is already signed by a certified fiscal cash register. Valuon connects to that data and gives the receipt a second life for the buyer.</p>
                 </div>
                 <div class="role-card role-card-c fade-in-up" data-animate="up">
                     <div class="role-icon role-icon-c"><i class="fa-solid fa-hourglass-half"></i></div>
-                    <span class="role-tag role-tag-c" data-i18n="role_c_tag">Роль В — отложено</span>
-                    <h3 data-i18n="role_c_title">Собственная сертификация</h3>
-                    <p data-i18n="role_c_desc">Стать сертифицированным фискальным провайдером самим (как fiskaly/efsta)
-                        — дорогой многолетний путь. Решение принимается не раньше 2028 года, под подтверждённый масштаб.
-                    </p>
+                    <span class="role-tag role-tag-c" data-i18n="role_c_tag">Role C — deferred</span>
+                    <h3 data-i18n="role_c_title">Becoming a certified provider</h3>
+                    <p data-i18n="role_c_desc">Becoming a certified fiscal middleware provider ourselves (like fiskaly/efsta) is an expensive, multi-year path. Decided no earlier than 2028, once scale is proven.</p>
                 </div>
             </div>
-            <p class="roles-note" data-i18n="roles_note">Гарантии, история владения и перепродажа техники работают
-                поверх обеих ролей как надстройка — они делают возврат в приложение осмысленным, но не являются целью
-                сами по себе.</p>
+            <p class="roles-note" data-i18n="roles_note">Warranty tracking, ownership history and resale work on top of both roles as an add-on layer — they make returning to the app meaningful, but they aren't the goal on their own.</p>
         </div>
     </section>
 
@@ -92,205 +82,133 @@
             <div class="timeline-card" data-animate="left">
                 <div class="card-status current" data-i18n="step0_badge"><i class="fa-solid fa-rocket"></i> Уже готово
                 </div>
-                <span class="role-tag role-tag-neutral" data-i18n="step0_role_tag">Роль А + Роль Б — основа</span>
-                <h2 data-i18n="step0_title">MVP: текущий этап — что уже сделано</h2>
-                <p class="stage-context" data-i18n="step0_context">Рабочий продукт, который можно открыть,
-                    зарегистрироваться и начать использовать. Дальнейшие этапы строятся поверх этой базы.</p>
+                <span class="role-tag role-tag-neutral" data-i18n="step0_role_tag">Role A + Role B — foundation</span>
+                <h2 data-i18n="step0_title">MVP: current stage — what's already built</h2>
+                <p class="stage-context" data-i18n="step0_context">A working product you can open, sign up for, and start using today. All further stages build on this foundation.</p>
                 <ul class="feature-list">
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_1">Регистрация с email/паролем,
-                            подтверждение email, восстановление пароля</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_2">Проверка от ботов при входе и
-                            регистрации</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_3">Смена email, редактирование
-                            имени/фамилии в настройках</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_4">Добавление вещи вручную:
-                            название, тип, бренд, цена, серийный номер, дата покупки, срок гарантии</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_5">Автоматический расчёт даты
-                            окончания гарантии</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_6">Раздел уведомлений: гарантия
-                            ≤30 дней или истекла</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_7">Загрузка фото/PDF чека,
-                            drag&drop, привязка к вещи</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_8">Бизнес: создание магазина,
-                            генерация Ed25519 ключей</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_9">Бизнес: выписка чека с
-                            несколькими позициями и цифровой подписью</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_10">Бизнес: PDF с QR-кодом, график
-                            продаж</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_11">Верификация: сканирование QR
-                            камерой, загрузка PDF, проверка Ed25519</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_12">Тёмная/светлая тема,
-                            мультиязычность RU/EN</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_13">Серверная верификация подписи:
-                            Edge Function с rate-лимитом по IP, анонимная страница проверки</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_14">Бизнес: выручка,
-                            средний чек, графики с периодами, фильтры, удаление чеков</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_15">Черновик чека:
-                            автосохранение формы и восстановление</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_16">Автоподстановка покупателя по
-                            email с историей клиентов</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_17">Бизнес: загрузка логотипов
-                            магазинов и отображение в PDF чеках</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_18">Экспорт календаря
-                            гарантий на устройство пользователя</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_1">Email/password registration, email confirmation, password recovery</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_2">Bot protection on login and registration</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_3">Email change, name editing in settings</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_4">Manual item entry: name, type, brand, price, serial number, purchase date, warranty term</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_5">Automatic warranty end date calculation</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_6">Notifications section: warranty ≤30 days or expired</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_7">Receipt photo/PDF upload, drag&amp;drop, attachment to item</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_8">Business: store creation, Ed25519 key generation</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_9">Business: multi-item receipt issuance with digital signature</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_10">Business: PDF with QR code, sales chart</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_11">Verification: QR camera scan, PDF upload, Ed25519 check</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_12">Dark/light theme, RU/EN multilingual support</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_13">Server-side signature verification: Edge Function with per-IP rate limiting, anonymous verification page</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_14">Business: revenue, average receipt, period charts, filters, receipt deletion</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_15">Receipt draft: auto-save of the form and restore</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_16">Customer autocomplete by email with customer history</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_17">Business: shop logo upload and display in PDF receipts</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step0_item_18">Warranty calendar export to the user's device</span></li>
                 </ul>
             </div>
 
             <div class="timeline-card" data-animate="right">
                 <div class="card-status upcoming" data-i18n="step1_badge"><i class="fa-solid fa-shield"></i> Текущая
                     работа</div>
-                <span class="role-tag role-tag-neutral" data-i18n="step1_role_tag">Инфраструктура</span>
-                <h2 data-i18n="step1_title">Этап 1: доработка технической базы</h2>
-                <p class="stage-context" data-i18n="step1_context">Прежде чем звать больше магазинов и пользователей —
-                    нужно укрепить то, что уже построено.</p>
+                <span class="role-tag role-tag-neutral" data-i18n="step1_role_tag">Infrastructure</span>
+                <h2 data-i18n="step1_title">Stage 1: strengthen the technical foundation</h2>
+                <p class="stage-context" data-i18n="step1_context">Before inviting more stores and users — strengthen what's already built.</p>
                 <ul class="feature-list">
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_3">Автоматизация версионирования
-                            схемы базы данных и политик доступа</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step1_item_4">Подключить проверку
-                            сложности пароля на регистрации и сбросе</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_5">Расширенные политики
-                            защиты браузера и заголовки безопасности</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_7">Дополнительная серверная
-                            валидация загружаемых файлов чеков</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_8">Версионирование формата
-                            криптографической подписи чека</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_9">Снимок реквизитов магазина
-                            на момент выпуска чека при верификации</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_10">Унификация расчётов и
-                            форматирования сумм в PDF-чеках</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_11">Дополнительные правила
-                            целостности данных позиций чека</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step1_item_12">Выбор валюты магазина и
-                            чека (мультивалютность, EUR по умолчанию)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_13">Эстонский язык
-                            интерфейса (ET)</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step1_item_14">Подпись чека на сервере:
-                            приватный ключ хранится только в Edge Function (Vault), на устройство не передаётся</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_15">Импорт исторических чеков
-                            через CSV</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step1_item_16">Экспорт чеков (CSV / Excel
-                            для бухгалтерии)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_3">Automated versioning of database schema and access policies</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step1_item_4">Enable password strength check on registration and reset</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_5">Enhanced browser protection policies and security headers</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_7">Additional server-side validation for uploaded receipt files</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_8">Versioning for the cryptographic receipt signature format</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_9">Snapshot store details at receipt issuance time for verification</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_10">Unified total calculations and formatting in PDF receipts</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_11">Additional data integrity rules for receipt line items</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step1_item_12">Shop and receipt currency selection (multicurrency, EUR by default)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_13">Estonian interface language (ET)</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step1_item_14">Server-side receipt signing: private key stored only in Edge Function (Vault), never sent to the user's device</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step1_item_15">Bulk historical receipt import via CSV</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step1_item_16">Receipt export (CSV / Excel for accounting)</span></li>
                 </ul>
                 <div class="decision-gate">
                     <i class="fa-solid fa-signs-post"></i>
-                    <span data-i18n="step1_gate">Этот этап закладывает надёжную техническую основу перед подключением
-                        новых магазинов и ростом объёма чеков.</span>
+                    <span data-i18n="step1_gate">This stage establishes a solid technical foundation ahead of onboarding more stores and scaling receipt volume.</span>
                 </div>
             </div>
 
             <div class="timeline-card" data-animate="left">
                 <div class="card-status upcoming" data-i18n="step2_badge"><i class="fa-solid fa-user-plus"></i> Месяцы
                     1–3</div>
-                <span class="role-tag role-tag-a" data-i18n="step2_role_tag">Роль А + активация</span>
-                <h2 data-i18n="step2_title">Этап 2: активация покупателя — retention D30</h2>
-                <p class="stage-context" data-i18n="step2_context">Ручной ввод чека — главный барьер возврата. OCR,
-                    импорт из почты и push-уведомления должны сделать приложение привычкой, а не одноразовым
-                    экспериментом.</p>
+                <span class="role-tag role-tag-a" data-i18n="step2_role_tag">Role A + activation</span>
+                <h2 data-i18n="step2_title">Stage 2: customer activation — D30 retention</h2>
+                <p class="stage-context" data-i18n="step2_context">Manual receipt entry is the #1 barrier to return. OCR, email import, and push notifications should turn the app into a habit, not a one-time experiment.</p>
                 <ul class="feature-list">
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_1">Автозаполнение полей вещи по
-                            фото чека (OCR)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_2">Импорт чеков из почты
-                            (Amazon, Ozon, AliExpress и др.)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_3">Push-уведомления об
-                            истечении гарантии</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_4">Фактическая отправка
-                            еженедельной рассылки (cron / Edge Function)</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step2_item_5">Экспорт даты окончания
-                            гарантии в календарь (.ics для Google/Apple Calendar)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_6">Журнал сервисного
-                            обслуживания вещи (ремонты, даты, стоимость)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_7">Мастер гарантийного
-                            обращения: письмо продавцу со ссылкой на чек</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_9">Передача вещи новому
-                            владельцу при перепродаже (QR с историей)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_10">PWA-версия с камерой в один
-                            тап</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_1">Auto-fill item fields from receipt photo (OCR)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_2">Import receipts from email (Amazon, Ozon, AliExpress, etc.)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_3">Push notifications for warranty expiry</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_4">Actual weekly newsletter delivery (cron / Edge Function)</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step2_item_5">Export warranty end date to calendar (.ics for Google/Apple Calendar)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_6">Service history log for each item (repairs, dates, cost)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_7">Warranty claim wizard: pre-filled email to seller with receipt link</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_9">Transfer item to new owner on resale (QR with ownership history)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step2_item_10">PWA with one-tap camera access</span></li>
                 </ul>
             </div>
 
             <div class="timeline-card" data-animate="right">
                 <div class="card-status future" data-i18n="step3_badge"><i class="fa-solid fa-store"></i> Месяцы 3–6
                 </div>
-                <span class="role-tag role-tag-b" data-i18n="step3_role_tag">Роль Б + бизнес-инструменты</span>
-                <h2 data-i18n="step3_title">Этап 3: инструменты для бизнеса</h2>
-                <p class="stage-context" data-i18n="step3_context">Магазины не будут выписывать чеки вручную. Нужны
-                    интеграции с кассами, API и бесшовный онбординг — только тогда выписка чека станет естественной
-                    частью продажи.</p>
+                <span class="role-tag role-tag-b" data-i18n="step3_role_tag">Role B + business tools</span>
+                <h2 data-i18n="step3_title">Stage 3: tools for business</h2>
+                <p class="stage-context" data-i18n="step3_context">Stores won't issue receipts manually. We need POS integrations, an API, and seamless onboarding — only then does receipt issuance become a natural part of the sale.</p>
                 <ul class="feature-list">
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_1">Плагины к кассам и
-                            e-commerce (Shopify, WooCommerce, Lightspeed)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_2">Публичный REST API для
-                            программной выписки чеков</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_3">Вебхуки на события (чек
-                            выписан, чек верифицирован)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_4">Мультипользовательские
-                            аккаунты магазина (роли сотрудников)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_5">Кастомный брендинг чека и
-                            страницы верификации</span></li>
-                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step3_item_6">Workflow
-                            возврата/обмена/аннулирования чека</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_7">Ротация и отзыв криптоключей
-                            магазина</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_8">Расширенная аналитика: LTV,
-                            средний чек, доля гарантийных обращений, % вернувшихся покупателей</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_9">Продажа расширенной гарантии
-                            в момент выписки чека (комиссия)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_1">Plugins for POS and e-commerce (Shopify, WooCommerce, Lightspeed)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_2">Public REST API for programmatic receipt issuance</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_3">Webhooks for events (receipt issued, receipt verified)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_4">Multi-user store accounts with employee roles</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_5">Custom receipt and verification page branding</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="step3_item_6">Return/exchange/void workflow for issued receipts</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_7">Store key rotation and revocation</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_8">Advanced analytics: LTV, average order, warranty claim rate, % of returning customers</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step3_item_9">Extended warranty upsell at receipt issuance time (commission)</span></li>
                 </ul>
             </div>
 
             <div class="timeline-card" data-animate="left">
                 <div class="card-status future" data-i18n="step4_badge"><i class="fa-solid fa-chart-line"></i> Месяцы
                     6–12</div>
-                <span class="role-tag role-tag-both" data-i18n="step4_role_tag">B2B2C-инфраструктура</span>
-                <h2 data-i18n="step4_title">Этап 4: монетизация и сетевой эффект</h2>
-                <p class="stage-context" data-i18n="step4_context">Сейчас в продукте нет платёжного функционала вообще.
-                    Первые тарифы — только после того, как пилотные магазины подтвердят готовность платить.</p>
+                <span class="role-tag role-tag-both" data-i18n="step4_role_tag">B2B2C infrastructure</span>
+                <h2 data-i18n="step4_title">Stage 4: monetization and network effects</h2>
+                <p class="stage-context" data-i18n="step4_context">The product currently has no payment functionality at all. First paid tiers only launch after pilot stores confirm willingness to pay.</p>
                 <ul class="feature-list">
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_1">Тарифные планы и биллинг
-                            (сейчас платёжного функционала нет)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_2">Публичный виджет «Verified
-                            by Valuon» для сайта магазина</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_3">Платный API верификации для
-                            страховых и площадок перепродажи</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_4">Онбординг-чеклист для нового
-                            магазина в дашборде</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_1">Pricing plans and billing (currently no payment functionality)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_2">Public 'Verified by Valuon' widget for merchant websites</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_3">Paid verification API for insurers and resale marketplaces</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step4_item_4">Onboarding checklist for new stores in the dashboard</span></li>
                 </ul>
                 <div class="decision-gate">
                     <i class="fa-solid fa-signs-post"></i>
-                    <span data-i18n="step4_gate">Платный тариф запускается только после письменного подтверждения
-                        магазинов, а не одновременно с пилотом.</span>
+                    <span data-i18n="step4_gate">Paid tier launches only after written merchant confirmation, not at the same time as the pilot.</span>
                 </div>
             </div>
 
             <div class="timeline-card" data-animate="right">
                 <div class="card-status vision" data-i18n="step5_badge"><i class="fa-solid fa-earth-europe"></i> Год 2
                 </div>
-                <span class="role-tag role-tag-both" data-i18n="step5_role_tag">А + Б → решение по В</span>
-                <h2 data-i18n="step5_title">Этап 5: географическое и юридическое расширение</h2>
-                <p class="stage-context" data-i18n="step5_context">Из одной страны и одной роли — в несколько
-                    юрисдикций. Каждый новый рынок запускается только после измеримого успеха на предыдущем.</p>
+                <span class="role-tag role-tag-both" data-i18n="step5_role_tag">A + B → C decision</span>
+                <h2 data-i18n="step5_title">Stage 5: geographic and legal expansion</h2>
+                <p class="stage-context" data-i18n="step5_context">From one country and one role to multiple jurisdictions. Each new market launches only after measurable success in the previous one.</p>
                 <ul class="feature-list">
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_1">Пилот Роли А в Эстонии (5–10
-                            продавцов) — Valuon как их единственная система чеков</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_2">Параллельный точечный пилот
-                            Роли А в США</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_3">Первая интеграция Роли Б:
-                            коннектор к TSE/кассовому API (Германия)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_4">Юридическая консультация:
-                            можно ли называть импортированный чек «официальным»</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_7">Выбор основной юрисдикции
-                            для юрлица (Эстония)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_5">Расширение Роли А на
-                            Ирландию/Финляндию при успехе Эстонии</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_6">Расширение Роли Б на Францию
-                            (сертификация касс с сентября 2026)</span></li>
-                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_8">Решение по Роли В — только
-                            под подтверждённый спрос, не раньше 2028</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_1">Role A pilot in Estonia (5–10 merchants) — Valuon as their only receipt system</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_2">Parallel small-scale Role A pilot in the US</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_3">First Role B integration: TSE/cash register API connector (Germany)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_4">Legal consultation: can an imported receipt be called 'official'</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_7">Choose primary legal jurisdiction (Estonia)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_5">Expand Role A to Ireland/Finland on Estonia success</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_6">Expand Role B to France (cash register certification from Sep 2026)</span></li>
+                    <li><i class="fa-regular fa-circle"></i> <span data-i18n="step5_item_8">Role C decision — only under confirmed demand, not before 2028</span></li>
                 </ul>
                 <div class="decision-gate">
                     <i class="fa-solid fa-signs-post"></i>
-                    <span data-i18n="step5_gate">Ключевая метрика: Retention D30 ≥ 25%. Если retention низкий —
-                        рассмотреть встраиваемый виджет вместо отдельного приложения.</span>
+                    <span data-i18n="step5_gate">Key metric: D30 retention ≥ 25%. If retention is low, consider an embeddable widget instead of a standalone app.</span>
                 </div>
             </div>
 
@@ -302,13 +220,13 @@
     <footer class="footer">
         <div class="container copyright">
             <nav class="footer-nav-links" aria-label="Навигация">
-                <a href="index.html" data-i18n="footer_nav_home">Главная</a>
-                <a href="about.html" data-i18n="footer_nav_about">О нас</a>
-                <a href="verify.html" data-i18n="footer_nav_verify">Проверка чека</a>
-                <a href="privacy.html" data-i18n="footer_nav_privacy">Конфиденциальность</a>
-                <a href="terms.html" data-i18n="footer_nav_terms">Условия</a>
+                <a href="index.html" data-i18n="footer_nav_home">Home</a>
+                <a href="about.html" data-i18n="footer_nav_about">About</a>
+                <a href="verify.html" data-i18n="footer_nav_verify">Verify Receipt</a>
+                <a href="privacy.html" data-i18n="footer_nav_privacy">Privacy</a>
+                <a href="terms.html" data-i18n="footer_nav_terms">Terms</a>
             </nav>
-            <p data-i18n="footer_copyright">© 2026 Valuon. Все права защищены.</p>
+            <p data-i18n="footer_copyright">© 2026 Valuon. All rights reserved.</p>
         </div>
     </footer>
 
@@ -316,10 +234,9 @@
     <script src="js/animations.js"></script>
     <script>document.addEventListener('DOMContentLoaded', () => { const n = document.querySelector('.navbar'); if (n) { const t = () => n.classList.toggle('scrolled', window.scrollY > 12); t(); window.addEventListener('scroll', t, { passive: !0 }) } })</script>
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
-                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <p id="cookie-text">We use cookies to operate the site. By continuing, you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
         <button id="cookie-btn" class="btn btn-primary small"
-            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Accept</button>
     </div>
     <script src="js/cookie-banner.js"></script>
 <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

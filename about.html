@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="about_title">Valuon — О нас</title>
+    <script src=\"js/lang-detect.js\"></script>
+    <title data-i18n="about_title">Valuon — About Us</title>
     <meta name="description" data-i18n="about_desc"
         content="Valuon — Цифровой профиль покупки. Криптографически заверенные чеки, автоматический расчёт гарантий, история всех покупок в одном месте.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <script>
-        (function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); var l = localStorage.getItem('valuon-lang'); if (l === 'en') document.documentElement.lang = 'en'; })();
+        (function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); if (window.getValuonLang) document.documentElement.lang = window.getValuonLang(); })();
     </script>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/roadmap.css">
@@ -35,16 +36,16 @@
                 <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle Theme"><i
                         class="fa-solid fa-moon"></i></button>
                 <button type="button" id="lang-toggle" class="icon-btn"
-                    aria-label="Toggle Language"><span>RU</span></button>
-                <a href="index.html" class="btn btn-outline small" data-i18n="about_back">← На главную</a>
+                    aria-label="Toggle Language"><span>EN</span></button>
+                <a href="index.html" class="btn btn-outline small" data-i18n="about_back">← Back to Home</a>
             </div>
         </div>
     </nav>
 
     <header class="roadmap-header section">
         <div class="container">
-            <h1 class="fade-in-up" data-i18n="about_heading">О Valuon</h1>
-            <p class="fade-in-up delay-1" data-i18n="about_subtitle">Цифровые чеки, которым можно доверять.</p>
+            <h1 class="fade-in-up" data-i18n="about_heading">About Valuon</h1>
+            <p class="fade-in-up delay-1" data-i18n="about_subtitle">Digital receipts you can trust.</p>
         </div>
     </header>
 
@@ -52,53 +53,44 @@
         <div class="container timeline-container">
 
             <div class="timeline-card" data-animate="up">
-                <h2 data-i18n="about_mission_title">Миссия</h2>
-                <p class="stage-context" data-i18n="about_mission_text">
-                    Сделать каждый чек цифровым, криптографически защищённым и всегда доступным. Никаких выцветших
-                    термобумажных лент, потерянных гарантий и споров с магазином.
-                </p>
+                <h2 data-i18n="about_mission_title">Mission</h2>
+                <p class="stage-context" data-i18n="about_mission_text">Make every receipt digital, cryptographically secure, and always accessible. No more faded thermal paper, lost warranties, or disputes with the store.</p>
             </div>
 
             <div class="timeline-card" data-animate="up">
-                <h2 data-i18n="about_how_title">Как это работает</h2>
-                <div class="stage-context" data-i18n="about_how_text">
-                    Продавец выписывает чек с Ed25519-цифровой подписью. Покупатель получает PDF с QR-кодом —
-                    отсканировав его, любой может проверить подлинность чека. Сроки гарантии отслеживаются в личном
-                    кабинете с возможностью экспорта в календарь.
-                </div>
+                <h2 data-i18n="about_how_title">How It Works</h2>
+                <div class="stage-context" data-i18n="about_how_text">The seller issues a receipt with an Ed25519 digital signature. The buyer gets a PDF with a QR code — anyone can scan it to verify the receipt's authenticity. Warranty dates are tracked in your dashboard with one-click calendar export.</div>
             </div>
 
             <div class="timeline-card" data-animate="up">
-                <h2 data-i18n="about_why_title">Почему Valuon</h2>
+                <h2 data-i18n="about_why_title">Why Valuon</h2>
                 <ul class="feature-list">
                     <li>
                         <i class="fa-solid fa-check"></i>
-                        <span data-i18n="about_why_1">Криптографическая подпись Ed25519 — чек невозможно подделать</span>
+                        <span data-i18n="about_why_1">Ed25519 cryptographic signature — receipts cannot be forged</span>
                     </li>
                     <li>
                         <i class="fa-solid fa-check"></i>
-                        <span data-i18n="about_why_2">Автоматический расчёт и отслеживание гарантий</span>
+                        <span data-i18n="about_why_2">Automatic warranty calculation and tracking</span>
                     </li>
                     <li>
                         <i class="fa-solid fa-check"></i>
-                        <span data-i18n="about_why_3">Чеки не выцветают и не теряются — они всегда в облаке</span>
+                        <span data-i18n="about_why_3">Receipts never fade or get lost — always in the cloud</span>
                     </li>
                     <li>
                         <i class="fa-solid fa-check"></i>
-                        <span data-i18n="about_why_4">Мгновенная верификация по QR-коду без регистрации</span>
+                        <span data-i18n="about_why_4">Instant QR verification without registration</span>
                     </li>
                     <li>
                         <i class="fa-solid fa-check"></i>
-                        <span data-i18n="about_why_5">Бесплатно для покупателей</span>
+                        <span data-i18n="about_why_5">Free for buyers</span>
                     </li>
                 </ul>
             </div>
 
             <div class="timeline-card" data-animate="up">
-                <h2 data-i18n="about_contact_title">Контакты</h2>
-                <p class="stage-context" data-i18n="about_contact_text">
-                    По всем вопросам пишите на почту или в Telegram-канал.
-                </p>
+                <h2 data-i18n="about_contact_title">Contact</h2>
+                <p class="stage-context" data-i18n="about_contact_text">For any questions, write to our email or Telegram channel.</p>
                 <div style="display:flex;flex-direction:column;gap:var(--space-3);margin-top:var(--space-4)">
                     <a href="mailto:valuonguard@proton.me"
                         style="display:flex;align-items:center;gap:var(--space-3);color:var(--text-main);text-decoration:none;font-weight:600">
@@ -119,13 +111,13 @@
     <footer class="footer">
         <div class="container copyright">
             <nav class="footer-nav-links" aria-label="Навигация">
-                <a href="index.html" data-i18n="footer_nav_home">Главная</a>
-                <a href="roadmap.html" data-i18n="footer_nav_roadmap">Дорожная карта</a>
-                <a href="verify.html" data-i18n="footer_nav_verify">Проверка чека</a>
-                <a href="privacy.html" data-i18n="footer_nav_privacy">Конфиденциальность</a>
-                <a href="terms.html" data-i18n="footer_nav_terms">Условия</a>
+                <a href="index.html" data-i18n="footer_nav_home">Home</a>
+                <a href="roadmap.html" data-i18n="footer_nav_roadmap">Roadmap</a>
+                <a href="verify.html" data-i18n="footer_nav_verify">Verify Receipt</a>
+                <a href="privacy.html" data-i18n="footer_nav_privacy">Privacy</a>
+                <a href="terms.html" data-i18n="footer_nav_terms">Terms</a>
             </nav>
-            <p data-i18n="footer_copyright">© 2026 Valuon. Все права защищены.</p>
+            <p data-i18n="footer_copyright">© 2026 Valuon. All rights reserved.</p>
         </div>
     </footer>
 
@@ -133,10 +125,9 @@
     <script src="js/animations.js"></script>
     <script>document.addEventListener('DOMContentLoaded', () => { const n = document.querySelector('.navbar'); if (n) { const t = () => n.classList.toggle('scrolled', window.scrollY > 12); t(); window.addEventListener('scroll', t, { passive: !0 }) } })</script>
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
-                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <p id="cookie-text">We use cookies to operate the site. By continuing, you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
         <button id="cookie-btn" class="btn btn-primary small"
-            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Accept</button>
     </div>
     <script src="js/cookie-banner.js"></script>
 <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

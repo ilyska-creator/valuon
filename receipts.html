@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon — Чеки и документы</title>
+    <script src=\"js/lang-detect.js\"></script>
+    <title>Valuon — Receipts & Documents</title>
     <meta name="description"
-        content="Valuon — Храните и управляйте цифровыми чеками. Загружайте, скачивайте PDF и отслеживайте гарантии.">
+        content="Valuon — Store personal and verified digital receipts securely in one place.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -43,46 +44,46 @@
         </div>
         <nav class="sidebar-nav">
             <a href="dashboard.html#view-items" class="nav-item"><i class="fa-solid fa-box-open"></i> <span
-                    data-i18n="nav_items">Мои вещи</span></a>
+                    data-i18n="nav_items">My Items</span></a>
             <a href="receipts.html" class="nav-item active"><i class="fa-solid fa-receipt"></i> <span
-                    data-i18n="nav_receipts">Чеки и документы</span></a>
+                    data-i18n="nav_receipts">Receipts &amp; Docs</span></a>
 
             <a href="business.html" class="nav-item">
-                <i class="fa-solid fa-store"></i> <span data-i18n="nav_business">Для бизнеса</span>
+                <i class="fa-solid fa-store"></i> <span data-i18n="nav_business">For Business</span>
             </a>
             <a href="verify.html?from=receipts.html" class="nav-item">
-                <i class="fa-solid fa-qrcode"></i> <span data-i18n="nav_verify">Проверить чек</span>
+                <i class="fa-solid fa-qrcode"></i> <span data-i18n="nav_verify">Verify Receipt</span>
             </a>
             <a href="dashboard.html#view-notifications" class="nav-item"><span class="icon-badge-wrap"><i
                         class="fa-solid fa-bell"></i><span class="nav-badge hidden" data-notif-badge></span></span>
-                <span data-i18n="nav_notifications">Уведомления</span></a>
+                <span data-i18n="nav_notifications">Notifications</span></a>
             <a href="dashboard.html#view-settings" class="nav-item"><i class="fa-solid fa-gear"></i> <span
-                    data-i18n="nav_settings">Настройки</span></a>
+                    data-i18n="nav_settings">Settings</span></a>
         </nav>
         <div class="sidebar-footer">
             <div class="controls-row">
                 <button type="button" id="theme-toggle" class="circle-btn" aria-label="Toggle Theme"><i
                         class="fa-solid fa-moon"></i></button>
                 <button type="button" id="lang-toggle" class="circle-btn"
-                    aria-label="Toggle Language"><span>RU</span></button>
+                    aria-label="Toggle Language"><span>EN</span></button>
             </div>
             <button type="button" id="logout-btn" class="nav-item full-width"><i
                     class="fa-solid fa-arrow-right-from-bracket"></i>
-                <span data-i18n="ui_logout">Выйти</span></button>
+                <span data-i18n="ui_logout">Logout</span></button>
         </div>
     </aside>
 
     <main class="main-content">
         <header class="content-header" data-animate>
-            <h1 data-i18n="nav_receipts">Чеки и документы</h1>
+            <h1 data-i18n="nav_receipts">Receipts &amp; Docs</h1>
             <button class="btn btn-primary" id="upload-receipt-btn"><i class="fa-solid fa-upload"></i> <span
-                    data-i18n="btn_upload">Загрузить чек</span></button>
+                    data-i18n="btn_upload">Upload Receipt</span></button>
         </header>
 
         <div class="upload-zone" id="drop-zone" data-animate>
             <i class="fa-solid fa-cloud-arrow-up"></i>
-            <p data-i18n="upload_title">Перетащите фото чека сюда</p>
-            <span data-i18n="upload_hint">или нажмите для выбора файла</span>
+            <p data-i18n="upload_title">Drag &amp; drop receipt photo here</p>
+            <span data-i18n="upload_hint">or click to select file</span>
             <div class="upload-pills">
                 <span class="upload-pill">JPG</span>
                 <span class="upload-pill">PNG</span>
@@ -93,28 +94,28 @@
 
         <section class="items-section" data-animate data-delay="120">
             <div class="items-section-header">
-                <h2 data-i18n="section_documents">Ваши документы</h2>
+                <h2 data-i18n="section_documents">Your Documents</h2>
                 <div class="section-toolbar-controls">
                     <div class="items-tabs" id="receipts-tabs" role="tablist">
                         <span class="items-tab-indicator" id="receipts-tab-indicator" aria-hidden="true"></span>
                         <button type="button" class="items-tab active" data-receipts-tab="personal" role="tab"
                             aria-selected="true">
-                            <span data-i18n="receipts_tab_personal">Ваши чеки</span>
+                            <span data-i18n="receipts_tab_personal">Your Receipts</span>
                             <span class="items-tab-count" id="receipts-count-personal">0</span>
                         </button>
                         <button type="button" class="items-tab" data-receipts-tab="business" role="tab"
                             aria-selected="false">
-                            <span data-i18n="receipts_tab_business">Чеки от партнеров</span>
+                            <span data-i18n="receipts_tab_business">Partner Receipts</span>
                             <span class="items-tab-count" id="receipts-count-business">0</span>
                         </button>
                     </div>
                     <div class="sort-control-wrap">
                         <i class="fa-solid fa-arrow-down-wide-short sort-control-icon" aria-hidden="true"></i>
                         <select id="receipts-sort-select" class="custom-select" aria-label="Сортировка">
-                            <option value="newest" data-i18n="sort_newest">Сначала новые</option>
-                            <option value="oldest" data-i18n="sort_oldest">Сначала старые</option>
-                            <option value="price_desc" data-i18n="sort_price_desc">По цене ↓</option>
-                            <option value="price_asc" data-i18n="sort_price_asc">По цене ↑</option>
+                            <option value="newest" data-i18n="sort_newest">Newest first</option>
+                            <option value="oldest" data-i18n="sort_oldest">Oldest first</option>
+                            <option value="price_desc" data-i18n="sort_price_desc">Price ↓</option>
+                            <option value="price_asc" data-i18n="sort_price_asc">Price ↑</option>
                         </select>
                     </div>
                 </div>
@@ -122,7 +123,7 @@
             <div class="receipts-summary-strip hidden" id="receipts-summary-strip">
                 <div class="receipts-summary-inner">
                     <span class="summary-icon"><i class="fa-solid fa-wallet"></i></span>
-                    <span class="summary-label" data-i18n="receipts_total_spent">Всего по чекам:</span>
+                    <span class="summary-label" data-i18n="receipts_total_spent">Total spent:</span>
                     <span class="summary-value" id="receipts-summary-total">0.00 €</span>
                     <span class="summary-divider">•</span>
                     <span class="summary-count" id="receipts-summary-count">0 чеков</span>
@@ -136,30 +137,30 @@
     <nav class="bottom-nav">
         <a href="dashboard.html#view-items" class="bottom-nav-item">
             <i class="fa-solid fa-box-open"></i>
-            <span data-i18n="nav_items">Мои вещи</span>
+            <span data-i18n="nav_items">My Items</span>
         </a>
         <a href="receipts.html" class="bottom-nav-item active">
             <i class="fa-solid fa-receipt"></i>
-            <span data-i18n="nav_receipts">Чеки</span>
+            <span data-i18n="nav_receipts">Receipts &amp; Docs</span>
         </a>
         <a href="business.html" class="bottom-nav-item">
             <i class="fa-solid fa-store"></i>
-            <span data-i18n="nav_business">Бизнес</span>
+            <span data-i18n="nav_business">For Business</span>
         </a>
         <a href="verify.html?from=receipts.html" class="bottom-nav-item">
             <i class="fa-solid fa-qrcode"></i>
-            <span data-i18n="nav_verify">QR</span>
+            <span data-i18n="nav_verify">Verify Receipt</span>
         </a>
         <a href="dashboard.html#view-notifications" class="bottom-nav-item">
             <span class="icon-badge-wrap">
                 <i class="fa-solid fa-bell"></i>
                 <span class="nav-badge hidden" data-notif-badge></span>
             </span>
-            <span data-i18n="nav_notifications">Уведомления</span>
+            <span data-i18n="nav_notifications">Notifications</span>
         </a>
         <a href="dashboard.html#view-settings" class="bottom-nav-item">
             <i class="fa-solid fa-gear"></i>
-            <span data-i18n="nav_settings">Настройки</span>
+            <span data-i18n="nav_settings">Settings</span>
         </a>
     </nav>
 
@@ -169,8 +170,8 @@
                 <div class="modal-heading">
                     <span class="modal-heading-icon"><i class="fa-solid fa-receipt"></i></span>
                     <div class="modal-heading-text">
-                        <h2 data-i18n="modal_upload_receipt">Загрузить чек</h2>
-                        <p data-i18n="modal_upload_receipt_subtitle">Файл чека и основные данные</p>
+                        <h2 data-i18n="modal_upload_receipt">Upload Receipt</h2>
+                        <p data-i18n="modal_upload_receipt_subtitle">Receipt file and basic details</p>
                     </div>
                 </div>
                 <button id="close-upload-modal" class="btn-close" aria-label="Закрыть"><i
@@ -178,15 +179,15 @@
             </div>
             <form id="upload-receipt-form" class="modal-form" action="#">
                 <div class="input-group">
-                    <label data-i18n="label_linked_item">Привязать к товару</label>
+                    <label data-i18n="label_linked_item">Link to Item</label>
                     <select name="item_id" id="linked-item-select" class="custom-select">
-                        <option value="" data-i18n="option_no_link">Не привязывать</option>
+                        <option value="" data-i18n="option_no_link">Don't link</option>
                     </select>
-                    <p class="field-hint link-hint" id="link-hint" data-i18n="link_hint_manual">Ручной ввод данных</p>
+                    <p class="field-hint link-hint" id="link-hint" data-i18n="link_hint_manual">Manual data entry</p>
                 </div>
 
                 <div class="input-group">
-                    <label data-i18n="label_receipt_name">Название чека</label>
+                    <label data-i18n="label_receipt_name">Receipt Name</label>
                     <div class="input-with-lock">
                         <input type="text" name="receipt_name" placeholder="MacBook Air M2" required>
                         <i class="fa-solid fa-lock lock-icon hidden"></i>
@@ -194,10 +195,10 @@
                 </div>
 
                 <div class="input-group">
-                    <label data-i18n="label_receipt_file">Файл чека</label>
+                    <label data-i18n="label_receipt_file">Receipt File</label>
                     <div class="upload-zone-mini" id="modal-drop-zone">
                         <i class="fa-solid fa-cloud-arrow-up"></i>
-                        <span id="file-name-display" data-i18n="upload_select_hint">Нажмите для выбора файла</span>
+                        <span id="file-name-display" data-i18n="upload_select_hint">Click to select file (Max 10 MB)</span>
                         <input type="file" id="modal-file-input"
                             accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf"
                             style="display: none;">
@@ -205,16 +206,16 @@
                 </div>
 
                 <div class="input-group">
-                    <label data-i18n="label_store_name">Магазин</label>
+                    <label data-i18n="label_store_name">Store</label>
                     <div class="input-with-lock">
-                        <input type="text" name="store_name" data-i18n-placeholder="ph_store" required>
+                        <input type="text" name="store_name" data-i18n-placeholder="ph_store" placeholder="Apple Store, Amazon, Best Buy..." required>
                         <i class="fa-solid fa-lock lock-icon hidden"></i>
                     </div>
                 </div>
 
                 <div class="input-row">
                     <div class="input-group">
-                        <label data-i18n="label_amount">Сумма</label>
+                        <label data-i18n="label_amount">Amount</label>
                         <div class="input-with-lock">
                             <input type="number" name="amount" min="0" step="0.01" placeholder="0.00" required>
                             <i class="fa-solid fa-lock lock-icon hidden"></i>
@@ -222,7 +223,7 @@
                         </div>
                     </div>
                     <div class="input-group">
-                        <label data-i18n="label_purchase_date">Дата покупки</label>
+                        <label data-i18n="label_purchase_date">Purchase Date</label>
                         <div class="input-with-lock">
                             <input type="date" name="purchase_date" class="custom-datepicker" required>
                             <i class="fa-solid fa-lock lock-icon hidden"></i>
@@ -231,7 +232,7 @@
                 </div>
 
                 <div class="input-group">
-                    <label data-i18n="label_receipt_currency">Валюта</label>
+                    <label data-i18n="label_receipt_currency">Currency</label>
                     <select name="currency" id="upload-receipt-currency" class="custom-select" data-searchable
                         data-search-placeholder="currency_search_placeholder"
                         data-search-empty="currency_search_empty"></select>
@@ -239,8 +240,8 @@
 
                 <div class="modal-actions">
                     <button type="button" id="cancel-upload-modal" class="btn btn-outline"
-                        data-i18n="btn_cancel">Отмена</button>
-                    <button type="submit" class="btn btn-primary" data-i18n="btn_submit_upload">Загрузить</button>
+                        data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_submit_upload">Upload</button>
                 </div>
             </form>
         </div>
@@ -250,13 +251,13 @@
             <div class="delete-icon-wrapper">
                 <i class="fa-solid fa-trash"></i>
             </div>
-            <h2 data-i18n="delete_receipt_title">Удалить чек?</h2>
-            <p data-i18n="delete_receipt_desc">Файл и запись будут удалены безвозвратно.</p>
+            <h2 data-i18n="delete_receipt_title">Delete receipt?</h2>
+            <p data-i18n="delete_receipt_desc">File and record will be permanently deleted.</p>
             <div class="modal-actions confirm-actions">
                 <button type="button" id="cancel-delete-receipt" class="btn btn-outline"
-                    data-i18n="btn_cancel">Отмена</button>
+                    data-i18n="btn_cancel">Cancel</button>
                 <button type="button" id="confirm-delete-receipt" class="btn btn-danger"
-                    data-i18n="btn_delete">Удалить</button>
+                    data-i18n="btn_delete">Delete</button>
             </div>
         </div>
     </div>
@@ -277,10 +278,9 @@
     <script src="js/animations.js"></script>
 
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
-                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <p id="cookie-text">We use cookies to operate the site. By continuing, you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
         <button id="cookie-btn" class="btn btn-primary small"
-            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Accept</button>
     </div>
     <script src="js/cookie-banner.js"></script>
     <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

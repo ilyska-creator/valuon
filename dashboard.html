@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon — Dashboard</title>
+    <script src=\"js/lang-detect.js\"></script>
+    <title>Valuon — My Items</title>
     <meta name="description"
-        content="Valuon — Личный кабинет. Управляйте гарантиями, отслеживайте чеки и получайте напоминания об окончании срока.">
+        content="Valuon — Personal dashboard for tracking purchases, warranties, and verified digital receipts.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -44,26 +45,26 @@
 
         <nav class="sidebar-nav">
             <a href="#view-items" class="nav-item active" data-view="items">
-                <i class="fa-solid fa-box-open"></i> <span data-i18n="nav_items">Мои вещи</span>
+                <i class="fa-solid fa-box-open"></i> <span data-i18n="nav_items">My Items</span>
             </a>
             <a href="receipts.html" class="nav-item">
-                <i class="fa-solid fa-receipt"></i> <span data-i18n="nav_receipts">Чеки и документы</span>
+                <i class="fa-solid fa-receipt"></i> <span data-i18n="nav_receipts">Receipts &amp; Docs</span>
             </a>
             <a href="business.html" class="nav-item">
-                <i class="fa-solid fa-store"></i> <span data-i18n="nav_business">Для бизнеса</span>
+                <i class="fa-solid fa-store"></i> <span data-i18n="nav_business">For Business</span>
             </a>
             <a href="verify.html?from=dashboard.html" class="nav-item">
-                <i class="fa-solid fa-qrcode"></i> <span data-i18n="nav_verify">Проверить чек</span>
+                <i class="fa-solid fa-qrcode"></i> <span data-i18n="nav_verify">Verify Receipt</span>
             </a>
             <a href="#view-notifications" class="nav-item" data-view="notifications">
                 <span class="icon-badge-wrap">
                     <i class="fa-solid fa-bell"></i>
                     <span class="nav-badge hidden" data-notif-badge></span>
                 </span>
-                <span data-i18n="nav_notifications">Уведомления</span>
+                <span data-i18n="nav_notifications">Notifications</span>
             </a>
             <a href="#view-settings" class="nav-item" data-view="settings">
-                <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Настройки</span>
+                <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Settings</span>
             </a>
         </nav>
 
@@ -73,12 +74,12 @@
                     <i class="fa-solid fa-moon"></i>
                 </button>
                 <button type="button" id="lang-toggle" class="circle-btn" aria-label="Toggle Language">
-                    <span>RU</span>
+                    <span>EN</span>
                 </button>
             </div>
             <button type="button" id="logout-btn" class="nav-item full-width">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                <span data-i18n="ui_logout">Выйти</span>
+                <span data-i18n="ui_logout">Logout</span>
             </button>
         </div>
     </aside>
@@ -86,15 +87,14 @@
     <main class="main-content">
         <section id="view-items" class="dashboard-view active">
             <header class="content-header" data-animate>
-                <h1 data-i18n="dashboard_title">Мои вещи</h1>
-                <button id="add-item-btn" class="btn btn-primary"><span data-i18n="btn_add">Добавить
-                        вещь</span></button>
+                <h1 data-i18n="dashboard_title">My Items</h1>
+                <button id="add-item-btn" class="btn btn-primary"><span data-i18n="btn_add">+ Add Item</span></button>
             </header>
             <div class="stats-grid" data-animate-group data-animate-step="100">
                 <div class="stat-card" data-animate="zoom">
                     <div class="stat-icon blue"><i class="fa-solid fa-laptop"></i></div>
                     <div class="stat-info">
-                        <span class="stat-label" data-i18n="stat_total">Всего вещей</span>
+                        <span class="stat-label" data-i18n="stat_total">Total Items</span>
                         <span class="stat-value" id="stat-total">0</span>
                     </div>
                 </div>
@@ -102,7 +102,7 @@
                 <div class="stat-card" data-animate="zoom">
                     <div class="stat-icon green"><i class="fa-solid fa-shield-halved"></i></div>
                     <div class="stat-info">
-                        <span class="stat-label" data-i18n="stat_active">Активных гарантий</span>
+                        <span class="stat-label" data-i18n="stat_active">Active Warranties</span>
                         <span class="stat-value" id="stat-active">0</span>
                     </div>
                 </div>
@@ -110,7 +110,7 @@
                 <div class="stat-card" data-animate="zoom">
                     <div class="stat-icon orange"><i class="fa-solid fa-triangle-exclamation"></i></div>
                     <div class="stat-info">
-                        <span class="stat-label" data-i18n="stat_expiring">Истекают скоро</span>
+                        <span class="stat-label" data-i18n="stat_expiring">Expiring Soon</span>
                         <span class="stat-value" id="stat-expiring">0</span>
                     </div>
                 </div>
@@ -118,36 +118,35 @@
                 <div class="stat-card" data-animate="zoom">
                     <div class="stat-icon red"><i class="fa-solid fa-circle-xmark"></i></div>
                     <div class="stat-info">
-                        <span class="stat-label" data-i18n="stat_expired">Истекла гарантия</span>
+                        <span class="stat-label" data-i18n="stat_expired">Expired Warranties</span>
                         <span class="stat-value" id="stat-expired">0</span>
                     </div>
                 </div>
             </div>
             <section class="items-section" data-animate>
                 <div class="items-section-header">
-                    <h2 data-i18n="section_recent">Недавние покупки</h2>
+                    <h2 data-i18n="section_recent">Recent Purchases</h2>
                     <div class="section-toolbar-controls">
                         <div class="items-tabs" id="items-tabs" role="tablist">
                             <span class="items-tab-indicator" id="items-tab-indicator" aria-hidden="true"></span>
                             <button type="button" class="items-tab active" data-items-tab="verified" role="tab"
                                 aria-selected="true">
-                                <span data-i18n="items_tab_verified">Подтвержденные товары</span>
+                                <span data-i18n="items_tab_verified">Confirmed Items</span>
                                 <span class="items-tab-count" id="items-count-verified">0</span>
                             </button>
                             <button type="button" class="items-tab" data-items-tab="mine" role="tab"
                                 aria-selected="false">
-                                <span data-i18n="items_tab_mine">Мои вещи</span>
+                                <span data-i18n="items_tab_mine">My Items</span>
                                 <span class="items-tab-count" id="items-count-mine">0</span>
                             </button>
                         </div>
                         <div class="sort-control-wrap">
                             <i class="fa-solid fa-arrow-down-wide-short sort-control-icon" aria-hidden="true"></i>
                             <select id="items-sort-select" class="custom-select" aria-label="Сортировка">
-                                <option value="newest" data-i18n="sort_newest">Сначала новые</option>
-                                <option value="warranty_asc" data-i18n="sort_warranty_soon">Скоро истекает гарантия
-                                </option>
-                                <option value="price_desc" data-i18n="sort_price_desc">По цене ↓</option>
-                                <option value="price_asc" data-i18n="sort_price_asc">По цене ↑</option>
+                                <option value="newest" data-i18n="sort_newest">Newest first</option>
+                                <option value="warranty_asc" data-i18n="sort_warranty_soon">Warranty expiring soon</option>
+                                <option value="price_desc" data-i18n="sort_price_desc">Price ↓</option>
+                                <option value="price_asc" data-i18n="sort_price_asc">Price ↑</option>
                             </select>
                         </div>
                     </div>
@@ -159,39 +158,38 @@
 
         <section id="view-notifications" class="dashboard-view hidden">
             <header class="content-header">
-                <h1 data-i18n="nav_notifications">Уведомления</h1>
+                <h1 data-i18n="nav_notifications">Notifications</h1>
             </header>
 
             <div class="notifications-list" id="notifications-container">
                 <div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> <span
-                        data-i18n="notif_checking">Проверка статусов...</span></div>
+                        data-i18n="notif_checking">Checking statuses...</span></div>
             </div>
         </section>
 
 
         <section id="view-settings" class="dashboard-view hidden">
             <header class="content-header">
-                <h1 data-i18n="nav_settings">Настройки</h1>
+                <h1 data-i18n="nav_settings">Settings</h1>
             </header>
 
             <div class="settings-container" data-animate-group data-animate-step="120">
 
                 <div class="settings-section" data-animate>
-                    <h2><i class="fa-solid fa-user"></i> <span data-i18n="settings_profile">Профиль</span></h2>
+                    <h2><i class="fa-solid fa-user"></i> <span data-i18n="settings_profile">Profile</span></h2>
 
                     <div class="profile-fields">
                         <div class="profile-field">
-                            <label for="settings-user-id" data-i18n="label_user_id">ID пользователя</label>
+                            <label for="settings-user-id" data-i18n="label_user_id">User ID</label>
                             <div class="email-row user-id-row">
                                 <input type="text" id="settings-user-id" class="user-id-input" readonly disabled>
                                 <button type="button" class="btn btn-outline btn-sm" id="copy-user-id-btn"
                                     aria-label="Скопировать ID">
                                     <i class="fa-regular fa-copy" aria-hidden="true"></i>
-                                    <span data-i18n="btn_copy_id">Копировать</span>
+                                    <span data-i18n="btn_copy_id">Copy</span>
                                 </button>
                             </div>
-                            <p class="setting-desc" data-i18n="user_id_hint">Уникальный идентификатор аккаунта — чеки
-                                привязываются к нему постоянно</p>
+                            <p class="setting-desc" data-i18n="user_id_hint">Unique account identifier — your receipts stay permanently linked to it</p>
                         </div>
 
                         <div class="profile-field">
@@ -199,48 +197,44 @@
                             <div class="email-row" id="email-display-row">
                                 <input type="email" id="settings-email" readonly disabled>
                                 <button class="btn btn-outline btn-sm" id="change-email-btn"
-                                    data-i18n="btn_change_email">Изменить</button>
+                                    data-i18n="btn_change_email">Change</button>
                             </div>
                             <div class="inline-expand-panel" id="change-email-form" aria-hidden="true" inert>
                                 <div class="inline-expand-inner">
-                                    <label data-i18n="label_new_email">Новый Email</label>
+                                    <label data-i18n="label_new_email">New Email</label>
                                     <div class="email-change-form">
                                         <input type="email" id="new-email-input" placeholder="new@email.com">
                                         <div class="email-change-actions">
                                             <button type="button" class="btn btn-primary btn-sm" id="confirm-email-change">
-                                                <span data-i18n="btn_save">Сохранить</span>
+                                                <span data-i18n="btn_save">Save</span>
                                             </button>
                                             <button type="button" class="btn btn-outline btn-sm" id="cancel-email-change">
-                                                <span data-i18n="btn_cancel">Отмена</span>
+                                                <span data-i18n="btn_cancel">Cancel</span>
                                             </button>
                                         </div>
                                     </div>
-                                    <p class="setting-desc email-hint" data-i18n="email_change_hint">
-                                        На новый адрес придёт ссылка для подтверждения
-                                    </p>
+                                    <p class="setting-desc email-hint" data-i18n="email_change_hint">A confirmation link will be sent to the new address</p>
                                 </div>
                             </div>
                         </div>
 
                         <div class="profile-field">
-                            <label for="settings-phone" data-i18n="label_phone">Номер телефона</label>
+                            <label for="settings-phone" data-i18n="label_phone">Phone Number</label>
                             <div class="email-row phone-display-row" id="phone-display-row">
                                 <input type="text" id="settings-phone" readonly disabled
-                                    data-i18n-placeholder="phone_not_set" placeholder="Не указан">
+                                    data-i18n-placeholder="phone_not_set" placeholder="Not set">
                                 <button type="button" class="btn btn-outline btn-sm" id="change-phone-btn"
-                                    data-i18n="btn_add_phone">Добавить</button>
+                                    data-i18n="btn_add_phone">Add</button>
                                 <button type="button" class="btn btn-outline btn-sm btn-icon-danger hidden"
                                     id="remove-phone-btn" aria-label="Удалить номер" data-i18n-title="btn_remove_phone"
                                     title="Удалить номер">
                                     <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
                                 </button>
                             </div>
-                            <p class="setting-desc" data-i18n="phone_settings_hint">Используется для входа по номеру и
-                                автоматического получения чеков</p>
+                            <p class="setting-desc" data-i18n="phone_settings_hint">Used to sign in with your phone and automatically receive partner receipts</p>
                             <div class="inline-expand-panel" id="change-phone-form" aria-hidden="true" inert>
                                 <div class="inline-expand-inner">
-                                    <label for="new-phone-input" data-i18n="label_new_phone">Новый номер
-                                        телефона</label>
+                                    <label for="new-phone-input" data-i18n="label_new_phone">New Phone Number</label>
                                     <div class="email-change-form phone-change-form">
                                         <div class="settings-phone-pair">
                                             <select id="settings-phone-country"
@@ -255,61 +249,56 @@
                                         <div class="email-change-actions">
                                             <button type="button" class="btn btn-primary btn-sm"
                                                 id="confirm-phone-change">
-                                                <span data-i18n="btn_save">Сохранить</span>
+                                                <span data-i18n="btn_save">Save</span>
                                             </button>
                                             <button type="button" class="btn btn-outline btn-sm"
                                                 id="cancel-phone-change">
-                                                <span data-i18n="btn_cancel">Отмена</span>
+                                                <span data-i18n="btn_cancel">Cancel</span>
                                             </button>
                                         </div>
                                     </div>
-                                    <p class="setting-desc email-hint" data-i18n="phone_change_hint">
-                                        При смене номера все ранее полученные чеки останутся в вашем аккаунте
-                                    </p>
+                                    <p class="setting-desc email-hint" data-i18n="phone_change_hint">Changing your phone keeps all previously linked receipts in your account</p>
                                 </div>
                             </div>
                         </div>
 
                         <div class="profile-field">
-                            <label for="settings-birthdate" data-i18n="label_birthdate">Дата рождения</label>
+                            <label for="settings-birthdate" data-i18n="label_birthdate">Date of Birth</label>
                             <input type="date" id="settings-birthdate" class="custom-datepicker" autocomplete="bday">
                         </div>
                         <div class="input-row">
                             <div class="profile-field">
-                                <label data-i18n="label_first_name">Имя</label>
+                                <label data-i18n="label_first_name">First Name</label>
                                 <input type="text" id="settings-first-name" placeholder="James">
                             </div>
                             <div class="profile-field">
-                                <label data-i18n="label_last_name">Фамилия</label>
+                                <label data-i18n="label_last_name">Last Name</label>
                                 <input type="text" id="settings-last-name" placeholder="Smith">
                             </div>
                         </div>
                         <div class="profile-field">
-                            <label data-i18n="currency_label">Валюта по умолчанию</label>
+                            <label data-i18n="currency_label">Default Currency</label>
                             <select id="settings-currency" name="currency" class="custom-select" data-searchable
                                 data-search-placeholder="currency_search_placeholder"
                                 data-search-empty="currency_search_empty"></select>
-                            <p class="setting-desc" data-i18n="currency_settings_hint">Применяется к новым вещам и
-                                чекам — старые записи не меняются</p>
+                            <p class="setting-desc" data-i18n="currency_settings_hint">Applies to new items and receipts — existing records are not changed</p>
                         </div>
                     </div>
 
                     <div class="save-bar">
                         <button class="btn btn-primary" id="save-profile-btn" data-i18n="btn_save"
-                            disabled>Сохранить</button>
+                            disabled>Save</button>
                     </div>
                 </div>
 
                 <div class="settings-section" data-animate>
-                    <h2><i class="fa-solid fa-bell"></i> <span data-i18n="settings_notifications">Уведомления</span>
+                    <h2><i class="fa-solid fa-bell"></i> <span data-i18n="settings_notifications">Notifications</span>
                     </h2>
 
                     <div class="setting-row">
                         <div class="setting-info">
-                            <span class="setting-label" data-i18n="setting_expiry_alerts">Напоминания об истечении
-                                гарантии</span>
-                            <span class="setting-desc" data-i18n="setting_expiry_desc">Предупреждения в кабинете за 30 дней
-                                до окончания</span>
+                            <span class="setting-label" data-i18n="setting_expiry_alerts">Warranty expiry reminders</span>
+                            <span class="setting-desc" data-i18n="setting_expiry_desc">Alerts in dashboard starting 30 days before expiry</span>
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="toggle-expiry" checked>
@@ -320,11 +309,10 @@
                     <div class="setting-row is-disabled">
                         <div class="setting-info">
                             <span class="setting-label-row">
-                                <span class="setting-label" data-i18n="setting_email_digest">Еженедельная сводка</span>
-                                <span class="setting-soon-badge" data-i18n="coming_soon">Скоро</span>
+                                <span class="setting-label" data-i18n="setting_email_digest">Weekly digest</span>
+                                <span class="setting-soon-badge" data-i18n="coming_soon">Coming Soon</span>
                             </span>
-                            <span class="setting-desc" data-i18n="setting_digest_desc">Обзор ваших активов каждый
-                                понедельник</span>
+                            <span class="setting-desc" data-i18n="setting_digest_desc">Overview of your assets every Monday</span>
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="toggle-digest" disabled aria-disabled="true">
@@ -334,12 +322,12 @@
                 </div>
 
                 <div class="settings-section" data-animate>
-                    <h2><i class="fa-solid fa-palette"></i> <span data-i18n="settings_appearance">Вид</span></h2>
+                    <h2><i class="fa-solid fa-palette"></i> <span data-i18n="settings_appearance">Appearance</span></h2>
 
                     <div class="setting-row">
                         <div class="setting-info">
-                            <span class="setting-label" data-i18n="setting_theme">Тёмная тема</span>
-                            <span class="setting-desc" data-i18n="setting_theme_desc">Переключить оформление</span>
+                            <span class="setting-label" data-i18n="setting_theme">Dark Theme</span>
+                            <span class="setting-desc" data-i18n="setting_theme_desc">Toggle appearance</span>
                         </div>
                         <button class="btn btn-outline btn-sm" id="settings-theme-toggle">
                             <i class="fa-solid fa-moon"></i> <span id="settings-theme-label">Тёмная</span>
@@ -348,7 +336,7 @@
 
                     <div class="setting-row">
                         <div class="setting-info">
-                            <span class="setting-label" data-i18n="setting_language">Язык</span>
+                            <span class="setting-label" data-i18n="setting_language">Language</span>
                             <span class="setting-desc" data-i18n="setting_language_desc">Русский / English</span>
                         </div>
                         <button class="btn btn-outline btn-sm" id="settings-lang-toggle">
@@ -358,37 +346,35 @@
                 </div>
 
                 <div class="settings-section hidden" id="pwa-install-card" data-animate>
-                    <h2><i class="fa-solid fa-mobile-screen-button"></i> <span data-i18n="settings_app">Приложение</span></h2>
+                    <h2><i class="fa-solid fa-mobile-screen-button"></i> <span data-i18n="settings_app">App</span></h2>
                     <div class="setting-row">
                         <div class="setting-info">
-                            <span class="setting-label" data-i18n="setting_install_title">Установить Valuon</span>
-                            <span class="setting-desc" data-i18n="setting_install_desc">Быстрый запуск с главного экрана телефона как нативное приложение</span>
-                            <span class="setting-desc hidden" id="pwa-ios-hint" data-i18n="setting_install_ios_hint" style="margin-top:6px;color:var(--primary);font-weight:500;">В Safari нажмите «Поделиться» (↑) → «На экран „Домой“»</span>
+                            <span class="setting-label" data-i18n="setting_install_title">Install Valuon</span>
+                            <span class="setting-desc" data-i18n="setting_install_desc">Launch straight from your home screen like a native app</span>
+                            <span class="setting-desc hidden" id="pwa-ios-hint" data-i18n="setting_install_ios_hint" style="margin-top:6px;color:var(--primary);font-weight:500;">In Safari tap Share (↑) → Add to Home Screen</span>
                         </div>
                         <button type="button" class="btn btn-primary btn-sm hidden" id="pwa-install-btn">
-                            <i class="fa-solid fa-download"></i> <span data-i18n="btn_install_app">Установить</span>
+                            <i class="fa-solid fa-download"></i> <span data-i18n="btn_install_app">Install</span>
                         </button>
-                        <span class="hidden" id="pwa-installed-badge" data-i18n="pwa_installed_badge" style="font-size:0.85rem;font-weight:600;color:var(--success);white-space:nowrap;">Установлено</span>
+                        <span class="hidden" id="pwa-installed-badge" data-i18n="pwa_installed_badge" style="font-size:0.85rem;font-weight:600;color:var(--success);white-space:nowrap;">Installed</span>
                     </div>
                 </div>
 
                 <div class="settings-section danger-zone disabled-section" data-animate>
-                    <h2><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="settings_danger">Опасная
-                            зона</span></h2>
+                    <h2><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="settings_danger">Danger Zone</span></h2>
 
                     <div class="setting-row">
                         <div class="setting-info">
-                            <span class="setting-label" data-i18n="setting_delete_all">Удалить все мои данные</span>
-                            <span class="setting-desc" data-i18n="setting_delete_disabled_desc">Функция появится в
-                                следующем обновлении</span>
+                            <span class="setting-label" data-i18n="setting_delete_all">Delete all my data</span>
+                            <span class="setting-desc" data-i18n="setting_delete_disabled_desc">Feature coming in the next update</span>
                         </div>
-                        <button class="btn-danger btn-disabled" disabled data-i18n="btn_unavailable">Недоступно</button>
+                        <button class="btn-danger btn-disabled" disabled data-i18n="btn_unavailable">Unavailable</button>
                     </div>
 
                     <div class="disabled-overlay">
                         <div class="disabled-badge">
                             <i class="fa-solid fa-lock"></i>
-                            <span data-i18n="coming_soon">Скоро</span>
+                            <span data-i18n="coming_soon">Coming Soon</span>
                         </div>
                     </div>
                 </div>
@@ -396,7 +382,7 @@
                 <div class="settings-section settings-logout" data-animate>
                     <button type="button" id="logout-btn-mobile" class="btn-logout-settings">
                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                        <span data-i18n="ui_logout">Выйти</span>
+                        <span data-i18n="ui_logout">Logout</span>
                     </button>
                 </div>
 
@@ -407,30 +393,30 @@
     <nav class="bottom-nav">
         <a href="#view-items" class="bottom-nav-item active" data-view="items">
             <i class="fa-solid fa-box-open"></i>
-            <span data-i18n="nav_items">Мои вещи</span>
+            <span data-i18n="nav_items">My Items</span>
         </a>
         <a href="receipts.html" class="bottom-nav-item">
             <i class="fa-solid fa-receipt"></i>
-            <span data-i18n="nav_receipts">Чеки</span>
+            <span data-i18n="nav_receipts">Receipts &amp; Docs</span>
         </a>
         <a href="business.html" class="bottom-nav-item">
             <i class="fa-solid fa-store"></i>
-            <span data-i18n="nav_business">Бизнес</span>
+            <span data-i18n="nav_business">For Business</span>
         </a>
         <a href="verify.html?from=dashboard.html" class="bottom-nav-item">
             <i class="fa-solid fa-qrcode"></i>
-            <span data-i18n="nav_verify">QR</span>
+            <span data-i18n="nav_verify">Verify Receipt</span>
         </a>
         <a href="#view-notifications" class="bottom-nav-item" data-view="notifications">
             <span class="icon-badge-wrap">
                 <i class="fa-solid fa-bell"></i>
                 <span class="nav-badge hidden" data-notif-badge></span>
             </span>
-            <span data-i18n="nav_notifications">Уведомления</span>
+            <span data-i18n="nav_notifications">Notifications</span>
         </a>
         <a href="#view-settings" class="bottom-nav-item" data-view="settings">
             <i class="fa-solid fa-gear"></i>
-            <span data-i18n="nav_settings">Настройки</span>
+            <span data-i18n="nav_settings">Settings</span>
         </a>
     </nav>
 
@@ -440,8 +426,8 @@
                 <div class="modal-heading">
                     <span class="modal-heading-icon"><i class="fa-solid fa-box-open"></i></span>
                     <div class="modal-heading-text">
-                        <h2 data-i18n="modal_title">Добавить новую вещь</h2>
-                        <p data-i18n="modal_title_subtitle">Данные о покупке и гарантии</p>
+                        <h2 data-i18n="modal_title">Add New Item</h2>
+                        <p data-i18n="modal_title_subtitle">Purchase and warranty details</p>
                     </div>
                 </div>
                 <button id="close-modal" class="btn-close" aria-label="Закрыть"><i
@@ -449,75 +435,75 @@
             </div>
             <form class="modal-form" action="#">
                 <div class="input-group">
-                    <label data-i18n="label_name">Название товара</label>
+                    <label data-i18n="label_name">Item Name</label>
                     <input type="text" name="name" placeholder="MacBook Air M2" required>
                 </div>
                 <div class="input-row">
                     <div class="input-group">
-                        <label data-i18n="label_category">Категория</label>
+                        <label data-i18n="label_category">Category</label>
                         <select name="type" class="custom-select" required data-searchable
                             data-search-placeholder="category_search_placeholder"
                             data-search-empty="category_search_empty"></select>
                     </div>
                     <div class="input-group">
-                        <label data-i18n="label_brand">Бренд</label>
+                        <label data-i18n="label_brand">Brand</label>
                         <input type="text" name="brand" placeholder="Apple, Samsung...">
                     </div>
                 </div>
 
                 <div class="input-row">
                     <div class="input-group">
-                        <label data-i18n="label_price">Цена покупки</label>
+                        <label data-i18n="label_price">Purchase Price</label>
                         <span class="input-suffix">
                             <input type="number" name="price" min="0" step="0.01" placeholder="0.00">
                             <span class="suffix-hint">€</span>
                         </span>
                     </div>
                     <div class="input-group">
-                        <label data-i18n="label_store">Магазин / Продавец</label>
-                        <input type="text" name="store_name" data-i18n-placeholder="ph_store">
+                        <label data-i18n="label_store">Store / Seller</label>
+                        <input type="text" name="store_name" data-i18n-placeholder="ph_store" placeholder="Apple Store, Amazon, Best Buy...">
                     </div>
                 </div>
 
                 <div class="input-row">
                     <div class="input-group">
-                        <label data-i18n="label_serial">Серийный номер</label>
+                        <label data-i18n="label_serial">Serial Number</label>
                         <input type="text" name="serial_number" placeholder="S/N...">
                     </div>
                     <div class="input-group">
-                        <label data-i18n="label_location">Место хранения</label>
-                        <input type="text" name="location" data-i18n-placeholder="ph_location">
+                        <label data-i18n="label_location">Storage Location</label>
+                        <input type="text" name="location" data-i18n-placeholder="ph_location" placeholder="Home, Office, Storage...">
                     </div>
                 </div>
                 <div class="input-row">
                     <div class="input-group">
-                        <label data-i18n="label_months">Срок гарантии</label>
+                        <label data-i18n="label_months">Warranty Period</label>
                         <span class="input-suffix">
                             <input type="number" name="warranty_months" min="0" max="600" value="0">
-                            <span class="suffix-hint" data-i18n="months_suffix">мес.</span>
+                            <span class="suffix-hint" data-i18n="months_suffix">mo.</span>
                         </span>
                         <div class="warranty-presets" role="group" aria-label="Срок гарантии">
                             <button type="button" class="warranty-chip" data-months="0">0</button>
-                            <button type="button" class="warranty-chip" data-months="12">12<span data-i18n="unit_m">м</span></button>
-                            <button type="button" class="warranty-chip" data-months="24">24<span data-i18n="unit_m">м</span></button>
-                            <button type="button" class="warranty-chip" data-months="36">36<span data-i18n="unit_m">м</span></button>
+                            <button type="button" class="warranty-chip" data-months="12">12<span data-i18n="unit_m">m</span></button>
+                            <button type="button" class="warranty-chip" data-months="24">24<span data-i18n="unit_m">m</span></button>
+                            <button type="button" class="warranty-chip" data-months="36">36<span data-i18n="unit_m">m</span></button>
                         </div>
                     </div>
                     <div class="input-group">
-                        <label data-i18n="label_date">Дата покупки</label>
+                        <label data-i18n="label_date">Purchase Date</label>
                         <input type="date" name="purchase_date" class="custom-datepicker" required>
                     </div>
                 </div>
                 <div class="input-group">
-                    <label data-i18n="label_item_currency">Валюта</label>
+                    <label data-i18n="label_item_currency">Currency</label>
                     <select name="currency" class="custom-select" data-searchable
                         data-search-placeholder="currency_search_placeholder"
                         data-search-empty="currency_search_empty"></select>
                 </div>
                 <div class="modal-actions">
                     <button type="button" id="cancel-modal" class="btn btn-outline"
-                        data-i18n="btn_cancel">Отмена</button>
-                    <button type="submit" class="btn btn-primary" data-i18n="btn_save">Сохранить</button>
+                        data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_save">Save</button>
                 </div>
             </form>
         </div>
@@ -528,8 +514,8 @@
                 <div class="modal-heading">
                     <span class="modal-heading-icon"><i class="fa-solid fa-pen"></i></span>
                     <div class="modal-heading-text">
-                        <h2 data-i18n="modal_edit_title">Изменить товар</h2>
-                        <p data-i18n="modal_edit_title_subtitle">Обновите данные о вещи</p>
+                        <h2 data-i18n="modal_edit_title">Edit Item</h2>
+                        <p data-i18n="modal_edit_title_subtitle">Update the item's details</p>
                     </div>
                 </div>
                 <button id="close-edit-modal" class="btn-close" aria-label="Закрыть"><i
@@ -538,73 +524,73 @@
             <form id="edit-item-form" class="modal-form" action="#">
                 <input type="hidden" name="item_id" id="edit-item-id">
                 <div class="input-group">
-                    <label data-i18n="label_name">Название товара</label>
+                    <label data-i18n="label_name">Item Name</label>
                     <input type="text" name="name" required>
                 </div>
                 <div class="input-row">
                     <div class="input-group">
-                        <label data-i18n="label_category">Категория</label>
+                        <label data-i18n="label_category">Category</label>
                         <select name="type" class="custom-select" required data-searchable
                             data-search-placeholder="category_search_placeholder"
                             data-search-empty="category_search_empty"></select>
                     </div>
                     <div class="input-group">
-                        <label data-i18n="label_brand">Бренд</label>
+                        <label data-i18n="label_brand">Brand</label>
                         <input type="text" name="brand">
                     </div>
                 </div>
                 <div class="input-row">
                     <div class="input-group">
-                        <label data-i18n="label_price">Цена покупки</label>
+                        <label data-i18n="label_price">Purchase Price</label>
                         <span class="input-suffix">
                             <input type="number" name="price" min="0" step="0.01">
                             <span class="suffix-hint">€</span>
                         </span>
                     </div>
                     <div class="input-group">
-                        <label data-i18n="label_store">Магазин / Продавец</label>
-                        <input type="text" name="store_name" data-i18n-placeholder="ph_store">
+                        <label data-i18n="label_store">Store / Seller</label>
+                        <input type="text" name="store_name" data-i18n-placeholder="ph_store" placeholder="Apple Store, Amazon, Best Buy...">
                     </div>
                 </div>
                 <div class="input-row">
                     <div class="input-group">
-                        <label data-i18n="label_serial">Серийный номер</label>
+                        <label data-i18n="label_serial">Serial Number</label>
                         <input type="text" name="serial_number">
                     </div>
                     <div class="input-group">
-                        <label data-i18n="label_location">Место хранения</label>
-                        <input type="text" name="location" data-i18n-placeholder="ph_location">
+                        <label data-i18n="label_location">Storage Location</label>
+                        <input type="text" name="location" data-i18n-placeholder="ph_location" placeholder="Home, Office, Storage...">
                     </div>
                 </div>
                 <div class="input-row">
                     <div class="input-group">
-                        <label data-i18n="label_months">Срок гарантии</label>
+                        <label data-i18n="label_months">Warranty Period</label>
                         <span class="input-suffix">
                             <input type="number" name="warranty_months" min="0" max="600">
-                            <span class="suffix-hint" data-i18n="months_suffix">мес.</span>
+                            <span class="suffix-hint" data-i18n="months_suffix">mo.</span>
                         </span>
                         <div class="warranty-presets" role="group" aria-label="Срок гарантии">
                             <button type="button" class="warranty-chip" data-months="0">0</button>
-                            <button type="button" class="warranty-chip" data-months="12">12<span data-i18n="unit_m">м</span></button>
-                            <button type="button" class="warranty-chip" data-months="24">24<span data-i18n="unit_m">м</span></button>
-                            <button type="button" class="warranty-chip" data-months="36">36<span data-i18n="unit_m">м</span></button>
+                            <button type="button" class="warranty-chip" data-months="12">12<span data-i18n="unit_m">m</span></button>
+                            <button type="button" class="warranty-chip" data-months="24">24<span data-i18n="unit_m">m</span></button>
+                            <button type="button" class="warranty-chip" data-months="36">36<span data-i18n="unit_m">m</span></button>
                         </div>
                     </div>
                     <div class="input-group">
-                        <label data-i18n="label_date">Дата покупки</label>
+                        <label data-i18n="label_date">Purchase Date</label>
                         <input type="date" name="purchase_date" class="custom-datepicker" required>
                     </div>
                 </div>
                 <div class="input-group">
-                    <label data-i18n="label_item_currency">Валюта</label>
+                    <label data-i18n="label_item_currency">Currency</label>
                     <select name="currency" class="custom-select" data-searchable
                         data-search-placeholder="currency_search_placeholder"
                         data-search-empty="currency_search_empty"></select>
                 </div>
                 <div class="modal-actions">
                     <button type="button" id="cancel-edit-modal" class="btn btn-outline"
-                        data-i18n="btn_cancel">Отмена</button>
-                    <button type="submit" class="btn btn-primary" data-i18n="btn_save">Сохранить</button>
+                        data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_save">Save</button>
                 </div>
             </form>
         </div>
@@ -614,13 +600,13 @@
             <div class="delete-icon-wrapper">
                 <i class="fa-solid fa-trash"></i>
             </div>
-            <h2 data-i18n="delete_item_title">Удалить товар?</h2>
-            <p data-i18n="delete_item_desc">Товар и связанные данные будут удалены безвозвратно.</p>
+            <h2 data-i18n="delete_item_title">Delete item?</h2>
+            <p data-i18n="delete_item_desc">Item and related data will be permanently deleted.</p>
             <div class="modal-actions confirm-actions">
                 <button type="button" id="cancel-delete-item" class="btn btn-outline"
-                    data-i18n="btn_cancel">Отмена</button>
+                    data-i18n="btn_cancel">Cancel</button>
                 <button type="button" id="confirm-delete-item" class="btn btn-danger"
-                    data-i18n="btn_delete">Удалить</button>
+                    data-i18n="btn_delete">Delete</button>
             </div>
         </div>
     </div>
@@ -644,10 +630,9 @@
     <script type="module" src="js/dashboard-settings.js"></script>
     <script src="js/animations.js"></script>
     <div id="cookie-banner" class="cookie-banner">
-        <p id="cookie-text">Мы используем cookies для работы сайта. Продолжая использовать сайт, вы соглашаетесь с <a
-                href="privacy.html">Политикой конфиденциальности</a>.</p>
+        <p id="cookie-text">We use cookies to operate the site. By continuing, you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
         <button id="cookie-btn" class="btn btn-primary small"
-            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Принять</button>
+            onclick="document.getElementById('cookie-banner').classList.remove('show');localStorage.setItem('cookie-consent','1')">Accept</button>
     </div>
     <script src="js/cookie-banner.js"></script>
     <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

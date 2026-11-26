@@ -671,7 +671,7 @@ async function startCamera() {
         startScanLoop();
     } catch (err) {
         logError('verify:camera', err);
-        const isEn = (localStorage.getItem('valuon-lang') || 'ru') === 'en';
+        const isEn = ((window.getValuonLang ? window.getValuonLang() : 'en')) === 'en';
         window.showToast?.(
             isEn ? 'Camera unavailable — choose a photo instead' : 'Камера недоступна — выберите фото чека',
             'warning'
@@ -703,7 +703,7 @@ function startScanLoop() {
     if (!window.jsQR) {
         console.warn('[verify] jsQR not loaded, cannot start scan loop');
         stopCamera();
-        const isEn = (localStorage.getItem('valuon-lang') || 'ru') === 'en';
+        const isEn = ((window.getValuonLang ? window.getValuonLang() : 'en')) === 'en';
         window.showToast?.(
             isEn ? 'QR scanner failed to load. Please refresh the page.' : 'Сканер QR не загрузился. Обновите страницу.',
             'error'
@@ -996,7 +996,7 @@ fileInput?.addEventListener('change', async () => {
 
     if (file.type === 'application/pdf' && typeof pdfjsLib === 'undefined') {
         console.warn('[verify] pdfjsLib not loaded, cannot preview PDF');
-        const isEn = (localStorage.getItem('valuon-lang') || 'ru') === 'en';
+        const isEn = ((window.getValuonLang ? window.getValuonLang() : 'en')) === 'en';
         window.showToast(
             isEn ? 'PDF library failed to load. Please refresh the page.' : 'Не удалось загрузить обработчик PDF. Обновите страницу.',
             'error'

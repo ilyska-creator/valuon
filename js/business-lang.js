@@ -139,6 +139,7 @@ const businessTranslations = {
         payment_cash: 'Наличные',
 
         cancel_btn: 'Отмена',
+        edit_btn: 'Изменить',
         issue_receipt_submit: 'Выписать чек',
         issuing_label: 'Выписка...',
 
@@ -497,6 +498,7 @@ const businessTranslations = {
         payment_cash: 'Cash',
 
         cancel_btn: 'Cancel',
+        edit_btn: 'Edit',
         issue_receipt_submit: 'Issue Receipt',
         issuing_label: 'Issuing...',
 
@@ -754,7 +756,7 @@ window.animateCount = function (el, target, duration) {
 
 function formatMoney(value, currencyCode) {
     if (!Number.isFinite(value)) value = 0;
-    const lang = localStorage.getItem('valuon-lang') || 'ru';
+    const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
     if (typeof window.formatCurrency === 'function') {
         return window.formatCurrency(value, currencyCode || 'EUR', lang);
     }
@@ -803,7 +805,7 @@ window.animateAmount = function (el, target, duration, currencyCode) {
     el._countRaf = requestAnimationFrame(step);
 };
 
-let businessCurrentLang = localStorage.getItem('valuon-lang') || 'ru';
+let businessCurrentLang = (window.getValuonLang ? window.getValuonLang() : 'en');
 
 // Применяет data-i18n / data-i18n-placeholder / data-i18n-title к любому
 // корню — document.body, но и к DocumentFragment внутри <template>, куда

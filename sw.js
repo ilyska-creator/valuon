@@ -1,5 +1,5 @@
 // Valuon Service Worker — Stage 1 (App Shell + Static Cache + Offline Fallback)
-const CACHE_VERSION = 'valuon-static-v1';
+const CACHE_VERSION = 'valuon-static-v2';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_URLS = [
@@ -13,6 +13,7 @@ const PRECACHE_URLS = [
     '/css/toast.css',
     '/css/custom-select.css',
     '/css/custom-datepicker.css',
+    '/js/lang-detect.js',
     '/js/theme.js',
     '/js/toast.js',
     '/js/pwa.js',

@@ -155,7 +155,7 @@ export function initPasswordStrength(inputId, options = {}) {
     if (!input) return null;
 
     const container = createStrengthContainer(input);
-    const getLang = options.getLang || (() => localStorage.getItem('valuon-lang') || 'ru');
+    const getLang = options.getLang || (() => (window.getValuonLang ? window.getValuonLang() : 'en'));
 
     const handler = () => updateStrengthUI(container, input.value, getLang());
     input.addEventListener('input', handler);
@@ -179,7 +179,7 @@ export function initPasswordMatch(passwordId, confirmId, options = {}) {
     const confirmInput = document.getElementById(confirmId);
     if (!passInput || !confirmInput) return null;
 
-    const getLang = options.getLang || (() => localStorage.getItem('valuon-lang') || 'ru');
+    const getLang = options.getLang || (() => (window.getValuonLang ? window.getValuonLang() : 'en'));
 
     const hint = document.createElement('div');
     hint.className = 'ps-match-hint';

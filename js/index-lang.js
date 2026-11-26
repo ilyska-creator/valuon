@@ -140,7 +140,7 @@ const translations = {
     }
 };
 
-let currentLang = localStorage.getItem('valuon-lang') === 'en' ? 'en' : 'ru';
+let currentLang = (window.getValuonLang ? window.getValuonLang() : 'en');
 let qrDemoLoader = null;
 
 function getDict(lang) {
@@ -190,8 +190,47 @@ if (qrDemoEl && typeof RotatingTextLoader !== 'undefined') {
     qrDemoLoader = new RotatingTextLoader(qrDemoEl, getDemoLoaderPhrases(), { autoRotate: false });
 }
 
+function hasLocalAuthSession() {
+    try {
+        const key = 'sb-qjnzawjivqvgupbgxdao-auth-token';
+        const raw = sessionStorage.getItem(key) || localStorage.getItem(key);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        return Boolean(parsed && parsed.access_token);
+    } catch (_) {
+        return false;
+    }
+}
+
+function setHomeAuthUI(isLoggedIn) {
+    const navCta = document.querySelector('.nav-list .controls a.btn');
+    if (navCta) {
+        navCta.href = isLoggedIn ? 'dashboard.html' : 'login.html';
+        navCta.setAttribute('data-i18n', isLoggedIn ? 'nav_dashboard' : 'nav_login');
+    }
+
+    const heroPrimary = document.querySelector('.hero-actions a.btn-primary');
+    if (heroPrimary) {
+        heroPrimary.href = isLoggedIn ? 'dashboard.html' : 'register.html';
+        const labelEl = heroPrimary.querySelector('[data-i18n]') || heroPrimary;
+        labelEl.setAttribute('data-i18n', isLoggedIn ? 'hero_btn_dashboard' : 'hero_btn_start');
+    }
+
+    document.querySelectorAll('.hero-actions a[href="login.html"]').forEach(link => {
+        link.hidden = isLoggedIn;
+        link.style.display = isLoggedIn ? 'none' : '';
+    });
+
+    applyTranslations();
+}
+
 window.applyIndexTranslations = applyTranslations;
-applyTranslations();
+window.setHomeAuthUI = setHomeAuthUI;
+if (hasLocalAuthSession()) {
+    setHomeAuthUI(true);
+} else {
+    applyTranslations();
+}
 
 const langToggle = document.getElementById('lang-toggle');
 if (langToggle) {

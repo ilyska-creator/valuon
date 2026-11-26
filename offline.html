@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuon — Нет подключения</title>
+    <title>Valuon — Offline</title>
     <meta name="theme-color" content="#2563eb">
     <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
     <style>
@@ -125,20 +125,23 @@
                 <line x1="12" y1="20" x2="12.01" y2="20"></line>
             </svg>
         </div>
-        <h1 id="offline-title">Нет подключения к интернету</h1>
-        <p id="offline-desc">Проверьте мобильную связь или Wi-Fi и попробуйте обновить страницу.</p>
-        <button type="button" class="btn" id="offline-retry">Повторить</button>
+        <h1 id="offline-title">No internet connection</h1>
+        <p id="offline-desc">Check your mobile data or Wi-Fi connection and try again.</p>
+        <button type="button" class="btn" id="offline-retry">Try again</button>
     </main>
 
     <script>
         (function () {
-            const isEn = (localStorage.getItem('valuon-lang') || 'ru') === 'en';
-            if (isEn) {
-                document.documentElement.lang = 'en';
-                document.title = 'Valuon — Offline';
-                document.getElementById('offline-title').textContent = 'No internet connection';
-                document.getElementById('offline-desc').textContent = 'Check your mobile data or Wi-Fi connection and try again.';
-                document.getElementById('offline-retry').textContent = 'Try again';
+            var saved = null;
+            try { saved = localStorage.getItem('valuon-lang'); } catch (_) {}
+            var rawNav = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+            var lang = (saved === 'ru' || saved === 'en') ? saved : (String(rawNav).toLowerCase().startsWith('ru') ? 'ru' : 'en');
+            if (lang === 'ru') {
+                document.documentElement.lang = 'ru';
+                document.title = 'Valuon — Нет подключения';
+                document.getElementById('offline-title').textContent = 'Нет подключения к интернету';
+                document.getElementById('offline-desc').textContent = 'Проверьте мобильную связь или Wi-Fi и попробуйте обновить страницу.';
+                document.getElementById('offline-retry').textContent = 'Повторить';
             }
             document.getElementById('offline-retry').addEventListener('click', () => {
                 window.location.reload();

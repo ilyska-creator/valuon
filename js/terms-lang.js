@@ -165,7 +165,7 @@ const termsTranslations = {
         }
 };
 
-let currentLang = localStorage.getItem('valuon-lang') || 'ru';
+let currentLang = (window.getValuonLang ? window.getValuonLang() : 'en');
 
 function applyTermsTranslations(lang) {
     const t = termsTranslations[lang] || termsTranslations.ru;

@@ -57,7 +57,7 @@ const aboutTranslations = {
     }
 };
 
-let currentLang = localStorage.getItem('valuon-lang') || 'ru';
+let currentLang = (window.getValuonLang ? window.getValuonLang() : 'en');
 
 function applyAboutTranslations(lang) {
     const t = aboutTranslations[lang] || aboutTranslations.ru;

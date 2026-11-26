@@ -241,7 +241,7 @@ const roadmapTranslations = {
         }
 };
 
-let currentLang = localStorage.getItem('valuon-lang') || 'ru';
+let currentLang = (window.getValuonLang ? window.getValuonLang() : 'en');
 
 function applyRoadmapTranslations(lang) {
     const t = roadmapTranslations[lang] || roadmapTranslations.ru;

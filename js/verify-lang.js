@@ -171,7 +171,7 @@ const verifyTranslations = {
     }
 };
 
-let verifyLang = localStorage.getItem('valuon-lang') || 'ru';
+let verifyLang = (window.getValuonLang ? window.getValuonLang() : 'en');
 
 function t(key) {
     return verifyTranslations[verifyLang]?.[key] ?? verifyTranslations.ru[key] ?? key;

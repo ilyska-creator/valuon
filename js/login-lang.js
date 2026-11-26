@@ -163,7 +163,7 @@ window.authTranslations = translations;
 // английский. Убрали ожидание DOMContentLoaded — текст переводится сразу.
 (() => {
     function getAuthLang() {
-        const raw = localStorage.getItem('valuon-lang') || 'ru';
+        const raw = (window.getValuonLang ? window.getValuonLang() : 'en');
         return translations[raw] ? raw : 'ru';
     }
 
@@ -241,7 +241,7 @@ window.authTranslations = translations;
         container.appendChild(error);
 
         form.addEventListener('submit', (e) => {
-            const lang = localStorage.getItem('valuon-lang') || 'ru';
+            const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
             const msg = lang === 'en' ? 'Please fill out this field' : 'Заполните это поле';
             el.setCustomValidity('');
             if (el.validity.valueMissing) {

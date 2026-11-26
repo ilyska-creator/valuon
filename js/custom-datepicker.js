@@ -1,6 +1,6 @@
 class CustomDatePicker {
     static getLang() {
-        return localStorage.getItem('valuon-lang') || 'ru';
+        return (window.getValuonLang ? window.getValuonLang() : 'en');
     }
 
     static init(root) {
