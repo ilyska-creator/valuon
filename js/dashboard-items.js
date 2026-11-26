@@ -49,7 +49,8 @@ window.addEventListener('currency-changed', (e) => {
 });
 
 function applySavedItemsTab() {
-    const saved = sessionStorage.getItem('valuon-items-tab') || 'verified';
+    let saved = 'verified';
+    try { saved = localStorage.getItem('valuon-items-tab') || 'verified'; } catch (_) {}
     if (saved === 'verified') return;
 
     document.querySelector('#items-tabs .items-tab[data-items-tab="verified"]')?.classList.remove('active');
@@ -85,8 +86,10 @@ async function initDashboardItems() {
     setupItemsSearch();
     await loadItems(auth.user.id, auth.client);
     await loadVerifiedItems(auth.user.email, auth.client);
-    if (!sessionStorage.getItem('valuon-items-tab') && lastVerifiedReceipts.length === 0 && lastMineItems.length > 0) {
-        activateItemsTab('mine', { instant: true });
+    let hasSavedItemsTab = false;
+    try { hasSavedItemsTab = Boolean(localStorage.getItem('valuon-items-tab')); } catch (_) {}
+    if (!hasSavedItemsTab && lastVerifiedReceipts.length === 0 && lastMineItems.length > 0) {
+        activateItemsTab('mine', { instant: false });
     }
     window.addEventListener('phone-changed', () => {
         verifiedReceiptPdfCache.clear();
@@ -259,33 +262,6 @@ async function openLinkedPersonalReceipt(itemId, btn) {
     }
 }
 
-let pdfLibsPromise = null;
-
-function loadScriptOnce(src, checkFn) {
-    if (checkFn()) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = src;
-        s.onload = resolve;
-        s.onerror = reject;
-        document.head.appendChild(s);
-    });
-}
-
-function ensurePdfLibsLoaded() {
-    if (!pdfLibsPromise) {
-        pdfLibsPromise = (async () => {
-            await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => typeof window.jspdf !== 'undefined');
-            await loadScriptOnce('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js', () => typeof qrcode !== 'undefined');
-            await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', () => typeof window.html2canvas !== 'undefined');
-        })().catch((err) => {
-            pdfLibsPromise = null;
-            throw err;
-        });
-    }
-    return pdfLibsPromise;
-}
-
 function getTotalWarrantyDays(item) {
     const start = item?.purchase_date ? parseLocalDate(item.purchase_date) : null;
     const end = item?.warranty_end_date ? parseLocalDate(item.warranty_end_date) : null;
@@ -319,9 +295,8 @@ async function downloadVerifiedReceiptPDF(receiptId, btn) {
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
     try {
+        const { ensurePdfLibsLoaded, downloadReceiptPDF } = await import('./receipt-generator.js');
         await ensurePdfLibsLoaded();
-
-        const { downloadReceiptPDF } = await import('./receipt-generator.js');
         let receipt = verifiedReceiptPdfCache.get(String(receiptId));
 
         if (!receipt) {
@@ -963,34 +938,23 @@ function switchGridTab(oldGrid, newGrid) {
     }
 
     const container = oldGrid?.parentElement;
-    const oldHeight = oldGrid?.offsetHeight || 0;
-    if (container && oldHeight > 0) {
-        container.style.minHeight = `${oldHeight}px`;
-        container.style.transition = 'min-height 0.24s cubic-bezier(0.16, 1, 0.3, 1)';
+    if (container) {
+        container.style.minHeight = '';
+        container.style.transition = '';
     }
 
     if (oldGrid) {
         oldGrid.classList.remove('fade-in', 'fade-out');
         oldGrid.classList.add('hidden');
     }
-    newGrid.classList.remove('hidden', 'fade-out');
+    newGrid.classList.remove('hidden', 'fade-out', 'fade-in');
+    void newGrid.offsetWidth;
     newGrid.classList.add('fade-in');
-
-    if (container) {
-        const newHeight = newGrid.offsetHeight;
-        requestAnimationFrame(() => {
-            container.style.minHeight = `${newHeight}px`;
-        });
-    }
 
     _tabTransitionTimer = setTimeout(() => {
         newGrid.classList.remove('fade-in');
-        if (container) {
-            container.style.minHeight = '';
-            container.style.transition = '';
-        }
         _tabTransitionTimer = null;
-    }, 250);
+    }, 310);
 }
 
 let _itemsTabsIndicator = null;
@@ -1008,7 +972,7 @@ function activateItemsTab(target, { instant = false } = {}) {
     tab.setAttribute('aria-selected', 'true');
     if (_itemsTabsIndicator) _itemsTabsIndicator.update(instant);
 
-    sessionStorage.setItem('valuon-items-tab', target);
+    try { localStorage.setItem('valuon-items-tab', target); } catch (_) {}
     const mineGrid = document.querySelector('#items-grid-mine');
     const verifiedGrid = document.querySelector('#items-grid-verified');
     if (instant) {

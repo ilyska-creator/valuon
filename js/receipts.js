@@ -45,7 +45,8 @@ function getLang() {
 // "Мои вещи"), поэтому просто восстанавливаем сохранённую вкладку —
 // без пересборки разметки и, соответственно, без мигания текста.
 function applySavedReceiptsTab() {
-    const saved = sessionStorage.getItem('valuon-receipts-tab') || 'personal';
+    let saved = 'personal';
+    try { saved = localStorage.getItem('valuon-receipts-tab') || 'personal'; } catch (_) {}
     if (saved === 'personal') return;
 
     document.querySelector('#receipts-tabs .items-tab[data-receipts-tab="personal"]')?.classList.remove('active');
@@ -182,8 +183,10 @@ async function initReceipts() {
     setupReceiptsSearch();
 
     await loadAllReceipts(currentUserEmail, currentUserId, client);
-    if (!sessionStorage.getItem('valuon-receipts-tab') && lastPersonalReceipts.length === 0 && lastBusinessReceipts.length > 0) {
-        activateReceiptsTab('business', { instant: true });
+    let hasSavedReceiptsTab = false;
+    try { hasSavedReceiptsTab = Boolean(localStorage.getItem('valuon-receipts-tab')); } catch (_) {}
+    if (!hasSavedReceiptsTab && lastPersonalReceipts.length === 0 && lastBusinessReceipts.length > 0) {
+        activateReceiptsTab('business', { instant: false });
     }
     await populateItemSelect(currentUserId, client);
 
@@ -498,7 +501,8 @@ function updateReceiptsSummary() {
     const countEl = document.getElementById('receipts-summary-count');
     if (!summaryStrip || !totalEl || !countEl) return;
 
-    const activeTab = sessionStorage.getItem('valuon-receipts-tab') || 'personal';
+    let activeTab = 'personal';
+    try { activeTab = localStorage.getItem('valuon-receipts-tab') || 'personal'; } catch (_) {}
     const rawReceipts = activeTab === 'personal' ? lastPersonalReceipts : lastBusinessReceipts;
     const receipts = currentReceiptsSearch
         ? rawReceipts.filter(r => activeTab === 'personal' ? matchesPersonalReceiptSearch(r) : matchesBusinessReceiptSearch(r))
@@ -606,34 +610,23 @@ function switchReceiptsGridTab(oldGrid, newGrid) {
     }
 
     const container = oldGrid?.parentElement;
-    const oldHeight = oldGrid?.offsetHeight || 0;
-    if (container && oldHeight > 0) {
-        container.style.minHeight = `${oldHeight}px`;
-        container.style.transition = 'min-height 0.24s cubic-bezier(0.16, 1, 0.3, 1)';
+    if (container) {
+        container.style.minHeight = '';
+        container.style.transition = '';
     }
 
     if (oldGrid) {
         oldGrid.classList.remove('fade-in', 'fade-out');
         oldGrid.classList.add('hidden');
     }
-    newGrid.classList.remove('hidden', 'fade-out');
+    newGrid.classList.remove('hidden', 'fade-out', 'fade-in');
+    void newGrid.offsetWidth;
     newGrid.classList.add('fade-in');
-
-    if (container) {
-        const newHeight = newGrid.offsetHeight;
-        requestAnimationFrame(() => {
-            container.style.minHeight = `${newHeight}px`;
-        });
-    }
 
     _receiptsTabTransitionTimer = setTimeout(() => {
         newGrid.classList.remove('fade-in');
-        if (container) {
-            container.style.minHeight = '';
-            container.style.transition = '';
-        }
         _receiptsTabTransitionTimer = null;
-    }, 250);
+    }, 310);
 }
 
 let _receiptsTabsIndicator = null;
@@ -651,7 +644,7 @@ function activateReceiptsTab(target, { instant = false } = {}) {
     tab.setAttribute('aria-selected', 'true');
     if (_receiptsTabsIndicator) _receiptsTabsIndicator.update(instant);
 
-    sessionStorage.setItem('valuon-receipts-tab', target);
+    try { localStorage.setItem('valuon-receipts-tab', target); } catch (_) {}
     const personalGrid = document.getElementById('receipts-grid-personal');
     const businessGrid = document.getElementById('receipts-grid-business');
     if (instant) {
@@ -1015,38 +1008,14 @@ function restoreListeners(client, userId) {
         });
     });
 
-    let receiptsPdfLibsPromise = null;
-    const ensureReceiptsPdfLibs = () => {
-        if (!receiptsPdfLibsPromise) {
-            const loadOne = (src, checkFn) => checkFn()
-                ? Promise.resolve()
-                : new Promise((resolve, reject) => {
-                    const s = document.createElement('script');
-                    s.src = src;
-                    s.onload = resolve;
-                    s.onerror = reject;
-                    document.head.appendChild(s);
-                });
-            receiptsPdfLibsPromise = (async () => {
-                await loadOne('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => typeof window.jspdf !== 'undefined');
-                await loadOne('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js', () => typeof qrcode !== 'undefined');
-                await loadOne('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', () => typeof window.html2canvas !== 'undefined');
-            })().catch((err) => {
-                receiptsPdfLibsPromise = null;
-                throw err;
-            });
-        }
-        return receiptsPdfLibsPromise;
-    };
-
     document.querySelectorAll('.btn-download-biz').forEach(btn => {
         btn.addEventListener('click', async () => {
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             try {
-                await ensureReceiptsPdfLibs();
-                const { downloadReceiptPDF } = await import('./receipt-generator.js');
+                const { ensurePdfLibsLoaded, downloadReceiptPDF } = await import('./receipt-generator.js');
+                await ensurePdfLibsLoaded();
                 const userPhoneForPdf = await fetchCurrentUserPhone(client, userId);
                 const pdfOrFilter = buildBuyerReceiptOrFilter({ userId, email: currentUserEmail, phone: userPhoneForPdf });
                 let pdfRes = pdfOrFilter

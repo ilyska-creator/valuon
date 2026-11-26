@@ -2,6 +2,33 @@ import { SUPABASE_URL } from './supabase-client.js';
 import { logError } from './security.js';
 import { buildReceiptCard, ensureReceiptFontsLoaded } from './receipt-template.js';
 
+let pdfLibsPromise = null;
+
+function loadScriptOnce(src, checkFn) {
+    if (checkFn()) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+    });
+}
+
+export function ensurePdfLibsLoaded() {
+    if (!pdfLibsPromise) {
+        pdfLibsPromise = (async () => {
+            await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => typeof window.jspdf !== 'undefined');
+            await loadScriptOnce('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js', () => typeof qrcode !== 'undefined');
+            await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', () => typeof window.html2canvas !== 'undefined');
+        })().catch((err) => {
+            pdfLibsPromise = null;
+            throw err;
+        });
+    }
+    return pdfLibsPromise;
+}
+
 export function generateQRDataURL(text, size = 80) {
     if (typeof qrcode === 'undefined') {
         console.error('qrcode-generator library is not loaded');
