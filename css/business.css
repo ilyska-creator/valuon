@@ -393,7 +393,7 @@
 
 .items-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
     gap: 1.25rem;
 }
 
@@ -974,9 +974,16 @@
     min-width: 0;
 }
 
-.shop-meta .meta-item:not(.meta-item-address) {
+.shop-meta .meta-item:not(.meta-item-address):not(#display-contact-email-wrap) {
     white-space: nowrap;
     flex-shrink: 0;
+}
+
+#display-contact-email-wrap {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    min-width: 0;
 }
 
 .shop-meta .meta-item i {
@@ -1640,6 +1647,8 @@
     margin: 2px 0 0;
     font-size: 0.8rem;
     color: var(--text-muted);
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 #create-receipt-modal .modal-body {
@@ -6424,7 +6433,7 @@ mark.search-hit {
 
 .shop-phone-pair {
     display: grid;
-    grid-template-columns: 118px 1fr;
+    grid-template-columns: 118px minmax(0, 1fr);
     gap: 0.55rem;
     align-items: stretch;
 }

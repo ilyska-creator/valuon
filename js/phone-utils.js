@@ -712,9 +712,17 @@ export async function fetchCurrentUserPhone(client, userId) {
             .from('profiles')
             .select('phone')
             .eq('id', userId)
-            .single();
-        if (error) return null;
-        return data?.phone || null;
+            .maybeSingle();
+        if (!error && data?.phone) {
+            return String(data.phone).trim();
+        }
+    } catch (_) {
+        // fall through to auth metadata fallback
+    }
+    try {
+        const { data: { user } } = await client.auth.getUser();
+        const metaPhone = user?.user_metadata?.phone || user?.phone || '';
+        return metaPhone ? String(metaPhone).trim() : null;
     } catch (_) {
         return null;
     }

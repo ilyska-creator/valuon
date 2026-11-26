@@ -1287,14 +1287,32 @@ async function populateItemSelect(userId, client) {
     const select = document.getElementById('linked-item-select');
     if (!select) return;
 
-    const { data } = await client
-        .from('items')
-        .select('id, name, price, purchase_date, store_name, type, currency')
-        .eq('user_id', userId)
-        .order('name');
+    const [{ data: itemsData }, { data: linkedReceipts }] = await Promise.all([
+        client
+            .from('items')
+            .select('id, name, price, purchase_date, store_name, type, currency')
+            .eq('user_id', userId)
+            .order('name'),
+        client
+            .from('receipts')
+            .select('item_id')
+            .eq('user_id', userId)
+            .not('item_id', 'is', null),
+    ]);
 
-    if (data) {
-        data.forEach(item => {
+    const linkedItemIds = new Set(
+        (linkedReceipts || []).map(r => String(r.item_id)).filter(Boolean)
+    );
+
+    // Keep only the placeholder option (value="")
+    Array.from(select.options).forEach((opt) => {
+        if (opt.value !== '') opt.remove();
+    });
+    select.value = '';
+
+    if (itemsData) {
+        itemsData.forEach(item => {
+            if (linkedItemIds.has(String(item.id))) return;
             const opt = document.createElement('option');
             opt.value = item.id;
             opt.textContent = item.name;
@@ -1311,7 +1329,9 @@ async function populateItemSelect(userId, client) {
         });
     }
 
-    if (typeof CustomSelect !== 'undefined') {
+    if (select._cs) {
+        select._cs.refresh();
+    } else if (typeof CustomSelect !== 'undefined') {
         CustomSelect.refreshAll();
     }
 }
@@ -1383,6 +1403,7 @@ function setupDeleteModal(client, userId) {
             closeDeleteModal();
 
             await loadAllReceipts(currentUserEmail, userId, client);
+            await populateItemSelect(userId, client);
 
         } catch (err) {
             logError('receipts:delete', err);
@@ -1789,6 +1810,26 @@ function createUploadModal(client, userId) {
             }
         }
 
+        const preCheckItemId = form.querySelector('[name="item_id"]')?.value || null;
+        if (preCheckItemId) {
+            const { data: existingLink } = await client
+                .from('receipts')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('item_id', preCheckItemId)
+                .limit(1);
+            if (existingLink && existingLink.length > 0) {
+                showToast(
+                    lang === 'ru'
+                        ? 'К этому товару уже привязан чек.'
+                        : 'A receipt is already linked to this item.',
+                    'warning'
+                );
+                await populateItemSelect(userId, client);
+                return;
+            }
+        }
+
         isSubmitting = true;
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
@@ -1863,6 +1904,7 @@ function createUploadModal(client, userId) {
             close();
             activateReceiptsTab('personal');
             await loadAllReceipts(currentUserEmail, userId, client);
+            await populateItemSelect(userId, client);
 
         } catch (err) {
             logError('receipts:upload', err);
