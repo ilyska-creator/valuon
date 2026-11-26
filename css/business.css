@@ -3438,9 +3438,13 @@
     }
 
     #receipt-lifecycle-modal .modal-actions.confirm-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        background: var(--card-bg);
         border-top: 1px solid var(--border);
-        padding: 1rem 0 calc(0.5rem + env(safe-area-inset-bottom, 0));
-        margin-top: 1.25rem;
+        padding: 0.9rem 0 calc(0.5rem + env(safe-area-inset-bottom, 0));
+        margin-top: auto;
         display: flex;
         flex-direction: column;
         gap: 0.65rem;
@@ -4139,6 +4143,7 @@
 }
 
 .lifecycle-action-tabs {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
@@ -4148,7 +4153,30 @@
     border-radius: 14px;
 }
 
+.lifecycle-tab-indicator {
+    position: absolute;
+    top: 0.3rem;
+    bottom: 0.3rem;
+    left: 0;
+    width: 0;
+    border-radius: 10px;
+    background: var(--card-bg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), width 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.16s ease;
+    will-change: transform, width;
+}
+
+[data-theme="dark"] .lifecycle-tab-indicator {
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
+}
+
 .lifecycle-tab-btn {
+    position: relative;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -4162,7 +4190,7 @@
     font-size: 0.85rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: color 0.22s ease, opacity 0.2s ease;
 }
 
 .lifecycle-tab-btn:hover:not(:disabled) {
@@ -4170,9 +4198,7 @@
 }
 
 .lifecycle-tab-btn.active {
-    background: var(--card-bg);
     color: var(--text-main);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .lifecycle-tab-btn[data-lifecycle-action="void"].active {
@@ -4182,6 +4208,31 @@
 .lifecycle-tab-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
+}
+
+.lifecycle-collapse-wrap,
+.lifecycle-refund-section {
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
+    margin-bottom: 0;
+    transition: grid-template-rows 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.22s ease,
+                margin-bottom 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lifecycle-collapse-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.lifecycle-collapse-wrap.is-hidden,
+.lifecycle-refund-section.is-hidden {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    margin-bottom: -1rem;
+    pointer-events: none;
 }
 
 .lifecycle-notice {
@@ -4202,12 +4253,19 @@
     border-color: rgba(245, 158, 11, 0.25);
 }
 
-.lifecycle-notice.is-hidden {
-    display: none;
+@keyframes lifecycleChipIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.lifecycle-refund-section.is-hidden {
-    display: none;
+.lifecycle-reason-presets.is-switching .lifecycle-preset-chip {
+    animation: lifecycleChipIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .lifecycle-items-header {
@@ -4853,6 +4911,24 @@
     background: transparent;
     border: 1px solid var(--border);
     color: var(--text-muted);
+}
+
+.receipts-load-more-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 0 6px;
+}
+
+.receipts-load-more-wrap.is-hidden {
+    display: none;
+}
+
+.receipts-load-more-meta {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -5589,8 +5665,15 @@ mark.search-hit {
     .chart-period-indicator,
     .contact-mode-indicator,
     .receipt-filter-indicator,
+    .lifecycle-tab-indicator,
+    .lifecycle-collapse-wrap,
+    .lifecycle-refund-section,
     .biz-contact-panel {
         transition: none;
+    }
+
+    .lifecycle-reason-presets.is-switching .lifecycle-preset-chip {
+        animation: none;
     }
 
     .biz-contact-panel {

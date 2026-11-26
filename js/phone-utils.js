@@ -668,7 +668,7 @@ export function getCustomerContactSummary(receipt) {
 /**
  * Escapes a string value for safe double-quoted literal use in PostgREST .or() filters.
  */
-function quotePostgrestLiteral(val) {
+export function quotePostgrestLiteral(val) {
     const escaped = String(val).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     return `"${escaped}"`;
 }
@@ -676,7 +676,7 @@ function quotePostgrestLiteral(val) {
 /**
  * Escapes PostgreSQL LIKE/ILIKE wildcard characters (%, _, \) for exact case-insensitive matching.
  */
-function escapeIlikePattern(val) {
+export function escapeIlikePattern(val) {
     return String(val).replace(/[\\%_]/g, '\\$&');
 }
 

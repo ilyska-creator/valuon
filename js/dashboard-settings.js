@@ -661,8 +661,14 @@ async function initSettings() {
     }
 
     if (langBtn) {
+        const readCurrentLang = () => (
+            window.getValuonLang
+                ? window.getValuonLang()
+                : (localStorage.getItem('valuon-lang') || document.documentElement.lang || 'en')
+        );
+
         const updateLangBtn = () => {
-            const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
+            const lang = readCurrentLang();
             const label = document.getElementById('settings-lang-label');
             if (label) label.textContent = lang.toUpperCase();
         };
@@ -671,7 +677,7 @@ async function initSettings() {
 
         langBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            const currentLang = (window.getValuonLang ? window.getValuonLang() : 'en');
+            const currentLang = readCurrentLang();
             const newLang = currentLang === 'ru' ? 'en' : 'ru';
             if (window.applyDashboardLang) {
                 window.applyDashboardLang(newLang);

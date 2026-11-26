@@ -11,7 +11,9 @@ import {
     getDefaultPhoneCountry,
     populateDialCodeSelect,
     wirePhoneInputPair,
-    getCustomerContactSummary
+    getCustomerContactSummary,
+    escapeIlikePattern,
+    quotePostgrestLiteral
 } from './phone-utils.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
 
@@ -37,6 +39,16 @@ async function initBusinessPanel() {
     }
 
     let currentReceiptsList = [];
+    const RECEIPTS_PAGE_SIZE = 25;
+    const RECEIPTS_SELECT_FULL = 'id, receipt_number, status, lifecycle_status, status_changed_at, status_reason, refunded_amount, purchase_date, customer_email, customer_phone, customer_user_id, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, discount_rate, category, net_total, vat_amount, gross_total, sort_order, refunded_qty)';
+    const RECEIPTS_SELECT_NOPHONE = 'id, receipt_number, status, lifecycle_status, status_changed_at, status_reason, refunded_amount, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order, refunded_qty)';
+    const RECEIPTS_SELECT_LEGACY = 'id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)';
+    let receiptsTotalMatched = 0;
+    let receiptsAllCount = 0;
+    let isLoadingMoreReceipts = false;
+    let isExportingReceipts = false;
+    let receiptsQuerySeq = 0;
+    let serverAnalyticsByPeriod = {};
     let receiptsChartInstance = null;
     let revenueChartInstance = null;
     let chartPeriod = 'week';
@@ -221,22 +233,27 @@ async function initBusinessPanel() {
     }
 
     function updateExportMenuState(filteredCount, totalCount, t) {
+        const currentLang = (window.getValuonLang ? window.getValuonLang() : (window.businessCurrentLang || 'en'));
+        const bt = window.businessTranslations || {};
+        const dict = t || bt[currentLang] || bt.ru || {};
+        const matched = typeof filteredCount === 'number' ? filteredCount : receiptsTotalMatched;
+        const all = typeof totalCount === 'number' ? totalCount : Math.max(receiptsAllCount, matched);
         const exportBtn = document.getElementById('export-receipts-btn');
         const xlsxBtn = document.getElementById('export-receipts-xlsx-btn');
         const csvBtn = document.getElementById('export-receipts-csv-btn');
         const scopeEl = document.getElementById('export-menu-scope');
-        const hasReceipts = filteredCount > 0;
-        if (exportBtn) exportBtn.disabled = !hasReceipts;
-        if (xlsxBtn) xlsxBtn.disabled = !hasReceipts;
-        if (csvBtn) csvBtn.disabled = !hasReceipts;
+        const hasReceipts = matched > 0;
+        if (exportBtn) exportBtn.disabled = !hasReceipts || isExportingReceipts;
+        if (xlsxBtn) xlsxBtn.disabled = !hasReceipts || isExportingReceipts;
+        if (csvBtn) csvBtn.disabled = !hasReceipts || isExportingReceipts;
         if (scopeEl) {
             const isFiltered = receiptFilter !== 'all' || receiptSearchQuery.trim().length > 0;
             const tpl = isFiltered
-                ? (t.export_scope_filtered || 'По фильтру: {n} из {total}')
-                : (t.export_scope_all || 'Все чеки: {n}');
+                ? (dict.export_scope_filtered || 'По фильтру: {n} из {total}')
+                : (dict.export_scope_all || 'Все чеки: {n}');
             scopeEl.textContent = tpl
-                .replace('{n}', String(filteredCount))
-                .replace('{total}', String(totalCount));
+                .replace('{n}', String(matched))
+                .replace('{total}', String(all));
         }
     }
 
@@ -250,21 +267,22 @@ async function initBusinessPanel() {
             cash: t.payment_cash || 'Cash',
         };
 
-        const totalAll = (receiptsList || []).length;
-        const filtered = filterReceiptsList(receiptsList || [], payMethodMap);
+        const filtered = receiptsList || [];
+        const matchedTotal = Math.max(receiptsTotalMatched, filtered.length);
+        const shopTotal = Math.max(receiptsAllCount, matchedTotal);
         const searchQueryTrimmed = receiptSearchQuery.trim();
         const hasSearch = searchQueryTrimmed.length > 0;
 
-        updateExportMenuState(filtered.length, totalAll, t);
+        updateExportMenuState(matchedTotal, shopTotal, t);
 
         const searchMetaEl = document.getElementById('receipt-search-meta');
         const searchCounterEl = document.getElementById('receipt-search-counter');
         if (searchMetaEl && searchCounterEl) {
-            if (hasSearch && totalAll > 0) {
+            if (hasSearch && shopTotal > 0) {
                 const countTpl = t.search_results_count || (currentLang === 'en' ? 'Found: {found} of {total}' : 'Найдено: {found} из {total}');
                 searchCounterEl.textContent = countTpl
-                    .replace('{found}', String(filtered.length))
-                    .replace('{total}', String(totalAll));
+                    .replace('{found}', String(matchedTotal))
+                    .replace('{total}', String(shopTotal));
                 searchMetaEl.style.display = 'flex';
             } else {
                 searchMetaEl.style.display = 'none';
@@ -273,7 +291,7 @@ async function initBusinessPanel() {
 
         const filteredEmptyMsg = document.getElementById('no-filtered-receipts-msg');
         if (filteredEmptyMsg) {
-            const showEmpty = !!(totalAll > 0 && filtered.length === 0);
+            const showEmpty = !!(shopTotal > 0 && filtered.length === 0);
             filteredEmptyMsg.style.display = showEmpty ? 'block' : 'none';
             if (showEmpty) {
                 const iconEl = document.getElementById('no-filtered-receipts-icon');
@@ -3077,9 +3095,16 @@ async function initBusinessPanel() {
     const lcCancelBtn = document.getElementById('cancel-lifecycle-btn');
     const lcConfirmBtn = document.getElementById('confirm-lifecycle-btn');
     const lcConfirmLabel = document.getElementById('confirm-lifecycle-label');
+    const lcTabsEl = document.getElementById('lifecycle-action-tabs');
+    const lcTabIndicatorEl = document.getElementById('lifecycle-tab-indicator');
     const lcTabBtns = Array.from(document.querySelectorAll('#receipt-lifecycle-modal .lifecycle-tab-btn'));
+    const lcVoidNoticeWrap = document.getElementById('lifecycle-void-notice-wrap');
     const lcVoidNotice = document.getElementById('lifecycle-void-notice');
     const lcRefundSection = document.getElementById('lifecycle-refund-section');
+    const lifecycleTabIndicator = createSegmentedIndicator(lcTabsEl, lcTabIndicatorEl, {
+        itemSelector: '.lifecycle-tab-btn',
+        activeClass: 'active',
+    });
     const lcItemsList = document.getElementById('lifecycle-items-list');
     const lcSelectAllBtn = document.getElementById('lifecycle-select-all-btn');
     const lcRefundTotal = document.getElementById('lifecycle-refund-total');
@@ -3127,16 +3152,21 @@ async function initBusinessPanel() {
         lcErrorEl.textContent = msg || '';
     }
 
-    function renderLifecyclePresets() {
+    function renderLifecyclePresets(animate = false) {
         if (!lcReasonPresets) return;
         const { t } = getBizT();
         const presets = lcAction === 'void'
             ? (t.lifecycle_presets_void || [])
             : (t.lifecycle_presets_refund || []);
         const currentVal = (lcReasonInput?.value || '').trim();
+        lcReasonPresets.classList.remove('is-switching');
         lcReasonPresets.innerHTML = presets.map(p =>
             `<button type="button" class="lifecycle-preset-chip${currentVal === p ? ' active' : ''}" data-preset="${escapeHtml(p)}">${escapeHtml(p)}</button>`
         ).join('');
+        if (animate) {
+            void lcReasonPresets.offsetWidth;
+            lcReasonPresets.classList.add('is-switching');
+        }
     }
 
     function updateLifecycleRefundSummary() {
@@ -3236,7 +3266,7 @@ async function initBusinessPanel() {
         updateLifecycleRefundSummary();
     }
 
-    function updateLifecycleTabUI() {
+    function updateLifecycleTabUI({ instant = false, animatePresets = false } = {}) {
         if (!lcReceipt) return;
         const { t } = getBizT();
         const lc = getLifecycleStatus(lcReceipt);
@@ -3252,24 +3282,33 @@ async function initBusinessPanel() {
                 btn.disabled = !voidAllowed;
             }
         });
+        lifecycleTabIndicator.update(instant);
 
+        const hideRefund = lcAction !== 'refund';
         if (lcRefundSection) {
-            lcRefundSection.classList.toggle('is-hidden', lcAction !== 'refund');
+            lcRefundSection.classList.toggle('is-hidden', hideRefund);
+            lcRefundSection.setAttribute('aria-hidden', String(hideRefund));
+            lcRefundSection.inert = hideRefund;
         }
 
         if (lcVoidNotice) {
+            const noticeTarget = lcVoidNoticeWrap || lcVoidNotice;
             if (lcAction === 'void') {
-                lcVoidNotice.classList.remove('is-hidden', 'is-warning');
+                noticeTarget.classList.remove('is-hidden');
+                noticeTarget.setAttribute('aria-hidden', 'false');
+                lcVoidNotice.classList.remove('is-warning');
                 lcVoidNotice.innerHTML = `<i class="fa-solid fa-clock" aria-hidden="true"></i><span>${escapeHtml((t.lifecycle_void_available || '').replace('{hours}', String(voidHours)))}</span>`;
             } else if (!voidAllowed) {
-                lcVoidNotice.classList.remove('is-hidden');
+                noticeTarget.classList.remove('is-hidden');
+                noticeTarget.setAttribute('aria-hidden', 'false');
                 lcVoidNotice.classList.add('is-warning');
                 const msg = lc === 'partially_refunded'
                     ? (t.lifecycle_void_has_refunds || 'По этому чеку уже был частичный возврат — аннулирование недоступно.')
                     : (t.lifecycle_void_expired || 'Прошло более 24 часов — аннулирование недоступно. Оформите возврат.');
                 lcVoidNotice.innerHTML = `<i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>${escapeHtml(msg)}</span>`;
             } else {
-                lcVoidNotice.classList.add('is-hidden');
+                noticeTarget.classList.add('is-hidden');
+                noticeTarget.setAttribute('aria-hidden', 'true');
             }
         }
 
@@ -3285,7 +3324,7 @@ async function initBusinessPanel() {
         }
 
         setLifecycleError('');
-        renderLifecyclePresets();
+        renderLifecyclePresets(animatePresets);
     }
 
     function openLifecycleModal(receipt) {
@@ -3315,11 +3354,12 @@ async function initBusinessPanel() {
         }
 
         renderLifecycleItems();
-        updateLifecycleTabUI();
+        updateLifecycleTabUI({ instant: true, animatePresets: false });
 
         lcModal.classList.remove('is-hidden');
         lcModal.setAttribute('aria-hidden', 'false');
         document.documentElement.classList.add('modal-open');
+        requestAnimationFrame(() => lifecycleTabIndicator.update(true));
     }
 
     lcTabBtns.forEach(btn => {
@@ -3328,7 +3368,7 @@ async function initBusinessPanel() {
             const nextAction = btn.dataset.lifecycleAction;
             if (nextAction === lcAction) return;
             lcAction = nextAction;
-            updateLifecycleTabUI();
+            updateLifecycleTabUI({ instant: false, animatePresets: true });
         });
     });
 
@@ -3529,16 +3569,14 @@ async function initBusinessPanel() {
             }
             if (list.grid) {
                 list.grid.classList.add('filter-fade-out');
-                filterFadeTimer = setTimeout(() => {
-                    renderReceiptCards(list, currentReceiptsList, { animateRows: true });
-                    window.applyBusinessTranslations?.();
-                    list.grid.classList.remove('filter-fade-out');
-                    list.grid.classList.add('filter-fade-in');
+                filterFadeTimer = setTimeout(async () => {
+                    await loadReceiptsPage({ append: false, animateRows: true });
+                    list.grid?.classList.remove('filter-fade-out');
+                    list.grid?.classList.add('filter-fade-in');
                     setTimeout(() => list.grid?.classList.remove('filter-fade-in'), 200);
-                }, 130);
+                }, 90);
             } else {
-                renderReceiptCards(list, currentReceiptsList, { animateRows: true });
-                window.applyBusinessTranslations?.();
+                loadReceiptsPage({ append: false, animateRows: true });
             }
         });
     }
@@ -3565,7 +3603,7 @@ async function initBusinessPanel() {
             receiptFilterIndicator.update();
         }
         releaseReceiptsContainerHeight();
-        renderReceiptCards(list, currentReceiptsList, { animateRows: true });
+        loadReceiptsPage({ append: false, animateRows: true });
         if (focusSearch && searchInput) searchInput.focus();
     }
 
@@ -3578,9 +3616,9 @@ async function initBusinessPanel() {
             if (nextQuery.trim().length > 0) {
                 lockReceiptsContainerHeight();
             }
-            const run = () => {
+            const run = async () => {
                 receiptSearchQuery = nextQuery;
-                renderReceiptCards(list, currentReceiptsList, { animateRows: true });
+                await loadReceiptsPage({ append: false, animateRows: true });
                 if (!nextQuery.trim() && receiptFilter === 'all') {
                     // Release lock smoothly on next frame once full list is rendered
                     requestAnimationFrame(releaseReceiptsContainerHeight);
@@ -3590,7 +3628,7 @@ async function initBusinessPanel() {
             if (immediate) {
                 run();
             } else {
-                searchDebounceTimer = setTimeout(run, 120);
+                searchDebounceTimer = setTimeout(run, 280);
             }
         };
 
@@ -3617,7 +3655,7 @@ async function initBusinessPanel() {
         receiptSearchQuery = '';
         if (searchClearBtn) searchClearBtn.style.display = 'none';
         if (receiptFilter === 'all') releaseReceiptsContainerHeight();
-        renderReceiptCards(list, currentReceiptsList, { animateRows: true });
+        loadReceiptsPage({ append: false, animateRows: true });
         searchInput?.focus();
     });
 
@@ -3695,7 +3733,7 @@ async function initBusinessPanel() {
         }, 250);
     }
 
-    function getExportContext() {
+    function getExportContext(rowsOverride) {
         const currentLang = (window.getValuonLang ? window.getValuonLang() : (window.businessCurrentLang || 'en'));
         const bt = window.businessTranslations || {};
         const t = bt[currentLang] || bt.ru || {};
@@ -3703,7 +3741,7 @@ async function initBusinessPanel() {
             card: t.payment_card || 'Card',
             cash: t.payment_cash || 'Cash',
         };
-        const filtered = filterReceiptsList(currentReceiptsList || [], payMethodMap);
+        const filtered = Array.isArray(rowsOverride) ? rowsOverride : (currentReceiptsList || []);
         const lcLabelMap = {
             active: t.lifecycle_active || (currentLang === 'en' ? 'Active' : 'Активен'),
             partially_refunded: t.lifecycle_partially_refunded || (currentLang === 'en' ? 'Partial Refund' : 'Частичный возврат'),
@@ -3713,238 +3751,277 @@ async function initBusinessPanel() {
         return { currentLang, t, payMethodMap, filtered, lcLabelMap };
     }
 
-    function exportFilteredReceiptsXlsx() {
-        setExportMenuOpen(false);
-        const { currentLang, t, payMethodMap, filtered, lcLabelMap } = getExportContext();
-        if (filtered.length === 0) {
-            window.showToast(t.export_csv_empty || (currentLang === 'en' ? 'No receipts to export' : 'Нет чеков для экспорта'), 'warning');
-            return;
+    async function loadExportRows() {
+        const currentLang = (window.getValuonLang ? window.getValuonLang() : (window.businessCurrentLang || 'en'));
+        const bt = window.businessTranslations || {};
+        const t = bt[currentLang] || bt.ru || {};
+        if (receiptsTotalMatched > currentReceiptsList.length) {
+            window.showToast(
+                t.exporting_progress || (currentLang === 'en' ? 'Preparing export…' : 'Подготовка экспорта…'),
+                'info'
+            );
         }
+        return await fetchAllReceiptsForExport();
+    }
 
-        const receiptRows = [];
-        const itemRows = [];
+    async function exportFilteredReceiptsXlsx() {
+        setExportMenuOpen(false);
+        if (isExportingReceipts) return;
+        isExportingReceipts = true;
+        updateExportMenuState();
+        try {
+            const allRows = await loadExportRows();
+            const { currentLang, t, payMethodMap, filtered, lcLabelMap } = getExportContext(allRows);
+            if (filtered.length === 0) {
+                window.showToast(t.export_csv_empty || (currentLang === 'en' ? 'No receipts to export' : 'Нет чеков для экспорта'), 'warning');
+                return;
+            }
 
-        for (const r of filtered) {
-            const lc = getLifecycleStatus(r);
-            const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
-            const dateIso = r.purchase_date ? new Date(r.purchase_date).toISOString().slice(0, 10) : '';
-            const binding = r.status === 'verified'
-                ? (t.status_verified_short || 'Linked')
-                : (t.status_pending_short || 'Pending');
-            const payRaw = (r.payment_method || '').toLowerCase();
-            const payLabel = payMethodMap[payRaw] || r.payment_method || '';
-            const lineItems = Array.isArray(r.receipt_items) ? r.receipt_items : [];
-            const currency = r.currency || currentShop?.currency || 'EUR';
-            const grossVal = Math.round((parseFloat(r.gross_total) || 0) * 100) / 100;
-            const vatVal = Math.round((parseFloat(r.vat_amount) || 0) * 100) / 100;
-            const netVal = r.net_total != null && Number.isFinite(parseFloat(r.net_total))
-                ? Math.round(parseFloat(r.net_total) * 100) / 100
-                : Math.max(0, Math.round((grossVal - vatVal) * 100) / 100);
-            const refundedVal = Math.round((parseFloat(r.refunded_amount) || 0) * 100) / 100;
-            const netRevenueVal = Math.round(getNetReceiptRevenue(r) * 100) / 100;
-            const totalUnits = lineItems.reduce((sum, it) => sum + Math.max(1, parseInt(it.qty, 10) || 1), 0);
+            const receiptRows = [];
+            const itemRows = [];
 
-            const phoneExport = r.customer_phone ? formatPhoneDisplay(r.customer_phone) : '';
-            receiptRows.push([
-                receiptNum,
-                dateIso,
-                r.customer_email || '',
-                phoneExport,
-                binding,
-                lcLabelMap[lc] || lc,
-                payLabel,
-                r.pos_serial || '',
-                totalUnits,
-                netVal,
-                vatVal,
-                grossVal,
-                refundedVal,
-                netRevenueVal,
-                currency,
-                r.status_reason || '',
-            ]);
+            for (const r of filtered) {
+                const lc = getLifecycleStatus(r);
+                const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
+                const dateIso = r.purchase_date ? new Date(r.purchase_date).toISOString().slice(0, 10) : '';
+                const binding = r.status === 'verified'
+                    ? (t.status_verified_short || 'Linked')
+                    : (t.status_pending_short || 'Pending');
+                const payRaw = (r.payment_method || '').toLowerCase();
+                const payLabel = payMethodMap[payRaw] || r.payment_method || '';
+                const lineItems = Array.isArray(r.receipt_items) ? r.receipt_items : [];
+                const currency = r.currency || currentShop?.currency || 'EUR';
+                const grossVal = Math.round((parseFloat(r.gross_total) || 0) * 100) / 100;
+                const vatVal = Math.round((parseFloat(r.vat_amount) || 0) * 100) / 100;
+                const netVal = r.net_total != null && Number.isFinite(parseFloat(r.net_total))
+                    ? Math.round(parseFloat(r.net_total) * 100) / 100
+                    : Math.max(0, Math.round((grossVal - vatVal) * 100) / 100);
+                const refundedVal = Math.round((parseFloat(r.refunded_amount) || 0) * 100) / 100;
+                const netRevenueVal = Math.round(getNetReceiptRevenue(r) * 100) / 100;
+                const totalUnits = lineItems.reduce((sum, it) => sum + Math.max(1, parseInt(it.qty, 10) || 1), 0);
 
-            for (const it of lineItems) {
-                const qty = Math.max(1, parseInt(it.qty, 10) || 1);
-                const refQty = Math.max(0, parseInt(it.refunded_qty, 10) || 0);
-                const lineGross = Math.round((parseFloat(it.gross_total) || 0) * 100) / 100;
-                const lineVat = Math.round((parseFloat(it.vat_amount) || 0) * 100) / 100;
-                const lineNet = it.net_total != null && Number.isFinite(parseFloat(it.net_total))
-                    ? Math.round(parseFloat(it.net_total) * 100) / 100
-                    : Math.max(0, Math.round((lineGross - lineVat) * 100) / 100);
-                const unitPrice = it.unit_price != null && Number.isFinite(parseFloat(it.unit_price))
-                    ? Math.round(parseFloat(it.unit_price) * 100) / 100
-                    : Math.round((lineGross / qty) * 100) / 100;
-                const vatRate = it.vat_rate != null && Number.isFinite(parseFloat(it.vat_rate))
-                    ? parseFloat(it.vat_rate)
-                    : 0;
-                const discountRate = it.discount_rate != null && Number.isFinite(parseFloat(it.discount_rate))
-                    ? parseFloat(it.discount_rate)
-                    : 0;
-                const categoryVal = it.category || '';
-                const warrantyMonths = Math.max(0, parseInt(it.warranty_months, 10) || 0);
-
-                itemRows.push([
+                const phoneExport = r.customer_phone ? formatPhoneDisplay(r.customer_phone) : '';
+                receiptRows.push([
                     receiptNum,
                     dateIso,
                     r.customer_email || '',
                     phoneExport,
-                    it.item_name || '',
-                    categoryVal,
-                    qty,
-                    refQty,
-                    unitPrice,
-                    discountRate,
-                    vatRate,
-                    lineNet,
-                    lineVat,
-                    lineGross,
-                    warrantyMonths,
-                    currency,
+                    binding,
                     lcLabelMap[lc] || lc,
+                    payLabel,
+                    r.pos_serial || '',
+                    totalUnits,
+                    netVal,
+                    vatVal,
+                    grossVal,
+                    refundedVal,
+                    netRevenueVal,
+                    currency,
+                    r.status_reason || '',
                 ]);
+
+                for (const it of lineItems) {
+                    const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+                    const refQty = Math.max(0, parseInt(it.refunded_qty, 10) || 0);
+                    const lineGross = Math.round((parseFloat(it.gross_total) || 0) * 100) / 100;
+                    const lineVat = Math.round((parseFloat(it.vat_amount) || 0) * 100) / 100;
+                    const lineNet = it.net_total != null && Number.isFinite(parseFloat(it.net_total))
+                        ? Math.round(parseFloat(it.net_total) * 100) / 100
+                        : Math.max(0, Math.round((lineGross - lineVat) * 100) / 100);
+                    const unitPrice = it.unit_price != null && Number.isFinite(parseFloat(it.unit_price))
+                        ? Math.round(parseFloat(it.unit_price) * 100) / 100
+                        : Math.round((lineGross / qty) * 100) / 100;
+                    const vatRate = it.vat_rate != null && Number.isFinite(parseFloat(it.vat_rate))
+                        ? parseFloat(it.vat_rate)
+                        : 0;
+                    const discountRate = it.discount_rate != null && Number.isFinite(parseFloat(it.discount_rate))
+                        ? parseFloat(it.discount_rate)
+                        : 0;
+                    const categoryVal = it.category || '';
+                    const warrantyMonths = Math.max(0, parseInt(it.warranty_months, 10) || 0);
+
+                    itemRows.push([
+                        receiptNum,
+                        dateIso,
+                        r.customer_email || '',
+                        phoneExport,
+                        it.item_name || '',
+                        categoryVal,
+                        qty,
+                        refQty,
+                        unitPrice,
+                        discountRate,
+                        vatRate,
+                        lineNet,
+                        lineVat,
+                        lineGross,
+                        warrantyMonths,
+                        currency,
+                        lcLabelMap[lc] || lc,
+                    ]);
+                }
             }
+
+            const blob = buildXlsxBlob([
+                {
+                    name: t.export_sheet_receipts || (currentLang === 'en' ? 'Receipts' : 'Чеки'),
+                    columns: [
+                        { header: t.csv_col_number || 'Receipt #', minWidth: 16 },
+                        { header: t.csv_col_date || 'Date', minWidth: 13 },
+                        { header: t.csv_col_email || 'Customer Email', minWidth: 24 },
+                        { header: t.csv_col_phone || 'Customer Phone', minWidth: 18 },
+                        { header: t.csv_col_binding || 'Binding', minWidth: 14 },
+                        { header: t.csv_col_lifecycle || 'Receipt Status', minWidth: 18 },
+                        { header: t.csv_col_payment || 'Payment', minWidth: 12 },
+                        { header: t.csv_col_register || 'Register', minWidth: 14 },
+                        { header: t.csv_col_items_count || 'Items Qty', type: 'int', minWidth: 13 },
+                        { header: t.csv_col_net || 'Net', type: 'money', minWidth: 13 },
+                        { header: t.csv_col_vat || 'VAT', type: 'money', minWidth: 12 },
+                        { header: t.csv_col_gross || 'Gross Total', type: 'money', minWidth: 14 },
+                        { header: t.csv_col_refunded || 'Refunded', type: 'money', minWidth: 13 },
+                        { header: t.csv_col_net_revenue || 'Net Revenue', type: 'money', minWidth: 14 },
+                        { header: t.csv_col_currency || 'Currency', minWidth: 10 },
+                        { header: t.csv_col_reason || 'Reason', minWidth: 22 },
+                    ],
+                    rows: receiptRows,
+                },
+                {
+                    name: t.export_sheet_items || (currentLang === 'en' ? 'Line Items' : 'Позиции'),
+                    columns: [
+                        { header: t.csv_col_number || 'Receipt #', minWidth: 16 },
+                        { header: t.csv_col_date || 'Date', minWidth: 13 },
+                        { header: t.csv_col_email || 'Customer Email', minWidth: 24 },
+                        { header: t.csv_col_phone || 'Customer Phone', minWidth: 18 },
+                        { header: t.xlsx_item_col_name || 'Product', minWidth: 26 },
+                        { header: t.xlsx_item_col_category || (currentLang === 'en' ? 'Category' : 'Категория'), minWidth: 16 },
+                        { header: t.xlsx_item_col_qty || 'Qty', type: 'int', minWidth: 10 },
+                        { header: t.xlsx_item_col_refunded_qty || 'Refunded Qty', type: 'int', minWidth: 14 },
+                        { header: t.xlsx_item_col_unit_price || 'Unit Price', type: 'money', minWidth: 13 },
+                        { header: t.xlsx_item_col_discount_rate || (currentLang === 'en' ? 'Discount %' : 'Скидка %'), type: 'number', minWidth: 12 },
+                        { header: t.xlsx_item_col_vat_rate || 'VAT %', type: 'number', minWidth: 10 },
+                        { header: t.csv_col_net || 'Net', type: 'money', minWidth: 13 },
+                        { header: t.csv_col_vat || 'VAT', type: 'money', minWidth: 12 },
+                        { header: t.csv_col_gross || 'Gross Total', type: 'money', minWidth: 14 },
+                        { header: t.xlsx_item_col_warranty || 'Warranty (mo.)', type: 'int', minWidth: 15 },
+                        { header: t.csv_col_currency || 'Currency', minWidth: 10 },
+                        { header: t.csv_col_lifecycle || 'Receipt Status', minWidth: 18 },
+                    ],
+                    rows: itemRows,
+                },
+            ]);
+
+            const todayStr = new Date().toISOString().slice(0, 10);
+            triggerBlobDownload(blob, `valuon-receipts-${todayStr}.xlsx`);
+            const doneTpl = t.export_xlsx_done || (currentLang === 'en' ? 'Excel downloaded ({n} receipts)' : 'Excel-файл скачан (чеков: {n})');
+            window.showToast(doneTpl.replace('{n}', String(filtered.length)), 'success');
+        } catch (err) {
+            logError('biz:exportXlsx', err);
+            const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
+            window.showToast(lang === 'en' ? 'Export failed' : 'Ошибка экспорта', 'error');
+        } finally {
+            isExportingReceipts = false;
+            updateExportMenuState();
         }
-
-        const blob = buildXlsxBlob([
-            {
-                name: t.export_sheet_receipts || (currentLang === 'en' ? 'Receipts' : 'Чеки'),
-                columns: [
-                    { header: t.csv_col_number || 'Receipt #', minWidth: 16 },
-                    { header: t.csv_col_date || 'Date', minWidth: 13 },
-                    { header: t.csv_col_email || 'Customer Email', minWidth: 24 },
-                    { header: t.csv_col_phone || 'Customer Phone', minWidth: 18 },
-                    { header: t.csv_col_binding || 'Binding', minWidth: 14 },
-                    { header: t.csv_col_lifecycle || 'Receipt Status', minWidth: 18 },
-                    { header: t.csv_col_payment || 'Payment', minWidth: 12 },
-                    { header: t.csv_col_register || 'Register', minWidth: 14 },
-                    { header: t.csv_col_items_count || 'Items Qty', type: 'int', minWidth: 13 },
-                    { header: t.csv_col_net || 'Net', type: 'money', minWidth: 13 },
-                    { header: t.csv_col_vat || 'VAT', type: 'money', minWidth: 12 },
-                    { header: t.csv_col_gross || 'Gross Total', type: 'money', minWidth: 14 },
-                    { header: t.csv_col_refunded || 'Refunded', type: 'money', minWidth: 13 },
-                    { header: t.csv_col_net_revenue || 'Net Revenue', type: 'money', minWidth: 14 },
-                    { header: t.csv_col_currency || 'Currency', minWidth: 10 },
-                    { header: t.csv_col_reason || 'Reason', minWidth: 22 },
-                ],
-                rows: receiptRows,
-            },
-            {
-                name: t.export_sheet_items || (currentLang === 'en' ? 'Line Items' : 'Позиции'),
-                columns: [
-                    { header: t.csv_col_number || 'Receipt #', minWidth: 16 },
-                    { header: t.csv_col_date || 'Date', minWidth: 13 },
-                    { header: t.csv_col_email || 'Customer Email', minWidth: 24 },
-                    { header: t.csv_col_phone || 'Customer Phone', minWidth: 18 },
-                    { header: t.xlsx_item_col_name || 'Product', minWidth: 26 },
-                    { header: t.xlsx_item_col_category || (currentLang === 'en' ? 'Category' : 'Категория'), minWidth: 16 },
-                    { header: t.xlsx_item_col_qty || 'Qty', type: 'int', minWidth: 10 },
-                    { header: t.xlsx_item_col_refunded_qty || 'Refunded Qty', type: 'int', minWidth: 14 },
-                    { header: t.xlsx_item_col_unit_price || 'Unit Price', type: 'money', minWidth: 13 },
-                    { header: t.xlsx_item_col_discount_rate || (currentLang === 'en' ? 'Discount %' : 'Скидка %'), type: 'number', minWidth: 12 },
-                    { header: t.xlsx_item_col_vat_rate || 'VAT %', type: 'number', minWidth: 10 },
-                    { header: t.csv_col_net || 'Net', type: 'money', minWidth: 13 },
-                    { header: t.csv_col_vat || 'VAT', type: 'money', minWidth: 12 },
-                    { header: t.csv_col_gross || 'Gross Total', type: 'money', minWidth: 14 },
-                    { header: t.xlsx_item_col_warranty || 'Warranty (mo.)', type: 'int', minWidth: 15 },
-                    { header: t.csv_col_currency || 'Currency', minWidth: 10 },
-                    { header: t.csv_col_lifecycle || 'Receipt Status', minWidth: 18 },
-                ],
-                rows: itemRows,
-            },
-        ]);
-
-        const todayStr = new Date().toISOString().slice(0, 10);
-        triggerBlobDownload(blob, `valuon-receipts-${todayStr}.xlsx`);
-        const doneTpl = t.export_xlsx_done || (currentLang === 'en' ? 'Excel downloaded ({n} receipts)' : 'Excel-файл скачан (чеков: {n})');
-        window.showToast(doneTpl.replace('{n}', String(filtered.length)), 'success');
     }
 
-    function exportFilteredReceiptsCsv() {
+    async function exportFilteredReceiptsCsv() {
         setExportMenuOpen(false);
-        const { currentLang, t, payMethodMap, filtered, lcLabelMap } = getExportContext();
-        if (filtered.length === 0) {
-            window.showToast(t.export_csv_empty || (currentLang === 'en' ? 'No receipts to export' : 'Нет чеков для экспорта'), 'warning');
-            return;
+        if (isExportingReceipts) return;
+        isExportingReceipts = true;
+        updateExportMenuState();
+        try {
+            const allRows = await loadExportRows();
+            const { currentLang, t, payMethodMap, filtered, lcLabelMap } = getExportContext(allRows);
+            if (filtered.length === 0) {
+                window.showToast(t.export_csv_empty || (currentLang === 'en' ? 'No receipts to export' : 'Нет чеков для экспорта'), 'warning');
+                return;
+            }
+
+            const headers = [
+                t.csv_col_number || 'Receipt #',
+                t.csv_col_date || 'Date',
+                t.csv_col_email || 'Customer Email',
+                t.csv_col_phone || 'Customer Phone',
+                t.csv_col_binding || 'Binding',
+                t.csv_col_lifecycle || 'Receipt Status',
+                t.csv_col_payment || 'Payment',
+                t.csv_col_register || 'Register',
+                t.csv_col_items || 'Items',
+                t.csv_col_currency || 'Currency',
+                t.csv_col_net || 'Net',
+                t.csv_col_vat || 'VAT',
+                t.csv_col_gross || 'Gross Total',
+                t.csv_col_refunded || 'Refunded',
+                t.csv_col_net_revenue || 'Net Revenue',
+                t.csv_col_reason || 'Reason',
+            ];
+
+            // Use semicolon (;) delimiter for European/Russian Excel compatibility,
+            // and join line items with " | " so no internal delimiter splits columns.
+            const DELIM = ';';
+            const rows = filtered.map(r => {
+                const lc = getLifecycleStatus(r);
+                const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
+                const dateIso = r.purchase_date ? new Date(r.purchase_date).toISOString().slice(0, 10) : '';
+                const binding = r.status === 'verified'
+                    ? (t.status_verified_short || 'Linked')
+                    : (t.status_pending_short || 'Pending');
+                const payRaw = (r.payment_method || '').toLowerCase();
+                const payLabel = payMethodMap[payRaw] || r.payment_method || '';
+                const itemsSummary = Array.isArray(r.receipt_items)
+                    ? r.receipt_items
+                        .map(it => {
+                            const base = `${String(it.item_name || '').replace(/[;|\r\n]+/g, ' ').trim()} x${Math.max(1, parseInt(it.qty, 10) || 1)}`;
+                            const disc = parseFloat(it.discount_rate) || 0;
+                            const cat = it.category ? ` [${String(it.category).replace(/[;|\r\n]+/g, ' ').trim()}]` : '';
+                            return `${base}${disc > 0 ? ` (-${disc}%)` : ''}${cat}`;
+                        })
+                        .join(' | ')
+                    : '';
+                const grossNum = parseFloat(r.gross_total) || 0;
+                const vatNum = parseFloat(r.vat_amount) || 0;
+                const netNum = r.net_total != null && Number.isFinite(parseFloat(r.net_total))
+                    ? parseFloat(r.net_total)
+                    : Math.max(0, grossNum - vatNum);
+                const refundedNum = parseFloat(r.refunded_amount) || 0;
+                const netRevenueNum = getNetReceiptRevenue(r);
+                const phoneExport = r.customer_phone ? formatPhoneDisplay(r.customer_phone) : '';
+
+                return [
+                    receiptNum,
+                    dateIso,
+                    r.customer_email || '',
+                    phoneExport,
+                    binding,
+                    lcLabelMap[lc] || lc,
+                    payLabel,
+                    r.pos_serial || '',
+                    itemsSummary,
+                    r.currency || currentShop?.currency || 'EUR',
+                    netNum.toFixed(2),
+                    vatNum.toFixed(2),
+                    grossNum.toFixed(2),
+                    refundedNum.toFixed(2),
+                    netRevenueNum.toFixed(2),
+                    r.status_reason || '',
+                ].map(sanitizeCsvCell).join(DELIM);
+            });
+
+            const csvContent = '\uFEFF' + [headers.map(sanitizeCsvCell).join(DELIM), ...rows].join('\r\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const todayStr = new Date().toISOString().slice(0, 10);
+            triggerBlobDownload(blob, `valuon-receipts-${todayStr}.csv`);
+
+            const doneTpl = t.export_csv_done || (currentLang === 'en' ? 'Exported {n} receipts' : 'Экспортировано чеков: {n}');
+            window.showToast(doneTpl.replace('{n}', String(filtered.length)), 'success');
+        } catch (err) {
+            logError('biz:exportCsv', err);
+            const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
+            window.showToast(lang === 'en' ? 'Export failed' : 'Ошибка экспорта', 'error');
+        } finally {
+            isExportingReceipts = false;
+            updateExportMenuState();
         }
-
-        const headers = [
-            t.csv_col_number || 'Receipt #',
-            t.csv_col_date || 'Date',
-            t.csv_col_email || 'Customer Email',
-            t.csv_col_phone || 'Customer Phone',
-            t.csv_col_binding || 'Binding',
-            t.csv_col_lifecycle || 'Receipt Status',
-            t.csv_col_payment || 'Payment',
-            t.csv_col_register || 'Register',
-            t.csv_col_items || 'Items',
-            t.csv_col_currency || 'Currency',
-            t.csv_col_net || 'Net',
-            t.csv_col_vat || 'VAT',
-            t.csv_col_gross || 'Gross Total',
-            t.csv_col_refunded || 'Refunded',
-            t.csv_col_net_revenue || 'Net Revenue',
-            t.csv_col_reason || 'Reason',
-        ];
-
-        // Use semicolon (;) delimiter for European/Russian Excel compatibility,
-        // and join line items with " | " so no internal delimiter splits columns.
-        const DELIM = ';';
-        const rows = filtered.map(r => {
-            const lc = getLifecycleStatus(r);
-            const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
-            const dateIso = r.purchase_date ? new Date(r.purchase_date).toISOString().slice(0, 10) : '';
-            const binding = r.status === 'verified'
-                ? (t.status_verified_short || 'Linked')
-                : (t.status_pending_short || 'Pending');
-            const payRaw = (r.payment_method || '').toLowerCase();
-            const payLabel = payMethodMap[payRaw] || r.payment_method || '';
-            const itemsSummary = Array.isArray(r.receipt_items)
-                ? r.receipt_items
-                    .map(it => {
-                        const base = `${String(it.item_name || '').replace(/[;|\r\n]+/g, ' ').trim()} x${Math.max(1, parseInt(it.qty, 10) || 1)}`;
-                        const disc = parseFloat(it.discount_rate) || 0;
-                        const cat = it.category ? ` [${String(it.category).replace(/[;|\r\n]+/g, ' ').trim()}]` : '';
-                        return `${base}${disc > 0 ? ` (-${disc}%)` : ''}${cat}`;
-                    })
-                    .join(' | ')
-                : '';
-            const grossNum = parseFloat(r.gross_total) || 0;
-            const vatNum = parseFloat(r.vat_amount) || 0;
-            const netNum = r.net_total != null && Number.isFinite(parseFloat(r.net_total))
-                ? parseFloat(r.net_total)
-                : Math.max(0, grossNum - vatNum);
-            const refundedNum = parseFloat(r.refunded_amount) || 0;
-            const netRevenueNum = getNetReceiptRevenue(r);
-            const phoneExport = r.customer_phone ? formatPhoneDisplay(r.customer_phone) : '';
-
-            return [
-                receiptNum,
-                dateIso,
-                r.customer_email || '',
-                phoneExport,
-                binding,
-                lcLabelMap[lc] || lc,
-                payLabel,
-                r.pos_serial || '',
-                itemsSummary,
-                r.currency || currentShop?.currency || 'EUR',
-                netNum.toFixed(2),
-                vatNum.toFixed(2),
-                grossNum.toFixed(2),
-                refundedNum.toFixed(2),
-                netRevenueNum.toFixed(2),
-                r.status_reason || '',
-            ].map(sanitizeCsvCell).join(DELIM);
-        });
-
-        const csvContent = '\uFEFF' + [headers.map(sanitizeCsvCell).join(DELIM), ...rows].join('\r\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const todayStr = new Date().toISOString().slice(0, 10);
-        triggerBlobDownload(blob, `valuon-receipts-${todayStr}.csv`);
-
-        const doneTpl = t.export_csv_done || (currentLang === 'en' ? 'Exported {n} receipts' : 'Экспортировано чеков: {n}');
-        window.showToast(doneTpl.replace('{n}', String(filtered.length)), 'success');
     }
 
     document.getElementById('export-receipts-xlsx-btn')?.addEventListener('click', exportFilteredReceiptsXlsx);
@@ -4042,6 +4119,207 @@ async function initBusinessPanel() {
         });
     }
 
+    function getBrowserTimeZone() {
+        try {
+            return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+        } catch (_) {
+            return 'UTC';
+        }
+    }
+
+    async function fetchShopAnalytics(sbClient, shopId, period) {
+        if (!sbClient || !shopId) return null;
+        try {
+            const { data, error } = await sbClient.rpc('get_shop_analytics', {
+                p_shop_id: shopId,
+                p_period: period || 'week',
+                p_tz: getBrowserTimeZone(),
+            });
+            if (error || !data) return null;
+            serverAnalyticsByPeriod[period || 'week'] = data;
+            return data;
+        } catch (err) {
+            logError('biz:getShopAnalytics', err);
+            return null;
+        }
+    }
+
+    function applyServerReceiptFilters(query, { filter = 'all', search = '', hasPhoneCol = true, hasLifecycleCol = true } = {}) {
+        let q = query;
+        if (hasLifecycleCol) {
+            if (filter === 'active') {
+                q = q.or('lifecycle_status.eq.active,lifecycle_status.is.null');
+            } else if (filter === 'closed') {
+                q = q.in('lifecycle_status', ['partially_refunded', 'refunded', 'voided']);
+            }
+        }
+        const trimmed = String(search || '').trim();
+        if (trimmed) {
+            const escaped = escapeIlikePattern(trimmed);
+            const quotedPattern = quotePostgrestLiteral(`*${escaped}*`);
+            const clauses = [
+                `customer_email.ilike.${quotedPattern}`,
+                `pos_serial.ilike.${quotedPattern}`,
+            ];
+            if (hasPhoneCol) {
+                clauses.push(`customer_phone.ilike.${quotedPattern}`);
+                const phoneDigits = trimmed.replace(/\D/g, '');
+                if (phoneDigits.length >= 3 && phoneDigits !== trimmed) {
+                    clauses.push(`customer_phone.ilike.${quotePostgrestLiteral(`*${phoneDigits}*`)}`);
+                }
+            }
+            const rcpDigits = trimmed.replace(/^#?(?:rcp-?)?/i, '').trim();
+            if (/^\d+$/.test(rcpDigits)) {
+                clauses.push(`receipt_number.eq.${rcpDigits}`);
+            }
+            q = q.or(clauses.join(','));
+        }
+        return q;
+    }
+
+    async function fetchReceiptsPage(sbClient, shopId, { offset = 0, limit = RECEIPTS_PAGE_SIZE, filter = receiptFilter, search = receiptSearchQuery } = {}) {
+        const runQuery = (selectCols, hasPhoneCol, hasLifecycleCol) => {
+            let q = sbClient.from('business_receipts')
+                .select(selectCols, { count: 'exact' })
+                .eq('shop_id', shopId)
+                .order('created_at', { ascending: false })
+                .order('sort_order', { referencedTable: 'receipt_items', ascending: true })
+                .range(offset, offset + limit - 1);
+            q = applyServerReceiptFilters(q, { filter, search, hasPhoneCol, hasLifecycleCol });
+            return q;
+        };
+
+        let res = await runQuery(RECEIPTS_SELECT_FULL, true, true);
+        if (res.error && res.error.code === '42703') {
+            res = await runQuery(RECEIPTS_SELECT_NOPHONE, false, true);
+        }
+        if (res.error && res.error.code === '42703') {
+            res = await runQuery(RECEIPTS_SELECT_LEGACY, false, false);
+        }
+        if (res.error) throw res.error;
+        return {
+            rows: res.data || [],
+            total: typeof res.count === 'number' ? res.count : (res.data || []).length,
+        };
+    }
+
+    function updateLoadMoreUI() {
+        const wrap = document.getElementById('receipts-load-more-wrap');
+        const meta = document.getElementById('receipts-load-more-meta');
+        const btn = document.getElementById('receipts-load-more-btn');
+        if (!wrap) return;
+
+        const shown = currentReceiptsList.length;
+        const total = Math.max(shown, receiptsTotalMatched);
+        const hasMore = shown > 0 && shown < total;
+
+        if (!hasMore) {
+            wrap.classList.add('is-hidden');
+            return;
+        }
+
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
+        const t = window.businessTranslations?.[lang] || window.businessTranslations?.en || {};
+        const tpl = t.load_more_meta || (lang === 'en' ? 'Showing {shown} of {total}' : 'Показано {shown} из {total}');
+        if (meta) {
+            meta.textContent = tpl.replace('{shown}', String(shown)).replace('{total}', String(total));
+        }
+        if (btn) {
+            btn.disabled = isLoadingMoreReceipts;
+            const span = btn.querySelector('span');
+            if (span) {
+                span.textContent = isLoadingMoreReceipts
+                    ? (lang === 'en' ? 'Loading…' : 'Загрузка…')
+                    : (t.load_more_receipts || (lang === 'en' ? 'Load more' : 'Загрузить ещё'));
+            }
+        }
+        wrap.classList.remove('is-hidden');
+    }
+
+    async function loadReceiptsPage({ append = false, animateRows = true } = {}) {
+        if (!currentClient || !currentShop?.id) return;
+        const seq = ++receiptsQuerySeq;
+        const offset = append ? currentReceiptsList.length : 0;
+
+        if (append) {
+            isLoadingMoreReceipts = true;
+            updateLoadMoreUI();
+        }
+
+        try {
+            const { rows, total } = await fetchReceiptsPage(currentClient, currentShop.id, {
+                offset,
+                limit: RECEIPTS_PAGE_SIZE,
+                filter: receiptFilter,
+                search: receiptSearchQuery,
+            });
+            if (seq !== receiptsQuerySeq) return;
+
+            receiptsTotalMatched = total;
+            if (append) {
+                const existingIds = new Set(currentReceiptsList.map(r => String(r.id)));
+                const fresh = rows.filter(r => !existingIds.has(String(r.id)));
+                currentReceiptsList = currentReceiptsList.concat(fresh);
+            } else {
+                currentReceiptsList = rows;
+            }
+
+            const emptyMsg = document.getElementById('no-receipts-msg');
+            if (receiptsAllCount === 0 && currentReceiptsList.length === 0 && receiptFilter === 'all' && !receiptSearchQuery.trim()) {
+                list.grid.innerHTML = '';
+                list.grid.style.display = 'none';
+                if (emptyMsg) emptyMsg.style.display = 'block';
+                updateLoadMoreUI();
+                updateExportMenuState();
+                return;
+            }
+            if (emptyMsg) emptyMsg.style.display = 'none';
+
+            renderReceiptCards(list, currentReceiptsList, { animateRows: !append && animateRows });
+            window.applyBusinessTranslations?.();
+            updateLoadMoreUI();
+            updateExportMenuState();
+        } catch (err) {
+            if (seq !== receiptsQuerySeq) return;
+            logError('biz:loadReceiptsPage', err);
+            const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
+            window.showToast(lang === 'en' ? 'Failed to load receipts' : 'Не удалось загрузить чеки', 'error');
+        } finally {
+            if (append) {
+                isLoadingMoreReceipts = false;
+                updateLoadMoreUI();
+            }
+        }
+    }
+
+    async function fetchAllReceiptsForExport() {
+        if (!currentClient || !currentShop?.id) return [];
+        if (currentReceiptsList.length >= receiptsTotalMatched) {
+            return currentReceiptsList.slice();
+        }
+        const BATCH = 1000;
+        const MAX_ROWS = 50000;
+        const all = [];
+        let offset = 0;
+        while (offset < MAX_ROWS) {
+            const { rows } = await fetchReceiptsPage(currentClient, currentShop.id, {
+                offset,
+                limit: BATCH,
+                filter: receiptFilter,
+                search: receiptSearchQuery,
+            });
+            if (!rows.length) break;
+            all.push(...rows);
+            if (rows.length < BATCH) break;
+            offset += BATCH;
+        }
+        return all;
+    }
+
+    document.getElementById('receipts-load-more-btn')?.addEventListener('click', () => {
+        if (!isLoadingMoreReceipts) loadReceiptsPage({ append: true, animateRows: false });
+    });
+
     async function refreshDashboard(client, shopId, statsEl, listEl) {
         if (!shopId) return;
 
@@ -4052,72 +4330,79 @@ async function initBusinessPanel() {
         if (emptyMsg) emptyMsg.style.display = 'none';
         const filteredEmptyMsg = document.getElementById('no-filtered-receipts-msg');
         if (filteredEmptyMsg) filteredEmptyMsg.style.display = 'none';
+        document.getElementById('receipts-load-more-wrap')?.classList.add('is-hidden');
+
+        serverAnalyticsByPeriod = {};
+        const seq = ++receiptsQuerySeq;
 
         try {
-            const receiptsSel = async () => {
-                const fullRes = await client.from('business_receipts')
-                    .select('id, receipt_number, status, lifecycle_status, status_changed_at, status_reason, refunded_amount, purchase_date, customer_email, customer_phone, customer_user_id, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order, refunded_qty)')
-                    .eq('shop_id', shopId)
-                    .order('created_at', { ascending: false })
-                    .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
-                if (!fullRes.error || fullRes.error.code !== '42703') return fullRes;
+            const [analytics, pageResult] = await Promise.all([
+                fetchShopAnalytics(client, shopId, chartPeriod),
+                fetchReceiptsPage(client, shopId, {
+                    offset: 0,
+                    limit: RECEIPTS_PAGE_SIZE,
+                    filter: receiptFilter,
+                    search: receiptSearchQuery,
+                }),
+            ]);
+            if (seq !== receiptsQuerySeq) return;
 
-                // Fallback 0: phone/user_id columns not yet migrated, lifecycle + pos present
-                const noPhoneRes = await client.from('business_receipts')
-                    .select('id, receipt_number, status, lifecycle_status, status_changed_at, status_reason, refunded_amount, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order, refunded_qty)')
-                    .eq('shop_id', shopId)
-                    .order('created_at', { ascending: false })
-                    .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
-                if (!noPhoneRes.error || noPhoneRes.error.code !== '42703') return noPhoneRes;
-
-                // Fallback 1: lifecycle columns not yet migrated, pos_* present
-                const noLcRes = await client.from('business_receipts')
-                    .select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, pos_terminal_id, pos_serial, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)')
-                    .eq('shop_id', shopId)
-                    .order('created_at', { ascending: false })
-                    .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
-                if (!noLcRes.error || noLcRes.error.code !== '42703') return noLcRes;
-
-                // Fallback 2: legacy schema without pos_* and lifecycle_*
-                return client.from('business_receipts')
-                    .select('id, receipt_number, status, purchase_date, customer_email, gross_total, net_total, vat_amount, currency, fiscal_hash, shop_id, created_at, shop_name, payment_method, receipt_items(id, item_name, qty, unit_price, vat_rate, warranty_months, net_total, vat_amount, gross_total, sort_order)')
-                    .eq('shop_id', shopId)
-                    .order('created_at', { ascending: false })
-                    .order('sort_order', { referencedTable: 'receipt_items', ascending: true });
-            };
-
-            const receiptsRes = await receiptsSel();
-            if (receiptsRes.error) throw receiptsRes.error;
-
-            const receipts = receiptsRes.data || [];
-            const activeReceipts = receipts.filter(r => !isReceiptClosed(r));
-            const pendingCount = activeReceipts.filter(r => r.status === 'pending').length;
-
-            if (statsEl.total) { statsEl.total.textContent = '0'; window.animateCount(statsEl.total, receipts.length); }
-            if (statsEl.pending) { statsEl.pending.textContent = '0'; window.animateCount(statsEl.pending, pendingCount); }
-
-            const netRevenues = activeReceipts.map(r => getNetReceiptRevenue(r)).filter(v => Number.isFinite(v));
-            const totalRevenue = Math.round(netRevenues.reduce((s, v) => s + v, 0) * 100) / 100;
-            const avgReceipt = netRevenues.length > 0 ? totalRevenue / netRevenues.length : 0;
+            const receipts = pageResult.rows || [];
+            receiptsTotalMatched = pageResult.total;
+            currentReceiptsList = receipts;
 
             const statsLang = (window.getValuonLang ? window.getValuonLang() : 'en');
             const statsCurrency = currentShop?.currency || 'EUR';
-            if (statsEl.revenue) {
-                statsEl.revenue.textContent = window.formatCurrency(0, statsCurrency, statsLang);
-                window.animateAmount(statsEl.revenue, totalRevenue, null, statsCurrency);
-            }
-            if (statsEl.avgReceipt) {
-                statsEl.avgReceipt.textContent = window.formatCurrency(0, statsCurrency, statsLang);
-                window.animateAmount(statsEl.avgReceipt, avgReceipt, null, statsCurrency);
+
+            if (analytics) {
+                const totalCount = Number(analytics.total_count) || 0;
+                const pendingCount = Number(analytics.pending_count) || 0;
+                const totalRevenue = Number(analytics.total_revenue) || 0;
+                const avgReceipt = Number(analytics.avg_receipt) || 0;
+                receiptsAllCount = totalCount;
+
+                if (statsEl.total) { statsEl.total.textContent = '0'; window.animateCount(statsEl.total, totalCount); }
+                if (statsEl.pending) { statsEl.pending.textContent = '0'; window.animateCount(statsEl.pending, pendingCount); }
+                if (statsEl.revenue) {
+                    statsEl.revenue.textContent = window.formatCurrency(0, statsCurrency, statsLang);
+                    window.animateAmount(statsEl.revenue, totalRevenue, null, statsCurrency);
+                }
+                if (statsEl.avgReceipt) {
+                    statsEl.avgReceipt.textContent = window.formatCurrency(0, statsCurrency, statsLang);
+                    window.animateAmount(statsEl.avgReceipt, avgReceipt, null, statsCurrency);
+                }
+
+                const setCnt = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = String(n); };
+                setCnt('filter-count-all', totalCount);
+                setCnt('filter-count-active', Number(analytics.active_filter_count) || 0);
+                setCnt('filter-count-closed', Number(analytics.closed_filter_count) || 0);
+                receiptFilterIndicator.update(true);
+            } else {
+                const activeReceipts = receipts.filter(r => !isReceiptClosed(r));
+                const pendingCount = activeReceipts.filter(r => r.status === 'pending').length;
+                receiptsAllCount = pageResult.total;
+                const netRevenues = activeReceipts.map(r => getNetReceiptRevenue(r)).filter(v => Number.isFinite(v));
+                const totalRevenue = Math.round(netRevenues.reduce((s, v) => s + v, 0) * 100) / 100;
+                const avgReceipt = netRevenues.length > 0 ? totalRevenue / netRevenues.length : 0;
+
+                if (statsEl.total) { statsEl.total.textContent = '0'; window.animateCount(statsEl.total, receiptsAllCount); }
+                if (statsEl.pending) { statsEl.pending.textContent = '0'; window.animateCount(statsEl.pending, pendingCount); }
+                if (statsEl.revenue) {
+                    statsEl.revenue.textContent = window.formatCurrency(0, statsCurrency, statsLang);
+                    window.animateAmount(statsEl.revenue, totalRevenue, null, statsCurrency);
+                }
+                if (statsEl.avgReceipt) {
+                    statsEl.avgReceipt.textContent = window.formatCurrency(0, statsCurrency, statsLang);
+                    window.animateAmount(statsEl.avgReceipt, avgReceipt, null, statsCurrency);
+                }
+                updateReceiptFilterCounts(receipts);
             }
 
-            currentReceiptsList = receipts;
-            updateReceiptFilterCounts(receipts);
-
-            if (receipts.length === 0) {
+            if (receiptsAllCount === 0 && receipts.length === 0) {
                 listEl.grid.innerHTML = '';
                 listEl.grid.style.display = 'none';
                 if (emptyMsg) emptyMsg.style.display = 'block';
+                updateLoadMoreUI();
                 updateExportMenuState();
                 updateChart();
                 return;
@@ -4128,6 +4413,8 @@ async function initBusinessPanel() {
             renderReceiptCards(listEl, receipts);
             window.applyBusinessTranslations?.();
             receiptFilterIndicator.update(true);
+            updateLoadMoreUI();
+            updateExportMenuState();
             updateChart();
         } catch (e) {
             logError('biz:refreshDashboard', e);
@@ -4398,14 +4685,43 @@ async function initBusinessPanel() {
     }
 
     function aggregateDualPeriod(field, receipts, period) {
-        if (!receipts || receipts.length === 0) {
-            return { labels: [], data: [], change: { absolute: 0, percent: 0 } };
-        }
-
         const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
         const now = new Date();
         const cal = getCalendarPeriod(period, now);
         const isYear = period === 'year';
+
+        const serverAnalytics = serverAnalyticsByPeriod?.[period];
+        if (serverAnalytics && typeof serverAnalytics === 'object') {
+            const cur = isYear
+                ? buildMonthMap(now.getFullYear(), lang)
+                : buildDayMap(cal.currentStart, cal.currentEnd, lang);
+
+            const buckets = serverAnalytics.buckets || {};
+            Object.keys(buckets).forEach(key => {
+                if (cur.groups[key]) {
+                    const b = buckets[key] || {};
+                    cur.groups[key].count = Number(b.count) || 0;
+                    cur.groups[key].total = Number(b.total) || 0;
+                }
+            });
+
+            const curSeries = extractSeries(cur.groups, field);
+            const curSum = curSeries.data.reduce((s, v) => s + (v || 0), 0);
+            const prevSum = field === 'revenue'
+                ? (Number(serverAnalytics.prev_total) || 0)
+                : (Number(serverAnalytics.prev_count) || 0);
+            const abs = curSum - prevSum;
+            const pct = prevSum > 0 ? ((curSum - prevSum) / prevSum) * 100 : (curSum > 0 ? 100 : 0);
+            const change = {
+                absolute: parseFloat(abs.toFixed(2)),
+                percent: parseFloat(pct.toFixed(1)),
+            };
+            return { labels: curSeries.labels, data: curSeries.data, change };
+        }
+
+        if (!receipts || receipts.length === 0) {
+            return { labels: [], data: [], change: { absolute: 0, percent: 0 } };
+        }
 
         const cur = isYear
             ? buildMonthMap(now.getFullYear(), lang)
@@ -4648,7 +4964,7 @@ async function initBusinessPanel() {
 
     const periodBtns = document.querySelectorAll('.chart-period-btn');
     periodBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             if (btn.dataset.period === chartPeriod && btn.classList.contains('active')) return;
             periodBtns.forEach(b => {
                 const isActive = b === btn;
@@ -4656,7 +4972,12 @@ async function initBusinessPanel() {
                 b.setAttribute('aria-selected', String(isActive));
             });
             chartPeriodIndicator.update(false);
-            chartPeriod = btn.dataset.period;
+            const nextPeriod = btn.dataset.period;
+            chartPeriod = nextPeriod;
+            if (currentClient && currentShop?.id && !serverAnalyticsByPeriod[nextPeriod]) {
+                await fetchShopAnalytics(currentClient, currentShop.id, nextPeriod);
+                if (chartPeriod !== nextPeriod) return;
+            }
             updateChart();
         });
     });
@@ -4682,6 +5003,7 @@ async function initBusinessPanel() {
         } else {
             updateExportMenuState();
         }
+        updateLoadMoreUI();
         syncDraftButton();
         requestAnimationFrame(() => {
             receiptFilterIndicator.update(true);
@@ -4690,7 +5012,7 @@ async function initBusinessPanel() {
         });
         if (lcReceipt && lcModal && !lcModal.classList.contains('is-hidden')) {
             renderLifecycleItems();
-            updateLifecycleTabUI();
+            updateLifecycleTabUI({ instant: true, animatePresets: false });
         }
         setTimeout(updateChart, 50);
     });

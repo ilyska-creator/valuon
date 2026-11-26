@@ -1,5 +1,5 @@
 // Valuon Service Worker — Stage 1 (App Shell + Static Cache + Offline Fallback)
-const CACHE_VERSION = 'valuon-static-v2';
+const CACHE_VERSION = 'valuon-static-v3';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_URLS = [

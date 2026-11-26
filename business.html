@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src=\"js/lang-detect.js\"></script>
+    <script src="js/lang-detect.js"></script>
     <title>Valuon — Business Panel</title>
     <meta name="description"
         content="Valuon — Seller dashboard for issuing cryptographically signed digital receipts.">
@@ -331,6 +331,12 @@
                         data-i18n="search_reset_btn">Reset search</button>
                 </div>
                 <div id="business-receipts-grid" class="receipts-ledger">
+                </div>
+                <div id="receipts-load-more-wrap" class="receipts-load-more-wrap is-hidden">
+                    <span id="receipts-load-more-meta" class="receipts-load-more-meta"></span>
+                    <button type="button" id="receipts-load-more-btn" class="btn btn-outline">
+                        <span data-i18n="load_more_receipts">Load more</span>
+                    </button>
                 </div>
                 <div id="no-filtered-receipts-msg" class="empty-state" style="display: none;">
                     <div class="empty-icon" id="no-filtered-receipts-icon"><i class="fa-solid fa-filter"></i></div>
@@ -712,7 +718,8 @@
                 </div>
 
                 <form id="receipt-lifecycle-form" class="modal-form lifecycle-modal-form" action="#" novalidate>
-                    <div class="lifecycle-action-tabs" role="tablist">
+                    <div class="lifecycle-action-tabs" id="lifecycle-action-tabs" role="tablist">
+                        <span class="lifecycle-tab-indicator" id="lifecycle-tab-indicator" aria-hidden="true"></span>
                         <button type="button" class="lifecycle-tab-btn active" data-lifecycle-action="refund" role="tab"
                             aria-selected="true">
                             <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
@@ -725,21 +732,27 @@
                         </button>
                     </div>
 
-                    <div id="lifecycle-void-notice" class="lifecycle-notice is-hidden"></div>
+                    <div id="lifecycle-void-notice-wrap" class="lifecycle-collapse-wrap is-hidden" aria-hidden="true">
+                        <div class="lifecycle-collapse-inner">
+                            <div id="lifecycle-void-notice" class="lifecycle-notice"></div>
+                        </div>
+                    </div>
 
                     <div id="lifecycle-refund-section" class="lifecycle-refund-section">
-                        <div class="lifecycle-items-header">
-                            <span class="lifecycle-section-label" data-i18n="lifecycle_select_items">Items to refund</span>
-                            <button type="button" id="lifecycle-select-all-btn" class="lifecycle-text-btn"
-                                data-i18n="lifecycle_select_all">Select all</button>
-                        </div>
-                        <div id="lifecycle-items-list" class="lifecycle-items-list"></div>
-                        <div class="lifecycle-refund-summary">
-                            <div class="lifecycle-summary-left">
-                                <span class="lifecycle-summary-label" data-i18n="lifecycle_refund_amount">Refund amount</span>
-                                <span id="lifecycle-refund-kind-badge" class="lifecycle-kind-badge"></span>
+                        <div class="lifecycle-collapse-inner">
+                            <div class="lifecycle-items-header">
+                                <span class="lifecycle-section-label" data-i18n="lifecycle_select_items">Items to refund</span>
+                                <button type="button" id="lifecycle-select-all-btn" class="lifecycle-text-btn"
+                                    data-i18n="lifecycle_select_all">Select all</button>
                             </div>
-                            <strong id="lifecycle-refund-total">€0.00</strong>
+                            <div id="lifecycle-items-list" class="lifecycle-items-list"></div>
+                            <div class="lifecycle-refund-summary">
+                                <div class="lifecycle-summary-left">
+                                    <span class="lifecycle-summary-label" data-i18n="lifecycle_refund_amount">Refund amount</span>
+                                    <span id="lifecycle-refund-kind-badge" class="lifecycle-kind-badge"></span>
+                                </div>
+                                <strong id="lifecycle-refund-total">€0.00</strong>
+                            </div>
                         </div>
                     </div>
 
@@ -747,8 +760,7 @@
                         <label for="lifecycle-reason-input" data-i18n="lifecycle_reason_label">Reason</label>
                         <div id="lifecycle-reason-presets" class="lifecycle-reason-presets"></div>
                         <textarea id="lifecycle-reason-input" name="reason" rows="2" maxlength="300" required
-                            data-i18n-placeholder="lifecycle_reason_placeholder" placeholder="Specify a reason (visible to the customer)"
-                            placeholder="Укажите причину (увидит покупатель)"></textarea>
+                            data-i18n-placeholder="lifecycle_reason_placeholder" placeholder="Specify a reason (visible to the customer)"></textarea>
                         <small class="field-error" id="lifecycle-error" role="alert"></small>
                     </div>
 
