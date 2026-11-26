@@ -248,25 +248,26 @@
     <section id="features" class="section features-section">
         <div class="container">
             <div class="section-header" data-animate>
-                <h2 data-i18n="feat_title">Everything you need <br>for your digital receipts</h2>
-                <p data-i18n="feat_desc">We removed the chaos from receipt storage and verification, keeping only what truly matters.</p>
+                <span class="section-eyebrow" data-i18n="feat_eyebrow">For Buyers</span>
+                <h2 data-i18n="feat_title">Everything you need <br>for your purchases and receipts</h2>
+                <p data-i18n="feat_desc">Works right away for receipts from any store — and unlocks automatic verification at Valuon partner stores.</p>
             </div>
 
             <div class="features-grid" data-animate-group data-animate-step="100">
                 <div class="feature-item" data-animate>
                     <div class="f-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-                    <h3 data-i18n="feat_1_title">Cloud Receipt Archive</h3>
-                    <p data-i18n="feat_1_desc">Upload receipt photos for secure storage. Data entry is manual; auto-fill is coming soon.</p>
-                </div>
-                <div class="feature-item" data-animate>
-                    <div class="f-icon"><i class="fa-solid fa-file-signature"></i></div>
-                    <h3 data-i18n="feat_2_title">A signature that can't be forged</h3>
-                    <p data-i18n="feat_2_desc">Ed25519 digital signature on every receipt. Anyone can verify authenticity — in seconds, without registration.</p>
+                    <h3 data-i18n="feat_1_title">Personal Receipt Vault</h3>
+                    <p data-i18n="feat_1_desc">Store receipt photos and PDFs from any store alongside serial numbers and prices with instant search. No more faded paper.</p>
                 </div>
                 <div class="feature-item" data-animate>
                     <div class="f-icon"><i class="fa-solid fa-calendar-check"></i></div>
-                    <h3 data-i18n="feat_3_title">Warranty, as a free bonus</h3>
-                    <p data-i18n="feat_3_desc">Since your receipt is already stored with us, Valuon automatically calculates warranty periods, alerts you in your dashboard starting 30 days before expiry, and lets you export a calendar reminder.</p>
+                    <h3 data-i18n="feat_3_title">Smart Warranty Tracking</h3>
+                    <p data-i18n="feat_3_desc">Automatic countdown of remaining warranty days, alerts in your dashboard 30 days before expiry, and one-click export to your calendar.</p>
+                </div>
+                <div class="feature-item" data-animate>
+                    <div class="f-icon"><i class="fa-solid fa-file-signature"></i></div>
+                    <h3 data-i18n="feat_2_title">Verified Partner Receipts</h3>
+                    <p data-i18n="feat_2_desc">When a store uses Valuon, your receipt arrives automatically by email or phone with an Ed25519 signature that cannot be altered.</p>
                 </div>
             </div>
         </div>
@@ -275,25 +276,26 @@
     <section id="verify" class="section verify-section">
         <div class="container">
             <div class="section-header" data-animate>
-                <h2 data-i18n="ver_title">Verify Receipts in Seconds</h2>
-                <p data-i18n="ver_desc">No app required. Just open your browser camera and check any receipt's authenticity instantly.</p>
+                <span class="section-eyebrow" data-i18n="ver_eyebrow">Verification</span>
+                <h2 data-i18n="ver_title">Verify Valuon Receipts in Seconds</h2>
+                <p data-i18n="ver_desc">No app required. Open your browser camera to verify any receipt issued through Valuon and check its live status.</p>
             </div>
 
             <div class="verify-scanner-grid" data-animate-group data-animate-step="100">
                 <div class="verify-scanner-card" data-animate>
                     <div class="vs-icon"><i class="fa-solid fa-camera"></i></div>
-                    <h3 data-i18n="ver_1_title">Scan the QR Code</h3>
-                    <p data-i18n="ver_1_desc">Point your camera at any receipt QR code. Works right in the browser on phone and desktop.</p>
+                    <h3 data-i18n="ver_1_title">Scan the Valuon QR</h3>
+                    <p data-i18n="ver_1_desc">Point your camera at the QR code on a Valuon receipt. Works right in the browser on phone and desktop.</p>
                 </div>
                 <div class="verify-scanner-card" data-animate>
                     <div class="vs-icon"><i class="fa-solid fa-shield-halved"></i></div>
-                    <h3 data-i18n="ver_2_title">Instant Verification</h3>
-                    <p data-i18n="ver_2_desc">Ed25519 cryptographic signature confirms the receipt is authentic and data hasn't been tampered with.</p>
+                    <h3 data-i18n="ver_2_title">Signature & Live Status</h3>
+                    <p data-i18n="ver_2_desc">Ed25519 signature confirms the receipt is authentic and shows in real time whether it is active, refunded, or voided.</p>
                 </div>
                 <div class="verify-scanner-card" data-animate>
                     <div class="vs-icon"><i class="fa-solid fa-user"></i></div>
                     <h3 data-i18n="ver_3_title">No Registration Needed</h3>
-                    <p data-i18n="ver_3_desc">No account required. Verification is available to everyone — buyers, sellers, and auditors alike.</p>
+                    <p data-i18n="ver_3_desc">No account required. Verification is open to buyers, stores, and anyone checking a receipt.</p>
                 </div>
             </div>
 
@@ -301,6 +303,7 @@
                 <a href="verify.html" class="btn btn-primary large">
                     <i class="fa-solid fa-qrcode"></i> <span data-i18n="ver_btn">Verify Receipt</span>
                 </a>
+                <p class="section-scope-note" data-i18n="ver_scope_note">Works for digital receipts issued with a Valuon QR code — not legacy paper receipts from unconnected stores.</p>
             </div>
         </div>
     </section>
@@ -308,30 +311,31 @@
     <section id="business" class="section business-section">
         <div class="container">
             <div class="section-header" data-animate>
-                <h2 data-i18n="biz_title">Valuon for Business</h2>
-                <p data-i18n="biz_desc">Digital receipts with cryptographic protection. Turn ordinary sales into customer trust.</p>
+                <span class="section-eyebrow" data-i18n="biz_eyebrow">For Business</span>
+                <h2 data-i18n="biz_title">Valuon for Shops & Sellers</h2>
+                <p data-i18n="biz_desc">Issue verified digital receipts in seconds — built for electronics stores, showrooms, repair shops, and independent retail.</p>
             </div>
 
             <div class="business-grid" data-animate-group data-animate-step="100">
                 <div class="business-card" data-animate>
-                    <div class="b-icon"><i class="fa-solid fa-file-signature"></i></div>
-                    <h3 data-i18n="biz_1_title">Cryptographic Receipts</h3>
-                    <p data-i18n="biz_1_desc">Ed25519 digital signature for every receipt. Mathematically impossible to forge without the private key.</p>
+                    <div class="b-icon"><i class="fa-solid fa-bolt"></i></div>
+                    <h3 data-i18n="biz_1_title">Issue in 15 Seconds</h3>
+                    <p data-i18n="biz_1_desc">Line items, VAT, discounts, and per-item warranty. Send via email, phone, WhatsApp, Telegram, or PDF with QR — no complex POS integration needed.</p>
                 </div>
                 <div class="business-card" data-animate>
                     <div class="b-icon"><i class="fa-solid fa-shield-halved"></i></div>
-                    <h3 data-i18n="biz_2_title">Forgery Protection</h3>
-                    <p data-i18n="biz_2_desc">QR code with signature allows instant receipt verification. No doubts for customers.</p>
+                    <h3 data-i18n="biz_2_title">Verified Receipts That Build Trust</h3>
+                    <p data-i18n="biz_2_desc">Ed25519 cryptographic signature and instant QR verification. Customers know their purchase is genuine, and your store stands out with transparent service.</p>
                 </div>
                 <div class="business-card" data-animate>
-                    <div class="b-icon"><i class="fa-solid fa-users"></i></div>
-                    <h3 data-i18n="biz_3_title">Customer Verification</h3>
-                    <p data-i18n="biz_3_desc">Automatic verification of registered users. Receipts are immediately linked to their accounts.</p>
+                    <div class="b-icon"><i class="fa-solid fa-rotate-left"></i></div>
+                    <h3 data-i18n="biz_3_title">Smart Refunds & Voiding</h3>
+                    <p data-i18n="biz_3_desc">Full or partial per-item refunds and one-click voiding. Receipt status updates live in the registry and on the QR page, so a refunded receipt cannot be reused.</p>
                 </div>
                 <div class="business-card" data-animate>
                     <div class="b-icon"><i class="fa-solid fa-chart-line"></i></div>
-                    <h3 data-i18n="biz_4_title">Sales Analytics</h3>
-                    <p data-i18n="biz_4_desc">Statistics on issued receipts, status tracking and full transaction history.</p>
+                    <h3 data-i18n="biz_4_title">Analytics, Registers & Export</h3>
+                    <p data-i18n="biz_4_desc">Revenue, average ticket, period charts, multiple POS registers, and full Excel/CSV export.</p>
                 </div>
             </div>
 

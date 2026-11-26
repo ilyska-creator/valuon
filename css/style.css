@@ -599,6 +599,29 @@ html.scroll-locked {
     margin: 0 auto 60px;
 }
 
+.section-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.32rem 0.85rem;
+    margin-bottom: 14px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.22);
+}
+
+.section-scope-note {
+    margin: 14px auto 0;
+    max-width: 520px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
 .section-header h2 {
     font-size: 2.5rem;
     font-weight: 800;

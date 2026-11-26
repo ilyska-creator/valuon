@@ -1070,7 +1070,9 @@ async function initBusinessPanel() {
         if (priceSuffix) priceSuffix.textContent = window.currencySymbol(currentShop?.currency || 'EUR');
         const categorySelect = node.querySelector('[data-field="category"]');
         renderItemCategoryOptions(categorySelect);
+        node.classList.add('is-row-new');
         itemsList.appendChild(node);
+        setTimeout(() => node.classList.remove('is-row-new'), 300);
         if (categorySelect && typeof CustomSelect !== 'undefined') CustomSelect.init(node);
         updateRemoveButtonsState();
         renumberRows();
@@ -1122,6 +1124,7 @@ async function initBusinessPanel() {
 
     function resetItemRows() {
         if (!itemsList) return;
+        resetReceiptRowDeleteConfirm();
         itemsList.innerHTML = '';
         addItemRow();
         renumberRows();
@@ -1256,6 +1259,21 @@ async function initBusinessPanel() {
             if (nameInput) nameInput.focus();
         }
     });
+    let receiptRowDeleteConfirmBtn = null;
+    let receiptRowDeleteConfirmTimer = null;
+
+    function resetReceiptRowDeleteConfirm() {
+        if (receiptRowDeleteConfirmTimer) {
+            clearTimeout(receiptRowDeleteConfirmTimer);
+            receiptRowDeleteConfirmTimer = null;
+        }
+        if (receiptRowDeleteConfirmBtn) {
+            receiptRowDeleteConfirmBtn.classList.remove('is-confirming');
+            receiptRowDeleteConfirmBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+            receiptRowDeleteConfirmBtn = null;
+        }
+    }
+
     itemsList?.addEventListener('click', (e) => {
         const chip = e.target.closest('.warranty-chip');
         if (chip) {
@@ -1276,6 +1294,21 @@ async function initBusinessPanel() {
         const row = btn.closest('[data-item-row]');
         if (!row || row.classList.contains('is-removing')) return;
         if (itemsList.querySelectorAll('[data-item-row]').length <= 1) return;
+
+        const hasRowContent = Boolean(
+            String(row.querySelector('[data-field="item_name"]')?.value || '').trim()
+            || String(row.querySelector('[data-field="price"]')?.value || '').trim()
+        );
+        if (hasRowContent && receiptRowDeleteConfirmBtn !== btn) {
+            resetReceiptRowDeleteConfirm();
+            receiptRowDeleteConfirmBtn = btn;
+            const lang = bizLang();
+            btn.classList.add('is-confirming');
+            btn.innerHTML = `<i class="fa-solid fa-trash"></i><span>${escapeHtml(lang === 'en' ? 'Delete?' : 'Удалить?')}</span>`;
+            receiptRowDeleteConfirmTimer = setTimeout(resetReceiptRowDeleteConfirm, 3000);
+            return;
+        }
+        resetReceiptRowDeleteConfirm();
 
         // Замеряем реальную высоту строки, чтобы плавно схлопнуть именно её,
         // а не дёргать layout скачком — остальные позиции при этом сами
@@ -2538,6 +2571,1115 @@ async function initBusinessPanel() {
     attachModalA11y(terminalFormModal, { mode: 'hidden', onClose: () => closeTerminalForm() });
     attachModalA11y(deleteTerminalModal, { mode: 'hidden', onClose: () => closeDeleteTerminalModal() });
 
+    // === Product Catalog (Assortment) + Receipt Autocomplete + Multi-select Picker ===
+    const catalogModal = document.getElementById('catalog-modal');
+    const catalogListEl = document.getElementById('catalog-list');
+    const catalogEmptyEl = document.getElementById('no-catalog-msg');
+    const catalogSearchInput = document.getElementById('catalog-search-input');
+    const catalogSearchClear = document.getElementById('catalog-search-clear');
+    const catalogCategoryChipsEl = document.getElementById('catalog-category-chips');
+    const importCatalogBtn = document.getElementById('import-catalog-from-receipts-btn');
+
+    const productFormModal = document.getElementById('product-form-modal');
+    const productForm = document.getElementById('product-form');
+    const productFormTitle = document.getElementById('product-form-title');
+    const productNameInput = document.getElementById('product-name-input');
+    const productPriceInput = document.getElementById('product-price-input');
+    const productPriceCurrency = document.getElementById('product-price-currency');
+    const productVatInput = document.getElementById('product-vat-input');
+    const productWarrantyInput = document.getElementById('product-warranty-input');
+    const productWarrantyPresets = document.getElementById('product-warranty-presets');
+    const productCategorySelect = document.getElementById('product-category-select');
+    const productSkuInput = document.getElementById('product-sku-input');
+
+    const catalogPickerModal = document.getElementById('catalog-picker-modal');
+    const pickerListEl = document.getElementById('catalog-picker-list');
+    const pickerEmptyEl = document.getElementById('picker-empty-msg');
+    const pickerSearchInput = document.getElementById('picker-search-input');
+    const pickerSearchClear = document.getElementById('picker-search-clear');
+    const pickerCategoryChipsEl = document.getElementById('picker-category-chips');
+    const pickerApplyBtn = document.getElementById('apply-catalog-picker');
+    const pickerApplyLabel = document.getElementById('apply-catalog-picker-label');
+
+    let currentShopProducts = [];
+    let editingProductId = null;
+    let catalogSearchQuery = '';
+    let catalogCategoryFilter = 'all';
+    let pickerSearchQuery = '';
+    let pickerCategoryFilter = 'all';
+    let pickerQuantities = new Map();
+    let productSubmitting = false;
+
+    function getCategoryLabel(code) {
+        if (!code) return '';
+        if (typeof window.getDeviceTypeLabel === 'function') {
+            return window.getDeviceTypeLabel(code, bizLang()) || code;
+        }
+        return code;
+    }
+
+    function getCategoryIconClass(code) {
+        if (code && window.DEVICE_ICONS && Object.prototype.hasOwnProperty.call(window.DEVICE_ICONS, code)) {
+            return window.DEVICE_ICONS[code];
+        }
+        return 'fa-box';
+    }
+
+    function refreshProductCategorySelect() {
+        if (!productCategorySelect) return;
+        renderItemCategoryOptions(productCategorySelect);
+        if (productCategorySelect._cs) productCategorySelect._cs.refresh();
+        else if (typeof CustomSelect !== 'undefined' && productFormModal) CustomSelect.init(productFormModal);
+    }
+
+    function formatCatalogCount(n) {
+        const t = bizT();
+        const lang = bizLang();
+        if (n === 0) return t.catalog_count_zero || (lang === 'en' ? 'No products' : 'Нет товаров');
+        if (lang === 'en') {
+            return (n === 1 ? (t.catalog_count_one || '{n} product') : (t.catalog_count_many || '{n} products')).replace('{n}', String(n));
+        }
+        const mod10 = n % 10;
+        const mod100 = n % 100;
+        if (mod10 === 1 && mod100 !== 11) return (t.catalog_count_one || '{n} товар').replace('{n}', String(n));
+        if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return (t.catalog_count_few || '{n} товара').replace('{n}', String(n));
+        return (t.catalog_count_many || '{n} товаров').replace('{n}', String(n));
+    }
+
+    function renderCatalogWidget() {
+        const label = document.getElementById('catalog-count-label');
+        if (label) label.textContent = formatCatalogCount(currentShopProducts.length);
+    }
+
+    async function loadShopProducts(shopId) {
+        if (!shopId || !currentClient) {
+            currentShopProducts = [];
+            renderCatalogWidget();
+            return;
+        }
+        try {
+            const { data, error } = await currentClient
+                .from('shop_products')
+                .select('id, shop_id, name, sku, price, vat_rate, warranty_months, category, is_active')
+                .eq('shop_id', shopId)
+                .eq('is_active', true)
+                .order('name', { ascending: true })
+                .limit(500);
+            if (error) throw error;
+            currentShopProducts = Array.isArray(data) ? data : [];
+        } catch (err) {
+            logError('biz:loadShopProducts', err);
+            currentShopProducts = [];
+        }
+        renderCatalogWidget();
+    }
+
+    function getPastReceiptProducts() {
+        const catalogNames = new Set(currentShopProducts.map(p => String(p.name || '').trim().toLowerCase()));
+        const seen = new Map();
+        for (const r of (currentReceiptsList || [])) {
+            const items = Array.isArray(r.receipt_items) ? r.receipt_items : [];
+            for (const it of items) {
+                const name = String(it.item_name || '').trim();
+                if (!name) continue;
+                const key = name.toLowerCase();
+                if (catalogNames.has(key) || seen.has(key)) continue;
+                const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+                const price = it.unit_price != null && Number.isFinite(parseFloat(it.unit_price))
+                    ? parseFloat(it.unit_price)
+                    : Math.round(((parseFloat(it.gross_total) || 0) / qty) * 100) / 100;
+                seen.set(key, {
+                    id: `hist_${key}`,
+                    name,
+                    sku: '',
+                    price: Math.max(0, Math.round(price * 100) / 100),
+                    vat_rate: Number.isFinite(parseFloat(it.vat_rate)) ? parseFloat(it.vat_rate) : 0,
+                    warranty_months: Math.max(0, parseInt(it.warranty_months, 10) || 0),
+                    category: String(it.category || '').trim(),
+                    _source: 'history',
+                });
+                if (seen.size >= 100) break;
+            }
+            if (seen.size >= 100) break;
+        }
+        return Array.from(seen.values());
+    }
+
+    function renderCategoryChips(containerEl, activeCat, onSelect) {
+        if (!containerEl) return;
+        const cats = [...new Set(currentShopProducts.map(p => (p.category || '').trim()).filter(Boolean))];
+        if (cats.length < 2) {
+            containerEl.classList.add('is-hidden');
+            containerEl.innerHTML = '';
+            return;
+        }
+        const t = bizT();
+        const allLabel = t.catalog_filter_all || (bizLang() === 'en' ? 'All' : 'Все');
+        containerEl.innerHTML = [
+            `<button type="button" class="catalog-cat-chip${activeCat === 'all' ? ' active' : ''}" data-cat="all">${escapeHtml(allLabel)}</button>`,
+            ...cats.map(cat => `<button type="button" class="catalog-cat-chip${activeCat === cat ? ' active' : ''}" data-cat="${escapeHtml(cat)}"><i class="fa-solid ${getCategoryIconClass(cat)}" aria-hidden="true"></i> ${escapeHtml(getCategoryLabel(cat))}</button>`)
+        ].join('');
+        containerEl.classList.remove('is-hidden');
+        containerEl.onclick = (e) => {
+            const btn = e.target.closest('.catalog-cat-chip');
+            if (!btn) return;
+            onSelect(btn.dataset.cat || 'all');
+        };
+    }
+
+    function filterProducts(products, query, catFilter) {
+        const q = String(query || '').trim().toLowerCase();
+        return (products || []).filter(p => {
+            if (catFilter !== 'all' && (p.category || '').trim() !== catFilter) return false;
+            if (!q) return true;
+            return String(p.name || '').toLowerCase().includes(q)
+                || String(p.sku || '').toLowerCase().includes(q);
+        });
+    }
+
+    function buildProductMetaText(p) {
+        const t = bizT();
+        const lang = bizLang();
+        const parts = [];
+        if (p.sku) parts.push(`SKU: ${p.sku}`);
+        if (Number(p.vat_rate) > 0) parts.push(`${t.vat_word || (lang === 'en' ? 'VAT:' : 'НДС:')} ${p.vat_rate}%`);
+        if (Number(p.warranty_months) > 0) parts.push(`${p.warranty_months} ${t.warranty_suffix || (lang === 'en' ? 'mo.' : 'мес.')}`);
+        if (p.category) parts.push(getCategoryLabel(p.category));
+        return parts.join(' · ');
+    }
+
+    function renderCatalogList({ animate = false } = {}) {
+        if (!catalogListEl) return;
+        renderCategoryChips(catalogCategoryChipsEl, catalogCategoryFilter, (nextCat) => {
+            if (nextCat === catalogCategoryFilter) return;
+            catalogCategoryFilter = nextCat;
+            renderCatalogList({ animate: true });
+        });
+
+        const hasPastItems = getPastReceiptProducts().length > 0;
+        if (importCatalogBtn) {
+            importCatalogBtn.classList.toggle('is-hidden', currentShopProducts.length > 0 || !hasPastItems);
+        }
+        const openImportFooterBtn = document.getElementById('open-import-catalog-btn');
+        if (openImportFooterBtn) {
+            openImportFooterBtn.classList.toggle('is-hidden', currentShopProducts.length === 0 || !hasPastItems);
+        }
+
+        const filtered = filterProducts(currentShopProducts, catalogSearchQuery, catalogCategoryFilter);
+        if (currentShopProducts.length === 0) {
+            catalogListEl.innerHTML = '';
+            catalogListEl.style.display = 'none';
+            if (catalogEmptyEl) catalogEmptyEl.style.display = 'block';
+            return;
+        }
+
+        if (catalogEmptyEl) catalogEmptyEl.style.display = 'none';
+        catalogListEl.style.display = '';
+        if (filtered.length === 0) {
+            const lang = bizLang();
+            catalogListEl.innerHTML = `<div class="empty-state" style="padding:1.5rem 0;"><p>${escapeHtml(lang === 'en' ? 'No matching products' : 'Товары не найдены')}</p></div>`;
+            return;
+        }
+
+        const t = bizT();
+        catalogListEl.innerHTML = filtered.map((p, idx) => {
+            const meta = buildProductMetaText(p);
+            const iconCls = getCategoryIconClass(p.category);
+            const animAttr = animate ? ` style="animation-delay:${Math.min(idx, 10) * 24}ms"` : '';
+            return `
+                <div class="catalog-item-card${animate ? ' is-entering' : ''}"${animAttr} data-product-id="${escapeHtml(p.id)}">
+                    <div class="catalog-item-left">
+                        <span class="catalog-item-icon"><i class="fa-solid ${iconCls}" aria-hidden="true"></i></span>
+                        <div class="catalog-item-info">
+                            <span class="catalog-item-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
+                            ${meta ? `<span class="catalog-item-meta">${escapeHtml(meta)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="catalog-item-right">
+                        <span class="catalog-item-price">${escapeHtml(fmtMoney(p.price || 0))}</span>
+                        <div class="catalog-item-actions">
+                            <button type="button" class="catalog-icon-btn" data-catalog-edit="${escapeHtml(p.id)}" title="${escapeHtml(t.edit_btn || 'Edit')}"><i class="fa-solid fa-pen"></i></button>
+                            <button type="button" class="catalog-icon-btn is-delete" data-catalog-delete="${escapeHtml(p.id)}" title="${escapeHtml(t.delete_btn || 'Delete')}"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+        if (animate) {
+            setTimeout(() => {
+                catalogListEl.querySelectorAll('.catalog-item-card.is-entering').forEach(el => {
+                    el.classList.remove('is-entering');
+                    el.style.animationDelay = '';
+                });
+            }, 420);
+        }
+    }
+
+    function openCatalogModal() {
+        if (!catalogModal || !currentShop) return;
+        catalogSearchQuery = '';
+        catalogCategoryFilter = 'all';
+        if (catalogSearchInput) catalogSearchInput.value = '';
+        if (catalogSearchClear) catalogSearchClear.style.display = 'none';
+        renderCatalogList({ animate: true });
+        catalogModal.classList.remove('is-hidden');
+        catalogModal.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('modal-open');
+    }
+
+    function closeCatalogModal() {
+        if (!catalogModal || catalogModal.classList.contains('is-hidden') || catalogModal.classList.contains('closing')) return;
+        resetCatalogDeleteConfirm();
+        catalogModal.classList.add('closing');
+        setTimeout(() => {
+            catalogModal.classList.add('is-hidden');
+            catalogModal.classList.remove('closing');
+            catalogModal.setAttribute('aria-hidden', 'true');
+            if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
+                document.documentElement.classList.remove('modal-open');
+            }
+        }, 220);
+    }
+
+    function setProductFormError(field, msg) {
+        const el = productForm?.querySelector(`[data-product-error="${field}"]`);
+        if (el) el.textContent = msg || '';
+    }
+
+    function syncProductWarrantyChips() {
+        if (!productWarrantyPresets || !productWarrantyInput) return;
+        const val = String(productWarrantyInput.value || '').trim();
+        productWarrantyPresets.querySelectorAll('.warranty-chip').forEach(ch => {
+            ch.classList.toggle('is-selected', val !== '' && ch.dataset.months === val);
+        });
+    }
+
+    function openProductFormModal(product = null) {
+        if (!productFormModal || !productForm) return;
+        const t = bizT();
+        const lang = bizLang();
+        editingProductId = product ? product.id : null;
+        if (productFormTitle) {
+            productFormTitle.textContent = editingProductId
+                ? (t.product_form_title_edit || (lang === 'en' ? 'Edit Product' : 'Редактировать товар'))
+                : (t.product_form_title_new || (lang === 'en' ? 'New Product' : 'Новый товар'));
+        }
+        if (productPriceCurrency) {
+            productPriceCurrency.textContent = window.currencySymbol(currentShop?.currency || 'EUR');
+        }
+        refreshProductCategorySelect();
+        setProductFormError('name', '');
+        setProductFormError('price', '');
+
+        if (productNameInput) productNameInput.value = product?.name || '';
+        if (productPriceInput) productPriceInput.value = product ? String(product.price ?? '') : '';
+        if (productVatInput) productVatInput.value = product ? String(product.vat_rate ?? 0) : '';
+        if (productWarrantyInput) productWarrantyInput.value = product ? String(product.warranty_months ?? 0) : '';
+        if (productSkuInput) productSkuInput.value = product?.sku || '';
+        if (productCategorySelect) {
+            productCategorySelect.value = product?.category || '';
+            if (productCategorySelect._cs) productCategorySelect._cs.refresh();
+        }
+        syncProductWarrantyChips();
+
+        catalogModal?.querySelector('.modal-content')?.classList.add('is-stacked-behind');
+        productFormModal.classList.remove('is-hidden');
+        productFormModal.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('modal-open');
+        if (window.innerWidth > 768) {
+            setTimeout(() => productNameInput?.focus(), 60);
+        }
+    }
+
+    function closeProductFormModal() {
+        if (!productFormModal || productFormModal.classList.contains('is-hidden') || productFormModal.classList.contains('closing')) return;
+        catalogModal?.querySelector('.modal-content')?.classList.remove('is-stacked-behind');
+        productFormModal.classList.add('closing');
+        setTimeout(() => {
+            productFormModal.classList.add('is-hidden');
+            productFormModal.classList.remove('closing');
+            productFormModal.setAttribute('aria-hidden', 'true');
+            editingProductId = null;
+            if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
+                document.documentElement.classList.remove('modal-open');
+            }
+        }, 200);
+    }
+
+    productWarrantyPresets?.addEventListener('click', (e) => {
+        const chip = e.target.closest('.warranty-chip');
+        if (!chip || !productWarrantyInput) return;
+        productWarrantyInput.value = chip.dataset.months || '0';
+        syncProductWarrantyChips();
+    });
+    productWarrantyInput?.addEventListener('input', syncProductWarrantyChips);
+
+    productForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (productSubmitting || !currentShop || !currentClient) return;
+        const t = bizT();
+        const lang = bizLang();
+        const name = String(productNameInput?.value || '').trim();
+        const rawPrice = parseFloat(productPriceInput?.value);
+        let vatRate = parseFloat(productVatInput?.value);
+        if (isNaN(vatRate) || vatRate < 0) vatRate = 0;
+        if (vatRate > 100) vatRate = 100;
+        let warrantyMonths = parseInt(productWarrantyInput?.value, 10);
+        if (isNaN(warrantyMonths) || warrantyMonths < 0) warrantyMonths = 0;
+        if (warrantyMonths > 600) warrantyMonths = 600;
+        const category = String(productCategorySelect?.value || '').trim();
+        const sku = String(productSkuInput?.value || '').trim();
+
+        let valid = true;
+        if (!name) {
+            setProductFormError('name', t.product_err_name || (lang === 'en' ? 'Enter product name' : 'Укажите название товара'));
+            valid = false;
+        } else {
+            setProductFormError('name', '');
+        }
+        if (!Number.isFinite(rawPrice) || rawPrice < 0) {
+            setProductFormError('price', t.product_err_price || (lang === 'en' ? 'Enter a valid price' : 'Укажите корректную цену'));
+            valid = false;
+        } else {
+            setProductFormError('price', '');
+        }
+        if (!valid) return;
+
+        const saveBtn = document.getElementById('save-product-btn');
+        productSubmitting = true;
+        if (saveBtn) saveBtn.disabled = true;
+
+        try {
+            const payload = {
+                shop_id: currentShop.id,
+                name,
+                sku,
+                price: Math.round(rawPrice * 100) / 100,
+                vat_rate: Math.round(vatRate * 100) / 100,
+                warranty_months: warrantyMonths,
+                category,
+                updated_at: new Date().toISOString(),
+            };
+
+            if (editingProductId) {
+                const { data, error } = await currentClient
+                    .from('shop_products')
+                    .update(payload)
+                    .eq('id', editingProductId)
+                    .eq('shop_id', currentShop.id)
+                    .select()
+                    .single();
+                if (error) throw error;
+                currentShopProducts = currentShopProducts
+                    .map(p => (p.id === editingProductId ? data : p))
+                    .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+                window.showToast(t.product_updated_toast || (lang === 'en' ? 'Product updated' : 'Товар обновлён'), 'success');
+            } else {
+                const { data, error } = await currentClient
+                    .from('shop_products')
+                    .insert(payload)
+                    .select()
+                    .single();
+                if (error) throw error;
+                currentShopProducts = [...currentShopProducts, data]
+                    .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+                window.showToast(t.product_saved_toast || (lang === 'en' ? 'Product added to catalog' : 'Товар сохранён в ассортимент'), 'success');
+            }
+            renderCatalogWidget();
+            renderCatalogList();
+            closeProductFormModal();
+        } catch (err) {
+            logError('biz:saveProduct', err);
+            window.showToast(lang === 'en' ? 'Failed to save product' : 'Не удалось сохранить товар', 'error');
+        } finally {
+            productSubmitting = false;
+            if (saveBtn) saveBtn.disabled = false;
+        }
+    });
+
+    let catalogDeleteConfirmId = null;
+    let catalogDeleteConfirmTimer = null;
+
+    function resetCatalogDeleteConfirm() {
+        if (catalogDeleteConfirmTimer) {
+            clearTimeout(catalogDeleteConfirmTimer);
+            catalogDeleteConfirmTimer = null;
+        }
+        if (!catalogDeleteConfirmId) return;
+        const prevBtn = catalogListEl?.querySelector(`[data-catalog-delete="${CSS.escape(catalogDeleteConfirmId)}"]`);
+        if (prevBtn) {
+            prevBtn.classList.remove('is-confirming');
+            prevBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        }
+        catalogDeleteConfirmId = null;
+    }
+
+    catalogListEl?.addEventListener('click', async (e) => {
+        const editBtn = e.target.closest('[data-catalog-edit]');
+        if (editBtn) {
+            resetCatalogDeleteConfirm();
+            const prod = currentShopProducts.find(p => p.id === editBtn.dataset.catalogEdit);
+            if (prod) openProductFormModal(prod);
+            return;
+        }
+        const delBtn = e.target.closest('[data-catalog-delete]');
+        if (delBtn && currentShop && currentClient) {
+            const id = delBtn.dataset.catalogDelete;
+            const prod = currentShopProducts.find(p => p.id === id);
+            if (!prod) return;
+            const t = bizT();
+            const lang = bizLang();
+
+            if (catalogDeleteConfirmId !== id) {
+                resetCatalogDeleteConfirm();
+                catalogDeleteConfirmId = id;
+                delBtn.classList.add('is-confirming');
+                delBtn.innerHTML = `<i class="fa-solid fa-trash"></i><span>${escapeHtml(lang === 'en' ? 'Delete?' : 'Удалить?')}</span>`;
+                catalogDeleteConfirmTimer = setTimeout(resetCatalogDeleteConfirm, 3000);
+                return;
+            }
+
+            resetCatalogDeleteConfirm();
+            delBtn.disabled = true;
+            const cardEl = delBtn.closest('.catalog-item-card');
+            try {
+                const { error } = await currentClient
+                    .from('shop_products')
+                    .delete()
+                    .eq('id', id)
+                    .eq('shop_id', currentShop.id);
+                if (error) throw error;
+                currentShopProducts = currentShopProducts.filter(p => String(p.id) !== String(id));
+                pickerQuantities.delete(String(id));
+                renderCatalogWidget();
+                if (catalogPickerModal && !catalogPickerModal.classList.contains('is-hidden')) {
+                    renderCatalogPickerList({ animate: false });
+                }
+                if (cardEl) {
+                    cardEl.classList.add('is-removing');
+                    setTimeout(() => renderCatalogList({ animate: false }), 210);
+                } else {
+                    renderCatalogList({ animate: false });
+                }
+                window.showToast(t.product_deleted_toast || (lang === 'en' ? 'Product removed from catalog' : 'Товар удалён из каталога'), 'success');
+            } catch (err) {
+                logError('biz:deleteProduct', err);
+                delBtn.disabled = false;
+                window.showToast(lang === 'en' ? 'Failed to delete product' : 'Не удалось удалить товар', 'error');
+            }
+        }
+    });
+
+    // --- Selective Import from Past Receipts Modal ---
+    const catalogImportModal = document.getElementById('catalog-import-modal');
+    const catalogImportListEl = document.getElementById('catalog-import-list');
+    const catalogImportCounterEl = document.getElementById('catalog-import-counter');
+    const catalogImportToggleAllBtn = document.getElementById('catalog-import-toggle-all');
+    const confirmCatalogImportBtn = document.getElementById('confirm-catalog-import');
+    const confirmCatalogImportLabel = document.getElementById('confirm-catalog-import-label');
+    let importCandidates = [];
+    let importSelectedIds = new Set();
+
+    function updateCatalogImportUI() {
+        const t = bizT();
+        const lang = bizLang();
+        const total = importCandidates.length;
+        const sel = importSelectedIds.size;
+        if (catalogImportCounterEl) {
+            const tpl = t.import_selected_meta || (lang === 'en' ? 'Selected {sel} of {total}' : 'Выбрано {sel} из {total}');
+            catalogImportCounterEl.textContent = tpl.replace('{sel}', String(sel)).replace('{total}', String(total));
+        }
+        if (catalogImportToggleAllBtn) {
+            const allSel = total > 0 && sel === total;
+            catalogImportToggleAllBtn.textContent = allSel
+                ? (t.lifecycle_deselect_all || (lang === 'en' ? 'Deselect all' : 'Снять выбор'))
+                : (t.lifecycle_select_all || (lang === 'en' ? 'Select all' : 'Выбрать все'));
+        }
+        if (confirmCatalogImportBtn) {
+            confirmCatalogImportBtn.disabled = sel === 0;
+        }
+        if (confirmCatalogImportLabel) {
+            if (sel > 0) {
+                const tpl = t.import_confirm_count || (lang === 'en' ? 'Import ({n})' : 'Импортировать ({n})');
+                confirmCatalogImportLabel.textContent = tpl.replace('{n}', String(sel));
+            } else {
+                confirmCatalogImportLabel.textContent = t.import_confirm_btn || (lang === 'en' ? 'Import selected' : 'Импортировать');
+            }
+        }
+    }
+
+    function renderCatalogImportList({ animate = false } = {}) {
+        if (!catalogImportListEl) return;
+        catalogImportListEl.innerHTML = importCandidates.map((p, idx) => {
+            const checked = importSelectedIds.has(p.id);
+            const meta = buildProductMetaText(p);
+            const iconCls = getCategoryIconClass(p.category);
+            const animAttr = animate ? ` style="animation-delay:${Math.min(idx, 10) * 22}ms"` : '';
+            return `
+                <div class="catalog-item-card${checked ? ' is-picked' : ''}${animate ? ' is-entering' : ''}"${animAttr} data-import-id="${escapeHtml(p.id)}">
+                    <div class="catalog-item-left">
+                        <input type="checkbox" class="lifecycle-item-check" ${checked ? 'checked' : ''} aria-label="${escapeHtml(p.name)}">
+                        <span class="catalog-item-icon"><i class="fa-solid ${iconCls}" aria-hidden="true"></i></span>
+                        <div class="catalog-item-info">
+                            <span class="catalog-item-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
+                            ${meta ? `<span class="catalog-item-meta">${escapeHtml(meta)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="catalog-item-right">
+                        <span class="catalog-item-price">${escapeHtml(fmtMoney(p.price || 0))}</span>
+                    </div>
+                </div>`;
+        }).join('');
+        updateCatalogImportUI();
+    }
+
+    function openCatalogImportModal() {
+        const past = getPastReceiptProducts();
+        const t = bizT();
+        const lang = bizLang();
+        if (past.length === 0) {
+            window.showToast(t.import_catalog_empty || (lang === 'en' ? 'No new items found in past receipts' : 'Нет новых товаров в прошлых чеках'), 'info');
+            return;
+        }
+        importCandidates = past.slice(0, 100);
+        importSelectedIds = new Set();
+        renderCatalogImportList({ animate: true });
+        catalogModal?.querySelector('.modal-content')?.classList.add('is-stacked-behind');
+        catalogImportModal?.classList.remove('is-hidden');
+        catalogImportModal?.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('modal-open');
+    }
+
+    function closeCatalogImportModal() {
+        if (!catalogImportModal || catalogImportModal.classList.contains('is-hidden') || catalogImportModal.classList.contains('closing')) return;
+        catalogModal?.querySelector('.modal-content')?.classList.remove('is-stacked-behind');
+        catalogImportModal.classList.add('closing');
+        setTimeout(() => {
+            catalogImportModal.classList.add('is-hidden');
+            catalogImportModal.classList.remove('closing');
+            catalogImportModal.setAttribute('aria-hidden', 'true');
+            if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
+                document.documentElement.classList.remove('modal-open');
+            }
+        }, 200);
+    }
+
+    catalogImportListEl?.addEventListener('click', (e) => {
+        const row = e.target.closest('[data-import-id]');
+        if (!row) return;
+        const id = row.dataset.importId;
+        const willSelect = !importSelectedIds.has(id);
+        if (willSelect) importSelectedIds.add(id);
+        else importSelectedIds.delete(id);
+        row.classList.toggle('is-picked', willSelect);
+        const cb = row.querySelector('.lifecycle-item-check');
+        if (cb) cb.checked = willSelect;
+        updateCatalogImportUI();
+    });
+
+    catalogImportToggleAllBtn?.addEventListener('click', () => {
+        const selectAll = importSelectedIds.size !== importCandidates.length;
+        if (selectAll) {
+            importSelectedIds = new Set(importCandidates.map(p => p.id));
+        } else {
+            importSelectedIds.clear();
+        }
+        catalogImportListEl?.querySelectorAll('[data-import-id]').forEach(row => {
+            row.classList.toggle('is-picked', selectAll);
+            const cb = row.querySelector('.lifecycle-item-check');
+            if (cb) cb.checked = selectAll;
+        });
+        updateCatalogImportUI();
+    });
+
+    confirmCatalogImportBtn?.addEventListener('click', async () => {
+        if (!currentShop || !currentClient || importSelectedIds.size === 0) return;
+        const t = bizT();
+        const lang = bizLang();
+        const chosen = importCandidates.filter(p => importSelectedIds.has(p.id));
+        confirmCatalogImportBtn.disabled = true;
+        try {
+            const rows = chosen.map(p => ({
+                shop_id: currentShop.id,
+                name: p.name.slice(0, 160),
+                sku: '',
+                price: p.price,
+                vat_rate: p.vat_rate,
+                warranty_months: p.warranty_months,
+                category: p.category.slice(0, 64),
+            }));
+            const { data, error } = await currentClient
+                .from('shop_products')
+                .insert(rows)
+                .select();
+            if (error) throw error;
+            currentShopProducts = [...currentShopProducts, ...(data || [])]
+                .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+            renderCatalogWidget();
+            renderCatalogList({ animate: true });
+            closeCatalogImportModal();
+            const tpl = t.import_catalog_done || (lang === 'en' ? 'Imported {n} products' : 'Импортировано товаров: {n}');
+            window.showToast(tpl.replace('{n}', String((data || []).length)), 'success');
+        } catch (err) {
+            logError('biz:importCatalog', err);
+            window.showToast(lang === 'en' ? 'Import failed' : 'Ошибка импорта', 'error');
+            updateCatalogImportUI();
+        }
+    });
+
+    importCatalogBtn?.addEventListener('click', openCatalogImportModal);
+    document.getElementById('open-import-catalog-btn')?.addEventListener('click', openCatalogImportModal);
+    document.getElementById('close-catalog-import')?.addEventListener('click', closeCatalogImportModal);
+    document.getElementById('cancel-catalog-import')?.addEventListener('click', closeCatalogImportModal);
+    catalogImportModal?.addEventListener('click', (e) => {
+        if (e.target === catalogImportModal || e.target.classList.contains('modal-backdrop')) closeCatalogImportModal();
+    });
+    attachModalA11y(catalogImportModal, { mode: 'hidden', onClose: () => closeCatalogImportModal() });
+
+    catalogSearchInput?.addEventListener('input', () => {
+        catalogSearchQuery = catalogSearchInput.value || '';
+        if (catalogSearchClear) catalogSearchClear.style.display = catalogSearchQuery ? 'inline-flex' : 'none';
+        renderCatalogList();
+    });
+    catalogSearchClear?.addEventListener('click', () => {
+        if (catalogSearchInput) catalogSearchInput.value = '';
+        catalogSearchQuery = '';
+        catalogSearchClear.style.display = 'none';
+        renderCatalogList();
+        catalogSearchInput?.focus();
+    });
+
+    document.getElementById('open-catalog-btn')?.addEventListener('click', openCatalogModal);
+    document.getElementById('close-catalog-modal')?.addEventListener('click', closeCatalogModal);
+    document.getElementById('add-product-btn')?.addEventListener('click', () => openProductFormModal(null));
+    document.getElementById('close-product-form')?.addEventListener('click', closeProductFormModal);
+    document.getElementById('cancel-product-form')?.addEventListener('click', closeProductFormModal);
+    catalogModal?.addEventListener('click', (e) => {
+        if (e.target === catalogModal || e.target.classList.contains('modal-backdrop')) closeCatalogModal();
+    });
+    productFormModal?.addEventListener('click', (e) => {
+        if (e.target === productFormModal || e.target.classList.contains('modal-backdrop')) closeProductFormModal();
+    });
+    attachModalA11y(catalogModal, {
+        mode: 'hidden',
+        onClose: () => {
+            if (productFormModal?.classList.contains('is-hidden') && catalogImportModal?.classList.contains('is-hidden')) {
+                closeCatalogModal();
+            }
+        }
+    });
+    attachModalA11y(productFormModal, { mode: 'hidden', onClose: () => closeProductFormModal() });
+
+    // --- Helper: apply a catalog/history product to a receipt row ---
+    function fillReceiptItemRow(row, prod, qty = null) {
+        if (!row || !prod) return;
+        const nameEl = row.querySelector('[data-field="item_name"]');
+        const qtyEl = row.querySelector('[data-field="qty"]');
+        const priceEl = row.querySelector('[data-field="price"]');
+        const vatEl = row.querySelector('[data-field="vat_rate"]');
+        const warEl = row.querySelector('[data-field="warranty_months"]');
+        const catEl = row.querySelector('[data-field="category"]');
+
+        if (nameEl) nameEl.value = prod.name || '';
+        if (qty !== null && qtyEl) qtyEl.value = String(Math.max(1, qty));
+        if (priceEl) priceEl.value = prod.price != null ? String(prod.price) : '';
+        if (vatEl) vatEl.value = prod.vat_rate != null ? String(prod.vat_rate) : '';
+        if (warEl) {
+            warEl.value = prod.warranty_months != null ? String(prod.warranty_months) : '';
+            row.querySelectorAll('.warranty-chip').forEach(ch => {
+                ch.classList.toggle('is-selected', ch.dataset.months === String(prod.warranty_months ?? ''));
+            });
+        }
+        if (catEl) {
+            catEl.value = prod.category || '';
+            if (catEl._cs) catEl._cs.refresh();
+        }
+        row.classList.remove('is-invalid');
+        const errEl = row.querySelector('[data-item-error]');
+        if (errEl) errEl.textContent = '';
+        row.classList.remove('item-row-flash');
+        void row.offsetWidth;
+        row.classList.add('item-row-flash');
+        setTimeout(() => row.classList.remove('item-row-flash'), 650);
+        updateTotalPreview();
+    }
+
+    // --- Receipt Row Item-Name Autocomplete (Catalog + Past Receipts) ---
+    function getItemAutocompleteCandidates(query) {
+        const q = String(query || '').trim().toLowerCase();
+        const catalogPool = currentShopProducts.map(p => ({ ...p, _source: 'catalog' }));
+        const historyPool = getPastReceiptProducts();
+        const combined = [...catalogPool, ...historyPool];
+        if (!q) return combined.slice(0, 6);
+        const starts = [];
+        const contains = [];
+        for (const p of combined) {
+            const n = String(p.name || '').toLowerCase();
+            const s = String(p.sku || '').toLowerCase();
+            if (n.startsWith(q) || (s && s.startsWith(q))) starts.push(p);
+            else if (n.includes(q) || (s && s.includes(q))) contains.push(p);
+        }
+        return [...starts, ...contains].slice(0, 6);
+    }
+
+    function closeAllItemAutocompletes() {
+        itemsList?.querySelectorAll('[data-item-autocomplete]').forEach(el => {
+            el.classList.add('is-hidden');
+        });
+    }
+
+    function renderRowAutocomplete(row, query) {
+        const listEl = row?.querySelector('[data-item-autocomplete]');
+        if (!listEl) return;
+        const candidates = getItemAutocompleteCandidates(query);
+        if (candidates.length === 0) {
+            listEl.classList.add('is-hidden');
+            return;
+        }
+        const t = bizT();
+        const lang = bizLang();
+        listEl._candidates = candidates;
+        listEl._activeIndex = -1;
+        listEl.innerHTML = candidates.map((p, idx) => {
+            const isHist = p._source === 'history';
+            const badgeText = isHist
+                ? (t.ac_source_history || (lang === 'en' ? 'Past receipts' : 'Из чеков'))
+                : (t.ac_source_catalog || (lang === 'en' ? 'Catalog' : 'Каталог'));
+            const meta = buildProductMetaText(p);
+            return `
+                <button type="button" class="item-ac-option" data-ac-idx="${idx}" role="option">
+                    <span class="item-ac-main">
+                        <span class="item-ac-name">${escapeHtml(p.name)}</span>
+                        <span class="item-ac-meta">
+                            <span class="item-ac-badge${isHist ? ' is-history' : ''}">${escapeHtml(badgeText)}</span>
+                            ${meta ? `<span>${escapeHtml(meta)}</span>` : ''}
+                        </span>
+                    </span>
+                    <span class="item-ac-price">${escapeHtml(fmtMoney(p.price || 0))}</span>
+                </button>`;
+        }).join('');
+        listEl.classList.remove('is-hidden');
+    }
+
+    let isPointerInItemAc = false;
+
+    itemsList?.addEventListener('pointerdown', (e) => {
+        isPointerInItemAc = Boolean(e.target.closest('[data-item-autocomplete]'));
+    });
+
+    itemsList?.addEventListener('focusin', (e) => {
+        const input = e.target.closest('[data-field="item_name"]');
+        if (!input) return;
+        const row = input.closest('[data-item-row]');
+        closeAllItemAutocompletes();
+        renderRowAutocomplete(row, input.value);
+    });
+
+    itemsList?.addEventListener('input', (e) => {
+        const input = e.target.closest('[data-field="item_name"]');
+        if (!input) return;
+        const row = input.closest('[data-item-row]');
+        renderRowAutocomplete(row, input.value);
+    });
+
+    itemsList?.addEventListener('keydown', (e) => {
+        const input = e.target.closest('[data-field="item_name"]');
+        if (!input) return;
+        const row = input.closest('[data-item-row]');
+        const listEl = row?.querySelector('[data-item-autocomplete]');
+        if (!listEl || listEl.classList.contains('is-hidden')) return;
+        const opts = [...listEl.querySelectorAll('.item-ac-option')];
+        if (!opts.length) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            listEl._activeIndex = (listEl._activeIndex + 1) % opts.length;
+            opts.forEach((o, i) => o.classList.toggle('is-active', i === listEl._activeIndex));
+            opts[listEl._activeIndex]?.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            listEl._activeIndex = (listEl._activeIndex - 1 + opts.length) % opts.length;
+            opts.forEach((o, i) => o.classList.toggle('is-active', i === listEl._activeIndex));
+            opts[listEl._activeIndex]?.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && listEl._activeIndex >= 0) {
+            e.preventDefault();
+            const prod = listEl._candidates?.[listEl._activeIndex];
+            if (prod) {
+                fillReceiptItemRow(row, prod);
+                closeAllItemAutocompletes();
+            }
+        } else if (e.key === 'Escape') {
+            closeAllItemAutocompletes();
+        }
+    });
+
+    itemsList?.addEventListener('click', (e) => {
+        const opt = e.target.closest('.item-ac-option');
+        if (!opt) return;
+        e.preventDefault();
+        const listEl = opt.closest('[data-item-autocomplete]');
+        const row = opt.closest('[data-item-row]');
+        const idx = parseInt(opt.dataset.acIdx, 10);
+        const prod = listEl?._candidates?.[idx];
+        if (prod && row) {
+            fillReceiptItemRow(row, prod);
+            closeAllItemAutocompletes();
+        }
+    });
+
+    itemsList?.addEventListener('focusout', (e) => {
+        const input = e.target.closest('[data-field="item_name"]');
+        if (!input) return;
+        setTimeout(() => {
+            if (isPointerInItemAc) {
+                isPointerInItemAc = false;
+                return;
+            }
+            if (!document.activeElement?.closest('[data-item-autocomplete]')) {
+                closeAllItemAutocompletes();
+            }
+        }, 160);
+    });
+
+    document.addEventListener('pointerdown', (e) => {
+        if (!e.target.closest('.item-name-autocomplete-wrap')) {
+            closeAllItemAutocompletes();
+        }
+    });
+
+    // --- Multi-Select Catalog Picker Modal inside Create Receipt ---
+    function updatePickerApplyButton() {
+        if (!pickerApplyBtn || !pickerApplyLabel) return;
+        let totalQty = 0;
+        pickerQuantities.forEach(q => { totalQty += q; });
+        pickerApplyBtn.disabled = totalQty === 0;
+        const t = bizT();
+        const lang = bizLang();
+        if (totalQty > 0) {
+            const tpl = t.catalog_picker_apply_count || (lang === 'en' ? 'Add to receipt ({n})' : 'Добавить в чек ({n})');
+            pickerApplyLabel.textContent = tpl.replace('{n}', String(totalQty));
+        } else {
+            pickerApplyLabel.textContent = t.catalog_picker_apply || (lang === 'en' ? 'Add to receipt' : 'Добавить в чек');
+        }
+    }
+
+    function renderCatalogPickerList({ animate = false } = {}) {
+        if (!pickerListEl) return;
+        renderCategoryChips(pickerCategoryChipsEl, pickerCategoryFilter, (nextCat) => {
+            if (nextCat === pickerCategoryFilter) return;
+            pickerCategoryFilter = nextCat;
+            renderCatalogPickerList({ animate: true });
+        });
+
+        const pool = currentShopProducts;
+        if (pool.length === 0) {
+            pickerListEl.innerHTML = '';
+            pickerListEl.style.display = 'none';
+            if (pickerEmptyEl) pickerEmptyEl.style.display = 'block';
+            updatePickerApplyButton();
+            return;
+        }
+        if (pickerEmptyEl) pickerEmptyEl.style.display = 'none';
+        pickerListEl.style.display = '';
+
+        const filtered = filterProducts(pool, pickerSearchQuery, pickerCategoryFilter);
+        if (filtered.length === 0) {
+            const lang = bizLang();
+            pickerListEl.innerHTML = `<div class="empty-state" style="padding:1.5rem 0;"><p>${escapeHtml(lang === 'en' ? 'No matching products' : 'Товары не найдены')}</p></div>`;
+            updatePickerApplyButton();
+            return;
+        }
+
+        pickerListEl.innerHTML = filtered.map((p, idx) => {
+            const qty = pickerQuantities.get(p.id) || 0;
+            const meta = buildProductMetaText(p);
+            const iconCls = getCategoryIconClass(p.category);
+            const animAttr = animate ? ` style="animation-delay:${Math.min(idx, 8) * 20}ms"` : '';
+            const controlsHtml = buildPickerControlsHtml(p.id, qty);
+            return `
+                <div class="catalog-item-card${qty > 0 ? ' is-picked' : ''}${animate ? ' is-entering' : ''}"${animAttr} data-picker-row="${escapeHtml(p.id)}">
+                    <div class="catalog-item-left">
+                        <span class="catalog-item-icon"><i class="fa-solid ${iconCls}" aria-hidden="true"></i></span>
+                        <div class="catalog-item-info">
+                            <span class="catalog-item-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
+                            ${meta ? `<span class="catalog-item-meta">${escapeHtml(meta)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="catalog-item-right">
+                        <span class="catalog-item-price">${escapeHtml(fmtMoney(p.price || 0))}</span>
+                        <span class="picker-controls-slot">${controlsHtml}</span>
+                    </div>
+                </div>`;
+        }).join('');
+        if (animate) {
+            setTimeout(() => {
+                pickerListEl.querySelectorAll('.catalog-item-card.is-entering').forEach(el => {
+                    el.classList.remove('is-entering');
+                    el.style.animationDelay = '';
+                });
+            }, 420);
+        }
+        updatePickerApplyButton();
+    }
+
+    function buildPickerControlsHtml(id, qty) {
+        if (qty > 0) {
+            return `<div class="lifecycle-qty-stepper" data-picker-id="${escapeHtml(id)}">
+                <button type="button" class="lifecycle-qty-btn" data-picker-delta="-1" aria-label="−">−</button>
+                <span class="lifecycle-qty-val">${qty}</span>
+                <button type="button" class="lifecycle-qty-btn" data-picker-delta="1" aria-label="+">+</button>
+            </div>`;
+        }
+        return `<button type="button" class="picker-add-btn" data-picker-add="${escapeHtml(id)}" aria-label="+"><i class="fa-solid fa-plus"></i></button>`;
+    }
+
+    function updatePickerRowInPlace(rowEl, id, qty) {
+        if (!rowEl) return;
+        rowEl.classList.toggle('is-picked', qty > 0);
+        const slot = rowEl.querySelector('.picker-controls-slot');
+        if (slot) {
+            const existingVal = slot.querySelector('.lifecycle-qty-val');
+            if (qty > 0 && existingVal) {
+                existingVal.textContent = String(qty);
+                existingVal.classList.remove('is-popping');
+                void existingVal.offsetWidth;
+                existingVal.classList.add('is-popping');
+            } else {
+                slot.innerHTML = buildPickerControlsHtml(id, qty);
+                const newVal = slot.querySelector('.lifecycle-qty-val');
+                if (newVal) newVal.classList.add('is-popping');
+            }
+        }
+        updatePickerApplyButton();
+    }
+
+    function openCatalogPickerModal() {
+        if (!catalogPickerModal) return;
+        pickerSearchQuery = '';
+        pickerCategoryFilter = 'all';
+        pickerQuantities.clear();
+        if (pickerSearchInput) pickerSearchInput.value = '';
+        if (pickerSearchClear) pickerSearchClear.style.display = 'none';
+        renderCatalogPickerList({ animate: true });
+        modal.el?.querySelector('.modal-content')?.classList.add('is-stacked-behind');
+        catalogPickerModal.classList.remove('is-hidden');
+        catalogPickerModal.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('modal-open');
+        if (currentShop?.id) {
+            const prevIds = currentShopProducts.map(p => p.id).join(',');
+            loadShopProducts(currentShop.id).then(() => {
+                const nextIds = currentShopProducts.map(p => p.id).join(',');
+                if (nextIds !== prevIds && !catalogPickerModal.classList.contains('is-hidden')) {
+                    renderCatalogPickerList({ animate: false });
+                }
+            });
+        }
+    }
+
+    function closeCatalogPickerModal() {
+        if (!catalogPickerModal || catalogPickerModal.classList.contains('is-hidden') || catalogPickerModal.classList.contains('closing')) return;
+        modal.el?.querySelector('.modal-content')?.classList.remove('is-stacked-behind');
+        catalogPickerModal.classList.add('closing');
+        setTimeout(() => {
+            catalogPickerModal.classList.add('is-hidden');
+            catalogPickerModal.classList.remove('closing');
+            catalogPickerModal.setAttribute('aria-hidden', 'true');
+            pickerQuantities.clear();
+            if (document.querySelectorAll('.modal-overlay:not(.is-hidden)').length === 0) {
+                document.documentElement.classList.remove('modal-open');
+            }
+        }, 200);
+    }
+
+    pickerListEl?.addEventListener('click', (e) => {
+        const deltaBtn = e.target.closest('[data-picker-delta]');
+        if (deltaBtn) {
+            e.stopPropagation();
+            const rowEl = deltaBtn.closest('[data-picker-row]');
+            const id = deltaBtn.closest('[data-picker-id]')?.dataset.pickerId;
+            if (!id) return;
+            const delta = parseInt(deltaBtn.dataset.pickerDelta, 10) || 0;
+            const next = Math.max(0, (pickerQuantities.get(id) || 0) + delta);
+            if (next === 0) pickerQuantities.delete(id);
+            else pickerQuantities.set(id, next);
+            updatePickerRowInPlace(rowEl, id, next);
+            return;
+        }
+        const rowEl = e.target.closest('[data-picker-row]');
+        if (rowEl) {
+            const id = rowEl.dataset.pickerRow;
+            const next = (pickerQuantities.get(id) || 0) + 1;
+            pickerQuantities.set(id, next);
+            updatePickerRowInPlace(rowEl, id, next);
+        }
+    });
+
+    pickerApplyBtn?.addEventListener('click', () => {
+        if (!itemsList || pickerQuantities.size === 0) return;
+        const byId = new Map(currentShopProducts.map(p => [p.id, p]));
+
+        pickerQuantities.forEach((addQty, id) => {
+            const prod = byId.get(id);
+            if (!prod || addQty <= 0) return;
+
+            const existingRows = [...itemsList.querySelectorAll('[data-item-row]')];
+            const matchRow = existingRows.find(r => {
+                const n = String(r.querySelector('[data-field="item_name"]')?.value || '').trim().toLowerCase();
+                const pr = parseFloat(r.querySelector('[data-field="price"]')?.value);
+                return n === String(prod.name || '').trim().toLowerCase()
+                    && Number.isFinite(pr) && Math.abs(pr - (Number(prod.price) || 0)) < 0.005;
+            });
+
+            if (matchRow) {
+                const qEl = matchRow.querySelector('[data-field="qty"]');
+                const curQty = Math.max(1, parseInt(qEl?.value, 10) || 1);
+                if (qEl) qEl.value = String(curQty + addQty);
+                return;
+            }
+
+            const emptyFirst = existingRows.length === 1
+                && !String(existingRows[0].querySelector('[data-field="item_name"]')?.value || '').trim()
+                && !String(existingRows[0].querySelector('[data-field="price"]')?.value || '').trim();
+
+            if (emptyFirst) {
+                fillReceiptItemRow(existingRows[0], prod, addQty);
+            } else {
+                addItemRow(false, { scroll: false });
+                const newRow = itemsList.lastElementChild;
+                fillReceiptItemRow(newRow, prod, addQty);
+            }
+        });
+
+        updateRemoveButtonsState();
+        renumberRows();
+        updateTotalPreview();
+        closeCatalogPickerModal();
+    });
+
+    pickerSearchInput?.addEventListener('input', () => {
+        pickerSearchQuery = pickerSearchInput.value || '';
+        if (pickerSearchClear) pickerSearchClear.style.display = pickerSearchQuery ? 'inline-flex' : 'none';
+        renderCatalogPickerList();
+    });
+    pickerSearchClear?.addEventListener('click', () => {
+        if (pickerSearchInput) pickerSearchInput.value = '';
+        pickerSearchQuery = '';
+        pickerSearchClear.style.display = 'none';
+        renderCatalogPickerList();
+        pickerSearchInput?.focus();
+    });
+
+    document.getElementById('pick-catalog-items-btn')?.addEventListener('click', openCatalogPickerModal);
+    document.getElementById('close-catalog-picker')?.addEventListener('click', closeCatalogPickerModal);
+    document.getElementById('cancel-catalog-picker')?.addEventListener('click', closeCatalogPickerModal);
+    document.getElementById('picker-open-catalog-btn')?.addEventListener('click', () => {
+        closeCatalogPickerModal();
+        setTimeout(openCatalogModal, 220);
+    });
+    catalogPickerModal?.addEventListener('click', (e) => {
+        if (e.target === catalogPickerModal || e.target.classList.contains('modal-backdrop')) closeCatalogPickerModal();
+    });
+    attachModalA11y(catalogPickerModal, { mode: 'hidden', onClose: () => closeCatalogPickerModal() });
+
     // Registration form logo preview
     const regLogoInput = document.getElementById('reg-logo-input');
     const logoDropZone = document.getElementById('logo-drop-zone');
@@ -2665,7 +3807,7 @@ async function initBusinessPanel() {
             renderView(views.shop);
         } else if (shop) {
             updateShopInfo(shop);
-            await loadTerminals(shop.id);
+            await Promise.all([loadTerminals(shop.id), loadShopProducts(shop.id)]);
             renderView(views.dashboard);
             await refreshDashboard(client, shop.id, stats, list);
         } else {
@@ -2675,7 +3817,7 @@ async function initBusinessPanel() {
         logError('biz:loadShop', e);
         if (currentShop) {
             updateShopInfo(currentShop);
-            await loadTerminals(currentShop.id);
+            await Promise.all([loadTerminals(currentShop.id), loadShopProducts(currentShop.id)]);
             renderView(views.dashboard);
             await refreshDashboard(client, currentShop.id, stats, list);
         } else if (views.shop) {
@@ -2807,7 +3949,7 @@ async function initBusinessPanel() {
                 currentShop = newShop;
                 sessionStorage.setItem('current_shop', JSON.stringify(newShop));
                 updateShopInfo(newShop);
-                await loadTerminals(newShop.id);
+                await Promise.all([loadTerminals(newShop.id), loadShopProducts(newShop.id)]);
                 renderView(views.dashboard);
                 await refreshDashboard(client, newShop.id, stats, list);
             } catch (err) {
@@ -2875,6 +4017,10 @@ async function initBusinessPanel() {
 
     function requestClose() {
         if (issuingClose) return;
+        if (catalogPickerModal && !catalogPickerModal.classList.contains('is-hidden')) {
+            closeCatalogPickerModal();
+            return;
+        }
         if (successScreen && !successScreen.classList.contains('is-hidden')) {
             forceClose();
             return;
@@ -2987,6 +4133,9 @@ async function initBusinessPanel() {
     attachModalA11y(modal.el, {
         mode: 'hidden',
         beforeClose: () => {
+            if (catalogPickerModal && !catalogPickerModal.classList.contains('is-hidden')) {
+                return false;
+            }
             if (isFormDirty() && !guardVisible && (!successScreen || successScreen.classList.contains('is-hidden'))) {
                 showGuard();
                 return false;
@@ -5090,8 +6239,16 @@ async function initBusinessPanel() {
         if (!currentShop) return;
         updateShopInfo(currentShop);
         renderTerminalsWidget();
+        renderCatalogWidget();
+        refreshProductCategorySelect();
         if (terminalsModal && !terminalsModal.classList.contains('is-hidden')) {
             renderTerminalsList();
+        }
+        if (catalogModal && !catalogModal.classList.contains('is-hidden')) {
+            renderCatalogList();
+        }
+        if (catalogPickerModal && !catalogPickerModal.classList.contains('is-hidden')) {
+            renderCatalogPickerList();
         }
         const curLang = (window.getValuonLang ? window.getValuonLang() : 'en');
         const curCurrency = currentShop?.currency || 'EUR';

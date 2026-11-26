@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/business.css">
+    <link rel="stylesheet" href="css/business.css?v=20261126c">
     <link rel="stylesheet" href="css/toast.css">
     <link rel="stylesheet" href="css/custom-select.css">
     <link rel="stylesheet" href="css/custom-datepicker.css">
@@ -206,14 +206,25 @@
                 </div>
             </div>
 
-            <button type="button" class="terminals-widget mb-6" id="open-terminals-btn" data-animate>
-                <span class="terminals-widget-icon"><i class="fa-solid fa-cash-register"></i></span>
-                <span class="terminals-widget-info">
-                    <span class="terminals-widget-title" data-i18n="terminals_widget_title">Cash Registers</span>
-                    <span class="terminals-widget-count" id="terminals-count-label">—</span>
-                </span>
-                <span class="terminals-widget-arrow"><i class="fa-solid fa-chevron-right"></i></span>
-            </button>
+            <div class="shop-tools-grid mb-6" data-animate>
+                <button type="button" class="terminals-widget" id="open-terminals-btn">
+                    <span class="terminals-widget-icon"><i class="fa-solid fa-cash-register"></i></span>
+                    <span class="terminals-widget-info">
+                        <span class="terminals-widget-title" data-i18n="terminals_widget_title">Cash Registers</span>
+                        <span class="terminals-widget-count" id="terminals-count-label">—</span>
+                    </span>
+                    <span class="terminals-widget-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                </button>
+
+                <button type="button" class="terminals-widget catalog-widget" id="open-catalog-btn">
+                    <span class="terminals-widget-icon catalog-widget-icon"><i class="fa-solid fa-boxes-stacked"></i></span>
+                    <span class="terminals-widget-info">
+                        <span class="terminals-widget-title" data-i18n="catalog_widget_title">Product Catalog</span>
+                        <span class="terminals-widget-count" id="catalog-count-label">—</span>
+                    </span>
+                    <span class="terminals-widget-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                </button>
+            </div>
 
             <div class="stats-grid mb-6" data-animate-group data-animate-step="110">
                 <div class="stat-card" data-animate="zoom">
@@ -498,9 +509,12 @@
                                     </div>
                                     <div class="input-group item-name">
                                         <label data-i18n="item_name_label">Product</label>
-                                        <input type="text" data-field="item_name"
-                                            data-i18n-placeholder="item_name_placeholder" placeholder="MacBook Air M2"
-                                            required>
+                                        <div class="item-name-autocomplete-wrap">
+                                            <input type="text" data-field="item_name" autocomplete="off"
+                                                data-i18n-placeholder="item_name_placeholder" placeholder="MacBook Air M2"
+                                                required>
+                                            <div class="item-autocomplete-list is-hidden" data-item-autocomplete role="listbox"></div>
+                                        </div>
                                     </div>
                                     <div class="item-fields">
                                         <div class="input-group item-qty">
@@ -565,10 +579,16 @@
                                 </div>
                             </template>
 
-                            <button type="button" id="add-item-row-btn">
-                                <span class="btn-add-item-plus"><i class="fa-solid fa-plus"></i></span>
-                                <span data-i18n="add_item_btn">Add item</span>
-                            </button>
+                            <div class="receipt-items-actions-row">
+                                <button type="button" id="add-item-row-btn">
+                                    <span class="btn-add-item-plus"><i class="fa-solid fa-plus"></i></span>
+                                    <span data-i18n="add_item_btn">Add item</span>
+                                </button>
+                                <button type="button" id="pick-catalog-items-btn" class="btn-pick-catalog">
+                                    <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
+                                    <span data-i18n="pick_from_catalog_btn">Add from catalog</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="receipt-footer">
@@ -885,6 +905,218 @@
                 </div>
             </div>
         </div>
+
+        <div id="catalog-modal" class="modal-overlay is-hidden" aria-hidden="true">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content max-w-lg catalog-modal-card">
+                <div class="modal-header">
+                    <div class="modal-heading">
+                        <span class="modal-heading-icon catalog-heading-icon"><i class="fa-solid fa-boxes-stacked"></i></span>
+                        <div class="modal-heading-text">
+                            <h2 data-i18n="catalog_modal_title">Product Catalog</h2>
+                            <p data-i18n="catalog_modal_subtitle">Quick-fill items when issuing receipts</p>
+                        </div>
+                    </div>
+                    <button type="button" id="close-catalog-modal" class="btn-close" aria-label="Close"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="catalog-toolbar">
+                    <div class="receipt-search-box catalog-search-box">
+                        <i class="fa-solid fa-magnifying-glass receipt-search-icon" aria-hidden="true"></i>
+                        <input type="text" id="catalog-search-input" class="receipt-search-input" autocomplete="off"
+                            data-i18n-placeholder="catalog_search_placeholder" placeholder="Search by name or SKU...">
+                        <button type="button" id="catalog-search-clear" class="receipt-search-clear" style="display:none;" aria-label="Clear">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div id="catalog-category-chips" class="catalog-category-chips is-hidden"></div>
+                </div>
+
+                <div class="catalog-list" id="catalog-list"></div>
+
+                <div id="no-catalog-msg" class="empty-state" style="display: none;">
+                    <div class="empty-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                    <h3 data-i18n="no_catalog_title">No products in catalog yet</h3>
+                    <p data-i18n="no_catalog_desc">Add your regular items once to fill receipts in one tap.</p>
+                    <button type="button" id="import-catalog-from-receipts-btn" class="btn btn-outline btn-sm is-hidden" style="margin-top: 0.75rem;">
+                        <i class="fa-solid fa-file-import"></i> <span data-i18n="import_catalog_btn">Import from past receipts</span>
+                    </button>
+                </div>
+
+                <div class="modal-actions catalog-modal-actions">
+                    <button type="button" id="open-import-catalog-btn" class="btn btn-outline is-hidden">
+                        <i class="fa-solid fa-file-import"></i> <span data-i18n="import_catalog_short_btn">From receipts</span>
+                    </button>
+                    <button type="button" id="add-product-btn" class="btn btn-primary w-full">
+                        <i class="fa-solid fa-plus"></i> <span data-i18n="add_product_btn">Add Product</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="catalog-import-modal" class="modal-overlay is-hidden z-overlay" aria-hidden="true">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content max-w-lg catalog-modal-card">
+                <div class="modal-header">
+                    <div class="modal-heading">
+                        <span class="modal-heading-icon catalog-heading-icon"><i class="fa-solid fa-file-import"></i></span>
+                        <div class="modal-heading-text">
+                            <h2 data-i18n="import_modal_title">Import from Past Receipts</h2>
+                            <p data-i18n="import_modal_subtitle">Choose which items to add to your catalog</p>
+                        </div>
+                    </div>
+                    <button type="button" id="close-catalog-import" class="btn-close" aria-label="Close"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="catalog-import-bar">
+                    <span class="lifecycle-section-label" id="catalog-import-counter"></span>
+                    <button type="button" id="catalog-import-toggle-all" class="lifecycle-text-btn"
+                        data-i18n="lifecycle_select_all">Select all</button>
+                </div>
+
+                <div class="catalog-list catalog-import-list" id="catalog-import-list"></div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cancel-catalog-import" class="btn btn-outline"
+                        data-i18n="cancel_btn">Cancel</button>
+                    <button type="button" id="confirm-catalog-import" class="btn btn-primary" disabled>
+                        <i class="fa-solid fa-check"></i> <span id="confirm-catalog-import-label" data-i18n="import_confirm_btn">Import selected</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="product-form-modal" class="modal-overlay is-hidden z-overlay" aria-hidden="true">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content max-w-md">
+                <div class="modal-header">
+                    <div class="modal-heading">
+                        <span class="modal-heading-icon catalog-heading-icon"><i class="fa-solid fa-box"></i></span>
+                        <div class="modal-heading-text">
+                            <h2 id="product-form-title" data-i18n="product_form_title_new">New Product</h2>
+                            <p data-i18n="product_form_subtitle">Will be available in autocomplete and catalog picker</p>
+                        </div>
+                    </div>
+                    <button type="button" id="close-product-form" class="btn-close" aria-label="Close"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <form id="product-form" class="modal-form" action="#" novalidate>
+                    <div class="input-group">
+                        <label for="product-name-input" data-i18n="product_name_label">Product Name</label>
+                        <input type="text" id="product-name-input" name="name" maxlength="160" required autocomplete="off"
+                            data-i18n-placeholder="product_name_placeholder" placeholder="iPhone 16 Pro 256GB">
+                        <small class="field-error" data-product-error="name" role="alert"></small>
+                    </div>
+
+                    <div class="catalog-form-row">
+                        <div class="input-group">
+                            <label for="product-price-input" data-i18n="product_price_label">Price</label>
+                            <span class="input-suffix">
+                                <input type="number" id="product-price-input" name="price" step="0.01" min="0" required
+                                    placeholder="0.00">
+                                <span class="suffix-hint" id="product-price-currency">€</span>
+                            </span>
+                            <small class="field-error" data-product-error="price" role="alert"></small>
+                        </div>
+                        <div class="input-group">
+                            <label for="product-vat-input" data-i18n="vat_rate_label">Tax Rate</label>
+                            <span class="input-suffix">
+                                <input type="number" id="product-vat-input" name="vat_rate" step="0.1" min="0" max="100"
+                                    placeholder="0">
+                                <span class="suffix-hint">%</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="product-warranty-input" data-i18n="warranty_months_label">Warranty, months</label>
+                        <span class="input-suffix">
+                            <input type="number" id="product-warranty-input" name="warranty_months" min="0" max="600"
+                                step="1" placeholder="12">
+                            <span class="suffix-hint" data-i18n="months_suffix">mo.</span>
+                        </span>
+                        <div class="warranty-presets" id="product-warranty-presets" role="group">
+                            <button type="button" class="warranty-chip" data-months="0">0</button>
+                            <button type="button" class="warranty-chip" data-months="6">6<span data-i18n="unit_m">m</span></button>
+                            <button type="button" class="warranty-chip" data-months="12">12<span data-i18n="unit_m">m</span></button>
+                            <button type="button" class="warranty-chip" data-months="24">24<span data-i18n="unit_m">m</span></button>
+                            <button type="button" class="warranty-chip" data-months="36">36<span data-i18n="unit_m">m</span></button>
+                        </div>
+                    </div>
+
+                    <div class="catalog-form-row">
+                        <div class="input-group">
+                            <label for="product-category-select" data-i18n="category_label">Category</label>
+                            <select id="product-category-select" name="category" class="custom-select" data-searchable
+                                data-search-placeholder="category_search_placeholder"
+                                data-search-empty="category_search_empty"></select>
+                        </div>
+                        <div class="input-group">
+                            <label for="product-sku-input" data-i18n="product_sku_label">SKU (optional)</label>
+                            <input type="text" id="product-sku-input" name="sku" maxlength="64" autocomplete="off"
+                                data-i18n-placeholder="product_sku_placeholder" placeholder="APL-16P-256">
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" id="cancel-product-form" class="btn btn-outline"
+                            data-i18n="cancel_btn">Cancel</button>
+                        <button type="submit" id="save-product-btn" class="btn btn-primary" data-i18n="save_product_btn">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="catalog-picker-modal" class="modal-overlay is-hidden z-overlay" aria-hidden="true">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content max-w-lg catalog-modal-card">
+                <div class="modal-header">
+                    <div class="modal-heading">
+                        <span class="modal-heading-icon catalog-heading-icon"><i class="fa-solid fa-boxes-stacked"></i></span>
+                        <div class="modal-heading-text">
+                            <h2 data-i18n="catalog_picker_title">Add from Catalog</h2>
+                            <p data-i18n="catalog_picker_subtitle">Tap items to add them to this receipt</p>
+                        </div>
+                    </div>
+                    <button type="button" id="close-catalog-picker" class="btn-close" aria-label="Close"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="catalog-toolbar">
+                    <div class="receipt-search-box catalog-search-box">
+                        <i class="fa-solid fa-magnifying-glass receipt-search-icon" aria-hidden="true"></i>
+                        <input type="text" id="picker-search-input" class="receipt-search-input" autocomplete="off"
+                            data-i18n-placeholder="catalog_search_placeholder" placeholder="Search by name or SKU...">
+                        <button type="button" id="picker-search-clear" class="receipt-search-clear" style="display:none;" aria-label="Clear">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div id="picker-category-chips" class="catalog-category-chips is-hidden"></div>
+                </div>
+
+                <div class="catalog-list catalog-picker-list" id="catalog-picker-list"></div>
+
+                <div id="picker-empty-msg" class="empty-state" style="display: none;">
+                    <div class="empty-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                    <h3 data-i18n="no_catalog_title">No products in catalog yet</h3>
+                    <p data-i18n="catalog_picker_empty">Add products to your catalog to pick them in one tap.</p>
+                    <button type="button" id="picker-open-catalog-btn" class="btn btn-outline btn-sm" style="margin-top: 0.75rem;">
+                        <i class="fa-solid fa-plus"></i> <span data-i18n="catalog_picker_manage_btn">Open Catalog</span>
+                    </button>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cancel-catalog-picker" class="btn btn-outline"
+                        data-i18n="cancel_btn">Cancel</button>
+                    <button type="button" id="apply-catalog-picker" class="btn btn-primary" disabled>
+                        <i class="fa-solid fa-check"></i> <span id="apply-catalog-picker-label" data-i18n="catalog_picker_apply">Add to receipt</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <nav class="bottom-nav">
@@ -926,8 +1158,8 @@
     <script src="js/countries.js"></script>
     <script src="js/currencies.js"></script>
     <script src="js/custom-datepicker.js"></script>
-    <script src="js/business-lang.js"></script>
-    <script type="module" src="js/business-panel.js"></script>
+    <script src="js/business-lang.js?v=20261126c"></script>
+    <script type="module" src="js/business-panel.js?v=20261126c"></script>
     <script type="module" src="js/dashboard-notifications.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/animations.js"></script>

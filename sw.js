@@ -1,5 +1,5 @@
 // Valuon Service Worker — Stage 1 (App Shell + Static Cache + Offline Fallback)
-const CACHE_VERSION = 'valuon-static-v3';
+const CACHE_VERSION = 'valuon-static-v4';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_URLS = [
@@ -65,7 +65,8 @@ self.addEventListener('fetch', (event) => {
 
     const url = new URL(req.url);
 
-    // Never intercept Supabase auth/API/storage, Vercel analytics, or third-party requests
+    // Never intercept localhost/127.0.0.1 dev servers, Supabase, Vercel analytics, or sw.js
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return;
     if (url.origin !== self.location.origin) return;
     if (url.pathname.startsWith('/_vercel/')) return;
     if (url.pathname === '/sw.js') return;
@@ -90,8 +91,26 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Same-origin static assets: Stale-While-Revalidate
+    // Same-origin static assets: Network-First for JS/CSS (always fresh on deploy), Stale-While-Revalidate for images/icons
     if (isCacheableStaticAsset(url)) {
+        const isCodeAsset = url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/');
+        if (isCodeAsset) {
+            event.respondWith(
+                fetch(req)
+                    .then((res) => {
+                        if (res && res.ok && res.type === 'basic') {
+                            const copy = res.clone();
+                            caches.open(CACHE_VERSION).then((cache) => cache.put(req, copy)).catch(() => {});
+                        }
+                        return res;
+                    })
+                    .catch(async () => {
+                        const cached = await caches.match(req);
+                        return cached || Response.error();
+                    })
+            );
+            return;
+        }
         event.respondWith(
             caches.open(CACHE_VERSION).then(async (cache) => {
                 const cached = await cache.match(req);
