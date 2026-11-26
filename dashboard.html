@@ -127,6 +127,18 @@
                 <div class="items-section-header">
                     <h2 data-i18n="section_recent">Recent Purchases</h2>
                     <div class="section-toolbar-controls">
+                        <div class="receipt-search-box">
+                            <i class="fa-solid fa-magnifying-glass receipt-search-icon" aria-hidden="true"></i>
+                            <input type="search" id="items-search-input" class="receipt-search-input"
+                                data-i18n-placeholder="items_search_placeholder"
+                                placeholder="Search by name, brand, store..." autocomplete="off"
+                                spellcheck="false">
+                            <button type="button" id="items-search-clear" class="receipt-search-clear"
+                                data-i18n-title="search_clear_title" title="Clear search"
+                                aria-label="Clear search" style="display: none;">
+                                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                            </button>
+                        </div>
                         <div class="items-tabs" id="items-tabs" role="tablist">
                             <span class="items-tab-indicator" id="items-tab-indicator" aria-hidden="true"></span>
                             <button type="button" class="items-tab active" data-items-tab="verified" role="tab"

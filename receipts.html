@@ -96,6 +96,18 @@
             <div class="items-section-header">
                 <h2 data-i18n="section_documents">Your Documents</h2>
                 <div class="section-toolbar-controls">
+                    <div class="receipt-search-box">
+                        <i class="fa-solid fa-magnifying-glass receipt-search-icon" aria-hidden="true"></i>
+                        <input type="search" id="receipts-search-input" class="receipt-search-input"
+                            data-i18n-placeholder="receipts_search_placeholder"
+                            placeholder="Search by store, item, #RCP..." autocomplete="off"
+                            spellcheck="false">
+                        <button type="button" id="receipts-search-clear" class="receipt-search-clear"
+                            data-i18n-title="search_clear_title" title="Clear search"
+                            aria-label="Clear search" style="display: none;">
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        </button>
+                    </div>
                     <div class="items-tabs" id="receipts-tabs" role="tablist">
                         <span class="items-tab-indicator" id="receipts-tab-indicator" aria-hidden="true"></span>
                         <button type="button" class="items-tab active" data-receipts-tab="personal" role="tab"

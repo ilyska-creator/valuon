@@ -2967,6 +2967,96 @@ html {
     max-width: 100%;
 }
 
+.receipt-search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 260px;
+    max-width: 100%;
+}
+
+.receipt-search-icon {
+    position: absolute;
+    left: 0.85rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: color 0.16s ease;
+}
+
+.receipt-search-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 2.15rem 0 2.3rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-main);
+    font-family: var(--font-main);
+    font-size: 0.84rem;
+    font-weight: 500;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+    box-sizing: border-box;
+}
+
+.receipt-search-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.85;
+}
+
+.receipt-search-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.receipt-search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.receipt-search-box:focus-within .receipt-search-icon {
+    color: var(--primary);
+}
+
+[data-theme="dark"] .receipt-search-input {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .receipt-search-input:focus {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.receipt-search-clear {
+    position: absolute;
+    right: 0.45rem;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .receipt-search-clear:hover {
+        color: var(--text-main);
+        background: rgba(0, 0, 0, 0.06);
+    }
+
+    [data-theme="dark"] .receipt-search-clear:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+}
+
 .sort-control-wrap {
     position: relative;
     min-width: 215px;
@@ -3173,6 +3263,10 @@ html {
         flex-direction: column;
         align-items: stretch;
         gap: 8px;
+    }
+
+    .receipt-search-box {
+        width: 100%;
     }
 
     .sort-control-wrap {

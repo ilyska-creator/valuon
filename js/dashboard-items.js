@@ -82,6 +82,7 @@ async function initDashboardItems() {
     applySavedItemsTab();
     setupItemsTabs(auth.user.id, auth.user.email, auth.client);
     setupItemsSort();
+    setupItemsSearch();
     await loadItems(auth.user.id, auth.client);
     await loadVerifiedItems(auth.user.email, auth.client);
     if (!sessionStorage.getItem('valuon-items-tab') && lastVerifiedReceipts.length === 0 && lastMineItems.length > 0) {
@@ -97,6 +98,62 @@ async function initDashboardItems() {
 }
 
 const VALID_ITEMS_SORTS = new Set(['newest', 'warranty_asc', 'price_desc', 'price_asc']);
+let currentItemsSearch = '';
+
+function setupItemsSearch() {
+    const input = document.getElementById('items-search-input');
+    const clearBtn = document.getElementById('items-search-clear');
+    if (!input) return;
+
+    const applySearch = (val) => {
+        currentItemsSearch = String(val || '').trim().toLowerCase();
+        if (clearBtn) clearBtn.style.display = currentItemsSearch ? '' : 'none';
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
+        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.en || {};
+        renderItems(lastMineItems, { animateCount: false });
+        renderVerifiedItems(lastVerifiedReceipts, t, { animateCount: false });
+    };
+
+    input.addEventListener('input', () => applySearch(input.value));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && input.value) {
+            input.value = '';
+            applySearch('');
+        }
+    });
+    clearBtn?.addEventListener('click', () => {
+        input.value = '';
+        applySearch('');
+        input.focus();
+    });
+}
+
+function matchesItemSearch(item, isVerified) {
+    if (!currentItemsSearch) return true;
+    const fields = isVerified
+        ? [item.name, item.shop_name, item.category]
+        : [item.name, item.brand, item.store_name, item.serial_number, item.location, item.type];
+    return fields.some(v => v && String(v).toLowerCase().includes(currentItemsSearch));
+}
+
+function renderItemsSearchEmpty(grid, t) {
+    grid.innerHTML = `
+        <div class="empty-state" data-animate="zoom">
+            <div class="empty-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+            <h3 data-i18n="search_empty_title">${escapeHtml(t.search_empty_title || 'Nothing found')}</h3>
+            <p data-i18n="search_empty_desc">${escapeHtml(t.search_empty_desc || 'Try a different search query')}</p>
+            <button type="button" class="btn btn-outline empty-state-cta btn-reset-items-search">
+                <span data-i18n="search_reset_btn">${escapeHtml(t.search_reset_btn || 'Reset search')}</span>
+            </button>
+        </div>`;
+    grid.querySelector('.btn-reset-items-search')?.addEventListener('click', () => {
+        const input = document.getElementById('items-search-input');
+        if (input) {
+            input.value = '';
+            input.dispatchEvent(new Event('input'));
+        }
+    });
+}
 
 function setupItemsSort() {
     const select = document.getElementById('items-sort-select');
@@ -237,6 +294,14 @@ function getTotalWarrantyDays(item) {
         if (diff > 0) return diff;
     }
     return (Number(item?.warranty_months) || 12) * 30;
+}
+
+function getTodayLocalIso() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
 }
 
 function parseWarrantyMonthsInput(rawVal) {
@@ -417,7 +482,16 @@ function renderItems(items, opts = {}) {
         return;
     }
 
-    const sortedItems = sortDashboardItems(items, currentItemsSort, false);
+    const filteredItems = currentItemsSearch
+        ? items.filter(it => matchesItemSearch(it, false))
+        : items;
+
+    if (filteredItems.length === 0) {
+        renderItemsSearchEmpty(grid, t);
+        return;
+    }
+
+    const sortedItems = sortDashboardItems(filteredItems, currentItemsSort, false);
 
     grid.innerHTML = sortedItems.map(item => {
         const iconClass = (item.type && Object.prototype.hasOwnProperty.call(window.DEVICE_ICONS, item.type))
@@ -653,7 +727,16 @@ function renderVerifiedItems(receipts, t, opts = {}) {
         return;
     }
 
-    const sortedItems = sortDashboardItems(allItems, currentItemsSort, true);
+    const filteredVerified = currentItemsSearch
+        ? allItems.filter(it => matchesItemSearch(it, true))
+        : allItems;
+
+    if (filteredVerified.length === 0) {
+        renderItemsSearchEmpty(grid, t);
+        return;
+    }
+
+    const sortedItems = sortDashboardItems(filteredVerified, currentItemsSort, true);
     lastVerifiedItems = sortedItems;
 
     grid.innerHTML = sortedItems.map(item => {
@@ -1146,15 +1229,25 @@ function setupEditModal(client, userId) {
         });
     }
 
+    const editDateInput = form.querySelector('[name="purchase_date"]');
+    if (editDateInput) editDateInput.max = getTodayLocalIso();
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (isSubmitting) return;
+
+        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
+        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+        const editDateVal = form.querySelector('[name="purchase_date"]')?.value || '';
+        if (editDateVal && editDateVal > getTodayLocalIso()) {
+            showToast(lang === 'ru' ? 'Дата покупки не может быть в будущем' : 'Purchase date cannot be in the future', 'warning');
+            return;
+        }
+
         isSubmitting = true;
 
         const btn = submitBtn || form.querySelector('button[type="submit"]');
         submitBtnOriginalHTML = btn.innerHTML;
-        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
-        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
 
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
@@ -1340,11 +1433,9 @@ function setupModal(client, userId) {
         syncWarrantyChips(addWarrantyPresets, addWarrantyInput?.value || '0');
         const dateInput = form?.querySelector('[name="purchase_date"]');
         if (dateInput) {
-            const now = new Date();
-            const y = now.getFullYear();
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const d = String(now.getDate()).padStart(2, '0');
-            dateInput.value = `${y}-${m}-${d}`;
+            const todayIso = getTodayLocalIso();
+            dateInput.max = todayIso;
+            dateInput.value = todayIso;
             if (dateInput._cdp) dateInput._cdp.syncDisplay();
         }
         if (currencySelect) {
@@ -1390,6 +1481,11 @@ function setupModal(client, userId) {
             const brandInput = form.querySelector('input[name="brand"]');
             const serialInput = form.querySelector('input[name="serial_number"]');
             const dateInput = form.querySelector('input[name="purchase_date"]');
+            if (dateInput?.value && dateInput.value > getTodayLocalIso()) {
+                showToast(lang === 'ru' ? 'Дата покупки не может быть в будущем' : 'Purchase date cannot be in the future', 'warning');
+                resetSubmitState();
+                return;
+            }
             const monthsInput = form.querySelector('input[name="warranty_months"]');
             const locationInput = form.querySelector('input[name="location"]');
             const priceInput = form.querySelector('input[name="price"]');

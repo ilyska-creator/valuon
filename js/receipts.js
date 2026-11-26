@@ -179,6 +179,7 @@ async function initReceipts() {
     applySavedReceiptsTab();
     setupReceiptsTabs();
     setupReceiptsSort();
+    setupReceiptsSearch();
 
     await loadAllReceipts(currentUserEmail, currentUserId, client);
     if (!sessionStorage.getItem('valuon-receipts-tab') && lastPersonalReceipts.length === 0 && lastBusinessReceipts.length > 0) {
@@ -192,6 +193,63 @@ async function initReceipts() {
 }
 
 const VALID_RECEIPTS_SORTS = new Set(['newest', 'oldest', 'price_desc', 'price_asc']);
+let currentReceiptsSearch = '';
+
+function setupReceiptsSearch() {
+    const input = document.getElementById('receipts-search-input');
+    const clearBtn = document.getElementById('receipts-search-clear');
+    if (!input) return;
+
+    const applySearch = (val) => {
+        currentReceiptsSearch = String(val || '').trim().toLowerCase();
+        if (clearBtn) clearBtn.style.display = currentReceiptsSearch ? '' : 'none';
+        if (receiptsLoaded) {
+            renderSplitReceipts(lastBusinessReceipts, lastPersonalReceipts, currentClient, currentUserId, { animateCounts: false, skipLangApply: true });
+        }
+    };
+
+    input.addEventListener('input', () => applySearch(input.value));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && input.value) {
+            input.value = '';
+            applySearch('');
+        }
+    });
+    clearBtn?.addEventListener('click', () => {
+        input.value = '';
+        applySearch('');
+        input.focus();
+    });
+}
+
+function matchesPersonalReceiptSearch(r) {
+    if (!currentReceiptsSearch) return true;
+    const fields = [r.receipt_name, r.store_name, r.items?.name, r.items?.store_name, r.items?.brand];
+    return fields.some(v => v && String(v).toLowerCase().includes(currentReceiptsSearch));
+}
+
+function matchesBusinessReceiptSearch(r) {
+    if (!currentReceiptsSearch) return true;
+    const numStr = r.receipt_number ? `#rcp-${r.receipt_number}` : '';
+    const fields = [r.shop_name, numStr, r.receipt_number, r.pos_serial];
+    if (fields.some(v => v && String(v).toLowerCase().includes(currentReceiptsSearch))) return true;
+    if (Array.isArray(r.receipt_items)) {
+        return r.receipt_items.some(it => it.item_name && String(it.item_name).toLowerCase().includes(currentReceiptsSearch));
+    }
+    return false;
+}
+
+function buildReceiptsSearchEmptyHTML(t) {
+    return `
+        <div class="empty-state" data-animate="zoom">
+            <div class="empty-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+            <h3 data-i18n="search_empty_title">${escapeHtml(t.search_empty_title || 'Nothing found')}</h3>
+            <p data-i18n="search_empty_desc">${escapeHtml(t.search_empty_desc || 'Try a different search query')}</p>
+            <button type="button" class="btn btn-outline empty-state-cta btn-reset-receipts-search">
+                <span data-i18n="search_reset_btn">${escapeHtml(t.search_reset_btn || 'Reset search')}</span>
+            </button>
+        </div>`;
+}
 
 function setupReceiptsSort() {
     const select = document.getElementById('receipts-sort-select');
@@ -423,6 +481,15 @@ function renderSplitReceipts(businessReceipts, personalReceipts, client, userId,
     }
     updateReceiptsSummary();
     restoreListeners(client, userId);
+    document.querySelectorAll('.btn-reset-receipts-search').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = document.getElementById('receipts-search-input');
+            if (input) {
+                input.value = '';
+                input.dispatchEvent(new Event('input'));
+            }
+        });
+    });
 }
 
 function updateReceiptsSummary() {
@@ -432,7 +499,10 @@ function updateReceiptsSummary() {
     if (!summaryStrip || !totalEl || !countEl) return;
 
     const activeTab = sessionStorage.getItem('valuon-receipts-tab') || 'personal';
-    const receipts = activeTab === 'personal' ? lastPersonalReceipts : lastBusinessReceipts;
+    const rawReceipts = activeTab === 'personal' ? lastPersonalReceipts : lastBusinessReceipts;
+    const receipts = currentReceiptsSearch
+        ? rawReceipts.filter(r => activeTab === 'personal' ? matchesPersonalReceiptSearch(r) : matchesBusinessReceiptSearch(r))
+        : rawReceipts;
 
     if (!receiptsLoaded || !receipts || receipts.length === 0) {
         summaryStrip.classList.add('hidden');
@@ -487,7 +557,12 @@ function buildPersonalGridHTML(receipts, t, lang) {
             </div>`;
     }
 
-    const flatData = receipts.map(r => ({
+    const filtered = currentReceiptsSearch ? receipts.filter(matchesPersonalReceiptSearch) : receipts;
+    if (filtered.length === 0) {
+        return buildReceiptsSearchEmptyHTML(t);
+    }
+
+    const flatData = filtered.map(r => ({
         ...r,
         item_name: r.items?.name || null,
         display_name: r.items?.name || r.receipt_name || r.store_name || 'Untitled Receipt',
@@ -512,7 +587,12 @@ function buildBusinessGridHTML(receipts, t, lang) {
             </div>`;
     }
 
-    const sorted = sortReceiptsArray(receipts, currentReceiptsSort, true);
+    const filtered = currentReceiptsSearch ? receipts.filter(matchesBusinessReceiptSearch) : receipts;
+    if (filtered.length === 0) {
+        return buildReceiptsSearchEmptyHTML(t);
+    }
+
+    const sorted = sortReceiptsArray(filtered, currentReceiptsSort, true);
     return sorted.map(r => renderBusinessCard(r, t)).join('');
 }
 
@@ -1164,6 +1244,10 @@ function createUploadModal(client, userId) {
     const receiptNameInput = form.querySelector('[name="receipt_name"]');
     const amountInput = form.querySelector('[name="amount"]');
     const dateInput = form.querySelector('[name="purchase_date"]');
+    if (dateInput) {
+        const now = new Date();
+        dateInput.max = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
     const storeInput = form.querySelector('[name="store_name"]');
     const currencySelect = form.querySelector('[name="currency"]');
     const lockIcons = form.querySelectorAll('.lock-icon');
@@ -1351,6 +1435,14 @@ function createUploadModal(client, userId) {
         const btn = form.querySelector('button[type="submit"]');
         const originalHTML = btn.innerHTML;
         const lang = getLang();
+
+        const purchaseDateVal = form.querySelector('[name="purchase_date"]')?.value || '';
+        const nowDate = new Date();
+        const todayIso = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}-${String(nowDate.getDate()).padStart(2, '0')}`;
+        if (purchaseDateVal && purchaseDateVal > todayIso) {
+            showToast(lang === 'ru' ? 'Дата покупки не может быть в будущем' : 'Purchase date cannot be in the future', 'warning');
+            return;
+        }
 
         if (!fileInput.files.length) {
             showToast(lang === 'ru' ? 'Прикрепите файл чека' : 'Please attach a receipt file', 'warning');
