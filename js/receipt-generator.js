@@ -1,6 +1,6 @@
 import { SUPABASE_URL } from './supabase-client.js';
 import { logError } from './security.js';
-import { buildReceiptCard, ensureReceiptFontsLoaded } from './receipt-template.js';
+import { buildReceiptCard, ensureReceiptFontsLoaded } from './receipt-template.js?v=20261126l';
 
 let pdfLibsPromise = null;
 

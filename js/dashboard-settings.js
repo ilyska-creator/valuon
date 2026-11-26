@@ -128,12 +128,12 @@ async function initSettings() {
                 toggleDigest.checked = false;
                 toggleDigest.disabled = true;
             }
-            currentPhoneE164 = data.phone || null;
+            currentPhoneE164 = data.phone || user.user_metadata?.phone || user.phone || null;
         } else {
             const metaFirstName = user.user_metadata?.first_name || '';
             const metaLastName = user.user_metadata?.last_name || '';
             const metaBirthdate = user.user_metadata?.birthdate || null;
-            const metaPhone = user.user_metadata?.phone || null;
+            const metaPhone = user.user_metadata?.phone || user.phone || null;
 
             const baseInsert = {
                 id: user.id,
@@ -163,12 +163,31 @@ async function initSettings() {
 
         syncPhoneDisplayUI();
 
-        if (birthdateInput && !birthdateInput.value) {
+        const needsBirthdateFallback = Boolean(birthdateInput && !birthdateInput.value);
+        const needsPhoneFallback = !currentPhoneE164;
+        if (needsBirthdateFallback || needsPhoneFallback) {
             const { data: { user: freshUser } } = await client.auth.getUser();
-            if (freshUser?.user_metadata?.birthdate) {
+            if (needsBirthdateFallback && freshUser?.user_metadata?.birthdate) {
                 birthdateInput.value = freshUser.user_metadata.birthdate;
                 if (birthdateInput._cdp) birthdateInput._cdp.syncDisplay();
             }
+            if (needsPhoneFallback) {
+                const freshPhone = freshUser?.user_metadata?.phone || freshUser?.phone || null;
+                if (freshPhone) {
+                    currentPhoneE164 = String(freshPhone).trim();
+                    syncPhoneDisplayUI();
+                }
+            }
+        }
+
+        // Backfill profiles.phone if the signup trigger created the row without copying phone from auth metadata
+        if (data && !data.phone && currentPhoneE164) {
+            try {
+                await client
+                    .from('profiles')
+                    .update({ phone: currentPhoneE164, updated_at: new Date().toISOString() })
+                    .eq('id', user.id);
+            } catch (_) { /* ignore */ }
         }
     }
 

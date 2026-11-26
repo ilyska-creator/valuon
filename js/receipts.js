@@ -1201,7 +1201,7 @@ function restoreListeners(client, userId) {
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             try {
-                const { ensurePdfLibsLoaded, downloadReceiptPDF } = await import('./receipt-generator.js');
+                const { ensurePdfLibsLoaded, downloadReceiptPDF } = await import('./receipt-generator.js?v=20261126l');
                 await ensurePdfLibsLoaded();
                 const userPhoneForPdf = await fetchCurrentUserPhone(client, userId);
                 const pdfOrFilter = buildBuyerReceiptOrFilter({ userId, email: currentUserEmail, phone: userPhoneForPdf });
@@ -1238,27 +1238,27 @@ function restoreListeners(client, userId) {
                     if (items?.length) receipt.receipt_items = items;
                 }
 
-                let shopContact = { contact_email: '', contact_phone: '' };
+                let shopMeta = {};
                 if (receipt.shop_id) {
                     try {
                         const { data: sData } = await client
                             .from('shops')
-                            .select('contact_email, contact_phone')
+                            .select('shop_name, address, country, tax_id, logo_path, contact_email, contact_phone')
                             .eq('id', receipt.shop_id)
                             .maybeSingle();
-                        if (sData) shopContact = sData;
+                        if (sData) shopMeta = sData;
                     } catch (_) { }
                 }
 
                 const mockShop = {
-                    shop_name: receipt.shop_name || 'Partner Store',
-                    address: receipt.address || '',
-                    country: receipt.country || null,
+                    shop_name: receipt.shop_name || shopMeta.shop_name || 'Partner Store',
+                    address: receipt.address || shopMeta.address || '',
+                    country: receipt.country || shopMeta.country || null,
                     currency: receipt.currency || 'EUR',
-                    tax_id: receipt.tax_id || '',
-                    logo_path: receipt.logo_path || null,
-                    contact_email: shopContact.contact_email || '',
-                    contact_phone: shopContact.contact_phone || ''
+                    tax_id: receipt.tax_id || shopMeta.tax_id || '',
+                    logo_path: receipt.logo_path || shopMeta.logo_path || null,
+                    contact_email: shopMeta.contact_email || '',
+                    contact_phone: shopMeta.contact_phone || ''
                 };
                 await downloadReceiptPDF(receipt, mockShop);
             } catch (e) {

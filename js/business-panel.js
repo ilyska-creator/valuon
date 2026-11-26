@@ -1,5 +1,5 @@
 import { requireAuth } from './dashboard-auth.js';
-import { downloadReceiptPDF, generateQRDataURL, buildQrPayload } from './receipt-generator.js';
+import { downloadReceiptPDF, generateQRDataURL, buildQrPayload } from './receipt-generator.js?v=20261126l';
 import { escapeHtml, logError, pluralRu } from './security.js';
 import { attachModalA11y } from './modal-a11y.js';
 import { buildXlsxBlob } from './xlsx-export.js';
@@ -3800,9 +3800,28 @@ async function initBusinessPanel() {
     });
 
     // --- Shop Registration & Edit Contacts Phone/Email Wiring ---
+    function wireClearButton(inputEl, clearBtnEl, onClear) {
+        if (!inputEl || !clearBtnEl) return { sync: () => {} };
+        const sync = () => {
+            clearBtnEl.classList.toggle('is-hidden', !inputEl.value.trim());
+        };
+        inputEl.addEventListener('input', sync);
+        inputEl.addEventListener('change', sync);
+        clearBtnEl.addEventListener('click', () => {
+            inputEl.value = '';
+            sync();
+            if (typeof onClear === 'function') onClear();
+            inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        sync();
+        return { sync };
+    }
+
     const regContactEmailInput = document.getElementById('shop-contact-email');
     const regPhoneCountrySelect = document.getElementById('shop-phone-country');
     const regContactPhoneInput = document.getElementById('shop-contact-phone');
+    const regEmailClear = wireClearButton(regContactEmailInput, document.getElementById('clear-shop-contact-email'));
+    const regPhoneClear = wireClearButton(regContactPhoneInput, document.getElementById('clear-shop-contact-phone'));
     let regPhonePair = null;
 
     if (regPhoneCountrySelect && regContactPhoneInput) {
@@ -3814,20 +3833,52 @@ async function initBusinessPanel() {
     (async function prefillShopRegistrationDefaults() {
         if (regContactEmailInput && !regContactEmailInput.value && user?.email) {
             regContactEmailInput.value = user.email;
+            regEmailClear.sync();
         }
         if (!user?.id) return;
         let userCurrency = '';
         let userPhone = '';
+        let profErr = null;
         try {
-            const { data: prof } = await client
+            const { data: prof, error } = await client
                 .from('profiles')
                 .select('currency, phone')
                 .eq('id', user.id)
                 .maybeSingle();
+            profErr = error || null;
             if (prof?.currency) userCurrency = String(prof.currency).trim().toUpperCase();
             if (prof?.phone) userPhone = String(prof.phone).trim();
-        } catch (_) {
+        } catch (e) {
+            profErr = e;
+        }
+
+        if (!userPhone && profErr) {
             userPhone = (await fetchCurrentUserPhone(client, user.id)) || '';
+        }
+        if (!userPhone) {
+            const metaPhone = user?.user_metadata?.phone || user?.phone || '';
+            if (metaPhone) {
+                userPhone = String(metaPhone).trim();
+            } else {
+                try {
+                    const { data: { user: freshUser } } = await client.auth.getUser();
+                    const freshPhone = freshUser?.user_metadata?.phone || freshUser?.phone || '';
+                    if (freshPhone) userPhone = String(freshPhone).trim();
+                } catch (_) { /* ignore */ }
+            }
+        }
+        if (!userCurrency && profErr) {
+            try {
+                const { data: curProf } = await client
+                    .from('profiles')
+                    .select('currency')
+                    .eq('id', user.id)
+                    .maybeSingle();
+                if (curProf?.currency) userCurrency = String(curProf.currency).trim().toUpperCase();
+            } catch (_) { /* ignore */ }
+        }
+        if (!userCurrency && user?.user_metadata?.currency) {
+            userCurrency = String(user.user_metadata.currency).trim().toUpperCase();
         }
 
         const shopCurrencySelect = document.getElementById('shop-currency');
@@ -3840,16 +3891,22 @@ async function initBusinessPanel() {
         }
 
         if (regPhoneCountrySelect && regContactPhoneInput && !regContactPhoneInput.value && userPhone) {
-            const parsed = splitPhone(userPhone, getDefaultPhoneCountry(null, bizLang()));
-            if (parsed?.code) {
-                populateDialCodeSelect(regPhoneCountrySelect, bizLang(), parsed.code);
-                regPhoneCountrySelect.value = parsed.code;
+            const fallbackCountry = getDefaultPhoneCountry(null, bizLang());
+            if (regPhonePair) {
+                regPhonePair.setFromE164(userPhone, fallbackCountry);
                 if (regPhoneCountrySelect._cs) regPhoneCountrySelect._cs.refresh();
+            } else {
+                const parsed = splitPhone(userPhone, fallbackCountry);
+                if (parsed?.code) {
+                    populateDialCodeSelect(regPhoneCountrySelect, bizLang(), parsed.code);
+                    regPhoneCountrySelect.value = parsed.code;
+                    if (regPhoneCountrySelect._cs) regPhoneCountrySelect._cs.refresh();
+                }
+                if (parsed?.local) {
+                    regContactPhoneInput.value = parsed.local;
+                }
             }
-            if (parsed?.local) {
-                regContactPhoneInput.value = parsed.local;
-                regPhonePair?.formatCurrent();
-            }
+            regPhoneClear.sync();
         }
     })();
 
@@ -3860,6 +3917,12 @@ async function initBusinessPanel() {
     const editShopPhoneInput = document.getElementById('edit-shop-contact-phone');
     const editShopEmailErr = document.getElementById('shop-contacts-email-error');
     const editShopPhoneErr = document.getElementById('shop-contacts-phone-error');
+    const editEmailClear = wireClearButton(editShopEmailInput, document.getElementById('clear-edit-shop-contact-email'), () => {
+        if (editShopEmailErr) editShopEmailErr.textContent = '';
+    });
+    const editPhoneClear = wireClearButton(editShopPhoneInput, document.getElementById('clear-edit-shop-contact-phone'), () => {
+        if (editShopPhoneErr) editShopPhoneErr.textContent = '';
+    });
     let editShopPhonePair = null;
     let shopContactsSaving = false;
 
@@ -3892,6 +3955,8 @@ async function initBusinessPanel() {
             else if (typeof CustomSelect !== 'undefined') CustomSelect.init(shopContactsModal);
         }
 
+        editEmailClear.sync();
+        editPhoneClear.sync();
         shopContactsModal.classList.remove('is-hidden');
         shopContactsModal.setAttribute('aria-hidden', 'false');
         document.documentElement.classList.add('modal-open');
@@ -4146,10 +4211,19 @@ async function initBusinessPanel() {
                     try {
                         const { error: contactErr } = await client
                             .from('shops')
-                            .update({ contact_email: rawContactEmail, contact_phone: normalizedShopPhone })
+                            .update({
+                                contact_email: rawContactEmail || null,
+                                contact_phone: normalizedShopPhone || null,
+                            })
                             .eq('id', newShop.id);
                         if (!contactErr) {
-                            newShop = { ...newShop, contact_email: rawContactEmail, contact_phone: normalizedShopPhone };
+                            newShop = {
+                                ...newShop,
+                                contact_email: rawContactEmail || null,
+                                contact_phone: normalizedShopPhone || null,
+                            };
+                        } else {
+                            logError('biz:shopContactsUpdateErr', contactErr);
                         }
                     } catch (contactEx) {
                         logError('biz:shopContactsUpdate', contactEx);

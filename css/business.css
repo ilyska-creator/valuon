@@ -6423,8 +6423,67 @@ mark.search-hit {
 
 .shop-phone-pair input[type="tel"] {
     width: 100%;
+    height: 100%;
     min-height: 46px;
     box-sizing: border-box;
+}
+
+.label-optional {
+    font-size: 0.76em;
+    font-weight: 400;
+    color: var(--text-muted);
+    opacity: 0.78;
+    margin-left: 0.25rem;
+}
+
+.input-clear-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.shop-phone-pair .input-clear-wrap {
+    height: 100%;
+}
+
+.input-clear-wrap input {
+    width: 100%;
+    padding-right: 2.55rem;
+}
+
+.input-clear-btn {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(148, 163, 184, 0.16);
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    cursor: pointer;
+    padding: 0;
+    touch-action: manipulation;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.input-clear-btn:hover {
+    background: rgba(239, 68, 68, 0.14);
+    color: #ef4444;
+}
+
+.input-clear-btn:active {
+    transform: translateY(-50%) scale(0.92);
+}
+
+.input-clear-btn.is-hidden {
+    display: none;
 }
 
 .shop-meta .meta-item.is-hidden {

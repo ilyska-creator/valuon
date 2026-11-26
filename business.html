@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/business.css?v=20261126h">
+    <link rel="stylesheet" href="css/business.css?v=20261126l">
     <link rel="stylesheet" href="css/toast.css">
     <link rel="stylesheet" href="css/custom-select.css">
     <link rel="stylesheet" href="css/custom-datepicker.css">
@@ -72,7 +72,7 @@
 
                 <form id="create-shop-form" class="mt-6" action="#">
                     <div class="input-group">
-                        <label data-i18n="logo_label">Logo (optional)</label>
+                        <label><span data-i18n="logo_label">Logo</span> <span class="label-optional" data-i18n="optional_badge">(optional)</span></label>
                         <div class="logo-drop-zone" id="logo-drop-zone">
                             <input type="file" id="reg-logo-input" name="logo" accept="image/png,image/jpeg" hidden>
                             <div class="logo-drop-content" id="logo-drop-content">
@@ -133,23 +133,35 @@
                     </div>
 
                     <div class="input-group">
-                        <label data-i18n="shop_contact_email_label" for="shop-contact-email">Shop Contact Email</label>
-                        <input type="email" id="shop-contact-email" name="contact_email"
-                            placeholder="support@store.com" autocomplete="email"
-                            data-i18n-placeholder="shop_contact_email_placeholder">
+                        <label for="shop-contact-email"><span data-i18n="shop_contact_email_label">Shop Contact Email</span> <span class="label-optional" data-i18n="optional_badge">(optional)</span></label>
+                        <div class="input-clear-wrap">
+                            <input type="email" id="shop-contact-email" name="contact_email"
+                                placeholder="support@store.com" autocomplete="email"
+                                data-i18n-placeholder="shop_contact_email_placeholder">
+                            <button type="button" id="clear-shop-contact-email" class="input-clear-btn is-hidden"
+                                data-i18n-title="clear_field_title" title="Clear field" aria-label="Clear email">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                         <small class="field-hint" data-i18n="shop_contact_email_hint">Shown on receipts for customer support</small>
                     </div>
 
                     <div class="input-group">
-                        <label data-i18n="shop_contact_phone_label" for="shop-contact-phone">Shop Contact Phone</label>
+                        <label for="shop-contact-phone"><span data-i18n="shop_contact_phone_label">Shop Contact Phone</span> <span class="label-optional" data-i18n="optional_badge">(optional)</span></label>
                         <div class="shop-phone-pair">
                             <select id="shop-phone-country" class="custom-select phone-country-select" data-searchable
                                 data-dropdown-min-width="260"
                                 data-search-placeholder="phone_country_search"
                                 data-search-empty="currency_search_empty"
                                 aria-label="Country code"></select>
-                            <input type="tel" id="shop-contact-phone" name="contact_phone" inputmode="tel"
-                                placeholder="5555 1234" autocomplete="tel-national">
+                            <div class="input-clear-wrap">
+                                <input type="tel" id="shop-contact-phone" name="contact_phone" inputmode="tel"
+                                    placeholder="5555 1234" autocomplete="tel-national">
+                                <button type="button" id="clear-shop-contact-phone" class="input-clear-btn is-hidden"
+                                    data-i18n-title="clear_field_title" title="Clear field" aria-label="Clear phone">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
                         </div>
                         <small class="field-hint" data-i18n="shop_contact_phone_hint">Shown on receipts so customers can reach your store</small>
                     </div>
@@ -1163,23 +1175,35 @@
 
                 <form id="shop-contacts-form" class="modal-form" action="#" novalidate>
                     <div class="input-group">
-                        <label for="edit-shop-contact-email" data-i18n="shop_contact_email_label">Shop Contact Email</label>
-                        <input type="email" id="edit-shop-contact-email" name="contact_email"
-                            data-i18n-placeholder="shop_contact_email_placeholder" placeholder="support@store.com"
-                            autocomplete="email">
+                        <label for="edit-shop-contact-email"><span data-i18n="shop_contact_email_label">Shop Contact Email</span> <span class="label-optional" data-i18n="optional_badge">(optional)</span></label>
+                        <div class="input-clear-wrap">
+                            <input type="email" id="edit-shop-contact-email" name="contact_email"
+                                data-i18n-placeholder="shop_contact_email_placeholder" placeholder="support@store.com"
+                                autocomplete="email">
+                            <button type="button" id="clear-edit-shop-contact-email" class="input-clear-btn is-hidden"
+                                data-i18n-title="clear_field_title" title="Clear field" aria-label="Clear email">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                         <small class="field-error" id="shop-contacts-email-error" role="alert"></small>
                     </div>
 
                     <div class="input-group">
-                        <label for="edit-shop-contact-phone" data-i18n="shop_contact_phone_label">Shop Contact Phone</label>
+                        <label for="edit-shop-contact-phone"><span data-i18n="shop_contact_phone_label">Shop Contact Phone</span> <span class="label-optional" data-i18n="optional_badge">(optional)</span></label>
                         <div class="shop-phone-pair">
                             <select id="edit-shop-phone-country" class="custom-select phone-country-select" data-searchable
                                 data-dropdown-min-width="260"
                                 data-search-placeholder="phone_country_search"
                                 data-search-empty="currency_search_empty"
                                 aria-label="Country code"></select>
-                            <input type="tel" id="edit-shop-contact-phone" name="contact_phone" inputmode="tel"
-                                placeholder="5555 1234" autocomplete="tel-national">
+                            <div class="input-clear-wrap">
+                                <input type="tel" id="edit-shop-contact-phone" name="contact_phone" inputmode="tel"
+                                    placeholder="5555 1234" autocomplete="tel-national">
+                                <button type="button" id="clear-edit-shop-contact-phone" class="input-clear-btn is-hidden"
+                                    data-i18n-title="clear_field_title" title="Clear field" aria-label="Clear phone">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
                         </div>
                         <small class="field-error" id="shop-contacts-phone-error" role="alert"></small>
                     </div>
@@ -1234,8 +1258,8 @@
     <script src="js/countries.js"></script>
     <script src="js/currencies.js"></script>
     <script src="js/custom-datepicker.js"></script>
-    <script src="js/business-lang.js?v=20261126f"></script>
-    <script type="module" src="js/business-panel.js?v=20261126i"></script>
+    <script src="js/business-lang.js?v=20261126l"></script>
+    <script type="module" src="js/business-panel.js?v=20261126l"></script>
     <script type="module" src="js/dashboard-notifications.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/animations.js"></script>
