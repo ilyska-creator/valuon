@@ -381,15 +381,22 @@ async function initSettings() {
         el.inert = !open;
     }
 
+    function restoreSaveButton(btn) {
+        if (!btn) return;
+        const t = getSettingsT();
+        const span = document.createElement('span');
+        span.setAttribute('data-i18n', 'btn_save');
+        span.textContent = t.btn_save || 'Save';
+        btn.replaceChildren(span);
+        btn.disabled = false;
+    }
+
     function resetEmailForm() {
         clearTimeout(emailCheckTimeout);
         setExpandPanel(changeEmailForm, false);
         changeEmailBtn?.classList.remove('hidden');
         if (newEmailInput) newEmailInput.value = '';
-        if (confirmEmailChange) {
-            confirmEmailChange.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-            confirmEmailChange.disabled = false;
-        }
+        restoreSaveButton(confirmEmailChange);
     }
 
     if (newEmailInput) {
@@ -494,10 +501,7 @@ async function initSettings() {
         changePhoneBtn?.classList.remove('hidden');
         if (removePhoneBtn) removePhoneBtn.classList.toggle('hidden', !currentPhoneE164);
         if (newPhoneInput) newPhoneInput.value = '';
-        if (confirmPhoneChange) {
-            confirmPhoneChange.innerHTML = '<i class="fa-solid fa-check"></i>';
-            confirmPhoneChange.disabled = false;
-        }
+        restoreSaveButton(confirmPhoneChange);
     }
 
     if (newPhoneInput) {

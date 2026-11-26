@@ -27,6 +27,8 @@ const translations = {
 
         reg_title: "Создать аккаунт",
         reg_subtitle: "Все чеки и гарантии в одном аккаунте",
+        reg_confirm_title: "Проверьте почту",
+        reg_confirm_resend: "Отправить письмо повторно",
         label_confirm_password: "Повторите пароль",
         btn_register: "Зарегистрироваться",
         footer_have_account: "Уже есть аккаунт?",
@@ -102,6 +104,8 @@ const translations = {
 
         reg_title: "Create Account",
         reg_subtitle: "All receipts and warranties in one account",
+        reg_confirm_title: "Check your email",
+        reg_confirm_resend: "Resend confirmation email",
         label_confirm_password: "Confirm Password",
         btn_register: "Sign Up",
         footer_have_account: "Already have an account?",

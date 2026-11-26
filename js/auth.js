@@ -5,10 +5,23 @@ import { createSegmentedIndicator, prefersReducedMotion } from './segmented-indi
 import { attachModalA11y } from './modal-a11y.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const getSafeRedirect = () => {
+        const raw = (new URLSearchParams(window.location.search).get('redirect') || '').trim();
+        if (!raw || raw.includes('\\') || raw.startsWith('//')) return 'dashboard.html';
+        try {
+            const parsed = new URL(raw, window.location.origin);
+            if (parsed.origin !== window.location.origin) return 'dashboard.html';
+            if (/^\/(login|register)(\.html)?$/i.test(parsed.pathname)) return 'dashboard.html';
+            return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+        } catch (_) {
+            return 'dashboard.html';
+        }
+    };
+
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session) {
-        window.location.href = 'dashboard.html';
+        window.location.href = getSafeRedirect();
         return;
     }
 
@@ -278,15 +291,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         localStorage.removeItem('valuon-remember-login');
                     }
                 }
-
-                const getSafeRedirect = () => {
-                    const raw = new URLSearchParams(window.location.search).get('redirect');
-                    if (!raw) return 'dashboard.html';
-                    if (raw.startsWith('/') && !raw.startsWith('//') && !raw.includes('\\') && !/^\/(login|register)(\.html)?([?#]|$)/i.test(raw)) {
-                        return raw;
-                    }
-                    return 'dashboard.html';
-                };
 
                 const reduced = prefersReducedMotion();
                 btn.innerHTML = `<i class="fa-solid fa-circle-check" style="font-size:1.25rem;${reduced ? '' : 'animation:checkPop 0.25s cubic-bezier(0.34,1.56,0.64,1) both;'}color:var(--success);"></i>`;

@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="css/custom-datepicker.css">
     <link rel="stylesheet" href="css/toast.css">
     <script>(function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); })();</script>
-    <script>if (location.hash) { window.__targetView = location.hash.replace('#', ''); history.replaceState(null, '', location.pathname); };</script>
+    <script>if (location.hash) { window.__targetView = location.hash.replace('#', ''); history.replaceState(null, '', location.pathname + location.search); };</script>
     <meta name="theme-color" content="#2563eb">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
@@ -164,7 +164,7 @@
                         </div>
                         <div class="sort-control-wrap">
                             <i class="fa-solid fa-arrow-down-wide-short sort-control-icon" aria-hidden="true"></i>
-                            <select id="items-sort-select" class="custom-select" aria-label="Сортировка">
+                            <select id="items-sort-select" class="custom-select" aria-label="Sort">
                                 <option value="newest" data-i18n="sort_newest">Newest first</option>
                                 <option value="warranty_asc" data-i18n="sort_warranty_soon">Warranty expiring soon</option>
                                 <option value="price_desc" data-i18n="sort_price_desc">Price ↓</option>
@@ -206,7 +206,7 @@
                             <div class="email-row user-id-row">
                                 <input type="text" id="settings-user-id" class="user-id-input" readonly disabled>
                                 <button type="button" class="btn btn-outline btn-sm" id="copy-user-id-btn"
-                                    aria-label="Скопировать ID">
+                                    aria-label="Copy ID">
                                     <i class="fa-regular fa-copy" aria-hidden="true"></i>
                                     <span data-i18n="btn_copy_id">Copy</span>
                                 </button>
@@ -248,8 +248,8 @@
                                 <button type="button" class="btn btn-outline btn-sm" id="change-phone-btn"
                                     data-i18n="btn_add_phone">Add</button>
                                 <button type="button" class="btn btn-outline btn-sm btn-icon-danger hidden"
-                                    id="remove-phone-btn" aria-label="Удалить номер" data-i18n-title="btn_remove_phone"
-                                    title="Удалить номер">
+                                    id="remove-phone-btn" aria-label="Remove phone number" data-i18n-title="btn_remove_phone"
+                                    title="Remove phone number">
                                     <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
                                 </button>
                             </div>
@@ -264,7 +264,7 @@
                                                 data-dropdown-min-width="270"
                                                 data-search-placeholder="phone_country_search"
                                                 data-search-empty="currency_search_empty"
-                                                aria-label="Код страны"></select>
+                                                aria-label="Country code"></select>
                                             <input type="tel" id="new-phone-input" inputmode="tel"
                                                 placeholder="5555 1234" autocomplete="tel-national">
                                         </div>
@@ -499,7 +499,7 @@
                         <p data-i18n="modal_title_subtitle">Purchase and warranty details</p>
                     </div>
                 </div>
-                <button id="close-modal" class="btn-close" aria-label="Закрыть"><i
+                <button id="close-modal" class="btn-close" aria-label="Close"><i
                         class="fa-solid fa-xmark"></i></button>
             </div>
             <form class="modal-form" action="#">
@@ -551,7 +551,7 @@
                             <input type="number" name="warranty_months" min="0" max="600" value="0">
                             <span class="suffix-hint" data-i18n="months_suffix">mo.</span>
                         </span>
-                        <div class="warranty-presets" role="group" aria-label="Срок гарантии">
+                        <div class="warranty-presets" role="group" aria-label="Warranty period">
                             <button type="button" class="warranty-chip" data-months="0">0</button>
                             <button type="button" class="warranty-chip" data-months="12">12<span data-i18n="unit_m">m</span></button>
                             <button type="button" class="warranty-chip" data-months="24">24<span data-i18n="unit_m">m</span></button>
@@ -587,7 +587,7 @@
                         <p data-i18n="modal_edit_title_subtitle">Update the item's details</p>
                     </div>
                 </div>
-                <button id="close-edit-modal" class="btn-close" aria-label="Закрыть"><i
+                <button id="close-edit-modal" class="btn-close" aria-label="Close"><i
                         class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="edit-item-form" class="modal-form" action="#">
@@ -638,7 +638,7 @@
                             <input type="number" name="warranty_months" min="0" max="600">
                             <span class="suffix-hint" data-i18n="months_suffix">mo.</span>
                         </span>
-                        <div class="warranty-presets" role="group" aria-label="Срок гарантии">
+                        <div class="warranty-presets" role="group" aria-label="Warranty period">
                             <button type="button" class="warranty-chip" data-months="0">0</button>
                             <button type="button" class="warranty-chip" data-months="12">12<span data-i18n="unit_m">m</span></button>
                             <button type="button" class="warranty-chip" data-months="24">24<span data-i18n="unit_m">m</span></button>
@@ -696,7 +696,7 @@
     <script type="module" src="js/dashboard-items.js?v=20261127a"></script>
     <script type="module" src="js/dashboard-notifications.js"></script>
     <script src="js/dashboard-nav.js"></script>
-    <script type="module" src="js/dashboard-settings.js?v=20261127a"></script>
+    <script type="module" src="js/dashboard-settings.js?v=20261127b"></script>
     <script src="js/animations.js"></script>
     <script src="js/cookie-banner.js"></script>
     <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

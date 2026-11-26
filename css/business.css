@@ -3185,10 +3185,15 @@
 }
 
 .receipt-success-qr-tools {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.45rem;
     width: 100%;
+}
+
+#success-share-btn.is-hidden + #success-copy-url-btn,
+#success-open-url-btn {
+    grid-column: 1 / -1;
 }
 
 .btn-qr-action.is-wa {

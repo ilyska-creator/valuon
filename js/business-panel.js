@@ -1245,22 +1245,6 @@ async function initBusinessPanel() {
         addItemRow(true, { scroll: true });
         collapseClientSectionIfFilled();
     });
-    itemsList?.addEventListener('keydown', (e) => {
-        if (e.key !== 'Enter') return;
-        const target = e.target;
-        if (!target || target.tagName !== 'INPUT') return;
-        if (target.closest('.custom-select, .custom-select-dropdown, .custom-datepicker, .custom-datepicker-panel')) return;
-        const row = target.closest('[data-item-row]');
-        if (!row) return;
-        e.preventDefault();
-        addItemRow(true, { scroll: true });
-        if (window.innerWidth > 768) {
-            const rows = itemsList.querySelectorAll('[data-item-row]');
-            const next = rows[rows.length - 1];
-            const nameInput = next?.querySelector('[data-field="item_name"]');
-            if (nameInput) nameInput.focus();
-        }
-    });
     let receiptRowDeleteConfirmBtn = null;
     let receiptRowDeleteConfirmTimer = null;
 

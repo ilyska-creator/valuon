@@ -270,8 +270,10 @@ function applyRoadmapTranslations(lang) {
         if (span) span.textContent = lang.toUpperCase();
     }
 
-    localStorage.setItem('valuon-lang', lang);
     document.documentElement.lang = lang === 'en' ? 'en' : 'ru';
+    try {
+        window.dispatchEvent(new CustomEvent('lang-changed', { detail: { lang } }));
+    } catch (_) { }
 }
 
 applyRoadmapTranslations(currentLang);
@@ -281,13 +283,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (langToggle) {
         langToggle.addEventListener('click', () => {
             const newLang = currentLang === 'ru' ? 'en' : 'ru';
+            localStorage.setItem('valuon-lang', newLang);
             applyRoadmapTranslations(newLang);
         });
     }
 
     window.addEventListener('storage', (e) => {
         if (e.key === 'valuon-lang') {
-            applyRoadmapTranslations(e.newValue || 'ru');
+            applyRoadmapTranslations(e.newValue || (window.getValuonLang ? window.getValuonLang() : 'en'));
         }
     });
 });

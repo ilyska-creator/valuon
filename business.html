@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/business.css?v=20261127a">
+    <link rel="stylesheet" href="css/business.css?v=20261127b">
     <link rel="stylesheet" href="css/toast.css">
     <link rel="stylesheet" href="css/custom-select.css">
     <link rel="stylesheet" href="css/custom-datepicker.css">
@@ -50,9 +50,9 @@
             <span>VALUON SELLER</span>
         </a>
         <div class="header-icons">
-            <button type="button" id="lang-toggle-business" class="icon-btn" title="Текущий язык: Русский (нажмите для EN)"
-                aria-label="Switch language / Переключить язык">EN</button>
-            <button type="button" id="theme-toggle-btn" class="icon-btn" aria-label="Переключить тему">
+            <button type="button" id="lang-toggle-business" class="icon-btn" title="Switch language"
+                aria-label="Switch language">EN</button>
+            <button type="button" id="theme-toggle-btn" class="icon-btn" aria-label="Toggle theme">
                 <i class="fa-solid fa-moon"></i>
             </button>
         </div>
@@ -83,7 +83,7 @@
                             <div class="logo-drop-preview" id="logo-drop-preview" style="display:none">
                                 <img src="" alt="preview">
                                 <button type="button" class="logo-drop-remove" id="logo-drop-remove"
-                                    data-i18n-title="logo_remove_title" title="Удалить">
+                                    data-i18n-title="logo_remove_title" title="Remove">
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
@@ -202,7 +202,7 @@
                     <div class="shop-export-wrap" id="shop-export-wrap">
                         <button type="button" id="export-receipts-btn" class="shop-export-btn" aria-haspopup="menu"
                             aria-expanded="false" aria-controls="export-receipts-menu" data-i18n-title="export_tooltip"
-                            title="Экспорт чеков в Excel или CSV" disabled>
+                            title="Export receipts to Excel or CSV" disabled>
                             <i class="fa-solid fa-file-export" aria-hidden="true"></i>
                             <span data-i18n="export_btn">Export</span>
                             <i class="fa-solid fa-chevron-down shop-export-caret" aria-hidden="true"></i>
@@ -301,7 +301,7 @@
                 <div class="chart-header">
                     <h2 class="section-title"><span data-i18n="analytics_title">Analytics</span> <span
                             class="chart-period-label" id="analytics-period"></span></h2>
-                    <div class="chart-controls" role="tablist" aria-label="Период аналитики">
+                    <div class="chart-controls" role="tablist" aria-label="Analytics period">
                         <span class="segmented-indicator chart-period-indicator" id="chart-period-indicator"
                             aria-hidden="true"></span>
                         <button type="button" class="chart-period-btn active" role="tab" aria-selected="true"
@@ -349,13 +349,13 @@
                                 placeholder="Поиск по #RCP, email, товару, кассе..." autocomplete="off"
                                 spellcheck="false">
                             <button type="button" id="receipt-search-clear" class="receipt-search-clear"
-                                data-i18n-title="receipt_search_clear" title="Очистить поиск"
-                                aria-label="Очистить поиск" style="display: none;">
+                                data-i18n-title="receipt_search_clear" title="Clear search"
+                                aria-label="Clear search" style="display: none;">
                                 <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                             </button>
                         </div>
                         <div class="receipt-filter-bar" id="receipt-filter-bar" role="tablist"
-                            aria-label="Фильтр чеков">
+                            aria-label="Filter receipts">
                             <span class="receipt-filter-indicator" id="receipt-filter-indicator"
                                 aria-hidden="true"></span>
                             <button type="button" class="receipt-filter-btn active" data-receipt-filter="all" role="tab"
@@ -420,10 +420,10 @@
                         </div>
                     </div>
                     <div class="modal-header-actions">
-                        <button type="button" id="header-save-draft-btn" class="btn-header-draft" data-i18n-title="draft_save" title="Сохранить черновик" aria-label="Сохранить черновик">
+                        <button type="button" id="header-save-draft-btn" class="btn-header-draft" data-i18n-title="draft_save" title="Save draft" aria-label="Save draft">
                             <i class="fa-regular fa-bookmark" aria-hidden="true"></i>
                         </button>
-                        <button id="close-receipt-modal" class="btn-close" aria-label="Закрыть"><i
+                        <button id="close-receipt-modal" class="btn-close" aria-label="Close"><i
                                 class="fa-solid fa-xmark"></i></button>
                     </div>
                 </div>
@@ -431,12 +431,12 @@
                 <div class="modal-body" id="receipt-modal-body">
                     <form id="issue-receipt-form" class="modal-form" action="#" novalidate>
                         <div class="receipt-section" id="receipt-client-section">
-                            <div class="receipt-client-chip is-hidden" id="receipt-client-chip" role="region" aria-label="Контакт клиента">
+                            <div class="receipt-client-chip is-hidden" id="receipt-client-chip" role="region" aria-label="Customer contact">
                                 <div class="client-chip-info">
                                     <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
                                     <span id="client-chip-text"></span>
                                 </div>
-                                <button type="button" class="client-chip-edit-btn" id="client-chip-edit-btn" aria-label="Изменить данные клиента">
+                                <button type="button" class="client-chip-edit-btn" id="client-chip-edit-btn" aria-label="Edit customer details">
                                     <i class="fa-solid fa-pen" aria-hidden="true"></i>
                                     <span data-i18n="edit_btn">Edit</span>
                                 </button>
@@ -448,7 +448,7 @@
                                     <div class="contact-mode-header">
                                         <label for="customer-email" id="customer-contact-label"
                                             data-i18n="customer_email_label">Customer Email</label>
-                                        <div class="contact-mode-switch" role="tablist" aria-label="Контакт клиента">
+                                        <div class="contact-mode-switch" role="tablist" aria-label="Customer contact">
                                             <span class="segmented-indicator contact-mode-indicator"
                                                 id="contact-mode-indicator" aria-hidden="true"></span>
                                             <button type="button" class="contact-mode-btn active" role="tab"
@@ -475,7 +475,7 @@
                                                     data-lpignore="true" data-1p-ignore data-bwignore="true"
                                                     data-form-type="other" required>
                                                 <ul class="customer-autocomplete is-hidden" id="customer-autocomplete"
-                                                    role="listbox" aria-label="Клиенты"></ul>
+                                                    role="listbox" aria-label="Customers"></ul>
                                             </span>
                                         </div>
                                         <div id="customer-phone-wrap" class="biz-contact-panel" aria-hidden="true"
@@ -486,7 +486,7 @@
                                                     data-dropdown-min-width="270"
                                                     data-search-placeholder="phone_country_search"
                                                     data-search-empty="country_search_empty"
-                                                    aria-label="Код страны"></select>
+                                                    aria-label="Country code"></select>
                                                 <span class="autocomplete-anchor biz-phone-anchor">
                                                     <input type="tel" id="customer-phone" name="customer_phone"
                                                         inputmode="tel" placeholder="5555 1234" autocomplete="off"
@@ -495,7 +495,7 @@
                                                         data-form-type="other">
                                                     <ul class="customer-autocomplete is-hidden"
                                                         id="customer-phone-autocomplete" role="listbox"
-                                                        aria-label="Телефоны клиентов"></ul>
+                                                        aria-label="Customer phones"></ul>
                                                 </span>
                                             </div>
                                         </div>
@@ -543,7 +543,7 @@
                                         <span class="item-index" data-item-index aria-hidden="true"></span>
                                         <span class="item-top-hint" data-i18n="item_position_label">Item</span>
                                         <button type="button" class="btn-action delete btn-remove-item"
-                                            data-i18n-title="remove_item_title" title="Удалить товар">
+                                            data-i18n-title="remove_item_title" title="Remove item">
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </div>
@@ -586,7 +586,7 @@
                                                     placeholder="12">
                                                 <span class="suffix-hint" data-i18n="months_suffix">mo.</span>
                                             </span>
-                                            <div class="warranty-presets" role="group" aria-label="Срок гарантии">
+                                            <div class="warranty-presets" role="group" aria-label="Warranty period">
                                                 <button type="button" class="warranty-chip" data-months="0">0</button>
                                                 <button type="button" class="warranty-chip" data-months="12">12<span data-i18n="unit_m">m</span></button>
                                                 <button type="button" class="warranty-chip" data-months="24">24<span data-i18n="unit_m">m</span></button>
@@ -682,28 +682,28 @@
                                     <span data-i18n="success_qr_title">Customer QR</span>
                                 </span>
                             </div>
-                            <div class="receipt-success-qr-box" id="receipt-success-qr-box" title="Нажмите, чтобы открыть чек">
+                            <div class="receipt-success-qr-box" id="receipt-success-qr-box" title="Click to open receipt">
                                 <img id="receipt-success-qr-img" class="receipt-success-qr-img" alt="QR Code" width="150" height="150" />
                             </div>
                             <p class="receipt-success-qr-hint" data-i18n="success_qr_hint">Scan with phone camera to open and save receipt</p>
                             <div class="receipt-success-qr-tools">
-                                <button type="button" class="btn-qr-action is-hidden" id="success-share-btn" title="Поделиться чеком">
+                                <button type="button" class="btn-qr-action is-hidden" id="success-share-btn" title="Share receipt">
                                     <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
                                     <span data-i18n="success_share_btn">Share</span>
                                 </button>
-                                <a href="#" target="_blank" rel="noopener noreferrer" class="btn-qr-action is-wa is-hidden" id="success-wa-btn" title="Отправить в WhatsApp">
-                                    <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
-                                    <span>WhatsApp</span>
-                                </a>
-                                <a href="#" target="_blank" rel="noopener noreferrer" class="btn-qr-action is-tg is-hidden" id="success-tg-btn" title="Отправить в Telegram">
-                                    <i class="fa-brands fa-telegram" aria-hidden="true"></i>
-                                    <span>Telegram</span>
-                                </a>
-                                <button type="button" class="btn-qr-action" id="success-copy-url-btn" title="Скопировать ссылку для отправки">
+                                <button type="button" class="btn-qr-action" id="success-copy-url-btn" title="Copy link to share">
                                     <i class="fa-solid fa-copy" aria-hidden="true"></i>
                                     <span id="success-copy-url-label" data-i18n="success_copy_link">Copy</span>
                                 </button>
-                                <a href="#" target="_blank" rel="noopener noreferrer" class="btn-qr-action" id="success-open-url-btn" title="Открыть чек в новой вкладке">
+                                <a href="#" target="_blank" rel="noopener noreferrer" class="btn-qr-action is-tg is-hidden" id="success-tg-btn" title="Send via Telegram">
+                                    <i class="fa-brands fa-telegram" aria-hidden="true"></i>
+                                    <span>Telegram</span>
+                                </a>
+                                <a href="#" target="_blank" rel="noopener noreferrer" class="btn-qr-action is-wa is-hidden" id="success-wa-btn" title="Send via WhatsApp">
+                                    <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+                                    <span>WhatsApp</span>
+                                </a>
+                                <a href="#" target="_blank" rel="noopener noreferrer" class="btn-qr-action" id="success-open-url-btn" title="Open receipt in a new tab">
                                     <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
                                     <span data-i18n="success_open_receipt">Open</span>
                                 </a>
@@ -779,7 +779,7 @@
                             <p id="lifecycle-modal-subtitle"></p>
                         </div>
                     </div>
-                    <button type="button" id="close-lifecycle-modal" class="btn-close" aria-label="Закрыть"><i
+                    <button type="button" id="close-lifecycle-modal" class="btn-close" aria-label="Close"><i
                             class="fa-solid fa-xmark"></i></button>
                 </div>
 
@@ -858,7 +858,7 @@
                             <p data-i18n="terminals_modal_subtitle">Devices used to issue receipts</p>
                         </div>
                     </div>
-                    <button type="button" id="close-terminals-modal" class="btn-close" aria-label="Закрыть"><i
+                    <button type="button" id="close-terminals-modal" class="btn-close" aria-label="Close"><i
                             class="fa-solid fa-xmark"></i></button>
                 </div>
 
@@ -889,7 +889,7 @@
                             <p data-i18n="terminal_form_subtitle">Serial number will be printed on every receipt</p>
                         </div>
                     </div>
-                    <button type="button" id="close-terminal-form" class="btn-close" aria-label="Закрыть"><i
+                    <button type="button" id="close-terminal-form" class="btn-close" aria-label="Close"><i
                             class="fa-solid fa-xmark"></i></button>
                 </div>
 
@@ -1259,7 +1259,7 @@
     <script src="js/currencies.js"></script>
     <script src="js/custom-datepicker.js"></script>
     <script src="js/business-lang.js?v=20261126l"></script>
-    <script type="module" src="js/business-panel.js?v=20261126m"></script>
+    <script type="module" src="js/business-panel.js?v=20261127b"></script>
     <script type="module" src="js/dashboard-notifications.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/animations.js"></script>

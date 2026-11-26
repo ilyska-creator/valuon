@@ -445,16 +445,44 @@ async function openAttachmentsViewer(receipt, attachments, client) {
     const titleEl = document.getElementById('att-viewer-title');
     if (!modal || !attachments?.length) return;
 
-    // Ensure fresh signed URLs for all attachments
-    const pathsNeedingSign = attachments.filter(a => a.path && !a.url).map(a => a.path);
+    // Ensure fresh signed URLs for all attachments (re-sign if missing or near/past TTL)
+    const now = Date.now();
+    const maxAgeMs = (SIGNED_URL_TTL - 300) * 1000;
+    const pathsNeedingSign = attachments
+        .filter(a => {
+            if (!a.path) return false;
+            if (!a.url) return true;
+            const signedAt = Number(a.signed_at || receipt?._signedAt || 0);
+            return !signedAt || (now - signedAt > maxAgeMs);
+        })
+        .map(a => a.path);
     const hydrated = attachments.map(a => ({ ...a }));
     if (pathsNeedingSign.length > 0 && client) {
         try {
             const { data } = await client.storage.from('receipts').createSignedUrls(pathsNeedingSign, SIGNED_URL_TTL);
             if (Array.isArray(data)) {
+                const freshAt = Date.now();
                 const map = new Map();
                 data.forEach((d, i) => { if (d?.signedUrl) map.set(d.path || pathsNeedingSign[i], d.signedUrl); });
-                hydrated.forEach(a => { if (a.path && map.has(a.path)) a.url = map.get(a.path); });
+                hydrated.forEach(a => {
+                    if (a.path && map.has(a.path)) {
+                        a.url = map.get(a.path);
+                        a.signed_at = freshAt;
+                    }
+                });
+                if (receipt) {
+                    receipt._signedAt = freshAt;
+                    if (Array.isArray(receipt.attachments)) {
+                        receipt.attachments = receipt.attachments.map(a => (
+                            a?.path && map.has(a.path)
+                                ? { ...a, url: map.get(a.path), signed_at: freshAt }
+                                : a
+                        ));
+                    }
+                    if (receipt.file_path && map.has(receipt.file_path)) {
+                        receipt.file_url = map.get(receipt.file_path);
+                    }
+                }
             }
         } catch (_) { }
     }
@@ -541,16 +569,19 @@ async function attachFreshSignedUrls(receipts, client) {
         }));
     }
 
+    const signedAtNow = Date.now();
     return receipts.map((r, idx) => {
-        if (!needsRefresh.has(idx)) return r;
-        const next = { ...r };
+        if (!needsRefresh.has(idx)) {
+            return r._signedAt ? r : { ...r, _signedAt: r.created_at ? new Date(r.created_at).getTime() : signedAtNow };
+        }
+        const next = { ...r, _signedAt: signedAtNow };
         if (r.file_path && signedUrlByPath.has(r.file_path)) {
             next.file_url = signedUrlByPath.get(r.file_path);
         }
         if (Array.isArray(r.attachments) && r.attachments.length > 0) {
             next.attachments = r.attachments.map(a => (
                 a?.path && signedUrlByPath.has(a.path)
-                    ? { ...a, url: signedUrlByPath.get(a.path) }
+                    ? { ...a, url: signedUrlByPath.get(a.path), signed_at: signedAtNow }
                     : a
             ));
         }

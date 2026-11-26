@@ -1,14 +1,18 @@
 // Valuon Service Worker — Stage 1 (App Shell + Static Cache + Offline Fallback)
-const CACHE_VERSION = 'valuon-static-v4';
+const CACHE_VERSION = 'valuon-static-v5';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_URLS = [
     OFFLINE_URL,
+    '/index.html',
     '/manifest.webmanifest',
     '/assets/icons/icon-192.png',
     '/assets/icons/icon-512.png',
     '/assets/icons/apple-touch-icon.png',
     '/css/style.css',
+    '/css/auth.css',
+    '/css/verify.css',
+    '/css/business.css',
     '/css/dashboard.css',
     '/css/toast.css',
     '/css/custom-select.css',
@@ -95,17 +99,19 @@ self.addEventListener('fetch', (event) => {
     if (isCacheableStaticAsset(url)) {
         const isCodeAsset = url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/');
         if (isCodeAsset) {
+            const cacheKey = url.pathname;
             event.respondWith(
                 fetch(req)
                     .then((res) => {
                         if (res && res.ok && res.type === 'basic') {
                             const copy = res.clone();
-                            caches.open(CACHE_VERSION).then((cache) => cache.put(req, copy)).catch(() => {});
+                            caches.open(CACHE_VERSION).then((cache) => cache.put(cacheKey, copy)).catch(() => {});
                         }
                         return res;
                     })
                     .catch(async () => {
-                        const cached = await caches.match(req);
+                        const cached = (await caches.match(cacheKey))
+                            || (await caches.match(req, { ignoreSearch: true }));
                         return cached || Response.error();
                     })
             );

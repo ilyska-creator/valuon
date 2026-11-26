@@ -327,12 +327,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const descEl = document.getElementById('register-confirm-desc');
                         const resendBtn = document.getElementById('register-resend-btn');
                         const goLoginEl = document.getElementById('register-go-login');
-                        if (titleEl) titleEl.textContent = lang === 'ru' ? 'Проверьте почту' : 'Check your email';
-                        if (descEl) {
-                            descEl.textContent = lang === 'ru'
+                        const updateConfirmDesc = (curLang) => {
+                            if (!descEl) return;
+                            descEl.textContent = curLang === 'ru'
                                 ? `Мы отправили письмо со ссылкой подтверждения на ${email}. Перейдите по ссылке в письме, чтобы завершить регистрацию.`
                                 : `We sent a confirmation link to ${email}. Click the link in the email to finish signing up.`;
-                        }
+                        };
+                        if (titleEl) titleEl.textContent = lang === 'ru' ? 'Проверьте почту' : 'Check your email';
+                        updateConfirmDesc(lang);
+                        window.addEventListener('lang-changed', () => updateConfirmDesc(getLang()));
                         if (resendBtn) {
                             resendBtn.textContent = lang === 'ru' ? 'Отправить письмо повторно' : 'Resend confirmation email';
                             resendBtn.onclick = async () => {
@@ -345,27 +348,31 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     showToast(isRuNow ? 'Письмо отправлено повторно!' : 'Confirmation email resent!', 'success');
                                     let sec = 60;
                                     const tick = () => {
+                                        const ruTick = getLang() === 'ru';
                                         if (sec <= 0) {
                                             resendBtn.disabled = false;
-                                            resendBtn.textContent = isRuNow ? 'Отправить письмо повторно' : 'Resend confirmation email';
+                                            resendBtn.textContent = ruTick ? 'Отправить письмо повторно' : 'Resend confirmation email';
                                             return;
                                         }
-                                        resendBtn.textContent = isRuNow ? `Повторно через ${sec} с` : `Resend in ${sec}s`;
+                                        resendBtn.textContent = ruTick ? `Повторно через ${sec} с` : `Resend in ${sec}s`;
                                         sec--;
                                         setTimeout(tick, 1000);
                                     };
                                     tick();
                                 } catch (resendErr) {
                                     logError('reg:resend', resendErr);
-                                    showToast(isRuNow ? 'Не удалось отправить письмо. Попробуйте позже.' : 'Failed to resend email. Try again later.', 'error');
+                                    const ruErr = getLang() === 'ru';
+                                    showToast(ruErr ? 'Не удалось отправить письмо. Попробуйте позже.' : 'Failed to resend email. Try again later.', 'error');
                                     resendBtn.disabled = false;
-                                    resendBtn.textContent = isRuNow ? 'Отправить письмо повторно' : 'Resend confirmation email';
+                                    resendBtn.textContent = ruErr ? 'Отправить письмо повторно' : 'Resend confirmation email';
                                 }
                             };
                         }
-                        if (goLoginEl) goLoginEl.textContent = lang === 'ru' ? 'Перейти ко входу' : 'Go to Sign In';
+                        if (goLoginEl) goLoginEl.textContent = lang === 'ru' ? 'Перейти ко входу' : 'Go to Login';
                         registerForm.classList.add('hidden');
-                        registerForm.closest('.auth-card')?.querySelector('.auth-header')?.classList.add('hidden');
+                        const authCard = registerForm.closest('.auth-card');
+                        authCard?.querySelector('.auth-logo h1')?.classList.add('hidden');
+                        authCard?.querySelector('.auth-subtitle')?.classList.add('hidden');
                         confirmScreen.classList.remove('hidden');
                         confirmScreen.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'center' });
                     } else {

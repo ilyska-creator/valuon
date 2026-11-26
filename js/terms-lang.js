@@ -187,8 +187,10 @@ function applyTermsTranslations(lang) {
         if (span) span.textContent = lang.toUpperCase();
     }
 
-    localStorage.setItem('valuon-lang', lang);
     document.documentElement.lang = lang === 'en' ? 'en' : 'ru';
+    try {
+        window.dispatchEvent(new CustomEvent('lang-changed', { detail: { lang } }));
+    } catch (_) { }
 }
 
 applyTermsTranslations(currentLang);
@@ -198,13 +200,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (langToggle) {
         langToggle.addEventListener('click', () => {
             const newLang = currentLang === 'ru' ? 'en' : 'ru';
+            localStorage.setItem('valuon-lang', newLang);
             applyTermsTranslations(newLang);
         });
     }
 
     window.addEventListener('storage', (e) => {
         if (e.key === 'valuon-lang') {
-            applyTermsTranslations(e.newValue || 'ru');
+            applyTermsTranslations(e.newValue || (window.getValuonLang ? window.getValuonLang() : 'en'));
         }
     });
 });
