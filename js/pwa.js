@@ -130,6 +130,53 @@
         });
     }
 
+    // Prefetch internal HTML pages on hover / touchstart for instant navigation
+    (function initLinkPrefetch() {
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (conn && (conn.saveData || conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g')) {
+            return;
+        }
+        const prefetched = new Set();
+
+        function prefetchLink(link) {
+            if (!link || prefetched.size >= 12) return;
+            if (link.hasAttribute('download') || link.target === '_blank') return;
+            const rawHref = link.getAttribute('href') || '';
+            if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('mailto:') || rawHref.startsWith('tel:') || rawHref.startsWith('javascript:')) {
+                return;
+            }
+            let url;
+            try {
+                url = new URL(link.href, window.location.href);
+            } catch (_) {
+                return;
+            }
+            if (url.origin !== window.location.origin) return;
+            if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+
+            const key = url.pathname + url.search;
+            if (prefetched.has(key)) return;
+            prefetched.add(key);
+
+            const el = document.createElement('link');
+            el.rel = 'prefetch';
+            el.as = 'document';
+            el.href = url.href;
+            document.head.appendChild(el);
+        }
+
+        document.addEventListener('pointerover', (e) => {
+            if (e.pointerType !== 'mouse') return;
+            const link = e.target.closest?.('a[href]');
+            if (link) prefetchLink(link);
+        }, { passive: true });
+
+        document.addEventListener('touchstart', (e) => {
+            const link = e.target.closest?.('a[href]');
+            if (link) prefetchLink(link);
+        }, { passive: true });
+    })();
+
     // Register Service Worker on HTTPS or localhost
     const isSecure = window.location.protocol === 'https:'
         || window.location.hostname === 'localhost'
