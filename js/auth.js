@@ -25,6 +25,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Surface OAuth cancellation / provider errors returned in URL query or hash
+    try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+        const oauthErr = searchParams.get('oauth_error') || searchParams.get('error') || hashParams.get('error');
+        if (oauthErr) {
+            const isRuInit = (window.getValuonLang ? window.getValuonLang() : 'en') === 'ru';
+            const cancelled = oauthErr === 'access_denied';
+            showToast(
+                cancelled
+                    ? (isRuInit ? 'Вход через Google отменён' : 'Google sign-in was cancelled')
+                    : (isRuInit ? 'Не удалось войти через Google. Попробуйте ещё раз.' : 'Google sign-in failed. Please try again.'),
+                cancelled ? 'warning' : 'error'
+            );
+            searchParams.delete('oauth_error');
+            searchParams.delete('error');
+            searchParams.delete('error_code');
+            searchParams.delete('error_description');
+            const nextQs = searchParams.toString();
+            const cleanUrl = `${window.location.pathname}${nextQs ? `?${nextQs}` : ''}`;
+            history.replaceState(null, '', cleanUrl);
+        }
+    } catch (_) {}
+
     let loginWidgetId = null;
     mountTurnstile({
         containerId: 'login-turnstile',
@@ -301,8 +325,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 setSessionOnly(false);
                 logError('auth:login', err);
                 const errMsgLower = String(err?.message || '').toLowerCase();
-                const errCode = String(err?.code || '').toLowerCase();
-                const errStatus = Number(err?.status || 0);
+                let fnErrCode = '';
+                try {
+                    const body = await err?.context?.json?.();
+                    if (body?.error) fnErrCode = String(body.error).toLowerCase();
+                } catch (_) { /* non-JSON body */ }
+                const errCode = String(err?.code || fnErrCode || '').toLowerCase();
+                const errStatus = Number(err?.status || err?.context?.status || 0);
                 const resendBox = document.getElementById('resend-confirm-box');
                 if (resendBox) resendBox.classList.add('hidden');
 
@@ -311,10 +340,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     msg = isRu
                         ? 'Ошибка сети. Проверьте подключение к интернету и попробуйте снова.'
                         : 'Network error. Check your internet connection and try again.';
-                } else if (errStatus === 429 || errCode === 'over_request_rate_limit' || errMsgLower.includes('too many requests') || errMsgLower.includes('rate limit')) {
+                } else if (errStatus === 429 || errCode === 'over_request_rate_limit' || errCode === 'rate_limited' || errMsgLower.includes('too many requests') || errMsgLower.includes('rate limit')) {
                     msg = isRu
                         ? 'Слишком много попыток входа. Подождите немного и попробуйте снова.'
                         : 'Too many login attempts. Please wait a moment and try again.';
+                } else if (errCode === 'captcha_failed' || errMsgLower.includes('captcha') || errMsgLower.includes('turnstile')) {
+                    msg = isRu
+                        ? 'Проверка безопасности истекла. Попробуйте войти ещё раз.'
+                        : 'Security check expired. Please try signing in again.';
                 } else if (loginMode === 'email' && (errCode === 'email_not_confirmed' || errMsgLower.includes('email not confirmed'))) {
                     msg = isRu
                         ? 'Email не подтверждён. Проверьте почту или отправьте письмо повторно.'
@@ -561,10 +594,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             googleOAuthBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             try {
                 setSessionOnly(false);
-                const redirectTo = new URL(getSafeRedirect(), window.location.href).href;
+                const targetUrl = new URL(getSafeRedirect(), window.location.href);
+                if (targetUrl.hash && /^#view-/i.test(targetUrl.hash)) {
+                    try { sessionStorage.setItem('dashboard-view', targetUrl.hash.slice(1)); } catch (_) {}
+                    targetUrl.hash = '';
+                }
                 const { error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
-                    options: { redirectTo },
+                    options: { redirectTo: targetUrl.href },
                 });
                 if (error) throw error;
             } catch (err) {

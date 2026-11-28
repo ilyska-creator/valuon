@@ -84,6 +84,14 @@ async function initDashboardItems() {
     setupItemsTabs(auth.user.id, auth.user.email, auth.client);
     setupItemsSort();
     setupItemsSearch();
+    // Bind any pending partner receipts issued before first sign-in (e.g. Google OAuth) once per session
+    const bindSessionKey = `valuon-bound-pending:${auth.user.id}`;
+    if (!sessionStorage.getItem(bindSessionKey)) {
+        try {
+            await auth.client.rpc('bind_pending_receipts');
+            sessionStorage.setItem(bindSessionKey, '1');
+        } catch (_) { /* non-critical */ }
+    }
     await Promise.all([
         loadItems(auth.user.id, auth.client),
         loadVerifiedItems(auth.user.email, auth.client)
@@ -117,10 +125,14 @@ async function initDashboardItems() {
         if (!avatarEl && !nameEl && !emailEl) return;
         const email = auth.user?.email || '';
         const meta = auth.user?.user_metadata || {};
-        const firstName = String(override?.firstName !== undefined ? override.firstName : (meta.first_name || '')).trim();
-        const lastName = String(override?.lastName !== undefined ? override.lastName : (meta.last_name || '')).trim();
+        const googleFull = String(meta.full_name || meta.name || '').trim();
+        const spacePos = googleFull.indexOf(' ');
+        const fallbackFirst = spacePos > 0 ? googleFull.slice(0, spacePos).trim() : googleFull;
+        const fallbackLast = spacePos > 0 ? googleFull.slice(spacePos + 1).trim() : '';
+        const firstName = String(override?.firstName !== undefined ? override.firstName : (meta.first_name || meta.given_name || fallbackFirst || '')).trim();
+        const lastName = String(override?.lastName !== undefined ? override.lastName : (meta.last_name || meta.family_name || fallbackLast || '')).trim();
         const combined = [firstName, lastName].filter(Boolean).join(' ');
-        const rawName = String(override?.displayName !== undefined ? override.displayName : (combined || meta.display_name || '')).trim();
+        const rawName = String(override?.displayName !== undefined ? override.displayName : (combined || meta.display_name || googleFull || '')).trim();
         const fallbackName = email ? email.split('@')[0] : 'Account';
         const displayName = rawName || fallbackName;
 

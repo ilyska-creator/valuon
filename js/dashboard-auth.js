@@ -66,6 +66,13 @@ export async function requireAuth() {
     }
 
     if (!session) {
+        const searchParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+        const oauthErr = searchParams.get('error') || hashParams.get('error');
+        if (oauthErr) {
+            window.location.href = `login.html?oauth_error=${encodeURIComponent(oauthErr)}`;
+            return null;
+        }
         const hash = window.location.hash || (window.__targetView ? `#${window.__targetView}` : '');
         const target = `${window.location.pathname}${window.location.search}${hash}`;
         const loginUrl = (target && target !== '/' && !target.startsWith('/login'))
