@@ -1,5 +1,5 @@
 // Valuon Service Worker — Stage 1 (App Shell + Static Cache + Offline Fallback + Web Push)
-const CACHE_VERSION = 'valuon-static-202611281623';
+const CACHE_VERSION = 'valuon-static-202611281629';
 const OFFLINE_URL = '/offline.html';
 
 // Public HTML routes safe to cache (normalized by pathname, never with query strings).
