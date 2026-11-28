@@ -49,7 +49,8 @@ if (typeof window !== 'undefined') {
     if (!window.__valuonNavHapticBound) {
         window.__valuonNavHapticBound = true;
         document.addEventListener('click', (e) => {
-            if (e.target && e.target.closest && e.target.closest('.bottom-nav-item')) {
+            const navItem = e.target && e.target.closest && e.target.closest('.bottom-nav-item');
+            if (navItem && !navItem.classList.contains('active')) {
                 haptic(8);
             }
         }, true);

@@ -6707,6 +6707,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderShopCountrySelect();
     renderShopCurrencySelect();
     if (typeof window.applyBusinessTranslations === 'function') window.applyBusinessTranslations();
+    document.querySelector('.bottom-nav-item.active')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.scrollY > 10) window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 });
 
 initBusinessPanel().catch(e => logError('init:bizPanel', e));

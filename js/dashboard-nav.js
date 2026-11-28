@@ -92,6 +92,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const targetId = link.getAttribute('href').replace('#', '');
         if (!isDashboardView(targetId)) return;
+        const targetEl = document.getElementById(targetId);
+        if (targetEl && targetEl.classList.contains('active')) {
+            if (window.scrollY > 10) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            return;
+        }
         activateView(targetId);
         sessionStorage.setItem('dashboard-view', targetId);
         if (window.location.hash !== '#' + targetId) {
@@ -162,6 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         profileSettingsBtn?.addEventListener('click', () => {
             setProfileMenuOpen(false);
+            const settingsView = document.getElementById('view-settings');
+            if (settingsView && settingsView.classList.contains('active')) {
+                if (window.scrollY > 10) window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
             activateView('view-settings');
             sessionStorage.setItem('dashboard-view', 'view-settings');
             if (window.location.hash !== '#view-settings') {
