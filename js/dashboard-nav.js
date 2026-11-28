@@ -80,4 +80,61 @@ document.addEventListener('DOMContentLoaded', () => {
             window.scrollTo({ top: 0, behavior: 'instant' });
         }, { once: true });
     }
+
+    // Sidebar profile mini-menu popover
+    const profileTrigger = document.getElementById('sidebar-profile-trigger');
+    const profileMenu = document.getElementById('sidebar-profile-menu');
+    const profileSettingsBtn = document.getElementById('sidebar-menu-settings');
+
+    function setProfileMenuOpen(open) {
+        if (!profileTrigger || !profileMenu) return;
+        profileMenu.classList.toggle('is-open', open);
+        profileTrigger.classList.toggle('is-open', open);
+        profileTrigger.setAttribute('aria-expanded', String(open));
+        profileMenu.setAttribute('aria-hidden', String(!open));
+    }
+
+    if (profileTrigger && profileMenu) {
+        profileTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setProfileMenuOpen(!profileMenu.classList.contains('is-open'));
+        });
+
+        profileSettingsBtn?.addEventListener('click', () => {
+            setProfileMenuOpen(false);
+            activateView('view-settings');
+            sessionStorage.setItem('dashboard-view', 'view-settings');
+            if (window.location.hash !== '#view-settings') {
+                history.pushState(null, '', '#view-settings');
+            }
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!profileMenu.classList.contains('is-open')) return;
+            if (!profileMenu.contains(e.target) && !profileTrigger.contains(e.target)) {
+                setProfileMenuOpen(false);
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && profileMenu.classList.contains('is-open')) {
+                setProfileMenuOpen(false);
+                profileTrigger.focus();
+            }
+        });
+    }
+
+    const syncSidebarThemePill = () => {
+        const pill = document.getElementById('sidebar-theme-pill');
+        if (!pill) return;
+        const lang = window.getValuonLang ? window.getValuonLang() : 'en';
+        const dict = window.dashboardTranslations?.[lang] || {};
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        pill.textContent = isDark
+            ? (dict.ui_theme_dark || (lang === 'en' ? 'Dark' : 'Тёмная'))
+            : (dict.ui_theme_light || (lang === 'en' ? 'Light' : 'Светлая'));
+    };
+    syncSidebarThemePill();
+    window.addEventListener('themeChange', syncSidebarThemePill);
 });

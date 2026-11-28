@@ -109,6 +109,42 @@ async function initDashboardItems() {
         verifiedReceiptPdfCache.clear();
         loadVerifiedItems(auth.user.email, auth.client);
     });
+
+    const renderSidebarProfile = (override) => {
+        const avatarEl = document.getElementById('sidebar-profile-avatar');
+        const nameEl = document.getElementById('sidebar-profile-name');
+        const emailEl = document.getElementById('sidebar-profile-email');
+        if (!avatarEl && !nameEl && !emailEl) return;
+        const email = auth.user?.email || '';
+        const meta = auth.user?.user_metadata || {};
+        const firstName = String(override?.firstName !== undefined ? override.firstName : (meta.first_name || '')).trim();
+        const lastName = String(override?.lastName !== undefined ? override.lastName : (meta.last_name || '')).trim();
+        const combined = [firstName, lastName].filter(Boolean).join(' ');
+        const rawName = String(override?.displayName !== undefined ? override.displayName : (combined || meta.display_name || '')).trim();
+        const fallbackName = email ? email.split('@')[0] : 'Account';
+        const displayName = rawName || fallbackName;
+
+        let initials = '';
+        if (firstName && lastName) {
+            initials = (Array.from(firstName)[0] + Array.from(lastName)[0]).toUpperCase();
+        } else if (firstName) {
+            initials = Array.from(firstName)[0].toUpperCase();
+        } else if (lastName) {
+            initials = Array.from(lastName)[0].toUpperCase();
+        } else {
+            const parts = displayName.split(/\s+/).filter(Boolean);
+            initials = parts.length >= 2
+                ? (Array.from(parts[0])[0] + Array.from(parts[parts.length - 1])[0]).toUpperCase()
+                : (Array.from(displayName)[0] || 'U').toUpperCase();
+        }
+        if (avatarEl) avatarEl.textContent = initials || 'U';
+        if (nameEl) nameEl.textContent = displayName;
+        if (emailEl) emailEl.textContent = email;
+    };
+    renderSidebarProfile();
+    window.addEventListener('valuon:profile-updated', (e) => {
+        renderSidebarProfile(e.detail || {});
+    });
     let liveReceiptsRefreshTimer = null;
     window.addEventListener('valuon:receipts-updated', () => {
         clearTimeout(liveReceiptsRefreshTimer);

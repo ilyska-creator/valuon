@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="js/lang-detect.js?v=202611281629"></script>
+    <script src="js/lang-detect.js?v=202611281644"></script>
     <title>Valuon — My Items</title>
     <meta name="description"
         content="Valuon — Personal dashboard for tracking purchases, warranties, and verified digital receipts.">
@@ -16,11 +16,11 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link rel="icon" type="image/png" href="assets/favicon.png">
-    <link rel="stylesheet" href="css/style.css?v=202611281629">
-    <link rel="stylesheet" href="css/dashboard.css?v=202611281629">
-    <link rel="stylesheet" href="css/custom-select.css?v=202611281629">
-    <link rel="stylesheet" href="css/custom-datepicker.css?v=202611281629">
-    <link rel="stylesheet" href="css/toast.css?v=202611281629">
+    <link rel="stylesheet" href="css/style.css?v=202611281644">
+    <link rel="stylesheet" href="css/dashboard.css?v=202611281644">
+    <link rel="stylesheet" href="css/custom-select.css?v=202611281644">
+    <link rel="stylesheet" href="css/custom-datepicker.css?v=202611281644">
+    <link rel="stylesheet" href="css/toast.css?v=202611281644">
     <script>(function () { var t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); })();</script>
     <script>if (location.hash) { window.__targetView = location.hash.replace('#', ''); history.replaceState(null, '', location.pathname + location.search); };</script>
     <meta name="theme-color" content="#2563eb">
@@ -53,17 +53,19 @@
                 <i class="fa-solid fa-receipt"></i> <span data-i18n="nav_receipts">Receipts &amp; Docs</span>
             </a>
             <a href="business.html" class="nav-item">
-                <i class="fa-solid fa-store"></i> <span data-i18n="nav_business">For Business</span>
+                <i class="fa-solid fa-store"></i>
+                <span data-i18n="nav_business">For Business</span>
+                <i class="fa-solid fa-arrow-up-right-from-square nav-ext-icon" aria-hidden="true"></i>
             </a>
             <a href="verify.html?from=dashboard.html" class="nav-item">
-                <i class="fa-solid fa-qrcode"></i> <span data-i18n="nav_verify">Verify Receipt</span>
+                <i class="fa-solid fa-qrcode"></i>
+                <span data-i18n="nav_verify">Verify Receipt</span>
+                <i class="fa-solid fa-arrow-up-right-from-square nav-ext-icon" aria-hidden="true"></i>
             </a>
             <a href="#view-notifications" class="nav-item" data-view="notifications">
-                <span class="icon-badge-wrap">
-                    <i class="fa-solid fa-bell"></i>
-                    <span class="nav-badge hidden" data-notif-badge></span>
-                </span>
+                <i class="fa-solid fa-bell"></i>
                 <span data-i18n="nav_notifications">Notifications</span>
+                <span class="nav-badge-pill hidden" data-notif-badge></span>
             </a>
             <a href="#view-settings" class="nav-item" data-view="settings">
                 <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Settings</span>
@@ -71,17 +73,35 @@
         </nav>
 
         <div class="sidebar-footer">
-            <div class="controls-row">
-                <button type="button" id="theme-toggle" class="circle-btn" aria-label="Toggle Theme">
-                    <i class="fa-solid fa-moon"></i>
+            <div class="sidebar-profile-menu" id="sidebar-profile-menu" role="menu" aria-hidden="true">
+                <button type="button" class="sidebar-menu-item" id="sidebar-menu-settings" role="menuitem">
+                    <i class="fa-solid fa-gear"></i>
+                    <span data-i18n="nav_settings">Settings</span>
                 </button>
-                <button type="button" id="lang-toggle" class="circle-btn" aria-label="Toggle Language">
-                    <span>EN</span>
+                <button type="button" id="theme-toggle" class="sidebar-menu-item" role="menuitem" aria-label="Toggle Theme">
+                    <i class="fa-solid fa-moon"></i>
+                    <span data-i18n="ui_theme">Theme</span>
+                    <span class="sidebar-menu-pill" id="sidebar-theme-pill">Light</span>
+                </button>
+                <button type="button" id="lang-toggle" class="sidebar-menu-item" role="menuitem" aria-label="Toggle Language">
+                    <i class="fa-solid fa-globe"></i>
+                    <span data-i18n="ui_language">Language</span>
+                    <span class="sidebar-menu-pill" data-lang-code>EN</span>
+                </button>
+                <div class="sidebar-menu-divider" role="separator"></div>
+                <button type="button" id="logout-btn" class="sidebar-menu-item is-danger" role="menuitem">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span data-i18n="ui_logout">Logout</span>
                 </button>
             </div>
-            <button type="button" id="logout-btn" class="nav-item full-width">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                <span data-i18n="ui_logout">Logout</span>
+
+            <button type="button" class="sidebar-profile-card" id="sidebar-profile-trigger" aria-haspopup="menu" aria-expanded="false">
+                <span class="sidebar-profile-avatar" id="sidebar-profile-avatar" aria-hidden="true">U</span>
+                <span class="sidebar-profile-info">
+                    <span class="sidebar-profile-name" id="sidebar-profile-name">Account</span>
+                    <span class="sidebar-profile-email" id="sidebar-profile-email"></span>
+                </span>
+                <i class="fa-solid fa-chevron-up sidebar-profile-chevron" aria-hidden="true"></i>
             </button>
         </div>
     </aside>
@@ -932,20 +952,20 @@
     <div id="toast-container" class="toast-container"></div>
 
 
-    <script src="js/theme.js?v=202611281629"></script>
-    <script src="js/toast.js?v=202611281629"></script>
-    <script src="js/devices.js?v=202611281629"></script>
+    <script src="js/theme.js?v=202611281644"></script>
+    <script src="js/toast.js?v=202611281644"></script>
+    <script src="js/devices.js?v=202611281644"></script>
 
-    <script src="js/custom-select.js?v=202611281629"></script>
-    <script src="js/custom-datepicker.js?v=202611281629"></script>
-    <script src="js/currencies.js?v=202611281629"></script>
-    <script src="js/dashboard-lang.js?v=202611281629"></script>
-    <script src="js/rotating-loader.js?v=202611281629"></script>
-    <script type="module" src="js/dashboard-auth.js?v=202611281629"></script>
-    <script type="module" src="js/dashboard-items.js?v=202611281629"></script>
-    <script type="module" src="js/dashboard-notifications.js?v=202611281629"></script>
-    <script src="js/dashboard-nav.js?v=202611281629"></script>
-    <script type="module" src="js/dashboard-settings.js?v=202611281629"></script>
+    <script src="js/custom-select.js?v=202611281644"></script>
+    <script src="js/custom-datepicker.js?v=202611281644"></script>
+    <script src="js/currencies.js?v=202611281644"></script>
+    <script src="js/dashboard-lang.js?v=202611281644"></script>
+    <script src="js/rotating-loader.js?v=202611281644"></script>
+    <script type="module" src="js/dashboard-auth.js?v=202611281644"></script>
+    <script type="module" src="js/dashboard-items.js?v=202611281644"></script>
+    <script type="module" src="js/dashboard-notifications.js?v=202611281644"></script>
+    <script src="js/dashboard-nav.js?v=202611281644"></script>
+    <script type="module" src="js/dashboard-settings.js?v=202611281644"></script>
     <script type="module">
         let receiptsModPromise = null;
         function loadReceiptsView() {
@@ -961,12 +981,12 @@
             loadReceiptsView();
         }
     </script>
-    <script src="js/animations.js?v=202611281629"></script>
-    <script src="js/cookie-banner.js?v=202611281629"></script>
+    <script src="js/animations.js?v=202611281644"></script>
+    <script src="js/cookie-banner.js?v=202611281644"></script>
     <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
-    <script defer src="js/pwa.js?v=202611281629"></script>
+    <script defer src="js/pwa.js?v=202611281644"></script>
 </body>
 
 </html>

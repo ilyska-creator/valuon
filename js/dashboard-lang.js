@@ -10,6 +10,13 @@ const dashboardTranslations = {
         nav_notifications: "Уведомления",
         nav_verify: "Проверить чек",
         nav_settings: "Настройки",
+        nav_group_personal: "Личное",
+        nav_group_tools: "Инструменты",
+        nav_group_system: "Система",
+        ui_theme: "Тема",
+        ui_language: "Язык",
+        ui_theme_dark: "Тёмная",
+        ui_theme_light: "Светлая",
         btn_logout: "Выйти",
         dashboard_title: "Мои вещи",
         btn_add: "+ Добавить вещь",
@@ -312,6 +319,13 @@ const dashboardTranslations = {
         nav_notifications: "Notifications",
         nav_verify: "Verify Receipt",
         nav_settings: "Settings",
+        nav_group_personal: "Personal",
+        nav_group_tools: "Tools",
+        nav_group_system: "System",
+        ui_theme: "Theme",
+        ui_language: "Language",
+        ui_theme_dark: "Dark",
+        ui_theme_light: "Light",
         btn_logout: "Log Out",
         dashboard_title: "My Items",
         btn_add: "+ Add Item",
@@ -698,8 +712,16 @@ function applyDashboardLang(lang) {
 
     const langBtn = document.getElementById('lang-toggle');
     if (langBtn) {
-        const span = langBtn.querySelector('span');
+        const span = langBtn.querySelector('[data-lang-code]') || langBtn.querySelector('span');
         if (span) span.textContent = activeLang.toUpperCase();
+    }
+
+    const themePill = document.getElementById('sidebar-theme-pill');
+    if (themePill) {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        themePill.textContent = isDark
+            ? (t.ui_theme_dark || (activeLang === 'en' ? 'Dark' : 'Тёмная'))
+            : (t.ui_theme_light || (activeLang === 'en' ? 'Light' : 'Светлая'));
     }
 
     const settingsLangLabel = document.getElementById('settings-lang-label');

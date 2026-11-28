@@ -323,6 +323,7 @@ async function initSettings() {
                 originalBirthdate = birthdate;
                 originalCurrency = currency;
                 window.dispatchEvent(new CustomEvent('currency-changed', { detail: { currency } }));
+                window.dispatchEvent(new CustomEvent('valuon:profile-updated', { detail: { firstName, lastName, displayName } }));
 
                 saveBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
                 const tSuccess = getSettingsT();
