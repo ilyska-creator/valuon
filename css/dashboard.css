@@ -5314,3 +5314,8 @@ html {
     gap: 0.65rem;
     justify-content: flex-end;
 }
+
+.upload-zone-mini.drag-over {
+    border-color: var(--primary);
+    background: rgba(59, 130, 246, 0.08);
+}

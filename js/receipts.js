@@ -1098,6 +1098,7 @@ function renderPersonalCard(r, t) {
 
     const btnViewText = escapeHtml(t.btn_view || 'Просмотр');
     const btnDownloadText = escapeHtml(t.btn_download || 'Скачать');
+    const btnEditText = escapeHtml(t.btn_edit || (lang === 'ru' ? 'Редактировать' : 'Edit'));
     const btnDeleteText = escapeHtml(t.btn_delete || 'Удалить');
 
     const attachments = getReceiptAttachments(r);
@@ -1149,6 +1150,11 @@ function renderPersonalCard(r, t) {
                     <span data-i18n="btn_view">${btnViewText}</span>
                 </button>
                 ${downloadBtnHtml}
+                <button type="button" class="receipt-doc-btn is-secondary is-icon btn-edit-receipt"
+                        data-id="${escapeHtml(r.id)}"
+                        title="${btnEditText}" aria-label="${btnEditText}">
+                    <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                </button>
                 <button type="button" class="receipt-doc-btn is-danger is-icon btn-delete-receipt"
                         data-id="${escapeHtml(r.id)}"
                         title="${btnDeleteText}" aria-label="${btnDeleteText}">
@@ -1226,6 +1232,15 @@ function restoreListeners(client, userId) {
         }
         return currentUrl || '';
     };
+
+    document.querySelectorAll('.btn-edit-receipt').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const rec = (lastPersonalReceipts || []).find(x => String(x.id) === String(btn.dataset.id));
+            if (rec && uploadModal?.openEdit) {
+                uploadModal.openEdit(rec);
+            }
+        });
+    });
 
     document.querySelectorAll('.btn-view-receipt').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -1517,8 +1532,14 @@ function createUploadModal(client, userId) {
     const linkedItemSelect = document.getElementById('linked-item-select');
 
     if (!modal || !form) {
-        return { open: () => { }, setFile: () => { } };
+        return { open: () => { }, openEdit: () => { }, setFile: () => { } };
     }
+
+    const modalTitleEl = modal.querySelector('.modal-header h2');
+    const modalSubmitBtn = form.querySelector('button[type="submit"]');
+    const filesGroupEl = miniDropZone?.closest('.input-group') || null;
+    const linkGroupEl = linkedItemSelect?.closest('.input-group') || null;
+    let editingReceiptId = null;
 
     const receiptNameInput = form.querySelector('[name="receipt_name"]');
     const amountInput = form.querySelector('[name="amount"]');
@@ -1614,7 +1635,25 @@ function createUploadModal(client, userId) {
         }
     }
 
+    function setUploadModalMode(isEdit) {
+        const lang = getLang();
+        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+        if (filesGroupEl) filesGroupEl.style.display = isEdit ? 'none' : '';
+        if (linkGroupEl) linkGroupEl.style.display = isEdit ? 'none' : '';
+        if (modalTitleEl) {
+            modalTitleEl.textContent = isEdit
+                ? (lang === 'ru' ? 'Редактировать чек' : 'Edit Receipt')
+                : (t.modal_upload_title || (lang === 'ru' ? 'Загрузить чек' : 'Upload Receipt'));
+        }
+        if (modalSubmitBtn) {
+            modalSubmitBtn.textContent = isEdit
+                ? (t.btn_save || (lang === 'ru' ? 'Сохранить' : 'Save'))
+                : (t.btn_upload_submit || (lang === 'ru' ? 'Загрузить' : 'Upload'));
+        }
+    }
+
     function open() {
+        editingReceiptId = null;
         if (modal._closeTimer) {
             clearTimeout(modal._closeTimer);
             modal._closeTimer = null;
@@ -1622,11 +1661,15 @@ function createUploadModal(client, userId) {
         }
         modal.classList.add('active');
         document.documentElement.classList.add('modal-open');
+        setUploadModalMode(false);
+        clearLockedFields();
+        setFieldsLocked(false);
         if (dateInput) {
             const now = new Date();
             const y = now.getFullYear();
             const m = String(now.getMonth() + 1).padStart(2, '0');
             const d = String(now.getDate()).padStart(2, '0');
+            dateInput.max = `${y}-${m}-${d}`;
             dateInput.value = `${y}-${m}-${d}`;
             if (dateInput._cdp) dateInput._cdp.syncDisplay();
         }
@@ -1636,6 +1679,36 @@ function createUploadModal(client, userId) {
         }
         updateAmountSuffix();
         populateItemSelect(userId, client).catch(() => {});
+    }
+
+    function openEdit(rec) {
+        if (!rec) return;
+        editingReceiptId = rec.id;
+        if (modal._closeTimer) {
+            clearTimeout(modal._closeTimer);
+            modal._closeTimer = null;
+            modal.classList.remove('closing');
+        }
+        modal.classList.add('active');
+        document.documentElement.classList.add('modal-open');
+        setUploadModalMode(true);
+        setFieldsLocked(false);
+        clearSelectedFile();
+
+        if (receiptNameInput) receiptNameInput.value = rec.receipt_name || '';
+        if (storeInput) storeInput.value = rec.store_name || '';
+        if (amountInput) amountInput.value = (rec.amount !== null && rec.amount !== undefined) ? rec.amount : '';
+        if (dateInput) {
+            const now = new Date();
+            dateInput.max = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            dateInput.value = rec.purchase_date ? String(rec.purchase_date).slice(0, 10) : '';
+            if (dateInput._cdp) dateInput._cdp.syncDisplay();
+        }
+        if (currencySelect) {
+            currencySelect.value = rec.currency || userDefaultCurrency;
+            if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
+        }
+        updateAmountSuffix();
     }
 
     let isSubmitting = false;
@@ -1650,6 +1723,8 @@ function createUploadModal(client, userId) {
             syncModalOpenClass();
             clearLockedFields();
             setFieldsLocked(false);
+            editingReceiptId = null;
+            setUploadModalMode(false);
             form.reset();
             if (dateInput?._cdp) dateInput._cdp.syncDisplay();
             if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
@@ -1809,6 +1884,48 @@ function createUploadModal(client, userId) {
     miniDropZone?.addEventListener('click', () => {
         if (selectedFiles.length < MAX_RECEIPT_ATTACHMENTS) fileInput?.click();
     });
+    if (miniDropZone) {
+        miniDropZone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!editingReceiptId && selectedFiles.length < MAX_RECEIPT_ATTACHMENTS) {
+                miniDropZone.classList.add('drag-over');
+            }
+        });
+        miniDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!editingReceiptId && selectedFiles.length < MAX_RECEIPT_ATTACHMENTS) {
+                miniDropZone.classList.add('drag-over');
+            }
+        });
+        miniDropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!miniDropZone.contains(e.relatedTarget)) {
+                miniDropZone.classList.remove('drag-over');
+            }
+        });
+        miniDropZone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            miniDropZone.classList.remove('drag-over');
+            if (!editingReceiptId && e.dataTransfer?.files?.length) {
+                await addFiles(e.dataTransfer.files);
+            }
+        });
+    }
+    // Prevent browser from opening a dropped file if user slightly misses #modal-drop-zone
+    modal.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+    modal.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        miniDropZone?.classList.remove('drag-over');
+        if (!editingReceiptId && e.dataTransfer?.files?.length) {
+            await addFiles(e.dataTransfer.files);
+        }
+    });
     modalCameraBtn?.addEventListener('click', () => {
         if (selectedFiles.length < MAX_RECEIPT_ATTACHMENTS) modalCameraInput?.click();
     });
@@ -1873,6 +1990,46 @@ function createUploadModal(client, userId) {
         const todayIso = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}-${String(nowDate.getDate()).padStart(2, '0')}`;
         if (purchaseDateVal && purchaseDateVal > todayIso) {
             showToast(lang === 'ru' ? 'Дата покупки не может быть в будущем' : 'Purchase date cannot be in the future', 'warning');
+            return;
+        }
+
+        if (editingReceiptId) {
+            const receiptName = form.querySelector('[name="receipt_name"]').value.trim();
+            const storeName = form.querySelector('[name="store_name"]').value.trim();
+            const amount = form.querySelector('[name="amount"]').value;
+            const rawAmount = parseFloat(amount);
+            const parsedAmount = isNaN(rawAmount) ? null : Math.max(0, rawAmount);
+            if (!receiptName || !storeName) {
+                showToast(lang === 'ru' ? 'Заполните название и магазин' : 'Fill in name and store', 'warning');
+                return;
+            }
+            isSubmitting = true;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            try {
+                const { error: updError } = await client
+                    .from('receipts')
+                    .update({
+                        receipt_name: receiptName,
+                        store_name: storeName,
+                        amount: parsedAmount,
+                        purchase_date: purchaseDateVal || null,
+                        currency: currencySelect?.value || userDefaultCurrency,
+                    })
+                    .eq('id', editingReceiptId)
+                    .eq('user_id', userId);
+                if (updError) throw updError;
+                showToast(lang === 'ru' ? 'Чек обновлён' : 'Receipt updated', 'success');
+                close(true);
+                await loadAllReceipts(currentUserEmail, userId, client, { silent: true });
+            } catch (err) {
+                logError('receipts:edit', err);
+                showToast(lang === 'ru' ? 'Не удалось сохранить изменения' : 'Failed to save changes', 'error');
+            } finally {
+                isSubmitting = false;
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
             return;
         }
 
@@ -2010,7 +2167,7 @@ function createUploadModal(client, userId) {
         }
     });
 
-    return { open, setFile };
+    return { open, openEdit, setFile };
 }
 
 let receiptsInitPromise = null;
