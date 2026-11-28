@@ -10,7 +10,11 @@ export async function getAuthSession() {
     return { session, client: supabase };
 }
 
+let logoutBound = false;
+
 export function setupLogout(currentClient) {
+    if (logoutBound) return;
+    logoutBound = true;
     document.querySelectorAll('#logout-btn, #logout-btn-mobile').forEach(btn => {
         btn.addEventListener('click', async () => {
             const clientToSignOut = currentClient || supabase;

@@ -49,7 +49,7 @@
             <a href="#view-items" class="nav-item active" data-view="items">
                 <i class="fa-solid fa-box-open"></i> <span data-i18n="nav_items">My Items</span>
             </a>
-            <a href="receipts.html" class="nav-item">
+            <a href="#view-receipts" class="nav-item" data-view="receipts">
                 <i class="fa-solid fa-receipt"></i> <span data-i18n="nav_receipts">Receipts &amp; Docs</span>
             </a>
             <a href="business.html" class="nav-item">
@@ -177,6 +177,86 @@
                 </div>
                 <div class="items-grid hidden" id="items-grid-mine"></div>
                 <div class="items-grid" id="items-grid-verified"></div>
+            </section>
+        </section>
+
+        <section id="view-receipts" class="dashboard-view hidden">
+            <header class="content-header" data-animate>
+                <h1 data-i18n="nav_receipts">Receipts &amp; Docs</h1>
+                <button type="button" class="btn btn-primary" id="upload-receipt-btn"><i class="fa-solid fa-upload"></i> <span
+                        data-i18n="btn_upload">Upload Receipt</span></button>
+            </header>
+
+            <button type="button" class="camera-upload-zone" id="take-photo-receipt-btn" data-animate>
+                <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                <p data-i18n="camera_zone_title">Take a receipt photo</p>
+                <span data-i18n="camera_zone_hint">Tap to open your phone camera and attach photo</span>
+            </button>
+            <input type="file" id="quick-camera-input" accept="image/*" capture="environment" style="display: none;">
+
+            <div class="upload-zone" id="drop-zone" data-animate>
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <p data-i18n="upload_title">Drag &amp; drop receipt photo here</p>
+                <span data-i18n="upload_hint">or click to select file</span>
+                <div class="upload-pills">
+                    <span class="upload-pill">JPG</span>
+                    <span class="upload-pill">PNG</span>
+                    <span class="upload-pill">PDF</span>
+                    <span class="upload-pill">WEBP</span>
+                </div>
+            </div>
+
+            <section class="items-section" data-animate data-delay="120">
+                <div class="items-section-header">
+                    <h2 data-i18n="section_documents">Your Documents</h2>
+                    <div class="section-toolbar-controls">
+                        <div class="receipt-search-box">
+                            <i class="fa-solid fa-magnifying-glass receipt-search-icon" aria-hidden="true"></i>
+                            <input type="search" id="receipts-search-input" class="receipt-search-input"
+                                data-i18n-placeholder="receipts_search_placeholder"
+                                placeholder="Search by store, item, #RCP..." autocomplete="off"
+                                spellcheck="false">
+                            <button type="button" id="receipts-search-clear" class="receipt-search-clear"
+                                data-i18n-title="search_clear_title" title="Clear search"
+                                aria-label="Clear search" style="display: none;">
+                                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <div class="items-tabs" id="receipts-tabs" role="tablist">
+                            <span class="items-tab-indicator" id="receipts-tab-indicator" aria-hidden="true"></span>
+                            <button type="button" class="items-tab active" data-receipts-tab="personal" role="tab"
+                                aria-selected="true">
+                                <span data-i18n="receipts_tab_personal">Your Receipts</span>
+                                <span class="items-tab-count" id="receipts-count-personal">0</span>
+                            </button>
+                            <button type="button" class="items-tab" data-receipts-tab="business" role="tab"
+                                aria-selected="false">
+                                <span data-i18n="receipts_tab_business">Partner Receipts</span>
+                                <span class="items-tab-count" id="receipts-count-business">0</span>
+                            </button>
+                        </div>
+                        <div class="sort-control-wrap">
+                            <i class="fa-solid fa-arrow-down-wide-short sort-control-icon" aria-hidden="true"></i>
+                            <select id="receipts-sort-select" class="custom-select" aria-label="Sort">
+                                <option value="newest" data-i18n="sort_newest">Newest first</option>
+                                <option value="oldest" data-i18n="sort_oldest">Oldest first</option>
+                                <option value="price_desc" data-i18n="sort_price_desc">Price ↓</option>
+                                <option value="price_asc" data-i18n="sort_price_asc">Price ↑</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="receipts-summary-strip hidden" id="receipts-summary-strip">
+                    <div class="receipts-summary-inner">
+                        <span class="summary-icon"><i class="fa-solid fa-wallet"></i></span>
+                        <span class="summary-label" data-i18n="receipts_total_spent">Total spent:</span>
+                        <span class="summary-value" id="receipts-summary-total">0.00 €</span>
+                        <span class="summary-divider">•</span>
+                        <span class="summary-count" id="receipts-summary-count">0 чеков</span>
+                    </div>
+                </div>
+                <div class="receipts-grid" id="receipts-grid-personal"></div>
+                <div class="receipts-grid hidden" id="receipts-grid-business"></div>
             </section>
         </section>
 
@@ -481,7 +561,7 @@
             <i class="fa-solid fa-box-open"></i>
             <span data-i18n="nav_items">My Items</span>
         </a>
-        <a href="receipts.html" class="bottom-nav-item">
+        <a href="#view-receipts" class="bottom-nav-item" data-view="receipts">
             <i class="fa-solid fa-receipt"></i>
             <span data-i18n="nav_receipts">Receipts &amp; Docs</span>
         </a>
@@ -697,6 +777,145 @@
         </div>
     </div>
 
+    <div id="upload-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-heading">
+                    <span class="modal-heading-icon"><i class="fa-solid fa-receipt"></i></span>
+                    <div class="modal-heading-text">
+                        <h2 data-i18n="modal_upload_receipt">Upload Receipt</h2>
+                        <p data-i18n="modal_upload_receipt_subtitle">Receipt file and basic details</p>
+                    </div>
+                </div>
+                <button id="close-upload-modal" class="btn-close" aria-label="Close"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="upload-receipt-form" class="modal-form" action="#">
+                <div class="input-group">
+                    <label data-i18n="label_linked_item">Link to Item</label>
+                    <select name="item_id" id="linked-item-select" class="custom-select">
+                        <option value="" data-i18n="option_no_link">Don't link</option>
+                    </select>
+                    <p class="field-hint link-hint" id="link-hint" data-i18n="link_hint_manual">Manual data entry</p>
+                </div>
+
+                <div class="input-group">
+                    <label data-i18n="label_receipt_name">Receipt Name</label>
+                    <div class="input-with-lock">
+                        <input type="text" name="receipt_name" placeholder="MacBook Air M2" required>
+                        <i class="fa-solid fa-lock lock-icon hidden"></i>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="receipt-files-label-row">
+                        <label data-i18n="label_receipt_file">Receipt Files</label>
+                        <span class="receipt-files-counter" id="modal-files-counter">0 / 3</span>
+                    </div>
+                    <div class="receipt-file-picker-row" id="modal-file-picker-row">
+                        <div class="upload-zone-mini" id="modal-drop-zone">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span id="file-name-display" data-i18n="upload_select_hint">Click to select files (up to 3, max 10 MB)</span>
+                            <input type="file" id="modal-file-input" multiple
+                                accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf"
+                                style="display: none;">
+                        </div>
+                        <button type="button" class="btn-modal-camera" id="modal-camera-btn" data-i18n-title="btn_take_photo" title="Take Photo">
+                            <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                            <span data-i18n="btn_camera_short">Camera</span>
+                        </button>
+                        <input type="file" id="modal-camera-input" accept="image/*" capture="environment" style="display: none;">
+                    </div>
+                    <div class="receipt-files-list hidden" id="modal-files-list"></div>
+                </div>
+
+                <div class="input-group">
+                    <label data-i18n="label_store_name">Store</label>
+                    <div class="input-with-lock">
+                        <input type="text" name="store_name" data-i18n-placeholder="ph_store" placeholder="Apple Store, Amazon, Best Buy..." required>
+                        <i class="fa-solid fa-lock lock-icon hidden"></i>
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label data-i18n="label_amount">Amount</label>
+                        <div class="input-with-lock">
+                            <input type="number" name="amount" min="0" step="0.01" placeholder="0.00" required>
+                            <i class="fa-solid fa-lock lock-icon hidden"></i>
+                            <span class="suffix-hint">€</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="label_purchase_date">Purchase Date</label>
+                        <div class="input-with-lock">
+                            <input type="date" name="purchase_date" class="custom-datepicker" required>
+                            <i class="fa-solid fa-lock lock-icon hidden"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label data-i18n="label_receipt_currency">Currency</label>
+                    <select name="currency" id="upload-receipt-currency" class="custom-select" data-searchable
+                        data-search-placeholder="currency_search_placeholder"
+                        data-search-empty="currency_search_empty"></select>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cancel-upload-modal" class="btn btn-outline"
+                        data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_submit_upload">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="delete-receipt-modal" class="modal-overlay">
+        <div class="modal-content delete-confirm-card">
+            <div class="delete-icon-wrapper">
+                <i class="fa-solid fa-trash"></i>
+            </div>
+            <h2 data-i18n="delete_receipt_title">Delete receipt?</h2>
+            <p data-i18n="delete_receipt_desc">File and record will be permanently deleted.</p>
+            <div class="modal-actions confirm-actions">
+                <button type="button" id="cancel-delete-receipt" class="btn btn-outline"
+                    data-i18n="btn_cancel">Cancel</button>
+                <button type="button" id="confirm-delete-receipt" class="btn btn-danger"
+                    data-i18n="btn_delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="attachments-viewer-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content attachments-viewer-card">
+            <div class="modal-header">
+                <div class="modal-heading">
+                    <span class="modal-heading-icon"><i class="fa-solid fa-images"></i></span>
+                    <div class="modal-heading-text">
+                        <h2 id="att-viewer-title" data-i18n="attachments_viewer_title">Receipt Files</h2>
+                        <p id="att-viewer-counter"></p>
+                    </div>
+                </div>
+                <button type="button" id="close-att-viewer" class="btn-close" aria-label="Close"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="att-viewer-stage" id="att-viewer-stage"></div>
+
+            <div class="att-viewer-thumbs" id="att-viewer-thumbs"></div>
+
+            <div class="modal-actions att-viewer-actions">
+                <a href="#" id="att-viewer-open-btn" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> <span data-i18n="attachments_open_file">Open</span>
+                </a>
+                <button type="button" id="att-viewer-download-btn" class="btn btn-primary">
+                    <i class="fa-solid fa-download"></i> <span data-i18n="btn_download">Download</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast-container" class="toast-container"></div>
 
 
@@ -714,6 +933,21 @@
     <script type="module" src="js/dashboard-notifications.js"></script>
     <script src="js/dashboard-nav.js"></script>
     <script type="module" src="js/dashboard-settings.js?v=20261127b"></script>
+    <script type="module">
+        let receiptsModPromise = null;
+        function loadReceiptsView() {
+            if (!receiptsModPromise) {
+                receiptsModPromise = import('./js/receipts.js?v=20261128a');
+            }
+            return receiptsModPromise.then((m) => m.ensureReceiptsLoaded());
+        }
+        window.addEventListener('dashboard-view-changed', (e) => {
+            if (e.detail?.viewId === 'view-receipts') loadReceiptsView();
+        });
+        if (document.getElementById('view-receipts')?.classList.contains('active')) {
+            loadReceiptsView();
+        }
+    </script>
     <script src="js/animations.js"></script>
     <script src="js/cookie-banner.js"></script>
     <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

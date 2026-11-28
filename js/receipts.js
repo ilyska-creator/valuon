@@ -4,6 +4,7 @@ import { attachModalA11y } from './modal-a11y.js';
 import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
 import { parseLocalDate } from './warranty-utils.js';
+import { pulseHighlight } from './ui-effects.js';
 
 let pendingDeleteId = null;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -679,6 +680,27 @@ async function loadAllReceipts(userEmail, userId, client) {
         receiptsLoaded = true;
 
         renderSplitReceipts(lastBusinessReceipts, lastPersonalReceipts, client, userId);
+
+        const params = new URLSearchParams(window.location.search);
+        const highlightId = params.get('highlight');
+        if (highlightId) {
+            params.delete('highlight');
+            const nextQs = params.toString();
+            const nextUrl = `${window.location.pathname}${nextQs ? `?${nextQs}` : ''}${window.location.hash}`;
+            try { history.replaceState(null, '', nextUrl); } catch (_) {}
+
+            const bizCard = document.querySelector(`#receipts-grid-business [data-receipt-id="${CSS.escape(highlightId)}"], #receipts-grid-business [data-id="${CSS.escape(highlightId)}"]`)?.closest('.receipt-card, .biz-receipt-card, .item-card');
+            if (bizCard) {
+                if (typeof activateReceiptsTab === 'function') activateReceiptsTab('business');
+                setTimeout(() => pulseHighlight(bizCard), 120);
+            } else {
+                const persCard = document.querySelector(`#receipts-grid-personal [data-receipt-id="${CSS.escape(highlightId)}"], #receipts-grid-personal [data-id="${CSS.escape(highlightId)}"]`)?.closest('.receipt-card, .item-card');
+                if (persCard) {
+                    if (typeof activateReceiptsTab === 'function') activateReceiptsTab('personal');
+                    setTimeout(() => pulseHighlight(persCard), 120);
+                }
+            }
+        }
     } catch (e) {
         logError('receipts:load', e);
         const errLang = getLang();
@@ -1600,6 +1622,7 @@ function createUploadModal(client, userId) {
             if (typeof CustomSelect !== 'undefined') CustomSelect.refreshAll();
         }
         updateAmountSuffix();
+        populateItemSelect(userId, client).catch(() => {});
     }
 
     let isSubmitting = false;
@@ -1977,11 +2000,54 @@ function createUploadModal(client, userId) {
     return { open, setFile };
 }
 
-initReceipts().catch(e => {
-    logError('init:receipts', e);
-    const lang = getLang();
-    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
-    const msg = t.load_error || (lang === 'ru' ? 'Ошибка загрузки. Обновите страницу.' : 'Load error. Please refresh.');
-    const el = document.querySelector('.main-content');
-    if (el) el.innerHTML = `<p class="empty-state error">${msg}</p>`;
-});
+let receiptsInitPromise = null;
+let receiptsInitialized = false;
+
+export async function ensureReceiptsLoaded() {
+    if (receiptsInitialized) {
+        if (typeof receiptsTabsIndicator !== 'undefined' && receiptsTabsIndicator?.update) {
+            requestAnimationFrame(() => receiptsTabsIndicator.update(true));
+        }
+        return;
+    }
+    if (receiptsInitPromise) return receiptsInitPromise;
+    receiptsInitPromise = initReceipts()
+        .then(() => {
+            receiptsInitialized = true;
+        })
+        .catch((e) => {
+            receiptsInitPromise = null;
+            logError('init:receipts', e);
+            const lang = getLang();
+            const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+            const msg = t.load_error || (lang === 'ru' ? 'Ошибка загрузки. Обновите страницу.' : 'Load error. Please refresh.');
+            const errHtml = `<p class="empty-state error">${escapeHtml(msg)}</p>`;
+            const pGrid = document.getElementById('receipts-grid-personal');
+            const bGrid = document.getElementById('receipts-grid-business');
+            if (pGrid) pGrid.innerHTML = errHtml;
+            if (bGrid) bGrid.innerHTML = errHtml;
+        });
+    return receiptsInitPromise;
+}
+
+export async function highlightReceiptCard(receiptId) {
+    if (!receiptId) return;
+    await ensureReceiptsLoaded();
+    const idStr = String(receiptId);
+    const bizCard = document.querySelector(`#receipts-grid-business [data-receipt-id="${CSS.escape(idStr)}"], #receipts-grid-business [data-id="${CSS.escape(idStr)}"]`)?.closest('.receipt-card, .biz-receipt-card, .item-card');
+    if (bizCard) {
+        if (typeof activateReceiptsTab === 'function') activateReceiptsTab('business');
+        setTimeout(() => pulseHighlight(bizCard), 120);
+        return;
+    }
+    const persCard = document.querySelector(`#receipts-grid-personal [data-receipt-id="${CSS.escape(idStr)}"], #receipts-grid-personal [data-id="${CSS.escape(idStr)}"]`)?.closest('.receipt-card, .item-card');
+    if (persCard) {
+        if (typeof activateReceiptsTab === 'function') activateReceiptsTab('personal');
+        setTimeout(() => pulseHighlight(persCard), 120);
+    }
+}
+
+// Auto-run only if loaded on a standalone receipts page (not inside dashboard.html)
+if (!document.getElementById('view-receipts')) {
+    ensureReceiptsLoaded();
+}

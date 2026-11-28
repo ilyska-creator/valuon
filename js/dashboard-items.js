@@ -5,6 +5,7 @@ import { attachModalA11y } from './modal-a11y.js';
 import { calculateDaysLeft, isNoWarranty, parseLocalDate } from './warranty-utils.js';
 import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
+import { collapseAndRemove, haptic, pulseHighlight } from './ui-effects.js';
 
 let currentClient = null;
 let currentUserId = null;
@@ -91,6 +92,18 @@ async function initDashboardItems() {
     try { hasSavedItemsTab = Boolean(localStorage.getItem('valuon-items-tab')); } catch (_) {}
     if (!hasSavedItemsTab && lastVerifiedReceipts.length === 0 && lastMineItems.length > 0) {
         activateItemsTab('mine', { instant: false });
+    }
+    const urlParams = new URLSearchParams(window.location.search);
+    const highlightItemId = urlParams.get('highlight_item');
+    if (highlightItemId) {
+        urlParams.delete('highlight_item');
+        const nextQs = urlParams.toString();
+        try { history.replaceState(null, '', `${window.location.pathname}${nextQs ? `?${nextQs}` : ''}${window.location.hash}`); } catch (_) {}
+        activateItemsTab('mine', { instant: true });
+        setTimeout(() => {
+            const card = document.querySelector(`#items-grid-mine [data-id="${CSS.escape(highlightItemId)}"]`)?.closest('.item-card');
+            if (card) pulseHighlight(card);
+        }, 140);
     }
     window.addEventListener('phone-changed', () => {
         verifiedReceiptPdfCache.clear();
@@ -1389,8 +1402,14 @@ function setupDeleteItemModal(client, userId) {
                 .eq('user_id', userId);
             if (error) throw error;
 
+            haptic(10);
+            const deletedId = pendingDeleteItemId;
             showToast(t.msg_item_deleted || 'Item deleted', 'success');
             closeDeleteModal();
+            const deletedCard = document.querySelector(`#items-grid-mine [data-id="${CSS.escape(String(deletedId))}"]`)?.closest('.item-card');
+            if (deletedCard) {
+                await new Promise((resolve) => collapseAndRemove(deletedCard, resolve));
+            }
             await loadItems(userId, client);
             refreshNotifBadge();
 

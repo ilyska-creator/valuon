@@ -203,26 +203,15 @@ export function attachModalA11y(modal, { mode = 'active', onClose, beforeClose }
         contentEl.addEventListener('touchcancel', cancelTouch, { passive: true });
     }
 
-    // --- Keyboard adaptive collapse & auto scroll-centering on mobile ---
+    // --- Auto scroll-centering on mobile focus (without layout-shifting header collapse) ---
     modal.addEventListener('focusin', (e) => {
         if (window.innerWidth <= 768 && e.target && e.target.matches('input, select, textarea')) {
-            modal.classList.add('keyboard-active');
-            contentEl?.classList.add('keyboard-active');
             setTimeout(() => {
                 if (document.activeElement === e.target && isOpen()) {
                     e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }, 220);
         }
-    });
-
-    modal.addEventListener('focusout', () => {
-        setTimeout(() => {
-            if (!modal.contains(document.activeElement)) {
-                modal.classList.remove('keyboard-active');
-                contentEl?.classList.remove('keyboard-active');
-            }
-        }, 120);
     });
 
     const observer = new MutationObserver(() => {

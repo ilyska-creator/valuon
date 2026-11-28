@@ -18,6 +18,7 @@ import {
 } from './phone-utils.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
 import { parseLocalDate } from './warranty-utils.js';
+import { haptic, morphCopyButton } from './ui-effects.js';
 
 function toSafeIsoDate(raw) {
     if (!raw) return '';
@@ -1782,6 +1783,7 @@ async function initBusinessPanel() {
     }
 
     function showSuccessScreen(receiptData) {
+        haptic([12, 40, 18]);
         lastIssuedReceipt = receiptData;
         const t = bizT();
         const numEl = document.getElementById('receipt-success-number');
@@ -2054,13 +2056,12 @@ async function initBusinessPanel() {
         if (!url) return;
         try {
             await navigator.clipboard.writeText(url);
+            morphCopyButton(btn, 1800);
             const labelEl = document.getElementById('success-copy-url-label');
-            const iconEl = btn.querySelector('i');
             const originalText = labelEl ? labelEl.textContent : '';
             const t = bizT();
             const copiedText = t.success_link_copied || (bizLang() === 'en' ? 'Copied!' : 'Скопировано!');
             if (labelEl) labelEl.textContent = copiedText;
-            if (iconEl) iconEl.className = 'fa-solid fa-check';
             btn.classList.add('copied');
 
             if (typeof window.showToast === 'function') {
@@ -5655,17 +5656,13 @@ async function initBusinessPanel() {
                 const t = window.businessTranslations?.[currentLang] || window.businessTranslations?.ru || {};
                 try {
                     await navigator.clipboard.writeText(num);
-                    const iconEl = copyBtn.querySelector('i');
+                    morphCopyButton(copyBtn, 1800);
                     const textEl = copyBtn.querySelector('span');
                     const prevText = textEl?.textContent || '';
-                    copyBtn.classList.add('is-copied');
-                    if (iconEl) iconEl.className = 'fa-solid fa-check';
                     if (textEl) textEl.textContent = t.ledger_action_copied || (currentLang === 'en' ? 'Copied' : 'Скопировано');
                     const toastTpl = t.ledger_copied_toast || (currentLang === 'en' ? 'Receipt {num} copied' : 'Номер чека {num} скопирован');
                     window.showToast(toastTpl.replace('{num}', num), 'success');
                     setTimeout(() => {
-                        copyBtn.classList.remove('is-copied');
-                        if (iconEl) iconEl.className = 'fa-regular fa-copy';
                         if (textEl) textEl.textContent = prevText || t.ledger_action_copy || 'Копировать №';
                     }, 1800);
                 } catch (err) {

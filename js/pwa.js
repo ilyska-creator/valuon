@@ -170,11 +170,6 @@
             const link = e.target.closest?.('a[href]');
             if (link) prefetchLink(link);
         }, { passive: true });
-
-        document.addEventListener('touchstart', (e) => {
-            const link = e.target.closest?.('a[href]');
-            if (link) prefetchLink(link);
-        }, { passive: true });
     })();
 
     // Register Service Worker on HTTPS or localhost

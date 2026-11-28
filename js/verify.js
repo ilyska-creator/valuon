@@ -1,6 +1,7 @@
 import { supabase, SUPABASE_URL } from './supabase-client.js';
 import { logError } from './security.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
+import { morphCopyButton } from './ui-effects.js';
 
 const verifyTabsWrap = document.querySelector('.verify-tabs');
 const verifyTabIndicatorEl = document.getElementById('verify-tab-indicator');
@@ -946,6 +947,7 @@ copyBtn?.addEventListener('click', async () => {
     const text = lines.join('\n');
     try {
         await navigator.clipboard.writeText(text);
+        morphCopyButton(copyBtn, 2000);
         const span = copyBtn.querySelector('span') || copyBtn;
         const original = span.textContent;
         span.textContent = window.t('copied');

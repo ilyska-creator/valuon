@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const view = document.getElementById(targetId);
         if (view) {
             view.classList.add('active');
-            if (targetId === 'view-settings') {
+            if (targetId === 'view-settings' || targetId === 'view-receipts') {
                 requestAnimationFrame(() => {
                     view.querySelectorAll('[data-animate]').forEach(el => el.classList.add('is-visible'));
                 });

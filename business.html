@@ -1224,7 +1224,7 @@
             <i class="fa-solid fa-box-open"></i>
             <span data-i18n="nav_items">My Items</span>
         </a>
-        <a href="receipts.html" class="bottom-nav-item">
+        <a href="dashboard.html#view-receipts" class="bottom-nav-item">
             <i class="fa-solid fa-receipt"></i>
             <span data-i18n="nav_receipts">Receipts</span>
         </a>
@@ -1299,6 +1299,11 @@
             }
 
             themeBtn.addEventListener('click', () => {
+                if (typeof window.toggleValuonTheme === 'function') {
+                    window.toggleValuonTheme(themeBtn);
+                    updateIcon();
+                    return;
+                }
                 const currentTheme = document.documentElement.getAttribute('data-theme');
                 const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
@@ -1307,6 +1312,7 @@
                 updateIcon();
                 window.dispatchEvent(new CustomEvent('themeChange'));
             });
+            window.addEventListener('themeChange', updateIcon);
 
             updateIcon();
 

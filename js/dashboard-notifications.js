@@ -1,6 +1,7 @@
 import { requireAuth } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
 import { calculateDaysLeft, parseLocalDate } from './warranty-utils.js';
+import { collapseAndRemove, haptic, pulseHighlight, ringNotificationBell } from './ui-effects.js';
 
 function getNotifLang() {
     return (window.getValuonLang ? window.getValuonLang() : 'en');
@@ -237,8 +238,13 @@ function renderNotificationsList(container) {
             </div>`
         : '';
 
-    container.innerHTML = disabledBanner + cards.map(n => `
-        <div class="notification-card ${n.cardClass} ${n.isUnread ? 'is-unread' : 'is-read'}" data-notif-id="${escapeHtml(n.id)}">
+    container.innerHTML = disabledBanner + cards.map((n, idx) => {
+        const row = cachedNotifications[idx];
+        const eType = row?.entity_type || '';
+        const eId = row?.entity_id || '';
+        const rId = row?.payload?.receipt_id || (eType === 'business_receipt' ? eId : '');
+        return `
+        <div class="notification-card ${n.cardClass} ${n.isUnread ? 'is-unread' : 'is-read'}" data-notif-id="${escapeHtml(n.id)}" data-entity-type="${escapeHtml(eType)}" data-entity-id="${escapeHtml(eId)}" data-receipt-id="${escapeHtml(rId)}">
             <div class="notif-icon"><i class="fa-solid ${n.icon}"></i></div>
             <div class="notif-content">
                 <h4>${n.title}</h4>
@@ -250,7 +256,8 @@ function renderNotificationsList(container) {
                 <i class="fa-solid fa-xmark" aria-hidden="true"></i>
             </button>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 let notifActionsBound = false;
@@ -266,11 +273,17 @@ function bindNotificationActions(container) {
         if (dismissBtn) {
             e.stopPropagation();
             const id = dismissBtn.getAttribute('data-notif-dismiss');
+            const cardEl = dismissBtn.closest('.notification-card');
             if (!id) return;
+            haptic(8);
             const nowIso = new Date().toISOString();
             const prev = cachedNotifications;
             cachedNotifications = cachedNotifications.filter(n => n.id !== id);
-            renderNotificationsList(container);
+            updateNotifBadge(cachedNotifications.filter(n => !n.read_at).length);
+
+            collapseAndRemove(cardEl, () => {
+                renderNotificationsList(container);
+            });
 
             const { error } = await cachedClient
                 .from('notifications')
@@ -284,24 +297,57 @@ function bindNotificationActions(container) {
             return;
         }
 
-        const card = e.target.closest('.notification-card.is-unread[data-notif-id]');
+        const card = e.target.closest('.notification-card[data-notif-id]');
         if (card) {
             const id = card.getAttribute('data-notif-id');
-            if (!id) return;
-            const nowIso = new Date().toISOString();
-            const target = cachedNotifications.find(n => n.id === id);
-            if (!target || target.read_at) return;
-            target.read_at = nowIso;
-            renderNotificationsList(container);
+            const entityType = card.getAttribute('data-entity-type') || '';
+            const entityId = card.getAttribute('data-entity-id') || '';
+            const receiptId = card.getAttribute('data-receipt-id') || '';
 
-            const { error } = await cachedClient
-                .from('notifications')
-                .update({ read_at: nowIso })
-                .eq('id', id);
-            if (error) {
-                logError('notif:markRead', error);
-                target.read_at = null;
-                renderNotificationsList(container);
+            if (id) {
+                const target = cachedNotifications.find(n => n.id === id);
+                if (target && !target.read_at) {
+                    const nowIso = new Date().toISOString();
+                    target.read_at = nowIso;
+                    renderNotificationsList(container);
+                    cachedClient
+                        .from('notifications')
+                        .update({ read_at: nowIso })
+                        .eq('id', id)
+                        .then(({ error }) => {
+                            if (error) logError('notif:markRead', error);
+                        });
+                }
+            }
+
+            if ((entityType === 'business_receipt' || entityType === 'receipt_item') && receiptId) {
+                haptic(8);
+                const receiptsNav = document.querySelector('[data-view="receipts"]');
+                if (receiptsNav) {
+                    receiptsNav.click();
+                    import('./receipts.js?v=20261128a')
+                        .then((m) => m.highlightReceiptCard(receiptId))
+                        .catch((err) => logError('notif:openReceipt', err));
+                } else {
+                    window.location.href = `dashboard.html?highlight=${encodeURIComponent(receiptId)}#view-receipts`;
+                }
+                return;
+            }
+
+            if (entityType === 'item' && entityId) {
+                haptic(8);
+                const itemsNav = document.querySelector('[data-view="items"]');
+                if (itemsNav) {
+                    itemsNav.click();
+                    const mineTab = document.querySelector('[data-items-tab="mine"]');
+                    if (mineTab) mineTab.click();
+                    setTimeout(() => {
+                        const itemCard = document.querySelector(`#items-grid-mine .item-card[data-item-id="${CSS.escape(entityId)}"], #items-grid-mine [data-id="${CSS.escape(entityId)}"]`)?.closest('.item-card');
+                        if (itemCard) pulseHighlight(itemCard);
+                    }, 120);
+                } else {
+                    window.location.href = `dashboard.html?highlight_item=${encodeURIComponent(entityId)}`;
+                }
             }
         }
     });
@@ -439,8 +485,54 @@ const startsOnNotifView = window.location.hash === '#view-notifications'
     || window.__targetView === 'view-notifications'
     || sessionStorage.getItem('dashboard-view') === 'view-notifications';
 
+let realtimeNotifChannel = null;
+
+function subscribeRealtimeNotifications(userId, client) {
+    if (realtimeNotifChannel || !userId || !client?.channel) return;
+    realtimeNotifChannel = client
+        .channel(`notif-live-${userId}`)
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'notifications',
+                filter: `user_id=eq.${userId}`,
+            },
+            async (payload) => {
+                const row = payload?.new;
+                if (!row || row.dismissed_at) return;
+                if (row.type?.startsWith('warranty_') && !cachedExpiryAlertsEnabled) return;
+
+                haptic(12);
+                ringNotificationBell();
+
+                if (notifInitialized) {
+                    if (!cachedNotifications.some(n => n.id === row.id)) {
+                        cachedNotifications = [row, ...cachedNotifications].slice(0, 50);
+                        const container = document.getElementById('notifications-container');
+                        if (container) renderNotificationsList(container);
+                    }
+                } else {
+                    const count = await computeActiveAlertsCount(userId, client);
+                    updateNotifBadge(count);
+                }
+            }
+        )
+        .subscribe();
+
+    window.addEventListener('beforeunload', () => {
+        if (realtimeNotifChannel && client?.removeChannel) {
+            client.removeChannel(realtimeNotifChannel);
+            realtimeNotifChannel = null;
+        }
+    });
+}
+
 if (startsOnNotifView) {
-    ensureNotifLoaded();
+    ensureNotifLoaded().then(() => {
+        if (cachedUserId && cachedClient) subscribeRealtimeNotifications(cachedUserId, cachedClient);
+    });
 }
 
 window.addEventListener('lang-changed', () => {
@@ -469,8 +561,12 @@ if (!startsOnNotifView) {
         try {
             const auth = await requireAuth();
             if (!auth) return;
+            cachedUserId = auth.user.id;
+            cachedClient = auth.client;
+            cachedExpiryAlertsEnabled = await getExpiryAlertsEnabled(auth.user.id, auth.client);
             const count = await computeActiveAlertsCount(auth.user.id, auth.client);
             updateNotifBadge(count);
+            subscribeRealtimeNotifications(auth.user.id, auth.client);
         } catch (e) {
             logError('notif:badgeInit', e);
         }

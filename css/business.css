@@ -3923,10 +3923,12 @@
     flex-shrink: 0;
 }
 
-.terminals-widget:hover .terminals-widget-arrow {
-    opacity: 1;
-    transform: translateX(2px);
-    transition: transform 0.2s ease;
+@media (hover: hover) {
+    .terminals-widget:hover .terminals-widget-arrow {
+        opacity: 1;
+        transform: translateX(2px);
+        transition: transform 0.2s ease;
+    }
 }
 
 .modal-overlay.z-overlay {
