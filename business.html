@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="js/lang-detect.js"></script>
+    <script src="js/lang-detect.js?v=202611281623"></script>
     <title>Valuon — Business Panel</title>
     <meta name="description"
         content="Valuon — Seller dashboard for issuing cryptographically signed digital receipts.">
@@ -16,11 +16,11 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link rel="icon" type="image/png" href="assets/favicon.png">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/business.css?v=20261127b">
-    <link rel="stylesheet" href="css/toast.css">
-    <link rel="stylesheet" href="css/custom-select.css">
-    <link rel="stylesheet" href="css/custom-datepicker.css">
+    <link rel="stylesheet" href="css/style.css?v=202611281623">
+    <link rel="stylesheet" href="css/business.css?v=202611281623">
+    <link rel="stylesheet" href="css/toast.css?v=202611281623">
+    <link rel="stylesheet" href="css/custom-select.css?v=202611281623">
+    <link rel="stylesheet" href="css/custom-datepicker.css?v=202611281623">
     <script defer src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
@@ -988,6 +988,9 @@
                     <button type="button" id="open-import-catalog-btn" class="btn btn-outline is-hidden">
                         <i class="fa-solid fa-file-import"></i> <span data-i18n="import_catalog_short_btn">From receipts</span>
                     </button>
+                    <button type="button" id="open-file-import-catalog-btn" class="btn btn-outline">
+                        <i class="fa-solid fa-file-csv"></i> <span data-i18n="file_import_short_btn">CSV / Excel</span>
+                    </button>
                     <button type="button" id="add-product-btn" class="btn btn-primary w-full">
                         <i class="fa-solid fa-plus"></i> <span data-i18n="add_product_btn">Add Product</span>
                     </button>
@@ -1023,6 +1026,91 @@
                         data-i18n="cancel_btn">Cancel</button>
                     <button type="button" id="confirm-catalog-import" class="btn btn-primary" disabled>
                         <i class="fa-solid fa-check"></i> <span id="confirm-catalog-import-label" data-i18n="import_confirm_btn">Import selected</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="catalog-file-import-modal" class="modal-overlay is-hidden z-overlay" aria-hidden="true">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content max-w-lg catalog-modal-card">
+                <div class="modal-header">
+                    <div class="modal-heading">
+                        <span class="modal-heading-icon catalog-heading-icon"><i class="fa-solid fa-file-csv"></i></span>
+                        <div class="modal-heading-text">
+                            <h2 data-i18n="file_import_modal_title">Import Catalog from File</h2>
+                            <p data-i18n="file_import_modal_subtitle">Upload a CSV or Excel (.xlsx, .xls) spreadsheet</p>
+                        </div>
+                    </div>
+                    <button type="button" id="close-catalog-file-import" class="btn-close" aria-label="Close"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="cfi-body">
+                    <div class="cfi-template-bar">
+                        <span class="cfi-template-hint" data-i18n="file_import_columns_hint">Columns: Name, SKU, Price, VAT %, Warranty months, Category</span>
+                        <button type="button" id="catalog-download-template-btn" class="lifecycle-text-btn">
+                            <i class="fa-solid fa-download"></i> <span data-i18n="file_import_download_tpl">Download template</span>
+                        </button>
+                    </div>
+
+                    <input type="file" id="catalog-file-input" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden>
+                    <div id="catalog-file-dropzone" class="cfi-dropzone" role="button" tabindex="0">
+                        <i class="fa-solid fa-cloud-arrow-up cfi-dropzone-icon" aria-hidden="true"></i>
+                        <div class="cfi-dropzone-title" data-i18n="file_import_drop_title">Click to choose a file or drag &amp; drop</div>
+                        <div class="cfi-dropzone-sub" data-i18n="file_import_drop_sub">CSV, XLSX, XLS • up to 2,000 rows (max 5 MB)</div>
+                    </div>
+
+                    <div id="catalog-file-selected" class="cfi-file-chip is-hidden">
+                        <span class="cfi-file-chip-info">
+                            <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
+                            <span id="catalog-file-name"></span>
+                        </span>
+                        <button type="button" id="catalog-file-clear" class="catalog-icon-btn" aria-label="Clear file">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div id="catalog-file-error" class="cfi-error-banner is-hidden" role="alert"></div>
+
+                    <div id="catalog-file-summary" class="cfi-summary is-hidden"></div>
+
+                    <div id="catalog-file-dup-mode" class="cfi-dup-mode is-hidden">
+                        <label class="cfi-dup-option">
+                            <input type="radio" name="catalog-dup-mode" value="skip" checked>
+                            <span data-i18n="file_import_dup_skip">Skip duplicates</span>
+                        </label>
+                        <label class="cfi-dup-option">
+                            <input type="radio" name="catalog-dup-mode" value="update">
+                            <span data-i18n="file_import_dup_update">Update existing items</span>
+                        </label>
+                    </div>
+
+                    <div id="catalog-file-preview-wrap" class="cfi-preview-wrap is-hidden">
+                        <table class="cfi-preview-table">
+                            <thead>
+                                <tr>
+                                    <th data-i18n="file_import_col_name">Name</th>
+                                    <th class="cfi-th-num" data-i18n="file_import_col_price">Price</th>
+                                    <th class="cfi-th-num" data-i18n="file_import_col_vat">VAT</th>
+                                    <th class="cfi-th-num" data-i18n="file_import_col_warranty">Warranty</th>
+                                </tr>
+                            </thead>
+                            <tbody id="catalog-file-preview-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="catalog-file-errors-wrap" class="cfi-errors-wrap is-hidden">
+                        <div class="cfi-errors-title" data-i18n="file_import_errors_title">Skipped rows</div>
+                        <ul id="catalog-file-errors-list" class="cfi-errors-list"></ul>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cancel-catalog-file-import" class="btn btn-outline"
+                        data-i18n="cancel_btn">Cancel</button>
+                    <button type="button" id="confirm-catalog-file-import" class="btn btn-primary" disabled>
+                        <i class="fa-solid fa-check"></i> <span id="confirm-catalog-file-import-label" data-i18n="file_import_confirm">Import</span>
                     </button>
                 </div>
             </div>
@@ -1251,18 +1339,18 @@
 
     <div id="toast-container" class="toast-container"></div>
 
-    <script src="js/rotating-loader.js"></script>
-    <script src="js/toast.js"></script>
-    <script src="js/custom-select.js?v=20261127a"></script>
-    <script src="js/devices.js"></script>
-    <script src="js/countries.js"></script>
-    <script src="js/currencies.js"></script>
-    <script src="js/custom-datepicker.js"></script>
-    <script src="js/business-lang.js?v=20261126l"></script>
-    <script type="module" src="js/business-panel.js?v=20261127b"></script>
-    <script type="module" src="js/dashboard-notifications.js"></script>
-    <script src="js/theme.js"></script>
-    <script src="js/animations.js"></script>
+    <script src="js/rotating-loader.js?v=202611281623"></script>
+    <script src="js/toast.js?v=202611281623"></script>
+    <script src="js/custom-select.js?v=202611281623"></script>
+    <script src="js/devices.js?v=202611281623"></script>
+    <script src="js/countries.js?v=202611281623"></script>
+    <script src="js/currencies.js?v=202611281623"></script>
+    <script src="js/custom-datepicker.js?v=202611281623"></script>
+    <script src="js/business-lang.js?v=202611281623"></script>
+    <script type="module" src="js/business-panel.js?v=202611281623"></script>
+    <script type="module" src="js/dashboard-notifications.js?v=202611281623"></script>
+    <script src="js/theme.js?v=202611281623"></script>
+    <script src="js/animations.js?v=202611281623"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const el = document.getElementById('business-loader');
@@ -1328,11 +1416,11 @@
         });
     </script>
 
-    <script src="js/cookie-banner.js"></script>
+    <script src="js/cookie-banner.js?v=202611281623"></script>
     <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
-    <script defer src="js/pwa.js"></script>
+    <script defer src="js/pwa.js?v=202611281623"></script>
 </body>
 
 </html>

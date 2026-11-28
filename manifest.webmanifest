@@ -39,7 +39,13 @@
     {
       "name": "Receipts & Documents",
       "short_name": "Receipts",
-      "url": "/receipts",
+      "url": "/dashboard#view-receipts",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Business POS",
+      "short_name": "Business",
+      "url": "/business",
       "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
     },
     {

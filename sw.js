@@ -1,5 +1,5 @@
 // Valuon Service Worker — Stage 1 (App Shell + Static Cache + Offline Fallback + Web Push)
-const CACHE_VERSION = 'valuon-static-v7';
+const CACHE_VERSION = 'valuon-static-202611281623';
 const OFFLINE_URL = '/offline.html';
 
 // Public HTML routes safe to cache (normalized by pathname, never with query strings).
@@ -159,7 +159,7 @@ self.addEventListener('fetch', (event) => {
         if (isCodeAsset) {
             const cacheKey = url.pathname;
             event.respondWith(
-                fetch(req)
+                fetch(req, { cache: 'no-cache' })
                     .then((res) => {
                         if (res && res.ok && res.type === 'basic') {
                             const copy = res.clone();

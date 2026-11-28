@@ -194,6 +194,17 @@ async function initReceipts() {
     if (typeof window.applyDashboardLang === 'function') {
         window.applyDashboardLang(getLang());
     }
+
+    let liveReceiptsTimer = null;
+    const scheduleLiveReceiptsRefresh = () => {
+        if (!currentClient || !currentUserId) return;
+        clearTimeout(liveReceiptsTimer);
+        liveReceiptsTimer = setTimeout(() => {
+            loadAllReceipts(currentUserEmail, currentUserId, currentClient, { silent: true });
+        }, 250);
+    };
+    window.addEventListener('valuon:receipts-updated', scheduleLiveReceiptsRefresh);
+    window.addEventListener('phone-changed', scheduleLiveReceiptsRefresh);
 }
 
 const VALID_RECEIPTS_SORTS = new Set(['newest', 'oldest', 'price_desc', 'price_asc']);
@@ -615,7 +626,7 @@ async function attachFreshSignedUrls(receipts, client) {
     });
 }
 
-async function loadAllReceipts(userEmail, userId, client) {
+async function loadAllReceipts(userEmail, userId, client, { silent = false } = {}) {
     // Шапка и вкладки статичны (как на "Мои вещи") и никогда не пересобираются,
     // а значит вкладки кликабельны и во время загрузки. Поэтому лоадер ставим
     // в обе сетки сразу — иначе клик по неактивной вкладке во время загрузки
@@ -624,21 +635,23 @@ async function loadAllReceipts(userEmail, userId, client) {
     const businessGrid = document.getElementById('receipts-grid-business');
     if (!personalGrid || !businessGrid) return;
 
-    const lang = getLang();
-    const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
-    const phrases = [
-        t.loading_receipts || 'Загружаем чеки…',
-        t.loading_signatures || 'Проверяем подписи…',
-        t.loading_items_update || 'Обновляем статусы…'
-    ];
+    if (!silent) {
+        const lang = getLang();
+        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+        const phrases = [
+            t.loading_receipts || 'Загружаем чеки…',
+            t.loading_signatures || 'Проверяем подписи…',
+            t.loading_items_update || 'Обновляем статусы…'
+        ];
 
-    [personalGrid, businessGrid].forEach(grid => {
-        grid.innerHTML = '<div class="rotating-loader"></div>';
-        const loaderEl = grid.querySelector('.rotating-loader');
-        if (loaderEl && typeof RotatingTextLoader !== 'undefined') {
-            new RotatingTextLoader(loaderEl, phrases, { interval: 800 });
-        }
-    });
+        [personalGrid, businessGrid].forEach(grid => {
+            grid.innerHTML = '<div class="rotating-loader"></div>';
+            const loaderEl = grid.querySelector('.rotating-loader');
+            if (loaderEl && typeof RotatingTextLoader !== 'undefined') {
+                new RotatingTextLoader(loaderEl, phrases, { interval: 800 });
+            }
+        });
+    }
 
     try {
         const userPhone = await fetchCurrentUserPhone(client, userId);

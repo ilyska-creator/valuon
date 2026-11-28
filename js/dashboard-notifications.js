@@ -718,6 +718,11 @@ function subscribeRealtimeNotifications(userId, client) {
                     const count = await computeActiveAlertsCount(userId, client);
                     updateNotifBadge(count);
                 }
+
+                // Live-sync verified items, warranty stats, and receipts on issue/refund/void
+                if (typeof row.type === 'string' && row.type.startsWith('receipt_')) {
+                    window.dispatchEvent(new CustomEvent('valuon:receipts-updated', { detail: row }));
+                }
             }
         )
         .subscribe();

@@ -779,7 +779,6 @@ async function initBusinessPanel() {
     let issuingClose = false;
     let guardVisible = false;
     let baselineDate = '';
-    let baselinePosTerminalId = '';
     let lastIssuedReceipt = null;
     let customerHistory = null;
     let customerHistoryPromise = null;
@@ -1001,7 +1000,6 @@ async function initBusinessPanel() {
         if (d.email) return true;
         if (d.phone_local) return true;
         if (d.payment && d.payment !== 'card') return true;
-        if (d.pos_terminal_id) return true;
         const refDate = baselineDate || defaultDateString();
         if (d.purchase_date && d.purchase_date !== refDate) return true;
         if (Array.isArray(d.items)) {
@@ -2131,6 +2129,7 @@ async function initBusinessPanel() {
                     clearDraft();
                     clearAllValidationState();
                     forms.receipt?.reset();
+                    renderPosSelect();
                     resetItemRows();
                     if (phoneInput) phoneInput.value = '';
                     ensureBizPhoneSelect(getDefaultBizCountry());
@@ -2380,9 +2379,16 @@ async function initBusinessPanel() {
         if (!posSelect) return;
         const t = bizT();
         const active = currentTerminals.filter((term) => term.is_active);
-        const targetValue = preferredId !== undefined
-            ? String(preferredId || '')
-            : (posSelect.value || getSavedPosTerminalId());
+        const savedId = getSavedPosTerminalId();
+        let targetValue;
+        if (preferredId !== undefined) {
+            targetValue = String(preferredId || '');
+        } else {
+            const currentVal = posSelect.value;
+            targetValue = (currentVal && active.some((term) => String(term.id) === currentVal))
+                ? currentVal
+                : savedId;
+        }
         posSelect.innerHTML = '';
 
         if (active.length === 0) {
@@ -3326,6 +3332,30 @@ async function initBusinessPanel() {
 
     importCatalogBtn?.addEventListener('click', openCatalogImportModal);
     document.getElementById('open-import-catalog-btn')?.addEventListener('click', openCatalogImportModal);
+    document.getElementById('open-file-import-catalog-btn')?.addEventListener('click', async () => {
+        if (!currentShop || !currentClient) return;
+        try {
+            const { openCatalogFileImportModal } = await import('./catalog-import.js');
+            openCatalogFileImportModal({
+                getShop: () => currentShop,
+                getClient: () => currentClient,
+                getProducts: () => currentShopProducts,
+                getLang: bizLang,
+                getT: bizT,
+                fmtMoney,
+                onImported: ({ insertedRows = [], updatedMap = new Map() }) => {
+                    const updated = currentShopProducts.map((p) => updatedMap.get(p.id) || p);
+                    currentShopProducts = [...updated, ...insertedRows]
+                        .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+                    renderCatalogWidget();
+                    renderCatalogList();
+                },
+            });
+        } catch (err) {
+            logError('biz:loadCatalogFileImport', err);
+            window.showToast(bizLang() === 'en' ? 'Failed to open file importer' : 'Не удалось открыть импорт из файла', 'error');
+        }
+    });
     document.getElementById('close-catalog-import')?.addEventListener('click', closeCatalogImportModal);
     document.getElementById('cancel-catalog-import')?.addEventListener('click', closeCatalogImportModal);
     catalogImportModal?.addEventListener('click', (e) => {
@@ -4460,8 +4490,7 @@ async function initBusinessPanel() {
             }
             if (dateInput) baselineDate = dateInput.value;
 
-            renderPosSelect(draft?.pos_terminal_id ?? '');
-            baselinePosTerminalId = posSelect?.value || '';
+            renderPosSelect(draft ? (draft.pos_terminal_id ?? '') : undefined);
 
             if (typeof CustomSelect !== 'undefined') {
                 const pay = modal.el.querySelector('[name="payment_method"]');

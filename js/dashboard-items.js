@@ -109,6 +109,14 @@ async function initDashboardItems() {
         verifiedReceiptPdfCache.clear();
         loadVerifiedItems(auth.user.email, auth.client);
     });
+    let liveReceiptsRefreshTimer = null;
+    window.addEventListener('valuon:receipts-updated', () => {
+        clearTimeout(liveReceiptsRefreshTimer);
+        liveReceiptsRefreshTimer = setTimeout(() => {
+            verifiedReceiptPdfCache.clear();
+            loadVerifiedItems(auth.user.email, auth.client, { silent: true });
+        }, 250);
+    });
     setupModal(auth.client, auth.user.id);
     setupEditModal(auth.client, auth.user.id);
     setupDeleteItemModal(auth.client, auth.user.id);
@@ -895,22 +903,24 @@ function renderVerifiedItems(receipts, t, opts = {}) {
 
 let loadVerifiedItemsSeq = 0;
 
-async function loadVerifiedItems(userEmail, client) {
+async function loadVerifiedItems(userEmail, client, { silent = false } = {}) {
     const grid = document.querySelector('#items-grid-verified');
     if (!grid) return;
 
     const seq = ++loadVerifiedItemsSeq;
 
-    grid.innerHTML = '<div class="rotating-loader"></div>';
-    const loaderEl = grid.querySelector('.rotating-loader');
-    if (loaderEl && typeof RotatingTextLoader !== 'undefined') {
-        const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
-        const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
-        new RotatingTextLoader(loaderEl, [
-            t.loading_items || 'Загружаем покупки…',
-            t.loading_items_check || 'Проверяем данные…',
-            t.loading_items_update || 'Обновляем статусы…'
-        ], { interval: 800 });
+    if (!silent) {
+        grid.innerHTML = '<div class="rotating-loader"></div>';
+        const loaderEl = grid.querySelector('.rotating-loader');
+        if (loaderEl && typeof RotatingTextLoader !== 'undefined') {
+            const lang = (window.getValuonLang ? window.getValuonLang() : 'en');
+            const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
+            new RotatingTextLoader(loaderEl, [
+                t.loading_items || 'Загружаем покупки…',
+                t.loading_items_check || 'Проверяем данные…',
+                t.loading_items_update || 'Обновляем статусы…'
+            ], { interval: 800 });
+        }
     }
 
     const userPhone = await fetchCurrentUserPhone(client, currentUserId);

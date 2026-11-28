@@ -114,3 +114,24 @@ export function ringNotificationBell() {
         setTimeout(() => icon.classList.remove('bell-ring'), 700);
     });
 }
+
+
+// Auto-select numeric inputs on focus so typing replaces 0 / 1 immediately without manual backspace
+if (typeof document !== 'undefined' && !window.__valuonNumAutoSelectBound) {
+    window.__valuonNumAutoSelectBound = true;
+    document.addEventListener('focusin', (e) => {
+        const el = e.target;
+        if (!(el instanceof HTMLInputElement) || el.type !== 'number') return;
+        if (el.readOnly || el.disabled || !el.value.trim()) return;
+        requestAnimationFrame(() => {
+            if (document.activeElement === el) {
+                try { el.select(); } catch (_) {}
+            }
+        });
+        const onMouseUp = (mu) => {
+            mu.preventDefault();
+        };
+        el.addEventListener('mouseup', onMouseUp, { once: true });
+        setTimeout(() => el.removeEventListener('mouseup', onMouseUp), 300);
+    });
+}
