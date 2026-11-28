@@ -15,7 +15,7 @@ html {
 .bottom-nav {
     display: none;
     position: fixed;
-    bottom: 16px;
+    bottom: max(12px, env(safe-area-inset-bottom, 0px));
     left: 12px;
     right: 12px;
     z-index: var(--z-bottom-nav);
@@ -31,6 +31,42 @@ html {
         0 0 0 1px rgba(0, 0, 0, 0.03) inset;
     will-change: transform;
     clip-path: inset(0 round 28px);
+}
+
+.bottom-nav-indicator {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: 0;
+    border-radius: 22px;
+    background: rgba(59, 130, 246, 0.14);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+    transition:
+        transform 0.34s cubic-bezier(0.34, 1.35, 0.64, 1),
+        width 0.34s cubic-bezier(0.34, 1.35, 0.64, 1),
+        opacity 0.18s ease;
+    will-change: transform, width;
+}
+
+[data-theme="dark"] .bottom-nav-indicator {
+    background: rgba(59, 130, 246, 0.22);
+}
+
+.bottom-nav-indicator.is-ready {
+    opacity: 1;
+}
+
+.bottom-nav-indicator.no-transition {
+    transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bottom-nav-indicator {
+        transition: opacity 0.12s ease !important;
+    }
 }
 
 [data-theme="light"] .bottom-nav,
@@ -49,6 +85,8 @@ html {
 }
 
 .bottom-nav-item {
+    position: relative;
+    z-index: 1;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -68,7 +106,11 @@ html {
 .bottom-nav-item i {
     font-size: 20px;
     line-height: 1;
-    transition: color 0.2s;
+    transition: color 0.2s, transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bottom-nav-item:active i {
+    transform: scale(0.9);
 }
 
 .bottom-nav-item span {
@@ -175,12 +217,45 @@ html {
 }
 
 .sidebar-nav {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
     flex-grow: 1;
     overflow-y: auto;
     padding-right: 2px;
+}
+
+.sidebar-nav-indicator {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 3px;
+    height: 20px;
+    border-radius: 0 3px 3px 0;
+    background: var(--primary);
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+    transition:
+        transform 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.16s ease;
+    will-change: transform;
+}
+
+.sidebar-nav-indicator.is-ready {
+    opacity: 1;
+}
+
+.sidebar-nav-indicator.no-transition {
+    transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sidebar-nav-indicator {
+        transition: opacity 0.12s ease !important;
+    }
 }
 
 .nav-item {
@@ -234,18 +309,6 @@ html {
 
 .nav-item.active > i:first-child {
     opacity: 1;
-}
-
-.sidebar-nav .nav-item.active::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 20px;
-    border-radius: 0 3px 3px 0;
-    background: var(--primary);
 }
 
 .nav-ext-icon {

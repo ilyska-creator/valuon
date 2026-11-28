@@ -1,8 +1,57 @@
 document.addEventListener('DOMContentLoaded', () => {
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    const sidebarIndicator = document.querySelector('.sidebar-nav-indicator');
+    const bottomNav = document.querySelector('.bottom-nav');
+    const bottomIndicator = document.querySelector('.bottom-nav-indicator');
     const sidebarLinks = document.querySelectorAll('.sidebar-nav .nav-item[data-view]');
     const bottomLinks = document.querySelectorAll('.bottom-nav-item[data-view]');
     const views = document.querySelectorAll('.dashboard-view');
+
+    function updateSidebarIndicator(instant = false) {
+        if (!sidebarIndicator || !sidebarNav) return;
+        const activeLink = sidebarNav.querySelector('.nav-item.active');
+        if (!activeLink || sidebarNav.offsetHeight === 0) {
+            sidebarIndicator.classList.remove('is-ready');
+            return;
+        }
+        const indHeight = sidebarIndicator.offsetHeight || 20;
+        const y = Math.round(activeLink.offsetTop + (activeLink.offsetHeight - indHeight) / 2);
+        const shouldInstant = instant || !sidebarIndicator.classList.contains('is-ready');
+        if (shouldInstant) sidebarIndicator.classList.add('no-transition');
+        sidebarIndicator.style.transform = `translate3d(0, ${y}px, 0)`;
+        sidebarIndicator.classList.add('is-ready');
+        if (shouldInstant) {
+            void sidebarIndicator.offsetHeight;
+            sidebarIndicator.classList.remove('no-transition');
+        }
+    }
+
+    function updateBottomIndicator(instant = false) {
+        if (!bottomIndicator || !bottomNav) return;
+        const activeLink = bottomNav.querySelector('.bottom-nav-item.active');
+        if (!activeLink || bottomNav.offsetWidth === 0) {
+            bottomIndicator.classList.remove('is-ready');
+            return;
+        }
+        const inset = 4;
+        const x = Math.round(activeLink.offsetLeft + inset);
+        const w = Math.max(0, Math.round(activeLink.offsetWidth - inset * 2));
+        const shouldInstant = instant || !bottomIndicator.classList.contains('is-ready');
+        if (shouldInstant) bottomIndicator.classList.add('no-transition');
+        bottomIndicator.style.width = `${w}px`;
+        bottomIndicator.style.transform = `translate3d(${x}px, 0, 0)`;
+        bottomIndicator.classList.add('is-ready');
+        if (shouldInstant) {
+            void bottomIndicator.offsetWidth;
+            bottomIndicator.classList.remove('no-transition');
+        }
+    }
+
+    function syncIndicators(instant = false) {
+        updateSidebarIndicator(instant);
+        updateBottomIndicator(instant);
+    }
 
     function isDashboardView(id) {
         if (!id) return false;
@@ -10,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return Boolean(el && el.classList.contains('dashboard-view'));
     }
 
-    function activateView(targetId) {
+    function activateView(targetId, { instant = false } = {}) {
         if (!isDashboardView(targetId)) return;
 
         sidebarLinks.forEach(l => l.classList.remove('active'));
@@ -24,6 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const bottomLink = document.querySelector(`.bottom-nav-item[href="#${targetId}"]`);
         if (bottomLink) bottomLink.classList.add('active');
 
+        syncIndicators(instant);
+
         const view = document.getElementById(targetId);
         if (view) {
             view.classList.add('active');
@@ -36,11 +87,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleNavClick(e, link) {
+    function handleNavClick(e, link, { isBottom = false } = {}) {
         e.preventDefault();
 
         const targetId = link.getAttribute('href').replace('#', '');
         if (!isDashboardView(targetId)) return;
+        if (isBottom && typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+            try { navigator.vibrate(8); } catch (_) {}
+        }
         activateView(targetId);
         sessionStorage.setItem('dashboard-view', targetId);
         if (window.location.hash !== '#' + targetId) {
@@ -55,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     bottomLinks.forEach(link => {
-        link.addEventListener('click', (e) => handleNavClick(e, link));
+        link.addEventListener('click', (e) => handleNavClick(e, link, { isBottom: true }));
     });
 
     window.addEventListener('popstate', () => {
@@ -69,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetView = sessionStorage.getItem('dashboard-view');
     const hash = window.__targetView || window.location.hash.replace('#', '') || targetView;
     if (isDashboardView(hash)) {
-        activateView(hash);
+        activateView(hash, { instant: true });
         sessionStorage.setItem('dashboard-view', hash);
         if (window.location.hash !== '#' + hash) {
             history.replaceState(null, '', '#' + hash);
@@ -79,6 +133,15 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('load', () => {
             window.scrollTo({ top: 0, behavior: 'instant' });
         }, { once: true });
+    }
+
+    requestAnimationFrame(() => syncIndicators(true));
+    window.addEventListener('resize', () => syncIndicators(true));
+    window.addEventListener('orientationchange', () => setTimeout(() => syncIndicators(true), 80));
+    if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(() => syncIndicators(true));
+        if (sidebarNav) ro.observe(sidebarNav);
+        if (bottomNav) ro.observe(bottomNav);
     }
 
     // Sidebar profile mini-menu popover
