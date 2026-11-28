@@ -363,11 +363,172 @@ async function initSettings() {
 
     const toggleExpiry = document.getElementById('toggle-expiry');
     const toggleDigest = document.getElementById('toggle-digest');
+    const togglePush = document.getElementById('toggle-push');
+    const togglePushDesc = document.getElementById('toggle-push-desc');
+    const pushRow = document.getElementById('setting-row-push');
 
     if (toggleExpiry) {
         toggleExpiry.addEventListener('change', async (e) => {
             const ok = await saveToggle('expiry_alerts', e.target.checked, toggleExpiry);
             if (ok) await refreshNotifBadge();
+        });
+    }
+
+    if (togglePush) {
+        const VAPID_PUBLIC_KEY = 'BM8PQ-efLG9aF1Aed640ahohayqvpbTy2aF6gd21Ao0cUmHhTn3PFNr1cfZBZQVt8LLsbQNbaRs6PiaD05YuDk4';
+
+        const urlBase64ToUint8Array = (base64String) => {
+            const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = atob(base64);
+            const output = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; i++) output[i] = rawData.charCodeAt(i);
+            return output;
+        };
+
+        const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+        const isStandalone = window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
+        const pushSupported = ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
+
+        const setPushDescKey = (key, fallback) => {
+            if (!togglePushDesc) return;
+            togglePushDesc.setAttribute('data-i18n', key);
+            const t = getSettingsT();
+            togglePushDesc.textContent = t[key] || fallback;
+        };
+
+        const initPushState = async () => {
+            if (isIos && !isStandalone) {
+                togglePush.checked = false;
+                togglePush.disabled = true;
+                pushRow?.classList.add('is-disabled');
+                setPushDescKey('setting_push_ios_hint', 'Add Valuon to Home Screen to enable push notifications');
+                return;
+            }
+            if (!pushSupported) {
+                togglePush.checked = false;
+                togglePush.disabled = true;
+                pushRow?.classList.add('is-disabled');
+                setPushDescKey('setting_push_unsupported', 'This browser does not support push notifications');
+                return;
+            }
+            if (Notification.permission === 'denied') {
+                togglePush.checked = false;
+                togglePush.disabled = true;
+                pushRow?.classList.add('is-disabled');
+                setPushDescKey('setting_push_denied', 'Notifications are blocked in browser settings');
+                return;
+            }
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                const sub = await reg.pushManager.getSubscription();
+                togglePush.checked = Boolean(sub);
+                if (sub) {
+                    const lang = getSettingsLang();
+                    await client
+                        .from('push_subscriptions')
+                        .update({ lang, updated_at: new Date().toISOString() })
+                        .eq('endpoint', sub.endpoint)
+                        .eq('user_id', user.id);
+                }
+            } catch (err) {
+                logError('settings:pushInit', err);
+            }
+        };
+
+        initPushState();
+
+        togglePush.addEventListener('change', async () => {
+            const wantEnable = togglePush.checked;
+            const t = getSettingsT();
+            togglePush.disabled = true;
+
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                if (wantEnable) {
+                    const permission = Notification.permission === 'granted'
+                        ? 'granted'
+                        : await Notification.requestPermission();
+
+                    if (permission !== 'granted') {
+                        togglePush.checked = false;
+                        if (permission === 'denied') {
+                            pushRow?.classList.add('is-disabled');
+                            setPushDescKey('setting_push_denied', 'Notifications are blocked in browser settings');
+                            return;
+                        }
+                        return;
+                    }
+
+                    let sub = await reg.pushManager.getSubscription();
+                    if (!sub) {
+                        sub = await reg.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+                        });
+                    }
+
+                    const json = sub.toJSON();
+                    const p256dh = json?.keys?.p256dh || '';
+                    const authKey = json?.keys?.auth || '';
+                    if (!sub.endpoint || !p256dh || !authKey) {
+                        throw new Error('Incomplete push subscription');
+                    }
+
+                    const { error: saveErr } = await client
+                        .from('push_subscriptions')
+                        .upsert({
+                            user_id: user.id,
+                            endpoint: sub.endpoint,
+                            p256dh,
+                            auth: authKey,
+                            lang: getSettingsLang(),
+                            user_agent: (navigator.userAgent || '').slice(0, 250),
+                            updated_at: new Date().toISOString(),
+                        }, { onConflict: 'endpoint' });
+
+                    if (saveErr) throw saveErr;
+
+                    showToast(t.msg_push_enabled || 'Push notifications enabled', 'success');
+                    // Fire a welcome confirmation push in background
+                    client.functions.invoke('send-push', { body: { test: true } }).catch(() => {});
+                } else {
+                    const sub = await reg.pushManager.getSubscription();
+                    if (sub) {
+                        const endpoint = sub.endpoint;
+                        await sub.unsubscribe().catch(() => {});
+                        await client
+                            .from('push_subscriptions')
+                            .delete()
+                            .eq('endpoint', endpoint)
+                            .eq('user_id', user.id);
+                    }
+                    showToast(t.msg_push_disabled || 'Push notifications disabled', 'info');
+                }
+            } catch (err) {
+                logError('settings:pushToggle', err);
+                togglePush.checked = !wantEnable;
+                showToast(t.msg_push_error || 'Failed to configure push notifications', 'error');
+            } finally {
+                if (Notification.permission !== 'denied' && !(isIos && !isStandalone) && pushSupported) {
+                    togglePush.disabled = false;
+                }
+            }
+        });
+
+        window.addEventListener('lang-changed', async () => {
+            if (!togglePush.checked || !pushSupported) return;
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                const sub = await reg.pushManager.getSubscription();
+                if (sub) {
+                    await client
+                        .from('push_subscriptions')
+                        .update({ lang: getSettingsLang(), updated_at: new Date().toISOString() })
+                        .eq('endpoint', sub.endpoint)
+                        .eq('user_id', user.id);
+                }
+            } catch (_) {}
         });
     }
 

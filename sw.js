@@ -1,5 +1,5 @@
-// Valuon Service Worker — Stage 1 (App Shell + Static Cache + Offline Fallback)
-const CACHE_VERSION = 'valuon-static-v6';
+// Valuon Service Worker — Stage 1 (App Shell + Static Cache + Offline Fallback + Web Push)
+const CACHE_VERSION = 'valuon-static-v7';
 const OFFLINE_URL = '/offline.html';
 
 // Public HTML routes safe to cache (normalized by pathname, never with query strings).
@@ -67,6 +67,44 @@ self.addEventListener('message', (event) => {
             caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
         );
     }
+});
+
+self.addEventListener('push', (event) => {
+    let data = {};
+    try {
+        data = event.data ? event.data.json() : {};
+    } catch (_) {
+        data = { title: 'Valuon', body: event.data ? event.data.text() : '' };
+    }
+    const title = data.title || 'Valuon';
+    const options = {
+        body: data.body || '',
+        icon: '/assets/icons/icon-192.png',
+        badge: '/assets/icons/icon-192.png',
+        tag: data.tag || 'valuon-notification',
+        data: { url: data.url || '/dashboard#view-notifications' },
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const targetPath = event.notification?.data?.url || '/dashboard#view-notifications';
+    const targetUrl = new URL(targetPath, self.location.origin).href;
+
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            for (const client of clientList) {
+                if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+                    client.navigate(targetUrl).catch(() => {});
+                    return client.focus();
+                }
+            }
+            if (self.clients.openWindow) {
+                return self.clients.openWindow(targetUrl);
+            }
+        })
+    );
 });
 
 function isCacheableStaticAsset(url) {
