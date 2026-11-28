@@ -87,14 +87,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleNavClick(e, link, { isBottom = false } = {}) {
+    function handleNavClick(e, link) {
         e.preventDefault();
 
         const targetId = link.getAttribute('href').replace('#', '');
         if (!isDashboardView(targetId)) return;
-        if (isBottom && typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
-            try { navigator.vibrate(8); } catch (_) {}
-        }
         activateView(targetId);
         sessionStorage.setItem('dashboard-view', targetId);
         if (window.location.hash !== '#' + targetId) {
@@ -109,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     bottomLinks.forEach(link => {
-        link.addEventListener('click', (e) => handleNavClick(e, link, { isBottom: true }));
+        link.addEventListener('click', (e) => handleNavClick(e, link));
     });
 
     window.addEventListener('popstate', () => {

@@ -6,13 +6,54 @@ function prefersReducedMotion() {
         && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+let iosHapticLabel = null;
+
+function isIosTouchDevice() {
+    if (typeof navigator === 'undefined') return false;
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent || '')
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function triggerIosTaptic() {
+    if (typeof document === 'undefined' || !document.body) return;
+    if (!iosHapticLabel) {
+        const label = document.createElement('label');
+        label.setAttribute('aria-hidden', 'true');
+        label.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.setAttribute('switch', '');
+        input.tabIndex = -1;
+        label.appendChild(input);
+        document.body.appendChild(label);
+        iosHapticLabel = label;
+    }
+    iosHapticLabel.click();
+}
+
 export function haptic(pattern = 12) {
     if (prefersReducedMotion()) return;
     try {
         if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
             navigator.vibrate(pattern);
+            return;
+        }
+        if (isIosTouchDevice()) {
+            triggerIosTaptic();
         }
     } catch (_) { /* ignore unsupported environments */ }
+}
+
+if (typeof window !== 'undefined') {
+    window.valuonHaptic = haptic;
+    if (!window.__valuonNavHapticBound) {
+        window.__valuonNavHapticBound = true;
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.closest && e.target.closest('.bottom-nav-item')) {
+                haptic(8);
+            }
+        }, true);
+    }
 }
 
 export function animateCount(el, toValue, { duration = 350, format = (v) => String(Math.round(v)) } = {}) {
