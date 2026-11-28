@@ -4680,15 +4680,37 @@ async function initBusinessPanel() {
                 // happen server-side (Edge Function issue-receipt): the shop's
                 // private key is read only inside that function, by a service_role
                 // client, and never touches the browser.
-                const { data: issued, error: issueError } = await client.functions.invoke('issue-receipt', {
+                let { data: issued, error: issueError } = await client.functions.invoke('issue-receipt', {
                     body: invokeBody,
                 });
 
+                // On 401 (stale/expired access token), refresh session once and retry
+                if (issueError && issueError.context?.status === 401) {
+                    try {
+                        const { data: refreshed } = await client.auth.refreshSession();
+                        if (refreshed?.session) {
+                            ({ data: issued, error: issueError } = await client.functions.invoke('issue-receipt', {
+                                body: invokeBody,
+                            }));
+                        }
+                    } catch (_) { /* refresh failed — fall through to error handler */ }
+                }
+
                 if (issueError || !issued?.id) {
+                    const isUnauth = issueError?.context?.status === 401;
                     let code = null;
                     try { code = (await issueError.context.json())?.error; } catch (_) { /* no body */ }
                     const errLang = (window.getValuonLang ? window.getValuonLang() : 'en');
-                    window.showToast(errLang === 'en' ? 'Receipt issue error' : 'Ошибка выписки чека', 'error');
+                    if (isUnauth || code === 'unauthorized') {
+                        window.showToast(
+                            errLang === 'en'
+                                ? 'Session expired — please sign in again'
+                                : 'Сессия истекла — войдите заново',
+                            'error'
+                        );
+                    } else {
+                        window.showToast(errLang === 'en' ? 'Receipt issue error' : 'Ошибка выписки чека', 'error');
+                    }
                     logError('biz:issueReceipt', issueError || code);
                     return;
                 }

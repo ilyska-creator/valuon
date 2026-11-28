@@ -36,10 +36,9 @@ export function setupLogout(currentClient) {
             isExplicitLogout = true;
             const clientToSignOut = currentClient || supabase;
             try {
-                await clientToSignOut.auth.signOut();
+                await clientToSignOut.auth.signOut({ scope: 'local' });
             } catch (err) {
                 logError('auth:logout', err);
-                await clientToSignOut.auth.signOut({ scope: 'local' }).catch(() => {});
             } finally {
                 localStorage.removeItem('valuon-remember-email');
                 localStorage.removeItem('valuon-remember-login');
