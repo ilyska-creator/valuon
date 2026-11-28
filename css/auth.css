@@ -1660,3 +1660,69 @@ html.modal-open:has(.auth-body) {
     background: rgba(59, 130, 246, 0.12);
     border-color: rgba(59, 130, 246, 0.28);
 }
+
+/* --- Google OAuth Button & Divider --- */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0.9rem 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: lowercase;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.btn-google-oauth {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    padding: 0.82rem 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-main);
+    font-size: 0.94rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.14s ease, box-shadow 0.16s ease;
+}
+
+.btn-google-oauth:hover:not(:disabled) {
+    background: rgba(15, 23, 42, 0.04);
+    border-color: rgba(148, 163, 184, 0.45);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="dark"] .btn-google-oauth {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+[data-theme="dark"] .btn-google-oauth:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.24);
+}
+
+.btn-google-oauth:active:not(:disabled) {
+    transform: scale(0.985);
+}
+
+.btn-google-oauth:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.google-oauth-icon {
+    flex-shrink: 0;
+}

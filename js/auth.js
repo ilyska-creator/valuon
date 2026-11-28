@@ -551,4 +551,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
+
+    const googleOAuthBtn = document.getElementById('google-oauth-btn');
+    if (googleOAuthBtn) {
+        googleOAuthBtn.addEventListener('click', async () => {
+            if (googleOAuthBtn.disabled) return;
+            const origHtml = googleOAuthBtn.innerHTML;
+            googleOAuthBtn.disabled = true;
+            googleOAuthBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            try {
+                setSessionOnly(false);
+                const redirectTo = new URL(getSafeRedirectTarget(), window.location.href).href;
+                const { error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { redirectTo },
+                });
+                if (error) throw error;
+            } catch (err) {
+                logError('auth:googleOAuth', err);
+                const isRu = (window.getValuonLang ? window.getValuonLang() : 'en') === 'ru';
+                showToast(
+                    isRu ? 'Не удалось войти через Google. Попробуйте ещё раз.' : 'Google sign-in failed. Please try again.',
+                    'error'
+                );
+                googleOAuthBtn.disabled = false;
+                googleOAuthBtn.innerHTML = origHtml;
+            }
+        });
+    }
 });

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="js/lang-detect.js?v=202611281718"></script>
+    <script src="js/lang-detect.js?v=202611281827"></script>
     <title>Valuon — Sign In</title>
     <meta name="description"
         content="Sign in to your Valuon account to manage digital receipts and warranties.">
@@ -14,10 +14,10 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link rel="icon" type="image/png" href="assets/favicon.png">
-    <link rel="stylesheet" href="css/style.css?v=202611281718">
-    <link rel="stylesheet" href="css/auth.css?v=202611281718">
-    <link rel="stylesheet" href="css/custom-select.css?v=202611281718">
-    <link rel="stylesheet" href="css/toast.css?v=202611281718">
+    <link rel="stylesheet" href="css/style.css?v=202611281827">
+    <link rel="stylesheet" href="css/auth.css?v=202611281827">
+    <link rel="stylesheet" href="css/custom-select.css?v=202611281827">
+    <link rel="stylesheet" href="css/toast.css?v=202611281827">
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script>
         (function () { const t = localStorage.getItem('valuon-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); if (window.getValuonLang) document.documentElement.lang = window.getValuonLang(); })();
@@ -120,6 +120,18 @@
 
                 <button type="submit" class="btn btn-primary auth-btn" data-i18n="btn_login" data-animate>Sign In</button>
 
+                <div class="auth-divider" data-animate><span data-i18n="auth_or">or</span></div>
+
+                <button type="button" id="google-oauth-btn" class="btn btn-google-oauth" data-animate>
+                    <svg class="google-oauth-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"/>
+                        <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/>
+                    </svg>
+                    <span data-i18n="btn_google_continue">Continue with Google</span>
+                </button>
+
                 <div id="resend-confirm-box" class="resend-confirm-box hidden">
                     <p id="resend-confirm-text"></p>
                     <button type="button" id="resend-confirm-btn" class="btn btn-outline small"></button>
@@ -175,11 +187,11 @@
         </div>
     </div>
 
-    <script src="js/custom-select.js?v=202611281718"></script>
-    <script src="js/login-lang.js?v=202611281718"></script>
-    <script src="js/toast.js?v=202611281718"></script>
-    <script type="module" src="js/auth.js?v=202611281718"></script>
-    <script src="js/theme.js?v=202611281718"></script>
+    <script src="js/custom-select.js?v=202611281827"></script>
+    <script src="js/login-lang.js?v=202611281827"></script>
+    <script src="js/toast.js?v=202611281827"></script>
+    <script type="module" src="js/auth.js?v=202611281827"></script>
+    <script src="js/theme.js?v=202611281827"></script>
     <script>
         (function () {
             var items = document.querySelectorAll('[data-animate]');
@@ -197,11 +209,11 @@
         })();
     </script>
     <div id="toast-container" class="toast-container"></div>
-    <script src="js/cookie-banner.js?v=202611281718"></script>
+    <script src="js/cookie-banner.js?v=202611281827"></script>
     <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
-    <script defer src="js/pwa.js?v=202611281718"></script>
+    <script defer src="js/pwa.js?v=202611281827"></script>
 </body>
 
 </html>
