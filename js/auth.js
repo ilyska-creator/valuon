@@ -561,7 +561,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             googleOAuthBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             try {
                 setSessionOnly(false);
-                const redirectTo = new URL(getSafeRedirectTarget(), window.location.href).href;
+                const redirectTo = new URL(getSafeRedirect(), window.location.href).href;
                 const { error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: { redirectTo },
