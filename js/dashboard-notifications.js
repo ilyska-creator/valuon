@@ -33,18 +33,26 @@ function formatAmount(rawVal, currency) {
 
 function updateNotifBadge(count) {
     const safeCount = Math.max(0, Number(count) || 0);
+    const label = safeCount > 99 ? '99+' : String(safeCount);
     document.querySelectorAll('[data-notif-badge]').forEach(el => {
         if (safeCount > 0) {
-            el.textContent = safeCount > 99 ? '99+' : String(safeCount);
+            el.textContent = label;
             el.classList.remove('hidden');
         } else {
             el.textContent = '';
             el.classList.add('hidden');
         }
     });
+    const baseTitle = document.title.replace(/^\(\d+\+?\)\s*/, '');
+    document.title = safeCount > 0 ? `(${label}) ${baseTitle}` : baseTitle;
     const markAllBtn = document.getElementById('notif-mark-all-read-btn');
     if (markAllBtn) {
         markAllBtn.classList.toggle('hidden', safeCount === 0);
+    }
+    const chipCount = document.getElementById('notif-unread-chip-count');
+    if (chipCount) {
+        chipCount.textContent = label;
+        chipCount.classList.toggle('hidden', safeCount === 0);
     }
 }
 
@@ -52,6 +60,25 @@ function formatDbNotification(row, t) {
     const p = row.payload || {};
     const type = row.type;
     const isUnread = !row.read_at;
+
+    if (type === 'weekly_digest') {
+        const active = Number(p.active_warranties) || 0;
+        const expiring = Number(p.expiring_30d) || 0;
+        const receipts = Number(p.new_receipts_7d) || 0;
+        return {
+            id: row.id,
+            isUnread,
+            cardClass: 'weekly-digest',
+            icon: 'fa-chart-pie',
+            title: t.notif_digest_title || 'Еженедельная сводка',
+            text: (t.notif_digest_text || 'Активных гарантий: {active} · Истекают за 30 дн.: {expiring} · Новых чеков: {receipts}')
+                .replace('{active}', String(active))
+                .replace('{expiring}', String(expiring))
+                .replace('{receipts}', String(receipts)),
+            date: formatDate(row.created_at),
+            quickAction: null,
+        };
+    }
 
     if (type === 'receipt_issued' || type === 'receipt_voided' || type === 'receipt_refunded' || type === 'receipt_partially_refunded') {
         const receiptNum = escapeHtml(
@@ -196,6 +223,14 @@ async function computeActiveAlertsCount(userId, client) {
 
 let cachedNotifications = [];
 let cachedExpiryAlertsEnabled = true;
+let currentNotifFilter = 'all';
+
+function matchesNotifFilter(row) {
+    if (currentNotifFilter === 'unread') return !row.read_at;
+    if (currentNotifFilter === 'receipts') return row.type?.startsWith('receipt_');
+    if (currentNotifFilter === 'warranties') return row.type?.startsWith('warranty_');
+    return true;
+}
 
 function renderNotificationsList(container) {
     const t = getNotifT();
@@ -203,8 +238,18 @@ function renderNotificationsList(container) {
     const unreadCount = cachedNotifications.filter(n => !n.read_at).length;
     updateNotifBadge(unreadCount);
 
-    if (cachedNotifications.length === 0) {
-        if (!cachedExpiryAlertsEnabled) {
+    const visibleRows = cachedNotifications.filter(matchesNotifFilter);
+
+    if (visibleRows.length === 0) {
+        if (cachedNotifications.length > 0 && currentNotifFilter !== 'all') {
+            container.innerHTML = `
+                <div class="notification-card info">
+                    <div class="notif-icon"><i class="fa-solid fa-filter"></i></div>
+                    <div class="notif-content">
+                        <h4>${escapeHtml(t.notif_filter_empty || 'No notifications in this category.')}</h4>
+                    </div>
+                </div>`;
+        } else if (!cachedExpiryAlertsEnabled) {
             container.innerHTML = `
                 <div class="notification-card info">
                     <div class="notif-icon"><i class="fa-solid fa-bell-slash"></i></div>
@@ -226,8 +271,8 @@ function renderNotificationsList(container) {
         return;
     }
 
-    const cards = cachedNotifications.map(row => formatDbNotification(row, t));
-    const disabledBanner = !cachedExpiryAlertsEnabled
+    const cards = visibleRows.map(row => formatDbNotification(row, t));
+    const disabledBanner = !cachedExpiryAlertsEnabled && (currentNotifFilter === 'all' || currentNotifFilter === 'warranties')
         ? `
             <div class="notification-card info">
                 <div class="notif-icon"><i class="fa-solid fa-bell-slash"></i></div>
@@ -238,11 +283,36 @@ function renderNotificationsList(container) {
             </div>`
         : '';
 
+    const calLabel = escapeHtml(t.notif_action_calendar || 'Add to calendar');
+    const openRecLabel = escapeHtml(t.notif_action_open_receipt || 'Open receipt');
+
     container.innerHTML = disabledBanner + cards.map((n, idx) => {
-        const row = cachedNotifications[idx];
+        const row = visibleRows[idx];
         const eType = row?.entity_type || '';
         const eId = row?.entity_id || '';
         const rId = row?.payload?.receipt_id || (eType === 'business_receipt' ? eId : '');
+        const isWarrantyActive = row?.type?.startsWith('warranty_expiring_') && row?.payload?.warranty_end_date;
+        const isReceiptNotif = row?.type?.startsWith('receipt_') && rId;
+
+        let actionsHtml = '';
+        if (isWarrantyActive) {
+            actionsHtml = `
+                <div class="notif-card-actions">
+                    <button type="button" class="notif-quick-btn" data-notif-calendar="${escapeHtml(n.id)}">
+                        <i class="fa-regular fa-calendar-plus" aria-hidden="true"></i>
+                        <span>${calLabel}</span>
+                    </button>
+                </div>`;
+        } else if (isReceiptNotif) {
+            actionsHtml = `
+                <div class="notif-card-actions">
+                    <button type="button" class="notif-quick-btn" data-notif-open-receipt="${escapeHtml(rId)}" data-notif-id-ref="${escapeHtml(n.id)}">
+                        <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+                        <span>${openRecLabel}</span>
+                    </button>
+                </div>`;
+        }
+
         return `
         <div class="notification-card ${n.cardClass} ${n.isUnread ? 'is-unread' : 'is-read'}" data-notif-id="${escapeHtml(n.id)}" data-entity-type="${escapeHtml(eType)}" data-entity-id="${escapeHtml(eId)}" data-receipt-id="${escapeHtml(rId)}">
             <div class="notif-icon"><i class="fa-solid ${n.icon}"></i></div>
@@ -250,6 +320,7 @@ function renderNotificationsList(container) {
                 <h4>${n.title}</h4>
                 <p>${n.text}</p>
                 ${n.date ? `<span class="notif-time">${n.date}</span>` : ''}
+                ${actionsHtml}
             </div>
             ${n.isUnread ? '<span class="notif-unread-dot" aria-hidden="true"></span>' : ''}
             <button type="button" class="notif-dismiss-btn" data-notif-dismiss="${escapeHtml(n.id)}" title="${dismissTitle}" aria-label="${dismissTitle}">
@@ -266,34 +337,178 @@ function bindNotificationActions(container) {
     if (notifActionsBound) return;
     notifActionsBound = true;
 
+    const dismissNotification = async (id, cardEl) => {
+        if (!id || !cachedClient) return;
+        haptic(8);
+        const nowIso = new Date().toISOString();
+        const prev = cachedNotifications;
+        cachedNotifications = cachedNotifications.filter(n => n.id !== id);
+        updateNotifBadge(cachedNotifications.filter(n => !n.read_at).length);
+
+        collapseAndRemove(cardEl, () => {
+            renderNotificationsList(container);
+        });
+
+        const { error } = await cachedClient
+            .from('notifications')
+            .update({ dismissed_at: nowIso, read_at: nowIso })
+            .eq('id', id);
+        if (error) {
+            logError('notif:dismiss', error);
+            cachedNotifications = prev;
+            renderNotificationsList(container);
+        }
+    };
+
+    const markOneRead = (id) => {
+        if (!id || !cachedClient) return;
+        const target = cachedNotifications.find(n => n.id === id);
+        if (!target || target.read_at) return;
+        const nowIso = new Date().toISOString();
+        target.read_at = nowIso;
+        renderNotificationsList(container);
+        cachedClient
+            .from('notifications')
+            .update({ read_at: nowIso })
+            .eq('id', id)
+            .then(({ error }) => {
+                if (error) logError('notif:markRead', error);
+            });
+    };
+
+    const filterBar = document.getElementById('notif-filter-bar');
+    filterBar?.addEventListener('click', (e) => {
+        const chip = e.target.closest('[data-notif-filter]');
+        if (!chip) return;
+        const nextFilter = chip.getAttribute('data-notif-filter') || 'all';
+        if (nextFilter === currentNotifFilter) return;
+        currentNotifFilter = nextFilter;
+        haptic(8);
+        filterBar.querySelectorAll('[data-notif-filter]').forEach((el) => {
+            const active = el === chip;
+            el.classList.toggle('active', active);
+            el.setAttribute('aria-selected', String(active));
+        });
+        renderNotificationsList(container);
+    });
+
+    // Mobile swipe-left to dismiss
+    let swipeCard = null;
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    let swipeStartTime = 0;
+    let swipeLocked = false;
+    let swipeDx = 0;
+
+    container.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        if (e.target.closest('button, a')) return;
+        const card = e.target.closest('.notification-card[data-notif-id]');
+        if (!card) return;
+        swipeCard = card;
+        swipeStartX = e.touches[0].clientX;
+        swipeStartY = e.touches[0].clientY;
+        swipeStartTime = performance.now();
+        swipeLocked = false;
+        swipeDx = 0;
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+        if (!swipeCard || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - swipeStartX;
+        const dy = e.touches[0].clientY - swipeStartY;
+        if (!swipeLocked) {
+            if (Math.abs(dy) > Math.abs(dx) || dx > -10) {
+                if (Math.abs(dy) > 10) swipeCard = null;
+                return;
+            }
+            swipeLocked = true;
+            swipeCard.classList.add('is-swiping');
+        }
+        if (dx < 0) {
+            swipeDx = dx;
+            const opacity = Math.max(0.25, 1 + dx / 240);
+            swipeCard.style.transform = `translateX(${dx}px)`;
+            swipeCard.style.opacity = String(opacity);
+        }
+    }, { passive: true });
+
+    const finishSwipe = () => {
+        if (!swipeCard) return;
+        const card = swipeCard;
+        const dx = swipeDx;
+        const elapsed = Math.max(1, performance.now() - swipeStartTime);
+        const fastSwipe = dx < -45 && (Math.abs(dx) / elapsed) > 0.35;
+        swipeCard = null;
+        swipeLocked = false;
+        swipeDx = 0;
+        card.classList.remove('is-swiping');
+
+        if (dx < -90 || fastSwipe) {
+            const id = card.getAttribute('data-notif-id');
+            haptic(10);
+            dismissNotification(id, card);
+        } else {
+            card.style.transform = '';
+            card.style.opacity = '';
+        }
+    };
+
+    container.addEventListener('touchend', finishSwipe, { passive: true });
+    container.addEventListener('touchcancel', finishSwipe, { passive: true });
+
     container.addEventListener('click', async (e) => {
         if (!cachedClient) return;
+
+        const calBtn = e.target.closest('[data-notif-calendar]');
+        if (calBtn) {
+            e.stopPropagation();
+            const id = calBtn.getAttribute('data-notif-calendar');
+            const row = cachedNotifications.find(n => n.id === id);
+            if (!row?.payload?.warranty_end_date) return;
+            haptic(10);
+            markOneRead(id);
+            try {
+                const { downloadICS } = await import('./calendar-export.js');
+                downloadICS({
+                    name: row.payload.item_name || 'Item',
+                    warranty_end_date: row.payload.warranty_end_date,
+                    purchase_date: row.payload.purchase_date,
+                    store_name: row.payload.shop_name || '',
+                });
+            } catch (err) {
+                logError('notif:calendar', err);
+            }
+            return;
+        }
+
+        const openRecBtn = e.target.closest('[data-notif-open-receipt]');
+        if (openRecBtn) {
+            e.stopPropagation();
+            const receiptId = openRecBtn.getAttribute('data-notif-open-receipt');
+            const notifId = openRecBtn.getAttribute('data-notif-id-ref');
+            if (notifId) markOneRead(notifId);
+            if (receiptId) {
+                haptic(8);
+                const receiptsNav = document.querySelector('[data-view="receipts"]');
+                if (receiptsNav) {
+                    receiptsNav.click();
+                    import('./receipts.js?v=20261128a')
+                        .then((m) => m.highlightReceiptCard(receiptId))
+                        .catch((err) => logError('notif:openReceipt', err));
+                } else {
+                    window.location.href = `dashboard.html?highlight=${encodeURIComponent(receiptId)}#view-receipts`;
+                }
+            }
+            return;
+        }
 
         const dismissBtn = e.target.closest('[data-notif-dismiss]');
         if (dismissBtn) {
             e.stopPropagation();
             const id = dismissBtn.getAttribute('data-notif-dismiss');
             const cardEl = dismissBtn.closest('.notification-card');
-            if (!id) return;
-            haptic(8);
-            const nowIso = new Date().toISOString();
-            const prev = cachedNotifications;
-            cachedNotifications = cachedNotifications.filter(n => n.id !== id);
-            updateNotifBadge(cachedNotifications.filter(n => !n.read_at).length);
-
-            collapseAndRemove(cardEl, () => {
-                renderNotificationsList(container);
-            });
-
-            const { error } = await cachedClient
-                .from('notifications')
-                .update({ dismissed_at: nowIso, read_at: nowIso })
-                .eq('id', id);
-            if (error) {
-                logError('notif:dismiss', error);
-                cachedNotifications = prev;
-                renderNotificationsList(container);
-            }
+            dismissNotification(id, cardEl);
             return;
         }
 
@@ -304,21 +519,7 @@ function bindNotificationActions(container) {
             const entityId = card.getAttribute('data-entity-id') || '';
             const receiptId = card.getAttribute('data-receipt-id') || '';
 
-            if (id) {
-                const target = cachedNotifications.find(n => n.id === id);
-                if (target && !target.read_at) {
-                    const nowIso = new Date().toISOString();
-                    target.read_at = nowIso;
-                    renderNotificationsList(container);
-                    cachedClient
-                        .from('notifications')
-                        .update({ read_at: nowIso })
-                        .eq('id', id)
-                        .then(({ error }) => {
-                            if (error) logError('notif:markRead', error);
-                        });
-                }
-            }
+            if (id) markOneRead(id);
 
             if ((entityType === 'business_receipt' || entityType === 'receipt_item') && receiptId) {
                 haptic(8);

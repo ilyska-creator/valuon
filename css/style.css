@@ -2850,3 +2850,38 @@ button,
         transition: none !important;
     }
 }
+
+
+/* === Network Online/Offline Status Pill === */
+.net-status-pill {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top, 12px));
+    left: 50%;
+    transform: translate(-50%, -140%);
+    z-index: 10050;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.92);
+    color: #f8fafc;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    pointer-events: none;
+    opacity: 0;
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease, background 0.24s ease;
+}
+
+.net-status-pill.is-visible {
+    transform: translate(-50%, 0);
+    opacity: 1;
+}
+
+.net-status-pill.is-online {
+    background: rgba(16, 185, 129, 0.95);
+    color: #ffffff;
+}

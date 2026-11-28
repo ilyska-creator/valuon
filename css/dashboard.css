@@ -3596,6 +3596,105 @@ html {
     color: var(--text);
 }
 
+.notif-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.notif-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.notif-filter-chip:hover {
+    border-color: var(--primary);
+    color: var(--text);
+}
+
+.notif-filter-chip.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.notif-chip-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.14);
+    color: var(--primary);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.notif-filter-chip.active .notif-chip-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+.notif-chip-count.hidden {
+    display: none;
+}
+
+.notif-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.notif-quick-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-subtle, rgba(148, 163, 184, 0.08));
+    color: var(--text);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.notif-quick-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.notification-card.weekly-digest::before {
+    background: #8b5cf6;
+}
+
+.notification-card.weekly-digest .notif-icon {
+    background: rgba(139, 92, 246, 0.14);
+    color: #8b5cf6;
+}
+
+.notification-card.is-swiping {
+    transition: none !important;
+    user-select: none;
+}
+
 /* ==== Redesigned Buyer Receipt Cards (Fintech Document Style) ==== */
 
 .receipt-doc-card {

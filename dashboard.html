@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://qjnzawjivqvgupbgxdao.supabase.co" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/dashboard.css?v=20261127a">
@@ -269,6 +269,22 @@
                 </button>
             </header>
 
+            <div class="notif-filter-bar" id="notif-filter-bar" role="tablist">
+                <button type="button" class="notif-filter-chip active" data-notif-filter="all" role="tab" aria-selected="true">
+                    <span data-i18n="notif_filter_all">All</span>
+                </button>
+                <button type="button" class="notif-filter-chip" data-notif-filter="unread" role="tab" aria-selected="false">
+                    <span data-i18n="notif_filter_unread">Unread</span>
+                    <span class="notif-chip-count hidden" id="notif-unread-chip-count">0</span>
+                </button>
+                <button type="button" class="notif-filter-chip" data-notif-filter="receipts" role="tab" aria-selected="false">
+                    <span data-i18n="notif_filter_receipts">Receipts</span>
+                </button>
+                <button type="button" class="notif-filter-chip" data-notif-filter="warranties" role="tab" aria-selected="false">
+                    <span data-i18n="notif_filter_warranties">Warranties</span>
+                </button>
+            </div>
+
             <div class="notifications-list" id="notifications-container">
                 <div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> <span
                         data-i18n="notif_checking">Checking statuses...</span></div>
@@ -472,12 +488,9 @@
                         </label>
                     </div>
 
-                    <div class="setting-row is-disabled">
+                    <div class="setting-row">
                         <div class="setting-info">
-                            <span class="setting-label-row">
-                                <span class="setting-label" data-i18n="setting_email_digest">Weekly digest</span>
-                                <span class="setting-soon-badge" data-i18n="coming_soon">Coming Soon</span>
-                            </span>
+                            <span class="setting-label" data-i18n="setting_email_digest">Weekly digest</span>
                             <span class="setting-desc" data-i18n="setting_digest_desc">Overview of your assets every Monday</span>
                         </div>
                         <label class="toggle-switch">

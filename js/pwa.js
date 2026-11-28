@@ -184,4 +184,54 @@
             });
         });
     }
+
+    // Network online/offline compact status pill
+    (function initNetworkBanner() {
+        let pill = null;
+        let hideTimer = null;
+
+        function isRu() {
+            try {
+                return (typeof window.getValuonLang === 'function' ? window.getValuonLang() : document.documentElement.lang) === 'ru';
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function ensurePill() {
+            if (pill) return pill;
+            pill = document.createElement('div');
+            pill.className = 'net-status-pill';
+            pill.setAttribute('role', 'status');
+            pill.setAttribute('aria-live', 'polite');
+            document.body.appendChild(pill);
+            return pill;
+        }
+
+        function showOffline() {
+            if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+            const el = ensurePill();
+            el.classList.remove('is-online');
+            el.innerHTML = `<i class="fa-solid fa-wifi" aria-hidden="true"></i> <span>${isRu() ? 'Нет подключения к интернету' : 'You are offline'}</span>`;
+            requestAnimationFrame(() => el.classList.add('is-visible'));
+        }
+
+        function showOnline() {
+            if (!pill || !pill.classList.contains('is-visible')) return;
+            if (hideTimer) clearTimeout(hideTimer);
+            pill.classList.add('is-online');
+            pill.innerHTML = `<i class="fa-solid fa-check" aria-hidden="true"></i> <span>${isRu() ? 'Соединение восстановлено' : 'Back online'}</span>`;
+            hideTimer = setTimeout(() => {
+                hideTimer = null;
+                pill?.classList.remove('is-visible');
+            }, 2500);
+        }
+
+        window.addEventListener('offline', showOffline);
+        window.addEventListener('online', showOnline);
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            if (document.body) showOffline();
+            else document.addEventListener('DOMContentLoaded', showOffline, { once: true });
+        }
+    })();
 })();

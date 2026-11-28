@@ -2351,11 +2351,38 @@ async function initBusinessPanel() {
         });
     }
 
+    const POS_STORAGE_PREFIX = 'valuon-biz-pos:';
+
+    function getSavedPosTerminalId() {
+        if (!currentShop?.id) return '';
+        try {
+            return localStorage.getItem(`${POS_STORAGE_PREFIX}${currentShop.id}`) || '';
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function savePosTerminalId(id) {
+        if (!currentShop?.id) return;
+        try {
+            if (id) localStorage.setItem(`${POS_STORAGE_PREFIX}${currentShop.id}`, String(id));
+            else localStorage.removeItem(`${POS_STORAGE_PREFIX}${currentShop.id}`);
+        } catch (_) { /* ignore storage restrictions */ }
+    }
+
+    if (posSelect) {
+        posSelect.addEventListener('change', () => {
+            savePosTerminalId(posSelect.value);
+        });
+    }
+
     function renderPosSelect(preferredId) {
         if (!posSelect) return;
         const t = bizT();
         const active = currentTerminals.filter((term) => term.is_active);
-        const targetValue = preferredId !== undefined ? String(preferredId || '') : (posSelect.value || '');
+        const targetValue = preferredId !== undefined
+            ? String(preferredId || '')
+            : (posSelect.value || getSavedPosTerminalId());
         posSelect.innerHTML = '';
 
         if (active.length === 0) {
@@ -5358,8 +5385,9 @@ async function initBusinessPanel() {
         const bt = window.businessTranslations || {};
         const t = bt[currentLang] || bt.ru || {};
         if (receiptsTotalMatched > currentReceiptsList.length) {
+            const tpl = t.exporting_progress || (currentLang === 'en' ? 'Preparing export… ({n})' : 'Подготовка экспорта… ({n})');
             window.showToast(
-                t.exporting_progress || (currentLang === 'en' ? 'Preparing export…' : 'Подготовка экспорта…'),
+                tpl.replace('{n}', String(receiptsTotalMatched)),
                 'info'
             );
         }

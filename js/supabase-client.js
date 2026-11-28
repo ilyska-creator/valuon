@@ -17,17 +17,28 @@ export function setSessionOnly(enabled) {
     } catch (_) { /* storage unavailable */ }
 }
 
+function pickFresherAuthValue(a, b) {
+    if (a === null) return b;
+    if (b === null) return a;
+    try {
+        const pa = JSON.parse(a);
+        const pb = JSON.parse(b);
+        const ea = Number(pa?.expires_at || 0);
+        const eb = Number(pb?.expires_at || 0);
+        if (ea && eb && ea !== eb) return ea > eb ? a : b;
+    } catch (_) { /* non-JSON storage key */ }
+    return a;
+}
+
 const adaptiveStorage = {
     getItem(key) {
         try {
-            if (sessionStorage.getItem(SESSION_ONLY_KEY) === '1') {
-                const sessionVal = sessionStorage.getItem(key);
-                if (sessionVal !== null) return sessionVal;
-                return localStorage.getItem(key);
-            }
+            const sessionVal = sessionStorage.getItem(key);
             const localVal = localStorage.getItem(key);
-            if (localVal !== null) return localVal;
-            return sessionStorage.getItem(key);
+            if (sessionStorage.getItem(SESSION_ONLY_KEY) === '1') {
+                return pickFresherAuthValue(sessionVal, localVal);
+            }
+            return pickFresherAuthValue(localVal, sessionVal);
         } catch (_) {
             return null;
         }

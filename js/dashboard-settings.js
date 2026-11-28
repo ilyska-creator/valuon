@@ -125,8 +125,8 @@ async function initSettings() {
             if (currencySelect) currencySelect.value = data.currency || 'EUR';
             if (toggleExpiry) toggleExpiry.checked = data.expiry_alerts ?? true;
             if (toggleDigest) {
-                toggleDigest.checked = false;
-                toggleDigest.disabled = true;
+                toggleDigest.checked = Boolean(data.weekly_digest);
+                toggleDigest.disabled = false;
             }
             currentPhoneE164 = data.phone || user.user_metadata?.phone || user.phone || null;
         } else {
@@ -533,8 +533,10 @@ async function initSettings() {
     }
 
     if (toggleDigest) {
-        toggleDigest.checked = false;
-        toggleDigest.disabled = true;
+        toggleDigest.disabled = false;
+        toggleDigest.addEventListener('change', async (e) => {
+            await saveToggle('weekly_digest', e.target.checked, toggleDigest);
+        });
     }
 
     const changeEmailBtn = document.getElementById('change-email-btn');
