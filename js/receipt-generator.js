@@ -68,9 +68,15 @@ export function generateQRDataURL(text, size = 80) {
 }
 
 async function fetchLogoDataUrl(shop) {
-    if (!shop?.logo_path) return null;
+    if (!shop?.logo_path || typeof shop.logo_path !== 'string') return null;
     try {
-        const logoUrl = `${SUPABASE_URL}/storage/v1/object/public/shop-logos/${shop.logo_path}`;
+        const safePath = shop.logo_path
+            .split('/')
+            .filter((s) => s && s !== '.' && s !== '..')
+            .map(encodeURIComponent)
+            .join('/');
+        if (!safePath) return null;
+        const logoUrl = `${SUPABASE_URL}/storage/v1/object/public/shop-logos/${safePath}`;
         const resp = await fetch(logoUrl);
         if (!resp.ok) return null;
         const blob = await resp.blob();

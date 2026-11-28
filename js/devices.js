@@ -73,6 +73,14 @@ function deviceIconMarkup(type) {
     return '<i class="fa-solid ' + icon + '"></i>';
 }
 
+function getDeviceTypeLabel(code, lang) {
+    if (!code) return '';
+    const item = DEVICE_TYPES.find((t) => t.value === code);
+    if (!item) return code;
+    return item[lang === 'en' ? 'en' : 'ru'] || code;
+}
+
 window.deviceTypeList = deviceTypeList;
 window.renderDeviceTypeOptions = renderDeviceTypeOptions;
 window.deviceIconMarkup = deviceIconMarkup;
+window.getDeviceTypeLabel = getDeviceTypeLabel;

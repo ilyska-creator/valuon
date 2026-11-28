@@ -204,11 +204,18 @@ if (qrDemoEl && typeof RotatingTextLoader !== 'undefined') {
 
 function hasLocalAuthSession() {
     try {
-        const key = 'sb-qjnzawjivqvgupbgxdao-auth-token';
-        const raw = sessionStorage.getItem(key) || localStorage.getItem(key);
-        if (!raw) return false;
-        const parsed = JSON.parse(raw);
-        return Boolean(parsed && parsed.access_token);
+        const tokenRe = /^sb-[a-z0-9-]+-auth-token$/i;
+        for (const storage of [sessionStorage, localStorage]) {
+            for (let i = 0; i < storage.length; i++) {
+                const k = storage.key(i);
+                if (!k || !tokenRe.test(k)) continue;
+                const raw = storage.getItem(k);
+                if (!raw) continue;
+                const parsed = JSON.parse(raw);
+                if (parsed && parsed.access_token) return true;
+            }
+        }
+        return false;
     } catch (_) {
         return false;
     }

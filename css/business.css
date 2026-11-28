@@ -3930,7 +3930,7 @@
 }
 
 .modal-overlay.z-overlay {
-    z-index: calc(var(--z-modal-overlay) + 1);
+    z-index: calc(var(--z-modal-overlay) + 10);
 }
 
 .terminals-list {

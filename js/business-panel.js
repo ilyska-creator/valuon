@@ -18,6 +18,21 @@ import {
     fetchCurrentUserPhone
 } from './phone-utils.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
+import { parseLocalDate } from './warranty-utils.js';
+
+function toSafeIsoDate(raw) {
+    if (!raw) return '';
+    if (typeof raw === 'string') {
+        const trimmed = raw.trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+    }
+    const dt = parseLocalDate(raw);
+    if (!dt || Number.isNaN(dt.getTime())) return '';
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const d = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
 
 let currentClient = null;
 let currentShop = null;
@@ -113,11 +128,11 @@ async function initBusinessPanel() {
         const gross = parseFloat(item.gross_total) || 0;
         const safeDelta = Math.max(0, Math.min(qty - already, parseInt(deltaQty, 10) || 0));
         if (safeDelta <= 0) return 0;
-        const prevRefundedAmt = Math.round((gross * already / qty) * 100) / 100;
-        if (already + safeDelta >= qty) {
-            return Math.max(0, Math.round((gross - prevRefundedAmt) * 100) / 100);
-        }
-        return Math.round((gross * safeDelta / qty) * 100) / 100;
+        const prevCum = Math.round((gross * already / qty) * 100) / 100;
+        const nextCum = (already + safeDelta >= qty)
+            ? Math.round(gross * 100) / 100
+            : Math.round((gross * (already + safeDelta) / qty) * 100) / 100;
+        return Math.max(0, Math.round((nextCum - prevCum) * 100) / 100);
     }
 
     function matchesReceiptSearch(r, query, payMethodMap) {
@@ -354,7 +369,7 @@ async function initBusinessPanel() {
             const isPartial = lc === 'partially_refunded';
             const isVerified = r.status === 'verified';
             const isExpanded = expandedReceiptIds.has(String(r.id));
-            const purchaseDateObj = r.purchase_date ? new Date(r.purchase_date) : null;
+            const purchaseDateObj = r.purchase_date ? parseLocalDate(r.purchase_date) : null;
             const dateStr = purchaseDateObj ? purchaseDateObj.toLocaleDateString(locale) : '—';
             const dateTimeSource = r.created_at ? new Date(r.created_at) : purchaseDateObj;
             const dateTimeStr = dateTimeSource
@@ -1215,10 +1230,10 @@ async function initBusinessPanel() {
             const totalQty = items.reduce((s, it) => s + it.qty, 0);
             const vat = items.reduce((s, it) => s + it.vatAmount, 0);
             const discTotal = items.reduce((s, it) => s + it.discountAmount, 0);
-            const word = t.units
-                ? pluralRu(positions, t.units.one, t.units.few, t.units.many)
-                : (gj === 'en'
-                    ? (positions === 1 ? 'item' : 'items')
+            const word = gj === 'en'
+                ? (positions === 1 ? (t.units?.one || 'item') : (t.units?.many || 'items'))
+                : (t.units
+                    ? pluralRu(positions, t.units.one, t.units.few, t.units.many)
                     : pluralRu(positions, 'позиция', 'позиции', 'позиций'));
             const qWord = t.qty_word || (gj === 'en' ? 'pcs' : 'шт.');
             const discWord = t.discount_word || (gj === 'en' ? 'discount' : 'скидка');
@@ -1398,6 +1413,7 @@ async function initBusinessPanel() {
         const qtyInput = row.querySelector('[data-field="qty"]');
         const priceInput = row.querySelector('[data-field="price"]');
         const vatInput = row.querySelector('[data-field="vat_rate"]');
+        const discountInput = row.querySelector('[data-field="discount"]');
         const warrantyInput = row.querySelector('[data-field="warranty_months"]');
         const t = bizT();
         const isEn = bizLang() === 'en';
@@ -1409,6 +1425,8 @@ async function initBusinessPanel() {
         const price = Number(priceRaw);
         const vatRaw = vatInput?.value.trim() || '';
         const vat = vatRaw === '' ? 0 : Number(vatRaw);
+        const discountRaw = discountInput?.value.trim() || '';
+        const discount = discountRaw === '' ? 0 : Number(discountRaw);
         const warrantyRaw = warrantyInput?.value.trim() || '';
         const warranty = warrantyRaw === '' ? 0 : Number(warrantyRaw);
 
@@ -1421,6 +1439,8 @@ async function initBusinessPanel() {
             message = t.error_item_price || (isEn ? 'Enter a valid price (0 or more)' : 'Укажите корректную цену (не меньше 0)');
         } else if (!Number.isFinite(vat) || vat < 0 || vat > 100) {
             message = t.error_item_vat || (isEn ? 'Tax rate must be between 0 and 100%' : 'Ставка налога должна быть от 0 до 100%');
+        } else if (!Number.isFinite(discount) || discount < 0 || discount > 100) {
+            message = t.error_item_discount || (isEn ? 'Discount must be between 0 and 100%' : 'Скидка должна быть от 0 до 100%');
         } else if (!Number.isInteger(warranty) || warranty < 0 || warranty > 600) {
             message = t.error_item_warranty || (isEn ? 'Warranty must be between 0 and 600 months' : 'Гарантия должна быть целым числом от 0 до 600 мес.');
         }
@@ -2065,9 +2085,33 @@ async function initBusinessPanel() {
         }
     });
 
-    document.getElementById('success-download-btn')?.addEventListener('click', async () => {
-        if (!lastIssuedReceipt || !currentShop) return;
-        await downloadReceiptPDF(lastIssuedReceipt, currentShop);
+    async function handleDownloadBizPdf(btn, receipt, shop) {
+        if (!receipt || !shop) return;
+        if (btn?.disabled) return;
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        }
+        try {
+            await downloadReceiptPDF(receipt, shop);
+        } catch (err) {
+            logError('biz:downloadPdf', err);
+            const errLang = (window.getValuonLang ? window.getValuonLang() : 'en');
+            window.showToast(
+                errLang === 'en' ? 'Failed to generate receipt PDF' : 'Не удалось сформировать PDF чека',
+                'error'
+            );
+        } finally {
+            if (btn) {
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+            }
+        }
+    }
+
+    document.getElementById('success-download-btn')?.addEventListener('click', async (e) => {
+        await handleDownloadBizPdf(e.currentTarget, lastIssuedReceipt, currentShop);
     });
     document.getElementById('success-new-btn')?.addEventListener('click', () => {
         // Сбрасываем подпись кнопки самым первым действием — до того, как
@@ -2457,7 +2501,10 @@ async function initBusinessPanel() {
                         t.terminal_duplicate_serial || 'Аппарат с таким серийным номером уже существует');
                 } else {
                     logError('biz:createTerminal', error);
-                    window.showToast(error.message || 'Ошибка добавления', 'error');
+                    window.showToast(
+                        t.terminal_save_error || (bizLang() === 'en' ? 'Failed to add cash register' : 'Ошибка добавления кассового аппарата'),
+                        'error'
+                    );
                 }
                 return;
             }
@@ -2470,7 +2517,10 @@ async function initBusinessPanel() {
             window.showToast(t.terminal_saved || 'Кассовый аппарат добавлен', 'success');
         } catch (err) {
             logError('biz:createTerminalCatch', err);
-            window.showToast(err.message || 'Ошибка добавления', 'error');
+            window.showToast(
+                t.terminal_save_error || (bizLang() === 'en' ? 'Failed to add cash register' : 'Ошибка добавления кассового аппарата'),
+                'error'
+            );
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalHTML;
@@ -2491,6 +2541,7 @@ async function initBusinessPanel() {
         confirmBtn.innerHTML = `<i class="fa-solid fa-trash"></i> ${t.delete_btn || 'Удалить'}`;
 
         const handleConfirm = async () => {
+            if (confirmBtn.disabled) return;
             confirmBtn.disabled = true;
             confirmBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
             try {
@@ -2521,9 +2572,6 @@ async function initBusinessPanel() {
                     currentTerminals = currentTerminals.filter((x) => x.id !== terminalId);
                     window.showToast(t.terminal_deleted || 'Кассовый аппарат удалён', 'success');
                 }
-
-                confirmBtn.disabled = false;
-                confirmBtn.innerHTML = `<i class="fa-solid fa-trash"></i> ${t.delete_btn || 'Удалить'}`;
 
                 renderTerminalsWidget();
                 renderTerminalsList();
@@ -4056,26 +4104,25 @@ async function initBusinessPanel() {
             } else if (views.shop) {
                 renderView(views.shop);
             }
-            return;
-        }
-
-        currentShop = shop;
-
-        if (shop) {
-            sessionStorage.setItem('current_shop', JSON.stringify(shop));
         } else {
-            sessionStorage.removeItem('current_shop');
-        }
+            currentShop = shop;
 
-        if (!shop && views.shop) {
-            renderView(views.shop);
-        } else if (shop) {
-            updateShopInfo(shop);
-            await Promise.all([loadTerminals(shop.id), loadShopProducts(shop.id)]);
-            renderView(views.dashboard);
-            await refreshDashboard(client, shop.id, stats, list);
-        } else {
-            renderView(views.dashboard);
+            if (shop) {
+                sessionStorage.setItem('current_shop', JSON.stringify(shop));
+            } else {
+                sessionStorage.removeItem('current_shop');
+            }
+
+            if (!shop && views.shop) {
+                renderView(views.shop);
+            } else if (shop) {
+                updateShopInfo(shop);
+                await Promise.all([loadTerminals(shop.id), loadShopProducts(shop.id)]);
+                renderView(views.dashboard);
+                await refreshDashboard(client, shop.id, stats, list);
+            } else {
+                renderView(views.dashboard);
+            }
         }
     } catch (e) {
         logError('biz:loadShop', e);
@@ -4261,7 +4308,10 @@ async function initBusinessPanel() {
             } catch (err) {
                 logError('biz:createShop', err);
                 const catchLang = (window.getValuonLang ? window.getValuonLang() : 'en');
-                window.showToast((catchLang === 'en' ? 'Shop creation error: ' : 'Ошибка создания магазина: ') + err.message, 'error');
+                window.showToast(
+                    catchLang === 'en' ? 'Failed to create store. Please try again.' : 'Не удалось создать магазин. Попробуйте ещё раз.',
+                    'error'
+                );
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
@@ -5332,7 +5382,7 @@ async function initBusinessPanel() {
             for (const r of filtered) {
                 const lc = getLifecycleStatus(r);
                 const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
-                const dateIso = r.purchase_date ? new Date(r.purchase_date).toISOString().slice(0, 10) : '';
+                const dateIso = toSafeIsoDate(r.purchase_date);
                 const binding = r.status === 'verified'
                     ? (t.status_verified_short || 'Linked')
                     : (t.status_pending_short || 'Pending');
@@ -5511,7 +5561,7 @@ async function initBusinessPanel() {
             const rows = filtered.map(r => {
                 const lc = getLifecycleStatus(r);
                 const receiptNum = r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`;
-                const dateIso = r.purchase_date ? new Date(r.purchase_date).toISOString().slice(0, 10) : '';
+                const dateIso = toSafeIsoDate(r.purchase_date);
                 const binding = r.status === 'verified'
                     ? (t.status_verified_short || 'Linked')
                     : (t.status_pending_short || 'Pending');
@@ -5640,10 +5690,11 @@ async function initBusinessPanel() {
 
             const dlBtn = e.target.closest('.btn-download-receipt');
             if (dlBtn) {
+                e.stopPropagation();
                 const receiptId = dlBtn.dataset.id;
                 const receipt = currentReceiptsList.find(r => String(r.id) === String(receiptId));
                 if (receipt && currentShop) {
-                    await downloadReceiptPDF(receipt, currentShop);
+                    await handleDownloadBizPdf(dlBtn, receipt, currentShop);
                 } else {
                     const errLang = (window.getValuonLang ? window.getValuonLang() : 'en');
                     window.showToast(errLang === 'en' ? 'Receipt data not found' : 'Не удалось найти данные чека', 'error');

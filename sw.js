@@ -1,6 +1,22 @@
 // Valuon Service Worker — Stage 1 (App Shell + Static Cache + Offline Fallback)
-const CACHE_VERSION = 'valuon-static-v5';
+const CACHE_VERSION = 'valuon-static-v6';
 const OFFLINE_URL = '/offline.html';
+
+// Public HTML routes safe to cache (normalized by pathname, never with query strings).
+// Sensitive/auth/app routes (/dashboard, /receipts, /business, /reset-password, /verify, /login, /register) are never cached.
+const CACHEABLE_NAV_PATHS = new Set([
+    '/',
+    '/index.html',
+    '/about',
+    '/about.html',
+    '/privacy',
+    '/privacy.html',
+    '/terms',
+    '/terms.html',
+    '/roadmap',
+    '/roadmap.html',
+    '/offline.html',
+]);
 
 const PRECACHE_URLS = [
     OFFLINE_URL,
@@ -26,7 +42,7 @@ const PRECACHE_URLS = [
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_VERSION)
-            .then((cache) => cache.addAll(PRECACHE_URLS).catch(() => {}))
+            .then((cache) => Promise.allSettled(PRECACHE_URLS.map((u) => cache.add(u))))
             .then(() => self.skipWaiting())
     );
 });
@@ -75,20 +91,24 @@ self.addEventListener('fetch', (event) => {
     if (url.pathname.startsWith('/_vercel/')) return;
     if (url.pathname === '/sw.js') return;
 
-    // HTML navigations: Network-First, fallback to cached page, then offline.html
+    // HTML navigations: Network-First; cache only allowlisted public pages by pathname (no query strings)
     if (req.mode === 'navigate') {
+        const canCacheNav = CACHEABLE_NAV_PATHS.has(url.pathname);
+        const navCacheKey = url.pathname;
         event.respondWith(
             fetch(req)
                 .then((res) => {
-                    if (res && res.ok && res.type === 'basic') {
+                    if (canCacheNav && res && res.ok && res.type === 'basic') {
                         const copy = res.clone();
-                        caches.open(CACHE_VERSION).then((cache) => cache.put(req, copy)).catch(() => {});
+                        caches.open(CACHE_VERSION).then((cache) => cache.put(navCacheKey, copy)).catch(() => {});
                     }
                     return res;
                 })
                 .catch(async () => {
-                    const cached = await caches.match(req);
-                    if (cached) return cached;
+                    if (canCacheNav) {
+                        const cached = await caches.match(navCacheKey);
+                        if (cached) return cached;
+                    }
                     return (await caches.match(OFFLINE_URL)) || Response.error();
                 })
         );

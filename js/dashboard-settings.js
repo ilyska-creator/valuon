@@ -209,8 +209,14 @@ async function initSettings() {
     let originalBirthdate = birthdateInput?.value?.trim() || '';
     let originalCurrency = currencySelect?.value || '';
 
+    let isSavingProfile = false;
+
     function updateSaveButtonState() {
         if (!saveBtn || !firstNameInput || !lastNameInput) return;
+        if (isSavingProfile) {
+            saveBtn.disabled = true;
+            return;
+        }
         const currentFirst = firstNameInput.value.trim();
         const currentLast = lastNameInput.value.trim();
         const currentBirthdate = birthdateInput?.value?.trim() || '';
@@ -245,6 +251,7 @@ async function initSettings() {
 
     if (saveBtn && firstNameInput && lastNameInput) {
         saveBtn.addEventListener('click', async () => {
+            if (isSavingProfile) return;
             const firstName = firstNameInput.value.trim();
             const lastName = lastNameInput.value.trim();
             const birthdate = birthdateInput?.value?.trim() || '';
@@ -279,6 +286,7 @@ async function initSettings() {
                 }
             }
 
+            isSavingProfile = true;
             saveBtn.disabled = true;
             const originalHTML = saveBtn.innerHTML;
             saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
@@ -321,12 +329,14 @@ async function initSettings() {
                 showToast(tSuccess.msg_save_success || 'Данные успешно сохранены', 'success');
                 setTimeout(() => {
                     saveBtn.innerHTML = originalHTML;
+                    isSavingProfile = false;
                     updateSaveButtonState();
                 }, 1500);
             } catch (err) {
                 logError('settings:save', err);
-                showToast((t.msg_save_error || 'Save failed') + ': ' + (err.message || ''), 'error');
+                showToast(t.msg_save_error || 'Save failed', 'error');
                 saveBtn.innerHTML = originalHTML;
+                isSavingProfile = false;
                 updateSaveButtonState();
             }
         });
@@ -597,7 +607,7 @@ async function initSettings() {
                 if (err?.code === '23505') {
                     showToast(tErr.msg_phone_in_use || 'Этот номер телефона уже привязан к другому аккаунту', 'error');
                 } else {
-                    showToast((tErr.msg_save_error || 'Ошибка сохранения') + (err?.message ? ': ' + err.message : ''), 'error');
+                    showToast(tErr.msg_save_error || 'Ошибка сохранения', 'error');
                 }
                 confirmPhoneChange.innerHTML = originalHTML;
                 confirmPhoneChange.disabled = false;

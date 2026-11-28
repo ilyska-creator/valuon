@@ -33,7 +33,9 @@ function parseDateOnly(dateStr) {
     if (typeof dateStr !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return null;
     const [year, month, day] = dateStr.slice(0, 10).split('-').map(Number);
     if (!year || !month || !day) return null;
-    return new Date(year, month - 1, day);
+    const dt = new Date(year, month - 1, day);
+    if (dt.getFullYear() !== year || dt.getMonth() !== month - 1 || dt.getDate() !== day) return null;
+    return dt;
 }
 
 function icsEscape(text) {

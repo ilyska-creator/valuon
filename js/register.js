@@ -146,8 +146,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const registerForm = document.getElementById('register-form');
     if (registerForm) {
+        let isRegisterSubmitting = false;
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (isRegisterSubmitting) return;
             var lang = getLang();
             var firstErr = null;
 
@@ -217,6 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             var btn = registerForm.querySelector('button[type="submit"]');
             var originalText = btn.innerHTML;
 
+            isRegisterSubmitting = true;
             try {
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
@@ -386,6 +389,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (err) {
                 logError('reg:signup', err);
                 showToast(formatSignupError(err, lang), 'error');
+                isRegisterSubmitting = false;
                 btn.innerHTML = originalText;
                 btn.disabled = false;
                 if (typeof turnstile !== 'undefined' && registerWidgetId !== null) turnstile.reset(registerWidgetId);

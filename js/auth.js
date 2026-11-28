@@ -150,12 +150,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
-        let lastLoginSubmitAt = 0;
+        let isLoggingIn = false;
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const nowTs = Date.now();
-            if (nowTs - lastLoginSubmitAt < 400) return;
-            lastLoginSubmitAt = nowTs;
+            if (isLoggingIn) return;
             const btn = loginForm.querySelector('button[type="submit"]');
             const password = document.getElementById('password').value;
             const rememberMe = document.getElementById('remember')?.checked;
@@ -232,6 +230,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
+            isLoggingIn = true;
             try {
                 setLoadingButton(btn);
 
@@ -341,6 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         : (isRu ? 'Неверный email или пароль' : 'Invalid email or password');
                 }
                 showToast(msg);
+                isLoggingIn = false;
                 resetLoadingButton(btn, originalText);
                 if (typeof turnstile !== 'undefined' && loginWidgetId !== null) turnstile.reset(loginWidgetId);
             }
@@ -480,8 +480,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (forgotForm) {
+        let isForgotSubmitting = false;
         forgotForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (isForgotSubmitting) return;
             const btn = forgotForm.querySelector('button[type="submit"]');
             const email = forgotEmailInput?.value.trim();
             const originalText = btn.innerHTML;
@@ -520,6 +522,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
+            isForgotSubmitting = true;
             try {
                 setLoadingButton(btn);
                 setSessionOnly(false);
@@ -542,6 +545,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ? 'Ошибка отправки. Проверьте email и попробуйте снова.'
                     : 'Failed to send. Check email and try again.');
             } finally {
+                isForgotSubmitting = false;
                 if (typeof turnstile !== 'undefined' && forgotWidgetId !== null) turnstile.reset(forgotWidgetId);
                 resetLoadingButton(btn, originalText);
             }

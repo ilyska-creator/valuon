@@ -20,6 +20,8 @@ export function calculateDaysLeft(warrantyEndDate) {
         endUtcMs = Date.UTC(warrantyEndDate.getFullYear(), warrantyEndDate.getMonth(), warrantyEndDate.getDate());
     } else if (typeof warrantyEndDate === 'string' && /^\d{4}-\d{2}-\d{2}/.test(warrantyEndDate)) {
         const [year, month, day] = warrantyEndDate.slice(0, 10).split('-').map(Number);
+        const check = new Date(year, month - 1, day);
+        if (check.getFullYear() !== year || check.getMonth() !== month - 1 || check.getDate() !== day) return -999;
         endUtcMs = Date.UTC(year, month - 1, day);
     } else {
         return -999;

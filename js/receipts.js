@@ -276,7 +276,10 @@ function setupReceiptsSort() {
 function getDateTimestamp(primary, fallback) {
     const raw = primary || fallback;
     if (!raw) return 0;
-    const ms = new Date(raw).getTime();
+    const dt = (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.trim()))
+        ? parseLocalDate(raw)
+        : new Date(raw);
+    const ms = dt ? dt.getTime() : NaN;
     return Number.isFinite(ms) ? ms : 0;
 }
 
@@ -345,6 +348,17 @@ let attViewerItems = [];
 let attViewerIdx = 0;
 let attViewerReceiptName = 'receipt';
 
+function getSafeReceiptUrl(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== 'string') return '';
+    try {
+        const parsed = new URL(rawUrl, window.location.origin);
+        if (parsed.protocol === 'https:' || (parsed.protocol === 'http:' && parsed.origin === window.location.origin)) {
+            return parsed.href;
+        }
+    } catch (_) { }
+    return '';
+}
+
 function renderAttachmentsViewerState() {
     const stage = document.getElementById('att-viewer-stage');
     const thumbs = document.getElementById('att-viewer-thumbs');
@@ -353,12 +367,21 @@ function renderAttachmentsViewerState() {
     if (!stage || !attViewerItems.length) return;
 
     const current = attViewerItems[attViewerIdx] || attViewerItems[0];
+    const safeCurrentUrl = getSafeReceiptUrl(current.url);
     const lang = getLang();
     const t = window.dashboardTranslations?.[lang] || window.dashboardTranslations?.ru || {};
     const isPdf = current.type === 'application/pdf' || /\.pdf$/i.test(current.path || '');
 
     if (counter) counter.textContent = `${attViewerIdx + 1} / ${attViewerItems.length}`;
-    if (openBtn) openBtn.href = current.url || '#';
+    if (openBtn) {
+        if (safeCurrentUrl) {
+            openBtn.href = safeCurrentUrl;
+            openBtn.removeAttribute('aria-disabled');
+        } else {
+            openBtn.removeAttribute('href');
+            openBtn.setAttribute('aria-disabled', 'true');
+        }
+    }
 
     if (isPdf) {
         const hint = t.attachments_pdf_hint || (lang === 'ru' ? 'PDF-документ — нажмите «Открыть» или «Скачать»' : 'PDF document — tap Open or Download');
@@ -369,14 +392,15 @@ function renderAttachmentsViewerState() {
                 <span>${escapeHtml(hint)}</span>
             </div>`;
     } else {
-        stage.innerHTML = `<img src="${escapeHtml(current.url || '')}" alt="${escapeHtml(current.name || 'Receipt')}">`;
+        stage.innerHTML = `<img src="${escapeHtml(safeCurrentUrl)}" alt="${escapeHtml(current.name || 'Receipt')}">`;
     }
 
     if (thumbs) {
         thumbs.innerHTML = attViewerItems.map((att, idx) => {
             const pdf = att.type === 'application/pdf' || /\.pdf$/i.test(att.path || '');
+            const safeThumbUrl = getSafeReceiptUrl(att.url);
             return `<button type="button" class="att-viewer-thumb${idx === attViewerIdx ? ' active' : ''}" data-att-idx="${idx}" aria-label="${idx + 1}">
-                ${pdf ? '<i class="fa-solid fa-file-pdf"></i>' : `<img src="${escapeHtml(att.url || '')}" alt="">`}
+                ${pdf ? '<i class="fa-solid fa-file-pdf"></i>' : `<img src="${escapeHtml(safeThumbUrl)}" alt="">`}
             </button>`;
         }).join('');
     }
@@ -412,12 +436,13 @@ function initAttachmentsViewer() {
 
     dlBtn?.addEventListener('click', async () => {
         const cur = attViewerItems[attViewerIdx];
-        if (!cur?.url) return;
+        const safeUrl = getSafeReceiptUrl(cur?.url);
+        if (!safeUrl) return;
         const orig = dlBtn.innerHTML;
         dlBtn.disabled = true;
         dlBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
         try {
-            const res = await fetch(cur.url);
+            const res = await fetch(safeUrl);
             if (!res.ok) throw new Error('Download failed');
             const blob = await res.blob();
             const blobUrl = URL.createObjectURL(blob);
@@ -545,10 +570,10 @@ async function attachFreshSignedUrls(receipts, client) {
                 }
             });
         } else if (error) {
-            console.warn('Не удалось пакетно перевыпустить signed URLs, используем fallback:', error);
+            logError('receipts:batchSignUrls', error);
         }
     } catch (err) {
-        console.warn('Ошибка пакетного createSignedUrls, используем fallback:', err);
+        logError('receipts:batchSignUrlsCatch', err);
     }
 
     const missingPaths = pathsToSign.filter(p => !signedUrlByPath.has(p));
@@ -561,10 +586,10 @@ async function attachFreshSignedUrls(receipts, client) {
                 if (!error && data?.signedUrl) {
                     signedUrlByPath.set(p, data.signedUrl);
                 } else {
-                    console.warn('Не удалось перевыпустить signed URL для', p, error);
+                    logError('receipts:signUrl', error);
                 }
             } catch (err) {
-                console.warn('Не удалось перевыпустить signed URL для', p, err);
+                logError('receipts:signUrlCatch', err);
             }
         }));
     }
@@ -1179,13 +1204,10 @@ function restoreListeners(client, userId) {
                 return;
             }
             const rawUrl = await resolveFreshReceiptUrl(btn);
-            if (!rawUrl) return;
-            try {
-                const parsed = new URL(rawUrl, window.location.origin);
-                if (parsed.protocol === 'https:' || (parsed.protocol === 'http:' && parsed.origin === window.location.origin)) {
-                    window.open(parsed.href, '_blank', 'noopener,noreferrer');
-                }
-            } catch (_) { }
+            const safeUrl = getSafeReceiptUrl(rawUrl);
+            if (safeUrl) {
+                window.open(safeUrl, '_blank', 'noopener,noreferrer');
+            }
         });
     });
 
@@ -1198,12 +1220,9 @@ function restoreListeners(client, userId) {
 
             try {
                 const url = await resolveFreshReceiptUrl(btn);
-                if (!url) throw new Error('Missing receipt URL');
-                const parsed = new URL(url, window.location.origin);
-                if (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && parsed.origin === window.location.origin)) {
-                    throw new Error('Invalid receipt URL protocol');
-                }
-                const response = await fetch(parsed.href);
+                const safeUrl = getSafeReceiptUrl(url);
+                if (!safeUrl) throw new Error('Invalid or missing receipt URL');
+                const response = await fetch(safeUrl);
                 if (!response.ok) throw new Error('Network response was not ok');
                 const blob = await response.blob();
                 const blobUrl = URL.createObjectURL(blob);
@@ -1426,7 +1445,7 @@ function setupDeleteModal(client, userId) {
                     .remove([...pathsToRemove]);
 
                 if (storageError) {
-                    console.warn('Storage delete warning:', storageError.message);
+                    logError('receipts:storageDelete', storageError);
                 }
             }
 
@@ -1440,8 +1459,8 @@ function setupDeleteModal(client, userId) {
             logError('receipts:delete', err);
             showToast(
                 lang === 'ru'
-                    ? `Ошибка удаления записи: ${err.message}`
-                    : `Failed to delete record: ${err.message}`,
+                    ? 'Не удалось удалить чек. Попробуйте ещё раз.'
+                    : 'Failed to delete receipt. Please try again.',
                 'error'
             );
         } finally {
@@ -1585,8 +1604,8 @@ function createUploadModal(client, userId) {
 
     let isSubmitting = false;
 
-    function close() {
-        isSubmitting = false;
+    function close(force = false) {
+        if (isSubmitting && !force) return;
         if (modal.classList.contains('closing')) return;
         modal.classList.add('closing');
         modal._closeTimer = setTimeout(() => {
@@ -1829,36 +1848,6 @@ function createUploadModal(client, userId) {
         const filesToUpload = selectedFiles.slice(0, MAX_RECEIPT_ATTACHMENTS).map(e => e.file);
         for (const f of filesToUpload) {
             if (!validateReceiptFile(f)) return;
-            const magicOk = await verifyReceiptMagicBytes(f);
-            if (!magicOk) {
-                showToast(
-                    lang === 'ru'
-                        ? 'Содержимое файла не соответствует формату JPG, PNG, WebP или PDF.'
-                        : 'File contents do not match a valid JPG, PNG, WebP, or PDF file.',
-                    'error'
-                );
-                return;
-            }
-        }
-
-        const preCheckItemId = form.querySelector('[name="item_id"]')?.value || null;
-        if (preCheckItemId) {
-            const { data: existingLink } = await client
-                .from('receipts')
-                .select('id')
-                .eq('user_id', userId)
-                .eq('item_id', preCheckItemId)
-                .limit(1);
-            if (existingLink && existingLink.length > 0) {
-                showToast(
-                    lang === 'ru'
-                        ? 'К этому товару уже привязан чек.'
-                        : 'A receipt is already linked to this item.',
-                    'warning'
-                );
-                await populateItemSelect(userId, client);
-                return;
-            }
         }
 
         isSubmitting = true;
@@ -1867,6 +1856,39 @@ function createUploadModal(client, userId) {
 
         const uploadedPaths = [];
         try {
+            for (const f of filesToUpload) {
+                const magicOk = await verifyReceiptMagicBytes(f);
+                if (!magicOk) {
+                    showToast(
+                        lang === 'ru'
+                            ? 'Содержимое файла не соответствует формату JPG, PNG, WebP или PDF.'
+                            : 'File contents do not match a valid JPG, PNG, WebP, or PDF file.',
+                        'error'
+                    );
+                    return;
+                }
+            }
+
+            const preCheckItemId = form.querySelector('[name="item_id"]')?.value || null;
+            if (preCheckItemId) {
+                const { data: existingLink } = await client
+                    .from('receipts')
+                    .select('id')
+                    .eq('user_id', userId)
+                    .eq('item_id', preCheckItemId)
+                    .limit(1);
+                if (existingLink && existingLink.length > 0) {
+                    showToast(
+                        lang === 'ru'
+                            ? 'К этому товару уже привязан чек.'
+                            : 'A receipt is already linked to this item.',
+                        'warning'
+                    );
+                    await populateItemSelect(userId, client);
+                    return;
+                }
+            }
+
             const ts = Date.now();
             const uploadedAttachments = await Promise.all(filesToUpload.map(async (file, idx) => {
                 const ext = ALLOWED_RECEIPT_MIME_EXT[file.type];
@@ -1932,14 +1954,19 @@ function createUploadModal(client, userId) {
             }
 
             showToast(lang === 'ru' ? 'Чек успешно загружен!' : 'Receipt uploaded successfully!', 'success');
-            close();
+            close(true);
             activateReceiptsTab('personal');
             await loadAllReceipts(currentUserEmail, userId, client);
             await populateItemSelect(userId, client);
 
         } catch (err) {
             logError('receipts:upload', err);
-            showToast(lang === 'ru' ? `Ошибка: ${err.message}` : `Error: ${err.message}`, 'error');
+            showToast(
+                lang === 'ru'
+                    ? 'Не удалось загрузить чек. Попробуйте ещё раз.'
+                    : 'Failed to upload receipt. Please try again.',
+                'error'
+            );
         } finally {
             isSubmitting = false;
             btn.innerHTML = originalHTML;

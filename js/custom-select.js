@@ -437,10 +437,16 @@ class CustomSelect {
             }
         };
         this._keyHandler = (e) => {
-            if (e.key === 'Escape' || e.key === 'Tab') this.close();
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.close({ restoreFocus: true });
+            } else if (e.key === 'Tab') {
+                this.close();
+            }
         };
         document.addEventListener('click', this._closeHandler);
-        document.addEventListener('keydown', this._keyHandler);
+        document.addEventListener('keydown', this._keyHandler, true);
 
         if (!sheetMode) {
             this._scrollHandler = () => this.close();
@@ -461,7 +467,7 @@ class CustomSelect {
         }
     }
 
-    close() {
+    close({ restoreFocus = false } = {}) {
         if (!this.isOpen) return;
         this.isOpen = false;
 
@@ -491,7 +497,10 @@ class CustomSelect {
         }
 
         document.removeEventListener('click', this._closeHandler);
-        document.removeEventListener('keydown', this._keyHandler);
+        document.removeEventListener('keydown', this._keyHandler, true);
+        if (restoreFocus && this.trigger && typeof this.trigger.focus === 'function') {
+            this.trigger.focus();
+        }
         if (this._sheetTouchStart) {
             this.dropdown.removeEventListener('touchstart', this._sheetTouchStart);
             this._sheetTouchStart = null;

@@ -82,6 +82,7 @@ const businessTranslations = {
         error_item_qty: 'Количество должно быть целым числом не меньше 1',
         error_item_price: 'Укажите корректную цену (не меньше 0)',
         error_item_vat: 'Ставка налога должна быть от 0 до 100%',
+        error_item_discount: 'Скидка должна быть от 0 до 100%',
         error_item_warranty: 'Гарантия должна быть целым числом от 0 до 600 мес.',
 
         success_title: 'Чек выписан!',
@@ -501,6 +502,7 @@ const businessTranslations = {
         error_item_qty: 'Quantity must be a whole number of at least 1',
         error_item_price: 'Enter a valid price (0 or more)',
         error_item_vat: 'Tax rate must be between 0 and 100%',
+        error_item_discount: 'Discount must be between 0 and 100%',
         error_item_warranty: 'Warranty must be a whole number between 0 and 600 months',
 
         success_title: 'Receipt issued!',
@@ -1002,7 +1004,16 @@ function translateReceiptCards(t) {
             const dateStr = card.getAttribute('data-receipt-date');
             if (dateStr) {
                 const locale = businessCurrentLang === 'en' ? 'en-US' : 'ru-RU';
-                el.textContent = new Date(dateStr).toLocaleDateString(locale);
+                let parsedDate = null;
+                if (/^\d{4}-\d{2}-\d{2}/.test(dateStr.trim())) {
+                    const [y, m, d] = dateStr.trim().slice(0, 10).split('-').map(Number);
+                    parsedDate = new Date(y, m - 1, d);
+                } else {
+                    parsedDate = new Date(dateStr);
+                }
+                if (parsedDate && !Number.isNaN(parsedDate.getTime())) {
+                    el.textContent = parsedDate.toLocaleDateString(locale);
+                }
             }
         }
     });

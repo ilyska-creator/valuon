@@ -914,8 +914,11 @@ class CustomDatePicker {
         const datePart = str.slice(0, 10);
         const parts = datePart.split('-');
         if (parts.length !== 3) return null;
-        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-        if (isNaN(d.getTime())) return null;
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const day = parseInt(parts[2], 10);
+        const d = new Date(year, month - 1, day);
+        if (isNaN(d.getTime()) || d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
         if (this.isDatetime && str.includes('T')) {
             const timePart = str.split('T')[1] || '';
             const [hh, mm] = timePart.split(':').map(n => parseInt(n, 10));

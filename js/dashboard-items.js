@@ -84,8 +84,10 @@ async function initDashboardItems() {
     setupItemsTabs(auth.user.id, auth.user.email, auth.client);
     setupItemsSort();
     setupItemsSearch();
-    await loadItems(auth.user.id, auth.client);
-    await loadVerifiedItems(auth.user.email, auth.client);
+    await Promise.all([
+        loadItems(auth.user.id, auth.client),
+        loadVerifiedItems(auth.user.email, auth.client)
+    ]);
     let hasSavedItemsTab = false;
     try { hasSavedItemsTab = Boolean(localStorage.getItem('valuon-items-tab')); } catch (_) {}
     if (!hasSavedItemsTab && lastVerifiedReceipts.length === 0 && lastMineItems.length > 0) {
@@ -181,7 +183,10 @@ function setupItemsSort() {
 function getItemDateTs(item) {
     const raw = item.purchase_date || item.created_at;
     if (!raw) return 0;
-    const ms = new Date(raw).getTime();
+    const dt = (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.trim()))
+        ? parseLocalDate(raw)
+        : new Date(raw);
+    const ms = dt ? dt.getTime() : NaN;
     return Number.isFinite(ms) ? ms : 0;
 }
 
@@ -374,9 +379,13 @@ async function downloadVerifiedReceiptPDF(receiptId, btn) {
 }
 
 
+let loadItemsSeq = 0;
+
 async function loadItems(userId, client) {
     const grid = document.querySelector('#items-grid-mine');
     if (!grid) return;
+
+    const seq = ++loadItemsSeq;
 
     grid.innerHTML = '<div class="rotating-loader"></div>';
     const loaderEl = grid.querySelector('.rotating-loader');
@@ -403,6 +412,8 @@ async function loadItems(userId, client) {
             .not('item_id', 'is', null)
             .order('created_at', { ascending: false })
     ]);
+
+    if (seq !== loadItemsSeq) return;
 
     const { data: items, error } = itemsRes;
 
@@ -868,9 +879,13 @@ function renderVerifiedItems(receipts, t, opts = {}) {
     }
 }
 
+let loadVerifiedItemsSeq = 0;
+
 async function loadVerifiedItems(userEmail, client) {
     const grid = document.querySelector('#items-grid-verified');
     if (!grid) return;
+
+    const seq = ++loadVerifiedItemsSeq;
 
     grid.innerHTML = '<div class="rotating-loader"></div>';
     const loaderEl = grid.querySelector('.rotating-loader');
@@ -885,6 +900,7 @@ async function loadVerifiedItems(userEmail, client) {
     }
 
     const userPhone = await fetchCurrentUserPhone(client, currentUserId);
+    if (seq !== loadVerifiedItemsSeq) return;
     const buyerOrFilter = buildBuyerReceiptOrFilter({ userId: currentUserId, email: userEmail, phone: userPhone });
 
     let res = buyerOrFilter
@@ -910,6 +926,8 @@ async function loadVerifiedItems(userEmail, client) {
             .eq('customer_email', userEmail)
             .order('purchase_date', { ascending: false });
     }
+
+    if (seq !== loadVerifiedItemsSeq) return;
 
     const { data, error } = res;
 
@@ -1328,7 +1346,7 @@ function setupEditModal(client, userId) {
 
         } catch (err) {
             logError('items:update', err);
-            showToast((t.msg_item_update_failed || 'Update failed') + ': ' + err.message, 'error');
+            showToast(t.msg_item_update_failed || 'Update failed', 'error');
             resetSubmitState();
         }
     });
@@ -1376,7 +1394,7 @@ function setupDeleteItemModal(client, userId) {
 
         } catch (err) {
             logError('items:delete', err);
-            showToast((t.msg_item_delete_failed || 'Delete failed') + ': ' + err.message, 'error');
+            showToast(t.msg_item_delete_failed || 'Delete failed', 'error');
         } finally {
             confirmBtn.innerHTML = originalHTML;
             confirmBtn.disabled = false;

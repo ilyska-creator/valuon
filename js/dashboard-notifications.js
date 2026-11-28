@@ -252,9 +252,13 @@ export async function refreshNotifBadge() {
     }
 }
 
+let loadNotificationsSeq = 0;
+
 async function loadNotifications(userId, userEmail, client) {
     const container = document.getElementById('notifications-container');
     if (!container) return;
+
+    const seq = ++loadNotificationsSeq;
 
     const checkingText = window.dashboardTranslations?.[(window.getValuonLang ? window.getValuonLang() : 'en')]?.notif_checking || 'Проверка статусов...';
     container.innerHTML = `<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> ${checkingText}</div>`;
@@ -264,6 +268,8 @@ async function loadNotifications(userId, userEmail, client) {
         client.from('items').select('name, purchase_date, warranty_months, warranty_end_date').eq('user_id', userId).order('purchase_date', { ascending: false }),
         fetchBuyerPartnerReceipts(userId, userEmail, client)
     ]);
+
+    if (seq !== loadNotificationsSeq) return;
 
     const t = getNotifT();
     const expiryAlertsEnabled = profileRes.data?.expiry_alerts ?? true;

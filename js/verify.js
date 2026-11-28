@@ -415,8 +415,11 @@ function buildViewDataFromVerified(receipt, shop) {
     const items = Array.isArray(receipt.items) ? receipt.items : [];
     const receiptNum = receipt.receiptNumber ? `#RCP-${receipt.receiptNumber}` : null;
     const registerSerial = receipt.posSerial || receipt.pos_serial || null;
-    const shopLogoUrl = shop?.logoPath
-        ? `${SUPABASE_URL}/storage/v1/object/public/shop-logos/${shop.logoPath}`
+    const safeLogoPath = typeof shop?.logoPath === 'string'
+        ? shop.logoPath.split('/').filter(s => s && s !== '.' && s !== '..').map(encodeURIComponent).join('/')
+        : '';
+    const shopLogoUrl = safeLogoPath
+        ? `${SUPABASE_URL}/storage/v1/object/public/shop-logos/${safeLogoPath}`
         : null;
 
     let lifecycleLabel = null;
@@ -977,7 +980,10 @@ scanFileInput?.addEventListener('change', async () => {
     }
 });
 
+let filePreviewSeq = 0;
+
 fileInput?.addEventListener('change', async () => {
+    const seq = ++filePreviewSeq;
     const file = fileInput.files?.[0];
     if (!file) return;
 
@@ -1012,16 +1018,21 @@ fileInput?.addEventListener('change', async () => {
     if (file.type === 'application/pdf') {
         try {
             const buf = await file.arrayBuffer();
+            if (seq !== filePreviewSeq) return;
             const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+            if (seq !== filePreviewSeq) return;
             const page = await pdf.getPage(1);
+            if (seq !== filePreviewSeq) return;
             const vp = page.getViewport({ scale: 1.5 });
             const c = document.createElement('canvas');
             c.width = vp.width;
             c.height = vp.height;
             const ctx = c.getContext('2d');
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            if (seq !== filePreviewSeq) return;
             previewImg.src = c.toDataURL();
         } catch (e) {
+            if (seq !== filePreviewSeq) return;
             logError('verify:pdfPreview', e);
             previewImg.removeAttribute('src');
         }
@@ -1030,6 +1041,7 @@ fileInput?.addEventListener('change', async () => {
         previewImg.src = activePreviewObjectUrl;
     }
 
+    if (seq !== filePreviewSeq) return;
     uploadPreview?.classList.add('active');
 });
 
