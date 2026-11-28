@@ -10,6 +10,8 @@
         content="Valuon — Personal dashboard for tracking purchases, warranties, and verified digital receipts.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://qjnzawjivqvgupbgxdao.supabase.co" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -179,8 +181,12 @@
         </section>
 
         <section id="view-notifications" class="dashboard-view hidden">
-            <header class="content-header">
+            <header class="content-header notif-header">
                 <h1 data-i18n="nav_notifications">Notifications</h1>
+                <button type="button" id="notif-mark-all-read-btn" class="btn-notif-mark-all hidden">
+                    <i class="fa-solid fa-check-double" aria-hidden="true"></i>
+                    <span data-i18n="notif_mark_all_read">Mark all as read</span>
+                </button>
             </header>
 
             <div class="notifications-list" id="notifications-container">

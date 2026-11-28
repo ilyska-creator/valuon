@@ -1,6 +1,5 @@
 import { requireAuth, setupLogout } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
-import { downloadICS, downloadAllICS } from './calendar-export.js';
 import { refreshNotifBadge } from './dashboard-notifications.js';
 import { attachModalA11y } from './modal-a11y.js';
 import { calculateDaysLeft, isNoWarranty, parseLocalDate } from './warranty-utils.js';
@@ -636,13 +635,14 @@ function renderItems(items, opts = {}) {
     });
 
     grid.querySelectorAll('.btn-add-calendar').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             const item = lastMineItems.find(it => String(it.id) === btn.dataset.id);
             if (!item) {
                 logError('items:calendar', new Error('Item not found'));
                 showToast(t.msg_calendar_error || 'Не удалось создать событие календаря', 'error');
                 return;
             }
+            const { downloadICS } = await import('./calendar-export.js');
             downloadICS(item);
         });
     });
@@ -857,13 +857,14 @@ function renderVerifiedItems(receipts, t, opts = {}) {
     });
 
     grid.querySelectorAll('.btn-add-calendar').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             const item = lastVerifiedItems.find(it => String(it.id) === btn.dataset.id);
             if (!item) {
                 logError('items:calendar', new Error('Item not found'));
                 showToast(t.msg_calendar_error || 'Не удалось создать событие календаря', 'error');
                 return;
             }
+            const { downloadICS } = await import('./calendar-export.js');
             downloadICS(item);
         });
     });
@@ -1115,8 +1116,9 @@ function updateExportAllCalendarBar() {
     const btn = document.getElementById('export-all-calendar-btn');
     const iconWrap = document.getElementById('export-all-calendar-icon');
     let resetTimer = null;
-    btn?.addEventListener('click', () => {
+    btn?.addEventListener('click', async () => {
         const active = getActiveWarrantyItems();
+        const { downloadAllICS } = await import('./calendar-export.js');
         const exported = downloadAllICS(active);
         if (exported > 0 && iconWrap) {
             if (resetTimer) clearTimeout(resetTimer);

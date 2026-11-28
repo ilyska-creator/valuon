@@ -2,7 +2,6 @@ import { requireAuth } from './dashboard-auth.js';
 import { downloadReceiptPDF, generateQRDataURL, buildQrPayload } from './receipt-generator.js?v=20261126l';
 import { escapeHtml, logError, pluralRu } from './security.js';
 import { attachModalA11y } from './modal-a11y.js';
-import { buildXlsxBlob } from './xlsx-export.js';
 import {
     normalizePhone,
     splitPhone,
@@ -4117,9 +4116,12 @@ async function initBusinessPanel() {
                 renderView(views.shop);
             } else if (shop) {
                 updateShopInfo(shop);
-                await Promise.all([loadTerminals(shop.id), loadShopProducts(shop.id)]);
                 renderView(views.dashboard);
-                await refreshDashboard(client, shop.id, stats, list);
+                await Promise.all([
+                    loadTerminals(shop.id),
+                    loadShopProducts(shop.id),
+                    refreshDashboard(client, shop.id, stats, list)
+                ]);
             } else {
                 renderView(views.dashboard);
             }
@@ -5461,6 +5463,7 @@ async function initBusinessPanel() {
                 }
             }
 
+            const { buildXlsxBlob } = await import('./xlsx-export.js');
             const blob = buildXlsxBlob([
                 {
                     name: t.export_sheet_receipts || (currentLang === 'en' ? 'Receipts' : 'Чеки'),

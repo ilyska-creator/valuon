@@ -1,12 +1,6 @@
 import { requireAuth } from './dashboard-auth.js';
 import { escapeHtml, logError } from './security.js';
-import {
-    calculateDaysLeft,
-    isNoWarranty,
-    extractActivePartnerWarrantyItems,
-    parseLocalDate
-} from './warranty-utils.js';
-import { buildBuyerReceiptOrFilter, fetchCurrentUserPhone } from './phone-utils.js';
+import { calculateDaysLeft, parseLocalDate } from './warranty-utils.js';
 
 function getNotifLang() {
     return (window.getValuonLang ? window.getValuonLang() : 'en');
@@ -26,211 +20,322 @@ function formatDate(dateStr) {
     return date.toLocaleDateString(locale, { day: 'numeric', month: 'numeric', year: 'numeric' });
 }
 
+function formatAmount(rawVal, currency) {
+    const num = parseFloat(rawVal) || 0;
+    const cur = currency || 'EUR';
+    const lang = getNotifLang();
+    if (typeof window.formatCurrency === 'function') {
+        return escapeHtml(window.formatCurrency(num, cur, lang));
+    }
+    return escapeHtml(`${num.toFixed(2)} ${cur}`);
+}
+
 function updateNotifBadge(count) {
+    const safeCount = Math.max(0, Number(count) || 0);
     document.querySelectorAll('[data-notif-badge]').forEach(el => {
-        if (count > 0) {
-            el.textContent = count > 99 ? '99+' : String(count);
+        if (safeCount > 0) {
+            el.textContent = safeCount > 99 ? '99+' : String(safeCount);
             el.classList.remove('hidden');
         } else {
             el.textContent = '';
             el.classList.add('hidden');
         }
     });
+    const markAllBtn = document.getElementById('notif-mark-all-read-btn');
+    if (markAllBtn) {
+        markAllBtn.classList.toggle('hidden', safeCount === 0);
+    }
 }
 
-async function fetchBuyerPartnerReceipts(userId, userEmail, client) {
-    if (!userId && !userEmail) return [];
-    const userPhone = await fetchCurrentUserPhone(client, userId);
-    const buyerOrFilter = buildBuyerReceiptOrFilter({ userId, email: userEmail, phone: userPhone });
+function formatDbNotification(row, t) {
+    const p = row.payload || {};
+    const type = row.type;
+    const isUnread = !row.read_at;
 
-    const fullSelect = 'id, receipt_number, shop_name, purchase_date, lifecycle_status, status_changed_at, status_reason, refunded_amount, gross_total, currency, receipt_items(id, item_name, qty, refunded_qty, warranty_months, warranty_end_date)';
-    const legacySelect = 'id, receipt_number, shop_name, purchase_date, gross_total, currency, receipt_items(id, item_name, qty, warranty_months, warranty_end_date)';
-
-    let res = buyerOrFilter
-        ? await client
-            .from('business_receipts')
-            .select(fullSelect)
-            .or(buyerOrFilter)
-            .order('purchase_date', { ascending: false })
-        : { data: [], error: null };
-
-    if (res.error && res.error.code === '42703' && userEmail) {
-        res = await client
-            .from('business_receipts')
-            .select(fullSelect)
-            .eq('customer_email', userEmail)
-            .order('purchase_date', { ascending: false });
-    }
-
-    if (res.error && res.error.code === '42703' && userEmail) {
-        res = await client
-            .from('business_receipts')
-            .select(legacySelect)
-            .eq('customer_email', userEmail)
-            .order('purchase_date', { ascending: false });
-    }
-
-    const { data, error } = res;
-    if (error) {
-        if (error.code !== '42703') logError('notif:partnerReceipts', error);
-        return [];
-    }
-    return data || [];
-}
-
-function filterRecentLifecycleReceipts(receipts) {
-    const cutoffMs = Date.now() - 30 * 86400000;
-    const validStatuses = new Set(['voided', 'refunded', 'partially_refunded']);
-    return (receipts || [])
-        .filter(r => {
-            if (!validStatuses.has(r.lifecycle_status)) return false;
-            if (!r.status_changed_at) return false;
-            const ts = new Date(r.status_changed_at).getTime();
-            return Number.isFinite(ts) && ts >= cutoffMs;
-        })
-        .sort((a, b) => new Date(b.status_changed_at).getTime() - new Date(a.status_changed_at).getTime());
-}
-
-function buildLifecycleNotifications(receipts, t) {
-    const lang = getNotifLang();
-    return (receipts || []).map(r => {
-        const lc = r.lifecycle_status || 'voided';
-        const receiptNum = escapeHtml(r.receipt_number ? `#RCP-${r.receipt_number}` : `#${String(r.id).slice(0, 8).toUpperCase()}`);
-        const shopName = escapeHtml(r.shop_name || '—');
-        const reasonPart = r.status_reason
-            ? ` ${escapeHtml(t.lifecycle_reason_prefix || 'Причина:')} ${escapeHtml(r.status_reason)}`
+    if (type === 'receipt_issued' || type === 'receipt_voided' || type === 'receipt_refunded' || type === 'receipt_partially_refunded') {
+        const receiptNum = escapeHtml(
+            p.receipt_number
+                ? `#RCP-${p.receipt_number}`
+                : `#${String(p.receipt_id || row.entity_id || '').slice(0, 8).toUpperCase()}`
+        );
+        const shopName = escapeHtml(p.shop_name || '—');
+        const reasonPart = p.reason
+            ? ` ${escapeHtml(t.lifecycle_reason_prefix || 'Причина:')} ${escapeHtml(p.reason)}`
             : '';
-        const currency = r.currency || 'EUR';
-        const rawAmount = lc === 'partially_refunded'
-            ? (parseFloat(r.refunded_amount) || 0)
-            : (parseFloat(r.gross_total) || 0);
-        const amountStr = typeof window.formatCurrency === 'function'
-            ? escapeHtml(window.formatCurrency(rawAmount, currency, lang))
-            : escapeHtml(`${rawAmount.toFixed(2)} ${currency}`);
+        const currency = p.currency || 'EUR';
 
-        if (lc === 'voided') {
+        if (type === 'receipt_issued') {
+            const amountStr = formatAmount(p.gross_total, currency);
             return {
-                type: 'lifecycle-voided',
+                id: row.id,
+                isUnread,
+                cardClass: 'receipt-issued',
+                icon: 'fa-receipt',
+                title: (t.notif_receipt_issued_title || 'Новый чек {num}').replace('{num}', () => receiptNum),
+                text: (t.notif_receipt_issued_text || 'Магазин «{shop}» выписал чек на сумму {amount}.')
+                    .replace('{shop}', () => shopName)
+                    .replace('{amount}', () => amountStr),
+                date: formatDate(p.purchase_date || row.created_at)
+            };
+        }
+
+        if (type === 'receipt_voided') {
+            return {
+                id: row.id,
+                isUnread,
+                cardClass: 'lifecycle-voided',
                 icon: 'fa-ban',
                 title: (t.notif_receipt_voided_title || 'Чек {num} аннулирован').replace('{num}', () => receiptNum),
                 text: (t.notif_receipt_voided_text || 'Магазин «{shop}» аннулировал чек.{reason}')
                     .replace('{shop}', () => shopName)
                     .replace('{reason}', () => reasonPart),
-                date: r.status_changed_at ? formatDate(r.status_changed_at) : ''
+                date: formatDate(p.status_changed_at || row.created_at)
             };
         }
 
-        if (lc === 'partially_refunded') {
+        if (type === 'receipt_partially_refunded') {
+            const amountStr = formatAmount(p.amount_delta ?? p.refunded_amount, currency);
             return {
-                type: 'lifecycle-partial',
+                id: row.id,
+                isUnread,
+                cardClass: 'lifecycle-partial',
                 icon: 'fa-rotate-left',
                 title: (t.notif_receipt_partial_title || 'Частичный возврат по чеку {num}').replace('{num}', () => receiptNum),
                 text: (t.notif_receipt_partial_text || 'Магазин «{shop}» вернул часть позиций ({amount}).{reason}')
                     .replace('{shop}', () => shopName)
                     .replace('{amount}', () => amountStr)
                     .replace('{reason}', () => reasonPart),
-                date: r.status_changed_at ? formatDate(r.status_changed_at) : ''
+                date: formatDate(p.status_changed_at || row.created_at)
             };
         }
 
+        const amountStr = formatAmount(p.gross_total ?? p.refunded_amount, currency);
         return {
-            type: 'lifecycle-refunded',
+            id: row.id,
+            isUnread,
+            cardClass: 'lifecycle-refunded',
             icon: 'fa-rotate-left',
             title: (t.notif_receipt_refunded_title || 'Возврат по чеку {num}').replace('{num}', () => receiptNum),
             text: (t.notif_receipt_refunded_text || 'Магазин «{shop}» оформил полный возврат ({amount}).{reason}')
                 .replace('{shop}', () => shopName)
                 .replace('{amount}', () => amountStr)
                 .replace('{reason}', () => reasonPart),
-            date: r.status_changed_at ? formatDate(r.status_changed_at) : ''
+            date: formatDate(p.status_changed_at || row.created_at)
         };
-    });
-}
-
-function buildWarrantyNotifications(personalItems, partnerItems, t) {
-    const expiring = [];
-    const expired = [];
-
-    const processItem = (item, isPartner) => {
-        if (isNoWarranty(item)) return;
-        const daysLeft = calculateDaysLeft(item.warranty_end_date);
-        if (daysLeft > 30) return;
-
-        const baseName = item.name || t.item_name_unknown || 'Товар';
-        const displayName = isPartner && item.active_qty > 1
-            ? `${baseName} ×${item.active_qty}`
-            : baseName;
-        const shopMeta = isPartner && item.shop_name ? escapeHtml(item.shop_name) : '';
-
-        if (daysLeft >= 0) {
-            const datePart = item.warranty_end_date ? formatDate(item.warranty_end_date) : '';
-            const isToday = daysLeft === 0;
-            expiring.push({
-                daysLeft,
-                type: 'warning',
-                icon: 'fa-triangle-exclamation',
-                title: (isToday
-                    ? (t.notif_expires_today_title || 'Warranty for "{name}" expires today')
-                    : (t.notif_expiring_title || 'Warranty for "{name}" is expiring')
-                ).replace('{name}', () => escapeHtml(displayName)),
-                text: isToday
-                    ? (t.notif_expires_today_text || 'Last day of warranty. Check device condition.')
-                    : (t.notif_expiring_text || '{count} days left. Check device condition.').replace('{count}', String(daysLeft)),
-                date: shopMeta && datePart ? `${shopMeta} · ${datePart}` : (shopMeta || datePart)
-            });
-        } else {
-            const absDays = Math.abs(daysLeft);
-            const datePart = item.warranty_end_date ? formatDate(item.warranty_end_date) : formatDate(item.purchase_date);
-            expired.push({
-                daysLeft,
-                type: 'expired',
-                icon: 'fa-circle-xmark',
-                title: (t.notif_expired_title || 'Warranty for "{name}" has expired').replace('{name}', () => escapeHtml(displayName)),
-                text: (t.notif_expired_text || 'Expired {count} days ago.').replace('{count}', String(absDays)),
-                date: shopMeta && datePart ? `${shopMeta} · ${datePart}` : (shopMeta || datePart)
-            });
-        }
-    };
-
-    (personalItems || []).forEach(item => processItem(item, false));
-    (partnerItems || []).forEach(item => processItem(item, true));
-
-    expiring.sort((a, b) => a.daysLeft - b.daysLeft);
-    expired.sort((a, b) => b.daysLeft - a.daysLeft);
-
-    return [...expiring, ...expired];
-}
-
-async function computeActiveAlertsCount(userId, userEmail, client) {
-    const [profileRes, partnerReceipts] = await Promise.all([
-        client.from('profiles').select('expiry_alerts').eq('id', userId).single(),
-        fetchBuyerPartnerReceipts(userId, userEmail, client)
-    ]);
-
-    const lifecycleReceipts = filterRecentLifecycleReceipts(partnerReceipts);
-    let count = lifecycleReceipts.length;
-    const expiryAlertsEnabled = profileRes.data?.expiry_alerts ?? true;
-    if (!expiryAlertsEnabled) return count;
-
-    const { data: items, error } = await client
-        .from('items')
-        .select('purchase_date, warranty_months, warranty_end_date')
-        .eq('user_id', userId);
-
-    if (!error && Array.isArray(items)) {
-        items.forEach(item => {
-            if (isNoWarranty(item)) return;
-            const daysLeft = calculateDaysLeft(item.warranty_end_date);
-            if (daysLeft <= 30) count++;
-        });
     }
 
-    const partnerWarrantyItems = extractActivePartnerWarrantyItems(partnerReceipts);
-    partnerWarrantyItems.forEach(item => {
-        const daysLeft = calculateDaysLeft(item.warranty_end_date);
-        if (daysLeft <= 30) count++;
+    // Warranty notifications (compute live daysLeft from warranty_end_date)
+    const baseName = p.item_name || t.item_name_unknown || 'Товар';
+    const activeQty = Number(p.active_qty || 1);
+    const displayName = p.is_partner && activeQty > 1 ? `${baseName} ×${activeQty}` : baseName;
+    const shopMeta = p.is_partner && p.shop_name ? escapeHtml(p.shop_name) : '';
+    const datePart = p.warranty_end_date ? formatDate(p.warranty_end_date) : formatDate(p.purchase_date || row.created_at);
+    const metaDate = shopMeta && datePart ? `${shopMeta} · ${datePart}` : (shopMeta || datePart);
+
+    const daysLeft = p.warranty_end_date ? calculateDaysLeft(p.warranty_end_date) : (type === 'warranty_expired' ? -1 : 0);
+
+    if (daysLeft < 0 || type === 'warranty_expired') {
+        const absDays = Math.max(1, Math.abs(daysLeft));
+        return {
+            id: row.id,
+            isUnread,
+            cardClass: 'expired',
+            icon: 'fa-circle-xmark',
+            title: (t.notif_expired_title || 'Warranty for "{name}" has expired').replace('{name}', () => escapeHtml(displayName)),
+            text: (t.notif_expired_text || 'Expired {count} days ago.').replace('{count}', String(absDays)),
+            date: metaDate
+        };
+    }
+
+    const isToday = daysLeft === 0;
+    return {
+        id: row.id,
+        isUnread,
+        cardClass: 'warning',
+        icon: 'fa-triangle-exclamation',
+        title: (isToday
+            ? (t.notif_expires_today_title || 'Warranty for "{name}" expires today')
+            : (t.notif_expiring_title || 'Warranty for "{name}" is expiring')
+        ).replace('{name}', () => escapeHtml(displayName)),
+        text: isToday
+            ? (t.notif_expires_today_text || 'Last day of warranty. Check device condition.')
+            : (t.notif_expiring_text || '{count} days left. Check device condition.').replace('{count}', String(daysLeft)),
+        date: metaDate
+    };
+}
+
+async function getExpiryAlertsEnabled(userId, client) {
+    const { data } = await client
+        .from('profiles')
+        .select('expiry_alerts')
+        .eq('id', userId)
+        .maybeSingle();
+    return data?.expiry_alerts ?? true;
+}
+
+async function computeActiveAlertsCount(userId, client) {
+    const expiryAlertsEnabled = await getExpiryAlertsEnabled(userId, client);
+    let query = client
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .is('read_at', null)
+        .is('dismissed_at', null);
+
+    if (!expiryAlertsEnabled) {
+        query = query.not('type', 'like', 'warranty_%');
+    }
+
+    const { count, error } = await query;
+    if (error) {
+        logError('notif:unreadCount', error);
+        return 0;
+    }
+    return count || 0;
+}
+
+let cachedNotifications = [];
+let cachedExpiryAlertsEnabled = true;
+
+function renderNotificationsList(container) {
+    const t = getNotifT();
+    const dismissTitle = escapeHtml(t.notif_dismiss_title || 'Dismiss');
+    const unreadCount = cachedNotifications.filter(n => !n.read_at).length;
+    updateNotifBadge(unreadCount);
+
+    if (cachedNotifications.length === 0) {
+        if (!cachedExpiryAlertsEnabled) {
+            container.innerHTML = `
+                <div class="notification-card info">
+                    <div class="notif-icon"><i class="fa-solid fa-bell-slash"></i></div>
+                    <div class="notif-content">
+                        <h4>${escapeHtml(t.notif_disabled_title || 'Notifications disabled')}</h4>
+                        <p>${escapeHtml(t.notif_disabled_desc || 'Enable warranty reminders in Settings to see alerts here.')}</p>
+                    </div>
+                </div>`;
+        } else {
+            container.innerHTML = `
+                <div class="notification-card info">
+                    <div class="notif-icon"><i class="fa-solid fa-check-circle"></i></div>
+                    <div class="notif-content">
+                        <h4>${escapeHtml(t.notif_none_title || t.notif_all_good_title || 'All good!')}</h4>
+                        <p>${escapeHtml(t.notif_none_desc || '')}</p>
+                    </div>
+                </div>`;
+        }
+        return;
+    }
+
+    const cards = cachedNotifications.map(row => formatDbNotification(row, t));
+    const disabledBanner = !cachedExpiryAlertsEnabled
+        ? `
+            <div class="notification-card info">
+                <div class="notif-icon"><i class="fa-solid fa-bell-slash"></i></div>
+                <div class="notif-content">
+                    <h4>${escapeHtml(t.notif_disabled_title || 'Notifications disabled')}</h4>
+                    <p>${escapeHtml(t.notif_disabled_desc || 'Enable warranty reminders in Settings to see alerts here.')}</p>
+                </div>
+            </div>`
+        : '';
+
+    container.innerHTML = disabledBanner + cards.map(n => `
+        <div class="notification-card ${n.cardClass} ${n.isUnread ? 'is-unread' : 'is-read'}" data-notif-id="${escapeHtml(n.id)}">
+            <div class="notif-icon"><i class="fa-solid ${n.icon}"></i></div>
+            <div class="notif-content">
+                <h4>${n.title}</h4>
+                <p>${n.text}</p>
+                ${n.date ? `<span class="notif-time">${n.date}</span>` : ''}
+            </div>
+            ${n.isUnread ? '<span class="notif-unread-dot" aria-hidden="true"></span>' : ''}
+            <button type="button" class="notif-dismiss-btn" data-notif-dismiss="${escapeHtml(n.id)}" title="${dismissTitle}" aria-label="${dismissTitle}">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+let notifActionsBound = false;
+
+function bindNotificationActions(container) {
+    if (notifActionsBound) return;
+    notifActionsBound = true;
+
+    container.addEventListener('click', async (e) => {
+        if (!cachedClient) return;
+
+        const dismissBtn = e.target.closest('[data-notif-dismiss]');
+        if (dismissBtn) {
+            e.stopPropagation();
+            const id = dismissBtn.getAttribute('data-notif-dismiss');
+            if (!id) return;
+            const nowIso = new Date().toISOString();
+            const prev = cachedNotifications;
+            cachedNotifications = cachedNotifications.filter(n => n.id !== id);
+            renderNotificationsList(container);
+
+            const { error } = await cachedClient
+                .from('notifications')
+                .update({ dismissed_at: nowIso, read_at: nowIso })
+                .eq('id', id);
+            if (error) {
+                logError('notif:dismiss', error);
+                cachedNotifications = prev;
+                renderNotificationsList(container);
+            }
+            return;
+        }
+
+        const card = e.target.closest('.notification-card.is-unread[data-notif-id]');
+        if (card) {
+            const id = card.getAttribute('data-notif-id');
+            if (!id) return;
+            const nowIso = new Date().toISOString();
+            const target = cachedNotifications.find(n => n.id === id);
+            if (!target || target.read_at) return;
+            target.read_at = nowIso;
+            renderNotificationsList(container);
+
+            const { error } = await cachedClient
+                .from('notifications')
+                .update({ read_at: nowIso })
+                .eq('id', id);
+            if (error) {
+                logError('notif:markRead', error);
+                target.read_at = null;
+                renderNotificationsList(container);
+            }
+        }
     });
 
-    return count;
+    const markAllBtn = document.getElementById('notif-mark-all-read-btn');
+    markAllBtn?.addEventListener('click', async () => {
+        if (!cachedClient || markAllBtn.disabled) return;
+        const unreadIds = cachedNotifications.filter(n => !n.read_at).map(n => n.id);
+        if (unreadIds.length === 0) return;
+
+        markAllBtn.disabled = true;
+        const nowIso = new Date().toISOString();
+        const prevReadMap = new Map(cachedNotifications.map(n => [n.id, n.read_at]));
+        cachedNotifications.forEach(n => { if (!n.read_at) n.read_at = nowIso; });
+        renderNotificationsList(container);
+
+        try {
+            const { error } = await cachedClient
+                .from('notifications')
+                .update({ read_at: nowIso })
+                .in('id', unreadIds);
+            if (error) throw error;
+            const t = getNotifT();
+            if (typeof window.showToast === 'function') {
+                window.showToast(t.notif_all_read || 'All notifications read', 'success');
+            }
+        } catch (err) {
+            logError('notif:markAllRead', err);
+            cachedNotifications.forEach(n => { n.read_at = prevReadMap.get(n.id) ?? null; });
+            renderNotificationsList(container);
+        } finally {
+            markAllBtn.disabled = false;
+        }
+    });
 }
 
 export async function refreshNotifBadge() {
@@ -238,13 +343,12 @@ export async function refreshNotifBadge() {
         const auth = await requireAuth();
         if (!auth) return;
         cachedUserId = auth.user.id;
-        cachedUserEmail = auth.user.email;
         cachedClient = auth.client;
         if (notifInitialized) {
-            await loadNotifications(auth.user.id, auth.user.email, auth.client);
+            await loadNotifications(auth.user.id, auth.client);
             currentNotifLang = getNotifLang();
         } else {
-            const count = await computeActiveAlertsCount(auth.user.id, auth.user.email, auth.client);
+            const count = await computeActiveAlertsCount(auth.user.id, auth.client);
             updateNotifBadge(count);
         }
     } catch (e) {
@@ -254,86 +358,43 @@ export async function refreshNotifBadge() {
 
 let loadNotificationsSeq = 0;
 
-async function loadNotifications(userId, userEmail, client) {
+async function loadNotifications(userId, client) {
     const container = document.getElementById('notifications-container');
     if (!container) return;
 
+    bindNotificationActions(container);
     const seq = ++loadNotificationsSeq;
 
-    const checkingText = window.dashboardTranslations?.[(window.getValuonLang ? window.getValuonLang() : 'en')]?.notif_checking || 'Проверка статусов...';
-    container.innerHTML = `<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> ${checkingText}</div>`;
+    const checkingText = getNotifT().notif_checking || 'Проверка статусов...';
+    container.innerHTML = `<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> ${escapeHtml(checkingText)}</div>`;
 
-    const [profileRes, itemsRes, partnerReceipts] = await Promise.all([
-        client.from('profiles').select('expiry_alerts').eq('id', userId).single(),
-        client.from('items').select('name, purchase_date, warranty_months, warranty_end_date').eq('user_id', userId).order('purchase_date', { ascending: false }),
-        fetchBuyerPartnerReceipts(userId, userEmail, client)
-    ]);
-
+    const expiryAlertsEnabled = await getExpiryAlertsEnabled(userId, client);
     if (seq !== loadNotificationsSeq) return;
 
-    const t = getNotifT();
-    const expiryAlertsEnabled = profileRes.data?.expiry_alerts ?? true;
-    const items = itemsRes.data || [];
+    let query = client
+        .from('notifications')
+        .select('id, type, severity, entity_type, entity_id, payload, read_at, created_at')
+        .is('dismissed_at', null)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-    if (itemsRes.error) {
-        logError('notif:load', itemsRes.error);
-        container.innerHTML = `<div class="empty-state error">${t.msg_save_error || 'Error loading notifications'}</div>`;
+    if (!expiryAlertsEnabled) {
+        query = query.not('type', 'like', 'warranty_%');
+    }
+
+    const { data, error } = await query;
+    if (seq !== loadNotificationsSeq) return;
+
+    if (error) {
+        logError('notif:load', error);
+        const t = getNotifT();
+        container.innerHTML = `<div class="empty-state error">${escapeHtml(t.msg_save_error || 'Error loading notifications')}</div>`;
         return;
     }
 
-    const lifecycleReceipts = filterRecentLifecycleReceipts(partnerReceipts);
-    const partnerWarrantyItems = extractActivePartnerWarrantyItems(partnerReceipts);
-    const notifications = buildLifecycleNotifications(lifecycleReceipts, t);
-
-    if (expiryAlertsEnabled) {
-        notifications.push(...buildWarrantyNotifications(items, partnerWarrantyItems, t));
-    }
-
-    const totalTrackedCount = items.length + partnerWarrantyItems.length;
-
-    if (notifications.length === 0) {
-        if (!expiryAlertsEnabled) {
-            container.innerHTML = `
-                <div class="notification-card info">
-                    <div class="notif-icon"><i class="fa-solid fa-bell-slash"></i></div>
-                    <div class="notif-content">
-                        <h4>${t.notif_disabled_title || 'Notifications disabled'}</h4>
-                        <p>${t.notif_disabled_desc || 'Enable warranty reminders in Settings to see alerts here.'}</p>
-                    </div>
-                </div>`;
-        } else if (totalTrackedCount === 0) {
-            container.innerHTML = `
-                <div class="notification-card info">
-                    <div class="notif-icon"><i class="fa-solid fa-database"></i></div>
-                    <div class="notif-content">
-                        <h4>${t.notif_empty_title || 'No items yet'}</h4>
-                        <p>${t.notif_empty_desc || 'Add at least one item to receive notifications.'}</p>
-                    </div>
-                </div>`;
-        } else {
-            container.innerHTML = `
-                <div class="notification-card info">
-                    <div class="notif-icon"><i class="fa-solid fa-check-circle"></i></div>
-                    <div class="notif-content">
-                        <h4>${t.notif_all_good_title || 'All good!'}</h4>
-                        <p>${(t.notif_all_good_text || 'You have {count} items and none expire within 30 days.').replace('{count}', totalTrackedCount)}</p>
-                    </div>
-                </div>`;
-        }
-    } else {
-        container.innerHTML = notifications.map(n => `
-            <div class="notification-card ${n.type}">
-                <div class="notif-icon"><i class="fa-solid ${n.icon}"></i></div>
-                <div class="notif-content">
-                    <h4>${n.title}</h4>
-                    <p>${n.text}</p>
-                    ${n.date ? `<span class="notif-time">${n.date}</span>` : ''}
-                </div>
-            </div>
-        `).join('');
-    }
-
-    updateNotifBadge(notifications.length);
+    cachedExpiryAlertsEnabled = expiryAlertsEnabled;
+    cachedNotifications = data || [];
+    renderNotificationsList(container);
 }
 
 let notifInitialized = false;
@@ -341,7 +402,6 @@ let notifLoadPromise = null;
 let currentNotifLang = getNotifLang();
 
 let cachedUserId = null;
-let cachedUserEmail = null;
 let cachedClient = null;
 
 async function ensureNotifLoaded() {
@@ -352,9 +412,8 @@ async function ensureNotifLoaded() {
             const auth = await requireAuth();
             if (!auth) return;
             cachedUserId = auth.user.id;
-            cachedUserEmail = auth.user.email;
             cachedClient = auth.client;
-            await loadNotifications(auth.user.id, auth.user.email, auth.client);
+            await loadNotifications(auth.user.id, auth.client);
             currentNotifLang = getNotifLang();
             notifInitialized = true;
         } catch (e) {
@@ -384,22 +443,19 @@ if (startsOnNotifView) {
     ensureNotifLoaded();
 }
 
-window.addEventListener('lang-changed', async (e) => {
-    const newLang = e.detail?.lang || getNotifLang();
-    if (notifInitialized && cachedUserId && cachedClient && newLang !== currentNotifLang) {
+window.addEventListener('lang-changed', () => {
+    const newLang = getNotifLang();
+    if (notifInitialized && newLang !== currentNotifLang) {
         currentNotifLang = newLang;
-        try {
-            await loadNotifications(cachedUserId, cachedUserEmail, cachedClient);
-        } catch (e) {
-            logError('notif:reloadLang', e);
-        }
+        const container = document.getElementById('notifications-container');
+        if (container) renderNotificationsList(container);
     }
 });
 
 window.addEventListener('phone-changed', async () => {
     if (notifInitialized && cachedUserId && cachedClient) {
         try {
-            await loadNotifications(cachedUserId, cachedUserEmail, cachedClient);
+            await loadNotifications(cachedUserId, cachedClient);
         } catch (e) {
             logError('notif:reloadPhone', e);
         }
@@ -413,7 +469,7 @@ if (!startsOnNotifView) {
         try {
             const auth = await requireAuth();
             if (!auth) return;
-            const count = await computeActiveAlertsCount(auth.user.id, auth.user.email, auth.client);
+            const count = await computeActiveAlertsCount(auth.user.id, auth.client);
             updateNotifBadge(count);
         } catch (e) {
             logError('notif:badgeInit', e);

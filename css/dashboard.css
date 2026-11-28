@@ -3506,6 +3506,96 @@ html {
     color: #fcd34d;
 }
 
+.notif-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.btn-notif-mark-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-notif-mark-all:hover:not(:disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.btn-notif-mark-all:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.btn-notif-mark-all.hidden {
+    display: none;
+}
+
+.notification-card.receipt-issued::before {
+    background: #10b981;
+}
+
+.notification-card.receipt-issued .notif-icon {
+    background: rgba(16, 185, 129, 0.14);
+    color: #10b981;
+}
+
+.notification-card.is-unread {
+    border-color: rgba(59, 130, 246, 0.35);
+    cursor: pointer;
+}
+
+.notification-card.is-read {
+    opacity: 0.78;
+}
+
+.notification-card.is-read:hover {
+    opacity: 1;
+}
+
+.notif-unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary);
+    flex-shrink: 0;
+    margin-top: 6px;
+}
+
+.notif-dismiss-btn {
+    margin-left: auto;
+    align-self: flex-start;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+
+.notif-dismiss-btn:hover {
+    background: rgba(148, 163, 184, 0.16);
+    color: var(--text);
+}
+
 /* ==== Redesigned Buyer Receipt Cards (Fintech Document Style) ==== */
 
 .receipt-doc-card {

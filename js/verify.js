@@ -316,13 +316,41 @@ async function decodeQRFromImage(img, maxSize = 1024) {
     return code ? code.data : null;
 }
 
+let pdfJsLoadPromise = null;
+
+function ensurePdfJsLoaded() {
+    if (typeof window.pdfjsLib !== 'undefined') {
+        if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+        return Promise.resolve(window.pdfjsLib);
+    }
+    if (!pdfJsLoadPromise) {
+        pdfJsLoadPromise = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+            s.onload = () => {
+                if (typeof window.pdfjsLib !== 'undefined') {
+                    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    resolve(window.pdfjsLib);
+                } else {
+                    reject(new Error('pdfjsLib unavailable after load'));
+                }
+            };
+            s.onerror = () => reject(new Error('Failed to load pdf.js'));
+            document.head.appendChild(s);
+        }).catch((err) => {
+            pdfJsLoadPromise = null;
+            throw err;
+        });
+    }
+    return pdfJsLoadPromise;
+}
+
 async function decodeQR(file) {
     if (file.type === 'application/pdf') {
         try {
-            if (typeof pdfjsLib === 'undefined') {
-                console.warn('[verify] pdfjsLib not loaded');
-                return null;
-            }
+            const pdfjsLib = await ensurePdfJsLoaded();
             const buf = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
             const maxPages = Math.min(pdf.numPages, 20);
@@ -1000,23 +1028,14 @@ fileInput?.addEventListener('change', async () => {
         return;
     }
 
-    if (file.type === 'application/pdf' && typeof pdfjsLib === 'undefined') {
-        console.warn('[verify] pdfjsLib not loaded, cannot preview PDF');
-        const isEn = ((window.getValuonLang ? window.getValuonLang() : 'en')) === 'en';
-        window.showToast(
-            isEn ? 'PDF library failed to load. Please refresh the page.' : 'Не удалось загрузить обработчик PDF. Обновите страницу.',
-            'error'
-        );
-        fileInput.value = '';
-        return;
-    }
-
     uploadZone?.classList.add('has-file');
 
     revokePreviewObjectUrl();
 
     if (file.type === 'application/pdf') {
         try {
+            const pdfjsLib = await ensurePdfJsLoaded();
+            if (seq !== filePreviewSeq) return;
             const buf = await file.arrayBuffer();
             if (seq !== filePreviewSeq) return;
             const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
