@@ -1223,3 +1223,128 @@ html.verify-auto-hash .verify-hash-loading,
 [data-theme="dark"] .verify-item-pill.is-void {
     color: #cbd5e1;
 }
+
+/* --- Collapsible Ed25519 Cryptographic Proof --- */
+.verify-crypto-details {
+    width: 100%;
+    margin: 0.75rem 0 0.85rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(148, 163, 184, 0.06);
+    text-align: left;
+    overflow: hidden;
+    transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+[data-theme="dark"] .verify-crypto-details {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.09);
+}
+
+.verify-crypto-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    transition: color 0.16s ease;
+}
+
+.verify-crypto-summary::-webkit-details-marker {
+    display: none;
+}
+
+.verify-crypto-summary:hover {
+    color: var(--text-main);
+}
+
+.verify-crypto-summary > i:first-child {
+    color: #10b981;
+    font-size: 0.85rem;
+}
+
+.verify-crypto-chevron {
+    margin-left: auto;
+    font-size: 0.72rem;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
+}
+
+.verify-crypto-details[open] .verify-crypto-chevron {
+    transform: rotate(180deg);
+}
+
+.verify-crypto-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.65rem 0.85rem 0.75rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+}
+
+[data-theme="dark"] .verify-crypto-body {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.verify-crypto-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.verify-crypto-label {
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.verify-crypto-val {
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 0.76rem;
+    word-break: break-all;
+}
+
+code.verify-crypto-val {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.verify-crypto-sig-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.verify-crypto-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.verify-crypto-copy-btn:hover {
+    color: var(--primary);
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.verify-crypto-copy-btn.is-copied {
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(16, 185, 129, 0.1);
+}

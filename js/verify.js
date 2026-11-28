@@ -1,7 +1,7 @@
 import { supabase, SUPABASE_URL } from './supabase-client.js';
 import { logError } from './security.js';
 import { createSegmentedIndicator } from './segmented-indicator.js';
-import { morphCopyButton } from './ui-effects.js';
+import { morphCopyButton, haptic } from './ui-effects.js';
 
 const verifyTabsWrap = document.querySelector('.verify-tabs');
 const verifyTabIndicatorEl = document.getElementById('verify-tab-indicator');
@@ -18,7 +18,34 @@ const retryBtn = document.getElementById('verify-retry-btn');
 const ctaBtn = document.getElementById('verify-cta-btn');
 const ctaIcon = document.getElementById('verify-cta-icon');
 const ctaLabel = document.getElementById('verify-cta-label');
+const cryptoDetailsEl = document.getElementById('verify-crypto-details');
+const cryptoSigEl = document.getElementById('verify-crypto-sig');
+const cryptoTimeEl = document.getElementById('verify-crypto-time');
+const cryptoCopySigBtn = document.getElementById('verify-crypto-copy-sig');
+let lastVerifiedSig = '';
 let isUserSignedIn = false;
+
+function formatShortSig(sig) {
+    const s = String(sig || '').trim();
+    if (s.length <= 24) return s || '—';
+    return `${s.slice(0, 14)}…${s.slice(-8)}`;
+}
+
+cryptoCopySigBtn?.addEventListener('click', async () => {
+    if (!lastVerifiedSig) return;
+    try {
+        await navigator.clipboard.writeText(lastVerifiedSig);
+        haptic(10);
+        const icon = cryptoCopySigBtn.querySelector('i');
+        cryptoCopySigBtn.classList.add('is-copied');
+        if (icon) icon.className = 'fa-solid fa-check';
+        window.showToast?.(window.t('crypto_sig_copied') || 'Signature copied', 'success');
+        setTimeout(() => {
+            cryptoCopySigBtn.classList.remove('is-copied');
+            if (icon) icon.className = 'fa-regular fa-copy';
+        }, 1600);
+    } catch (_) { /* ignore clipboard failure */ }
+});
 
 const refreshAuthState = async () => {
     try {
@@ -169,6 +196,11 @@ function resetAll() {
     verifyTabsWrap?.classList.remove('is-hidden');
     lastResultState = null;
     lastResultData = null;
+    lastVerifiedSig = '';
+    if (cryptoDetailsEl) {
+        cryptoDetailsEl.open = false;
+        cryptoDetailsEl.style.display = 'none';
+    }
     Object.values(panels).forEach(p => p?.classList.remove('done'));
     resultBlockWrapper?.classList.remove('active');
     updateVerifyCta(false);
@@ -298,6 +330,63 @@ function parseQRData(text) {
     };
 }
 
+let barcodeDetectorPromise = null;
+
+function getBarcodeDetector() {
+    if (barcodeDetectorPromise !== null) return barcodeDetectorPromise;
+    if (typeof window === 'undefined' || typeof window.BarcodeDetector !== 'function') {
+        barcodeDetectorPromise = Promise.resolve(null);
+        return barcodeDetectorPromise;
+    }
+    barcodeDetectorPromise = (async () => {
+        try {
+            if (typeof window.BarcodeDetector.getSupportedFormats === 'function') {
+                const formats = await window.BarcodeDetector.getSupportedFormats();
+                if (!Array.isArray(formats) || !formats.includes('qr_code')) return null;
+            }
+            return new window.BarcodeDetector({ formats: ['qr_code'] });
+        } catch (_) {
+            return null;
+        }
+    })();
+    return barcodeDetectorPromise;
+}
+
+async function detectQrFromCanvas(canvasEl, ctx) {
+    const detector = await getBarcodeDetector();
+    if (detector) {
+        try {
+            const barcodes = await detector.detect(canvasEl);
+            const hit = Array.isArray(barcodes) ? barcodes.find((b) => b && b.rawValue) : null;
+            if (hit) {
+                const pts = Array.isArray(hit.cornerPoints) && hit.cornerPoints.length >= 4
+                    ? hit.cornerPoints
+                    : null;
+                const box = hit.boundingBox;
+                const location = pts
+                    ? {
+                        topLeftCorner: pts[0],
+                        topRightCorner: pts[1],
+                        bottomRightCorner: pts[2],
+                        bottomLeftCorner: pts[3],
+                    }
+                    : (box ? {
+                        topLeftCorner: { x: box.x, y: box.y },
+                        topRightCorner: { x: box.x + box.width, y: box.y },
+                        bottomRightCorner: { x: box.x + box.width, y: box.y + box.height },
+                        bottomLeftCorner: { x: box.x, y: box.y + box.height },
+                    } : null);
+                return { data: hit.rawValue, location };
+            }
+        } catch (_) { /* fall through to jsQR */ }
+    }
+
+    if (!window.jsQR) return null;
+    const imageData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
+    const code = window.jsQR(imageData.data, canvasEl.width, canvasEl.height, { inversionAttempts: 'attemptBoth' });
+    return code ? { data: code.data, location: code.location || null } : null;
+}
+
 async function decodeQRFromImage(img, maxSize = 1024) {
     const canvas = document.createElement('canvas');
     let w = img.naturalWidth || img.width;
@@ -311,9 +400,7 @@ async function decodeQRFromImage(img, maxSize = 1024) {
     canvas.height = h;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(img, 0, 0, w, h);
-    const imageData = ctx.getImageData(0, 0, w, h);
-    if (!window.jsQR) return null;
-    const code = window.jsQR(imageData.data, w, h, { inversionAttempts: 'attemptBoth' });
+    const code = await detectQrFromCanvas(canvas, ctx);
     return code ? code.data : null;
 }
 
@@ -368,11 +455,8 @@ async function decodeQR(file) {
                 canvas.height = viewport.height;
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
                 await page.render({ canvasContext: ctx, viewport }).promise;
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                if (window.jsQR) {
-                    const code = window.jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'attemptBoth' });
-                    if (code && code.data) return code.data;
-                }
+                const code = await detectQrFromCanvas(canvas, ctx);
+                if (code && code.data) return code.data;
             }
             return null;
         } catch (e) {
@@ -645,8 +729,33 @@ function showResult(status, data) {
     }
     if (status !== 'success') {
         copyBtn && (copyBtn.style.display = 'none');
+        if (cryptoDetailsEl) {
+            cryptoDetailsEl.open = false;
+            cryptoDetailsEl.style.display = 'none';
+        }
         updateVerifyCta(false);
+        haptic([30, 50, 30]);
     } else {
+        const sigVal = data?.receipt?.fiscal_hash || lastVerifiedSig || '';
+        if (sigVal) lastVerifiedSig = sigVal;
+        if (cryptoDetailsEl) {
+            cryptoDetailsEl.open = false;
+            if (sigVal) {
+                if (cryptoSigEl) cryptoSigEl.textContent = formatShortSig(sigVal);
+                if (cryptoTimeEl) {
+                    const loc = (window.getValuonLang && window.getValuonLang() === 'ru') ? 'ru-RU' : 'en-GB';
+                    cryptoTimeEl.textContent = new Date().toLocaleString(loc, {
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    });
+                }
+                cryptoDetailsEl.style.display = '';
+            } else {
+                cryptoDetailsEl.style.display = 'none';
+            }
+        }
+        const lcStatus = lastResultData?.lifecycleStatus;
+        haptic(lcStatus === 'voided' ? [30, 50, 30] : [10, 40, 15]);
         updateVerifyCta(true);
         refreshAuthState().then(() => {
             if (lastResultState?.status === 'success' && resultBlockWrapper?.classList.contains('active')) {
@@ -732,8 +841,8 @@ function stopCamera() {
 
 function startScanLoop() {
     if (!mediaStream) return;
-    if (!window.jsQR) {
-        console.warn('[verify] jsQR not loaded, cannot start scan loop');
+    if (!window.jsQR && typeof window.BarcodeDetector !== 'function') {
+        console.warn('[verify] QR decoder not loaded, cannot start scan loop');
         stopCamera();
         const isEn = ((window.getValuonLang ? window.getValuonLang() : 'en')) === 'en';
         window.showToast?.(
@@ -743,8 +852,9 @@ function startScanLoop() {
         return;
     }
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    let isDecodingFrame = false;
 
-    scanInterval = setInterval(() => {
+    scanInterval = setInterval(async () => {
         if (!mediaStream || video.readyState < 2 || document.hidden) {
             if (!mediaStream) {
                 clearInterval(scanInterval);
@@ -766,17 +876,25 @@ function startScanLoop() {
             sh = Math.round(sh * scale);
         }
 
+        if (isDecodingFrame) return;
+        isDecodingFrame = true;
+
         canvas.width = sw;
         canvas.height = sh;
         ctx.drawImage(video, 0, 0, sw, sh);
-        const imageData = ctx.getImageData(0, 0, sw, sh);
-        const code = window.jsQR(imageData.data, sw, sh, { inversionAttempts: 'attemptBoth' });
 
-        if (code) {
+        let code = null;
+        try {
+            code = await detectQrFromCanvas(canvas, ctx);
+        } finally {
+            isDecodingFrame = false;
+        }
+
+        if (code && scanInterval) {
             clearInterval(scanInterval);
             scanInterval = null;
 
-            if (qrOverlayCtx) {
+            if (qrOverlayCtx && code.location) {
                 qrOverlay.width = sw;
                 qrOverlay.height = sh;
                 const loc = code.location;
@@ -1153,6 +1271,7 @@ if (backBtn) {
 // Auto-verify receipt when opened via quick action link (#sig=<fiscal_hash>)
 async function verifyReceiptByHash(fiscalHash) {
     if (!fiscalHash || verifying) return;
+    lastVerifiedSig = String(fiscalHash).trim();
     verifying = true;
     setHashLoading(true);
     try {

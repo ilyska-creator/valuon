@@ -3,8 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="js/lang-detect.js?v=202611281654"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <script src="js/lang-detect.js?v=202611281701"></script>
     <title>Valuon — Receipt Verification</title>
     <meta name="description"
         content="Valuon — Verify receipt authenticity by QR code or PDF using Ed25519 cryptographic verification.">
@@ -27,10 +27,10 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="css/style.css?v=202611281654">
-    <link rel="stylesheet" href="css/auth.css?v=202611281654">
-    <link rel="stylesheet" href="css/verify.css?v=202611281654">
-    <link rel="stylesheet" href="css/toast.css?v=202611281654">
+    <link rel="stylesheet" href="css/style.css?v=202611281701">
+    <link rel="stylesheet" href="css/auth.css?v=202611281701">
+    <link rel="stylesheet" href="css/verify.css?v=202611281701">
+    <link rel="stylesheet" href="css/toast.css?v=202611281701">
     <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <meta name="theme-color" content="#2563eb">
     <link rel="manifest" href="manifest.webmanifest">
@@ -166,6 +166,32 @@
                         <dt data-i18n="detail_status">Receipt Claim Status</dt>
                         <dd id="result-seller-status">—</dd>
                     </dl>
+                    <details id="verify-crypto-details" class="verify-crypto-details" style="display:none">
+                        <summary class="verify-crypto-summary">
+                            <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                            <span data-i18n="crypto_summary">Cryptographic Proof (Ed25519)</span>
+                            <i class="fa-solid fa-chevron-down verify-crypto-chevron" aria-hidden="true"></i>
+                        </summary>
+                        <div class="verify-crypto-body">
+                            <div class="verify-crypto-row">
+                                <span class="verify-crypto-label" data-i18n="crypto_algo">Algorithm</span>
+                                <code class="verify-crypto-val">Ed25519</code>
+                            </div>
+                            <div class="verify-crypto-row">
+                                <span class="verify-crypto-label" data-i18n="crypto_sig">Signature</span>
+                                <span class="verify-crypto-sig-wrap">
+                                    <code id="verify-crypto-sig" class="verify-crypto-val">—</code>
+                                    <button type="button" id="verify-crypto-copy-sig" class="verify-crypto-copy-btn" aria-label="Copy signature">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </span>
+                            </div>
+                            <div class="verify-crypto-row">
+                                <span class="verify-crypto-label" data-i18n="crypto_verified_at">Verified at</span>
+                                <span id="verify-crypto-time" class="verify-crypto-val">—</span>
+                            </div>
+                        </div>
+                    </details>
                     <button id="verify-copy-btn" class="copy-btn" style="display:none">
                         <i class="fa-solid fa-copy"></i> <span data-i18n="copy_btn">Copy result</span>
                     </button>
@@ -191,9 +217,9 @@
     </div>
 
     <div id="toast-container" class="toast-container"></div>
-    <script src="js/toast.js?v=202611281654"></script>
-    <script src="js/theme.js?v=202611281654"></script>
-    <script src="js/rotating-loader.js?v=202611281654"></script>
+    <script src="js/toast.js?v=202611281701"></script>
+    <script src="js/theme.js?v=202611281701"></script>
+    <script src="js/rotating-loader.js?v=202611281701"></script>
     <script>
         (function () {
             var items = document.querySelectorAll('[data-animate]');
@@ -210,14 +236,14 @@
             });
         })();
     </script>
-    <script src="js/currencies.js?v=202611281654"></script>
-    <script src="js/verify-lang.js?v=202611281654"></script>
-    <script type="module" src="js/verify.js?v=202611281654"></script>
-    <script src="js/cookie-banner.js?v=202611281654"></script>
+    <script src="js/currencies.js?v=202611281701"></script>
+    <script src="js/verify-lang.js?v=202611281701"></script>
+    <script type="module" src="js/verify.js?v=202611281701"></script>
+    <script src="js/cookie-banner.js?v=202611281701"></script>
     <script>  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
-    <script defer src="js/pwa.js?v=202611281654"></script>
+    <script defer src="js/pwa.js?v=202611281701"></script>
 </body>
 
 </html>

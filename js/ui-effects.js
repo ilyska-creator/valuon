@@ -17,14 +17,19 @@ function isIosTouchDevice() {
 function triggerIosTaptic() {
     if (typeof document === 'undefined' || !document.body) return;
     if (!iosHapticLabel) {
-        const label = document.createElement('label');
-        label.setAttribute('aria-hidden', 'true');
-        label.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;';
+        const id = 'valuon-ios-haptic-switch';
         const input = document.createElement('input');
+        input.id = id;
         input.type = 'checkbox';
         input.setAttribute('switch', '');
         input.tabIndex = -1;
-        label.appendChild(input);
+        input.setAttribute('aria-hidden', 'true');
+        input.style.cssText = 'position:fixed;bottom:0;left:0;width:1px;height:1px;opacity:0.001;pointer-events:none;margin:0;z-index:-1;';
+        const label = document.createElement('label');
+        label.htmlFor = id;
+        label.setAttribute('aria-hidden', 'true');
+        label.style.cssText = 'position:fixed;bottom:0;left:0;width:1px;height:1px;opacity:0.001;pointer-events:none;z-index:-1;';
+        document.body.appendChild(input);
         document.body.appendChild(label);
         iosHapticLabel = label;
     }

@@ -3363,7 +3363,7 @@
 .bottom-nav {
     display: none;
     position: fixed;
-    bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) - 18px));
     left: 12px;
     right: 12px;
     z-index: var(--z-bottom-nav);
